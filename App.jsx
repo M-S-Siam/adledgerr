@@ -202,7 +202,7 @@ export default function AdLedgerApp() {
                   cards={cards} 
                   metrics={metrics} 
                   transactions={transactions} 
-                  onAddCard={() => setActiveModal('add-card')}
+                  onAddCard={() => { setSelectedCard(null); setActiveModal('add-card'); }}
                   onEditCard={openEditCard}
                   onArchiveCard={handleArchiveCard}
                   onViewDetails={openCardDetails}
