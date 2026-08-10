@@ -4,7 +4,8 @@ import {
   Activity, FileText, Settings, Plus, Search, 
   ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
-  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2
+  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, 
+  Trash2, Edit, Eye, Filter, ArrowUpDown
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -41,8 +42,16 @@ function useLocalStorage(key, initialValue) {
 
 // --- INITIAL MOCK DATA ---
 const INITIAL_CLIENTS = [
-  { id: 'c1', name: 'Mehedi Hasan', company: 'RITMO', status: 'Active', budget: 50000, dateAdded: '2026-07-15' },
-  { id: 'c2', name: 'John Doe', company: 'TechNova', status: 'Active', budget: 25000, dateAdded: '2026-08-01' },
+  { 
+    id: 'c1', name: 'Mehedi Hasan', company: 'RITMO', phone: '01700000000', email: 'hello@ritmo.com', 
+    fb: 'fb.com/ritmo', ig: '@ritmo', website: 'ritmo.com', serviceType: 'Meta Ads',
+    status: 'Active', budget: 50000, dateAdded: '2026-07-15', notes: 'Premium retaining client.' 
+  },
+  { 
+    id: 'c2', name: 'John Doe', company: 'TechNova', phone: '01800000000', email: 'john@technova.com', 
+    fb: 'fb.com/technova', ig: '@technovatech', website: 'technova.com', serviceType: 'Social Media Management',
+    status: 'Active', budget: 25000, dateAdded: '2026-08-01', notes: 'Standard package.' 
+  },
 ];
 
 const INITIAL_CARDS = [
@@ -54,7 +63,7 @@ const INITIAL_TRANSACTIONS = [
   { id: 't1', date: '2026-08-01', type: 'PAYMENT_RECEIVED', clientId: 'c1', amountBDT: 25000, method: 'bKash', notes: 'August Retainer' },
   { id: 't3', date: '2026-08-02', type: 'USD_PURCHASE', amountBDT: 12500, cashOutCharge: 150, amountUSD: 100, method: 'Bank Transfer', notes: 'Binance P2P' },
   { id: 't5', date: '2026-08-02', type: 'CARD_LOAD', cardId: 'card1', amountUSD: 100, notes: 'Initial Load' },
-  { id: 't7', date: '2026-08-04', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 25, taxUSD: 3.75, notes: 'RITMO Awareness' },
+  { id: 't7', date: '2026-08-04', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 25, taxUSD: 3.75, adAccount: 'RITMO Ads 1', campaign: 'Awareness Q3', notes: 'RITMO Awareness' },
 ];
 
 // --- UTILITIES ---
@@ -73,8 +82,9 @@ export default function AdLedgerApp() {
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
   // Modal State
-  const [activeModal, setActiveModal] = useState(null); // 'payment', 'usd', 'spend', 'add-card', 'edit-card', 'card-details', 'load-card'
-  const [selectedCard, setSelectedCard] = useState(null); // Stores card data for editing/details
+  const [activeModal, setActiveModal] = useState(null); // 'payment', 'usd', 'spend', 'add-card', 'edit-card', 'card-details', 'load-card', 'add-client', 'edit-client', 'client-details'
+  const [selectedCard, setSelectedCard] = useState(null); 
+  const [selectedClient, setSelectedClient] = useState(null); 
 
   // --- FINANCIAL CALCULATIONS (Auto-derived from transactions) ---
   const metrics = useMemo(() => {
@@ -82,14 +92,14 @@ export default function AdLedgerApp() {
     
     // USD Variables
     let totalUSDPurchased = 0;
-    let totalBDTSpentOnUSD = 0; // Base BDT
-    let totalCashOutCharges = 0; // Fees
+    let totalBDTSpentOnUSD = 0; 
+    let totalCashOutCharges = 0; 
     
     let totalAdSpendUSD = 0;
     let totalTaxUSD = 0;
     
     let cardBalances = {};
-    let cardStats = {}; // Tracks loads, spends per card
+    let cardStats = {}; 
     cards.forEach(c => {
       cardBalances[c.id] = parseFloat(c.initialBalance || 0);
       cardStats[c.id] = { loaded: 0, spent: 0 };
@@ -130,17 +140,9 @@ export default function AdLedgerApp() {
     const globalUSDBalance = totalUSDPurchased - totalLoadedToCards;
 
     return {
-      totalRevenueBDT,
-      totalUSDPurchased,
-      avgUSDEffectiveRate,
-      totalAdSpendUSD,
-      totalTaxUSD,
-      netProfitBDT,
-      profitMargin,
-      cardBalances,
-      cardStats,
-      globalUSDBalance,
-      totalLoadedToCards
+      totalRevenueBDT, totalUSDPurchased, avgUSDEffectiveRate,
+      totalAdSpendUSD, totalTaxUSD, netProfitBDT, profitMargin,
+      cardBalances, cardStats, globalUSDBalance, totalLoadedToCards
     };
   }, [transactions, cards]);
 
@@ -154,7 +156,6 @@ export default function AdLedgerApp() {
     }, {});
     return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
   }, [transactions]);
-
 
   // --- HANDLERS ---
   const handleAddTransaction = (newTx) => {
@@ -174,37 +175,61 @@ export default function AdLedgerApp() {
 
   const handleDeleteCard = (cardId) => {
     const hasHistory = transactions.some(t => t.cardId === cardId);
-    
     let msg = "Are you sure you want to delete this card?";
     if (hasHistory) {
       msg = "This card has transaction history. Deleting it may affect historical records. Are you sure?";
     }
-    
     if (window.confirm(msg)) {
       setCards(prev => prev.filter(c => c.id !== cardId));
     }
   };
 
-  const openCardDetails = (card) => {
-    setSelectedCard(card);
-    setActiveModal('card-details');
+  const handleSaveClient = (clientData) => {
+    if (activeModal === 'edit-client') {
+      setClients(prev => prev.map(c => c.id === clientData.id ? clientData : c));
+    } else {
+      setClients(prev => [...prev, { ...clientData, id: `c_${Date.now()}` }]);
+    }
+    setActiveModal(null);
   };
 
-  const openEditCard = (card) => {
-    setSelectedCard(card);
-    setActiveModal('edit-card');
+  const handleDeleteClient = (clientId) => {
+    const hasHistory = transactions.some(t => t.clientId === clientId);
+    let msg = "Are you sure you want to delete this client?";
+    if (hasHistory) {
+      msg = "This client has financial transaction history. Deleting the client may affect historical records. Are you sure?";
+    }
+    if (window.confirm(msg)) {
+      setClients(prev => prev.filter(c => c.id !== clientId));
+    }
   };
 
-  const openLoadCard = (card) => {
-    setSelectedCard(card);
-    setActiveModal('load-card');
+  const openPaymentForClient = (client) => {
+    setSelectedClient(client);
+    setActiveModal('payment');
+  };
+
+  const openAdSpendForClient = (client) => {
+    setSelectedClient(client);
+    setActiveModal('spend');
   };
 
   // --- RENDERERS ---
   const renderContent = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} />;
-      case 'clients': return <ClientsView clients={clients} transactions={transactions} />;
+      case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} />;
+      case 'clients': 
+        return <ClientsView 
+                  clients={clients} 
+                  transactions={transactions} 
+                  metrics={metrics}
+                  onAddClient={() => { setSelectedClient(null); setActiveModal('add-client'); }}
+                  onEditClient={(c) => { setSelectedClient(c); setActiveModal('edit-client'); }}
+                  onViewDetails={(c) => { setSelectedClient(c); setActiveModal('client-details'); }}
+                  onDeleteClient={handleDeleteClient}
+                  onReceivePayment={openPaymentForClient}
+                  onAddAdSpend={openAdSpendForClient}
+                />;
       case 'ledger': return <LedgerView transactions={transactions} clients={clients} cards={cards} />;
       case 'cards': 
         return <CardsView 
@@ -212,12 +237,12 @@ export default function AdLedgerApp() {
                   metrics={metrics} 
                   transactions={transactions} 
                   onAddCard={() => { setSelectedCard(null); setActiveModal('add-card'); }}
-                  onEditCard={openEditCard}
+                  onEditCard={(c) => { setSelectedCard(c); setActiveModal('edit-card'); }}
                   onDeleteCard={handleDeleteCard}
-                  onViewDetails={openCardDetails}
-                  onLoadCard={openLoadCard}
+                  onViewDetails={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
+                  onLoadCard={(c) => { setSelectedCard(c); setActiveModal('load-card'); }}
                 />;
-      default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} />;
+      default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} />;
     }
   };
 
@@ -238,7 +263,7 @@ export default function AdLedgerApp() {
         
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<Users />} label="Client Management" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<Activity />} label="Transaction Ledger" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => {setCurrentView('cards'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {}} />
@@ -268,13 +293,13 @@ export default function AdLedgerApp() {
               <span className="text-xs font-medium text-slate-500 uppercase">Avg USD Rate:</span>
               <span className="text-sm font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
             </div>
-            <button onClick={() => setActiveModal('payment')} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
+            <button onClick={() => { setSelectedClient(null); setActiveModal('payment'); }} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
               <ArrowDownRight size={16} className="text-green-600"/> Receive BDT
             </button>
             <button onClick={() => setActiveModal('usd')} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
               <DollarSign size={16} className="text-blue-600"/> Buy USD
             </button>
-            <button onClick={() => setActiveModal('spend')} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm">
+            <button onClick={() => { setSelectedClient(null); setActiveModal('spend'); }} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm">
               <Plus size={16} /> Ad Spend
             </button>
           </div>
@@ -289,7 +314,7 @@ export default function AdLedgerApp() {
       {/* MODALS */}
       {activeModal === 'payment' && (
         <Modal title="Receive Client Payment" onClose={() => setActiveModal(null)}>
-          <TransactionForm type="PAYMENT_RECEIVED" clients={clients} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          <TransactionForm type="PAYMENT_RECEIVED" clients={clients} initialClientId={selectedClient?.id} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
         </Modal>
       )}
       {activeModal === 'usd' && (
@@ -299,7 +324,7 @@ export default function AdLedgerApp() {
       )}
       {activeModal === 'spend' && (
         <Modal title="Record Meta Ad Spend" onClose={() => setActiveModal(null)}>
-          <TransactionForm type="AD_SPEND" clients={clients} cards={cards} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          <TransactionForm type="AD_SPEND" clients={clients} cards={cards} initialClientId={selectedClient?.id} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
         </Modal>
       )}
       {activeModal === 'load-card' && selectedCard && (
@@ -309,20 +334,30 @@ export default function AdLedgerApp() {
       )}
       {(activeModal === 'add-card' || activeModal === 'edit-card') && (
         <Modal title={activeModal === 'add-card' ? 'Add New Card' : 'Edit Card'} onClose={() => setActiveModal(null)}>
-          <CardForm 
-            initialData={activeModal === 'edit-card' ? selectedCard : null} 
-            onSubmit={handleSaveCard} 
-            onCancel={() => setActiveModal(null)} 
-          />
+          <CardForm initialData={activeModal === 'edit-card' ? selectedCard : null} onSubmit={handleSaveCard} onCancel={() => setActiveModal(null)} />
         </Modal>
       )}
       {activeModal === 'card-details' && selectedCard && (
-        <CardDetailsModal 
-          card={selectedCard} 
-          metrics={metrics} 
-          transactions={transactions} 
-          onClose={() => setActiveModal(null)} 
-        />
+        <Modal title={`Card Ledger: ${selectedCard.name}`} onClose={() => setActiveModal(null)} width="max-w-4xl">
+           <CardDetailsModal card={selectedCard} metrics={metrics} transactions={transactions} onClose={() => setActiveModal(null)} />
+        </Modal>
+      )}
+      {(activeModal === 'add-client' || activeModal === 'edit-client') && (
+        <Modal title={activeModal === 'add-client' ? 'Add New Client' : 'Edit Client'} onClose={() => setActiveModal(null)} width="max-w-2xl">
+          <ClientForm initialData={activeModal === 'edit-client' ? selectedClient : null} onSubmit={handleSaveClient} onCancel={() => setActiveModal(null)} />
+        </Modal>
+      )}
+      {activeModal === 'client-details' && selectedClient && (
+        <Modal title={`Client Dashboard: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-6xl">
+           <ClientDetailsModal 
+              client={selectedClient} 
+              metrics={metrics} 
+              transactions={transactions} 
+              onClose={() => setActiveModal(null)}
+              onReceivePayment={() => openPaymentForClient(selectedClient)}
+              onAdSpend={() => openAdSpendForClient(selectedClient)}
+            />
+        </Modal>
       )}
 
     </div>
@@ -331,7 +366,7 @@ export default function AdLedgerApp() {
 
 // --- VIEWS ---
 
-function DashboardView({ metrics, chartData, transactions }) {
+function DashboardView({ metrics, chartData, transactions, clients }) {
   const recentTx = [...transactions].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 
   return (
@@ -375,56 +410,15 @@ function DashboardView({ metrics, chartData, transactions }) {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col">
           <h3 className="font-semibold text-slate-800 mb-4">Quick Stats</h3>
           <div className="space-y-4 flex-1">
+            <StatRow label="Active Clients" value={clients.filter(c=>c.status==='Active').length} />
             <StatRow label="Avg USD Effective Rate" value={`৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} />
             <StatRow label="Total USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} />
-            <StatRow label="Total BDT Spent (inc. fees)" value={formatBDT(metrics.totalUSDPurchased * metrics.avgUSDEffectiveRate)} />
+            <StatRow label="Total BDT Spent on USD" value={formatBDT(metrics.totalUSDPurchased * metrics.avgUSDEffectiveRate)} />
             <Divider />
             <StatRow label="Total Meta Tax" value={formatUSD(metrics.totalTaxUSD)} className="text-red-600" />
             <StatRow label="Effective Tax Rate" value={`${metrics.totalAdSpendUSD > 0 ? ((metrics.totalTaxUSD / metrics.totalAdSpendUSD) * 100).toFixed(1) : 0}%`} />
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ClientsView({ clients, transactions }) {
-  const clientStats = clients.map(client => {
-    const clientTx = transactions.filter(t => t.clientId === client.id);
-    const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + t.amountBDT, 0);
-    const spendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + t.amountUSD + (t.taxUSD||0), 0);
-    return { ...client, revenue, spendUSD };
-  });
-
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-            <tr>
-              <th className="px-5 py-4">Client</th>
-              <th className="px-5 py-4">Status</th>
-              <th className="px-5 py-4 text-right">Total Revenue (BDT)</th>
-              <th className="px-5 py-4 text-right">Ad Spend (USD)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {clientStats.map(c => (
-              <tr key={c.id} className="hover:bg-slate-50">
-                <td className="px-5 py-4">
-                  <div className="font-semibold text-slate-900">{c.name}</div>
-                  <div className="text-xs text-slate-500">{c.company}</div>
-                </td>
-                <td className="px-5 py-4">
-                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">{c.status}</span>
-                </td>
-                <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
-                <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.spendUSD)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );
@@ -470,6 +464,7 @@ function LedgerView({ transactions, clients, cards }) {
                     {client && <div className="font-medium text-slate-800">{client.name}</div>}
                     {card && <div className="text-xs text-slate-500">Card: {card.name}</div>}
                     {tx.type === 'USD_PURCHASE' && <div className="font-medium text-slate-800">Eff. Rate: ৳{((tx.amountBDT + (tx.cashOutCharge||0)) / tx.amountUSD).toFixed(2)}</div>}
+                    {tx.type === 'AD_SPEND' && <div className="text-xs text-slate-500">{tx.adAccount} • {tx.campaign}</div>}
                   </td>
                   <td className="px-5 py-3 text-right font-medium text-green-600">
                     {tx.type === 'PAYMENT_RECEIVED' ? `+${formatBDT(tx.amountBDT)}` : '-'}
@@ -481,6 +476,168 @@ function LedgerView({ transactions, clients, cards }) {
                   </td>
                 </tr>
               )})}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onReceivePayment, onAddAdSpend }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [sortConfig, setSortConfig] = useState({ key: 'revenue', direction: 'desc' });
+
+  // Compute stats dynamically per client
+  const clientStats = useMemo(() => {
+    return clients.map(client => {
+      const clientTx = transactions.filter(t => t.clientId === client.id);
+      
+      const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + t.amountBDT, 0);
+      const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + t.amountUSD, 0);
+      const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + (t.taxUSD||0), 0);
+      
+      const totalCostBDT = (adSpendUSD + taxUSD) * metrics.avgUSDEffectiveRate;
+      const profitBDT = revenue - totalCostBDT;
+      const profitMargin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
+      
+      return { ...client, revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, profitMargin };
+    });
+  }, [clients, transactions, metrics.avgUSDEffectiveRate]);
+
+  // Filter & Sort
+  const filteredClients = useMemo(() => {
+    let result = clientStats.filter(c => {
+      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.company.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchStatus = statusFilter === 'All' || c.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let valA = a[sortConfig.key];
+        let valB = b[sortConfig.key];
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return result;
+  }, [clientStats, searchTerm, statusFilter, sortConfig]);
+
+  const requestSort = (key) => {
+    let direction = 'desc';
+    if (sortConfig.key === key && sortConfig.direction === 'desc') direction = 'asc';
+    setSortConfig({ key, direction });
+  };
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) return <ArrowUpDown size={12} className="ml-1 inline text-slate-300" />;
+    return <ArrowUpDown size={12} className={`ml-1 inline text-blue-600 ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />;
+  };
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
+        <button onClick={onAddClient} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
+          <Plus size={16} /> Add Client
+        </button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Search clients, business..." 
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <select 
+          className="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white min-w-[150px]"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+        >
+          <option value="All">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Paused">Paused</option>
+          <option value="Completed">Completed</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+              <tr>
+                <th className="px-5 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('name')}>
+                  Client <SortIcon columnKey="name"/>
+                </th>
+                <th className="px-5 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('status')}>
+                  Status <SortIcon columnKey="status"/>
+                </th>
+                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('revenue')}>
+                  Revenue (BDT) <SortIcon columnKey="revenue"/>
+                </th>
+                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('adSpendUSD')}>
+                  Ad Spend (USD) <SortIcon columnKey="adSpendUSD"/>
+                </th>
+                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" title={`Calculated using effective rate: ৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} onClick={() => requestSort('totalCostBDT')}>
+                  Total Cost (BDT) <SortIcon columnKey="totalCostBDT"/>
+                </th>
+                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitBDT')}>
+                  Profit (BDT) <SortIcon columnKey="profitBDT"/>
+                </th>
+                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitMargin')}>
+                  Margin <SortIcon columnKey="profitMargin"/>
+                </th>
+                <th className="px-5 py-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredClients.length === 0 && <tr><td colSpan="8" className="text-center py-8 text-slate-500">No clients found.</td></tr>}
+              {filteredClients.map(c => (
+                <tr key={c.id} className="hover:bg-slate-50 group">
+                  <td className="px-5 py-4">
+                    <div className="font-semibold text-slate-900">{c.name}</div>
+                    <div className="text-xs text-slate-500">{c.company}</div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
+                      ${c.status === 'Active' ? 'bg-green-100 text-green-700' : 
+                        c.status === 'Paused' ? 'bg-orange-100 text-orange-700' : 
+                        c.status === 'Completed' ? 'bg-blue-100 text-blue-700' : 
+                        'bg-slate-100 text-slate-600'}`}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
+                  <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)} <span className="text-xs font-normal text-slate-400 block">+{formatUSD(c.taxUSD)} tax</span></td>
+                  <td className="px-5 py-4 text-right text-slate-600">{formatBDT(c.totalCostBDT)}</td>
+                  <td className="px-5 py-4 text-right font-bold text-slate-900">{formatBDT(c.profitBDT)}</td>
+                  <td className="px-5 py-4 text-right">
+                    <span className={`font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin > 20 ? 'text-blue-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-orange-600'}`}>
+                      {c.profitMargin.toFixed(1)}%
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-center">
+                    <ClientDropdownMenu 
+                      onViewDetails={() => onViewDetails(c)}
+                      onEdit={() => onEditClient(c)}
+                      onReceivePayment={() => onReceivePayment(c)}
+                      onAddAdSpend={() => onAddAdSpend(c)}
+                      onDelete={() => onDeleteClient(c.id)}
+                    />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -556,7 +713,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
       <h3 className="text-lg font-bold text-slate-800 mt-8 mb-4">USD Purchase History</h3>
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
+          <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
               <tr>
                 <th className="px-5 py-3 whitespace-normal align-middle">Date</th>
@@ -577,14 +734,14 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
 
                 return (
                 <tr key={tx.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
-                  <td className="px-5 py-3 font-medium text-slate-800">{tx.notes}</td>
-                  <td className="px-5 py-3 text-right text-slate-600">{formatBDT(tx.amountBDT)}</td>
-                  <td className="px-5 py-3 text-right text-red-500">{tx.cashOutCharge ? formatBDT(tx.cashOutCharge) : '-'}</td>
-                  <td className="px-5 py-3 text-right font-bold text-slate-800">{formatBDT(totalCost)}</td>
-                  <td className="px-5 py-3 text-right font-bold text-green-600">{formatUSD(tx.amountUSD)}</td>
-                  <td className="px-5 py-3 text-right text-slate-500">৳{baseRate}</td>
-                  <td className="px-5 py-3 text-right font-medium text-blue-600">৳{effectiveRate}</td>
+                  <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
+                  <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">{tx.notes}</td>
+                  <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(tx.amountBDT)}</td>
+                  <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{tx.cashOutCharge ? formatBDT(tx.cashOutCharge) : '-'}</td>
+                  <td className="px-5 py-3 text-right font-bold text-slate-800 whitespace-nowrap">{formatBDT(totalCost)}</td>
+                  <td className="px-5 py-3 text-right font-bold text-green-600 whitespace-nowrap">{formatUSD(tx.amountUSD)}</td>
+                  <td className="px-5 py-3 text-right text-slate-500 whitespace-nowrap">৳{baseRate}</td>
+                  <td className="px-5 py-3 text-right font-medium text-blue-600 whitespace-nowrap">৳{effectiveRate}</td>
                 </tr>
               )})}
             </tbody>
@@ -606,14 +763,14 @@ function NavItem({ icon, label, isActive, onClick }) {
   );
 }
 
-function MetricCard({ title, value, subtitle, icon, bgColor }) {
+function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
   return (
     <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
       <div className="flex justify-between items-start mb-2">
         <p className="text-sm font-medium text-slate-500">{title}</p>
         <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
       </div>
-      <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{value}</h3>
+      <h3 className={`text-2xl font-bold tracking-tight ${textColorClass}`}>{value}</h3>
       <div className="mt-2 flex items-center text-xs">
         {subtitle && <span className="text-slate-500">{subtitle}</span>}
       </div>
@@ -641,7 +798,7 @@ function TransactionTypeBadge({ type }) {
 function Modal({ title, onClose, children, width = "max-w-md" }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
-      <div className={`bg-white rounded-xl shadow-xl w-full ${width} overflow-hidden flex flex-col max-h-[90vh]`}>
+      <div className={`bg-white rounded-xl shadow-xl w-full ${width} overflow-hidden flex flex-col max-h-[95vh]`}>
         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
@@ -683,7 +840,92 @@ function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   );
 }
 
+function ClientDropdownMenu({ onViewDetails, onEdit, onReceivePayment, onAddAdSpend, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) setIsOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuRef]);
+
+  return (
+    <div className="relative inline-block text-left" ref={menuRef}>
+      <button onClick={() => setIsOpen(!isOpen)} className="p-1 rounded hover:bg-slate-100 text-slate-400 transition-colors">
+        <MoreVertical size={20} />
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 overflow-hidden">
+          <button onClick={() => {onViewDetails(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">View Details</button>
+          <button onClick={() => {onEdit(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Edit Client</button>
+          <div className="h-px w-full bg-slate-100 my-1"></div>
+          <button onClick={() => {onReceivePayment(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50">Receive Payment</button>
+          <button onClick={() => {onAddAdSpend(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">Add Ad Spend</button>
+          <div className="h-px w-full bg-slate-100 my-1"></div>
+          <button onClick={() => {onDelete(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Delete Client <Trash2 size={14}/></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- FORMS & MODALS ---
+
+function ClientForm({ initialData, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(initialData || {
+    name: '', company: '', phone: '', email: '', fb: '', ig: '', website: '',
+    serviceType: 'Meta Ads', budget: '', status: 'Active', 
+    dateAdded: new Date().toISOString().split('T')[0], notes: ''
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleSubmit = (e) => { e.preventDefault(); onSubmit({...formData, budget: parseFloat(formData.budget||0)}); };
+
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
+  const labelClass = "block text-xs font-medium text-slate-700 uppercase tracking-wide";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required className={inputClass} /></div>
+        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} className={inputClass} /></div>
+        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
+        <div><label className={labelClass}>Instagram Account</label><input type="text" name="ig" value={formData.ig} onChange={handleChange} placeholder="@username" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>Service Type</label>
+          <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
+            <option>Meta Ads</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
+          </select>
+        </div>
+        
+        <div><label className={labelClass}>Monthly Budget (Contract/Agreed BDT)</label><input type="number" name="budget" value={formData.budget} onChange={handleChange} placeholder="0.00" className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>Status</label>
+          <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
+            <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
+          </select>
+        </div>
+        
+        <div><label className={labelClass}>Start Date</label><input type="date" name="dateAdded" value={formData.dateAdded} onChange={handleChange} required className={inputClass} /></div>
+      </div>
+      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass}></textarea></div>
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
+      </div>
+    </form>
+  );
+}
+
 function CardForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(initialData || {
     name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
@@ -691,12 +933,7 @@ function CardForm({ initialData, onSubmit, onCancel }) {
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
+  const handleSubmit = (e) => { e.preventDefault(); onSubmit(formData); };
   const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
 
   return (
@@ -742,13 +979,186 @@ function CardForm({ initialData, onSubmit, onCancel }) {
   );
 }
 
-function CardDetailsModal({ card, metrics, transactions, onClose }) {
-  // Filter transactions for this specific card and sort chronologically
-  const cardTxs = transactions
-    .filter(t => t.cardId === card.id)
-    .sort((a,b) => new Date(a.date) - new Date(b.date));
+function ClientDetailsModal({ client, metrics, transactions, onClose, onReceivePayment, onAdSpend }) {
+  const clientTx = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a,b) => new Date(b.date) - new Date(a.date)), [transactions, client.id]);
+  
+  // Stats Calculation
+  const stats = useMemo(() => {
+    const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + t.amountBDT, 0);
+    const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + t.amountUSD, 0);
+    const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + (t.taxUSD||0), 0);
+    const totalCostBDT = (adSpendUSD + taxUSD) * metrics.avgUSDEffectiveRate;
+    const profitBDT = revenue - totalCostBDT;
+    const margin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
+    const outstanding = client.budget ? client.budget - revenue : 0;
+    
+    return { revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, margin, outstanding };
+  }, [clientTx, metrics.avgUSDEffectiveRate, client.budget]);
 
-  // Calculate Running Balance
+  // Campaign Extraction
+  const campaigns = useMemo(() => {
+    const map = {};
+    clientTx.filter(t => t.type === 'AD_SPEND').forEach(t => {
+      const key = `${t.adAccount || 'Unknown'} - ${t.campaign || 'Unknown'}`;
+      if(!map[key]) map[key] = { account: t.adAccount||'Unknown', campaign: t.campaign||'Unknown', spend: 0, tax: 0 };
+      map[key].spend += t.amountUSD;
+      map[key].tax += (t.taxUSD||0);
+    });
+    return Object.values(map);
+  }, [clientTx]);
+
+  // Chart Data Preparation
+  const chartData = useMemo(() => {
+    const data = [...clientTx].reverse().reduce((acc, t) => {
+      const d = t.date.substring(5); // MM-DD
+      if(!acc[d]) acc[d] = { date: d, revenue: 0, cost: 0 };
+      if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += t.amountBDT;
+      if (t.type === 'AD_SPEND') acc[d].cost += ((t.amountUSD + (t.taxUSD||0)) * metrics.avgUSDEffectiveRate);
+      return acc;
+    }, {});
+    return Object.values(data);
+  }, [clientTx, metrics.avgUSDEffectiveRate]);
+
+  return (
+    <div className="flex flex-col h-full space-y-6">
+      
+      {/* Client Overview Header */}
+      <div className="bg-slate-900 rounded-xl p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-2xl font-bold">{client.name}</h2>
+            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${client.status === 'Active' ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-300'}`}>{client.status}</span>
+          </div>
+          <p className="text-slate-400 font-medium">{client.company} • {client.serviceType}</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-slate-300">
+            {client.phone && <span>📞 {client.phone}</span>}
+            {client.email && <span>✉️ {client.email}</span>}
+            {client.fb && <span>🌐 {client.fb}</span>}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onReceivePayment} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Payment</button>
+          <button onClick={onAdSpend} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Ad Spend</button>
+        </div>
+      </div>
+
+      {/* Financial Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <MetricCard title="Total Revenue" value={formatBDT(stats.revenue)} icon={<ArrowDownRight size={18} className="text-green-600" />} bgColor="bg-green-50" />
+        <MetricCard title="Total Ad Spend" value={formatUSD(stats.adSpendUSD)} subtitle={`Tax: ${formatUSD(stats.taxUSD)}`} icon={<Activity size={18} className="text-purple-600" />} bgColor="bg-purple-50" />
+        <MetricCard title="Total Cost (BDT)" value={formatBDT(stats.totalCostBDT)} icon={<Wallet size={18} className="text-orange-600" />} bgColor="bg-orange-50" />
+        <MetricCard title="Net Profit" value={formatBDT(stats.profitBDT)} subtitle={`Margin: ${stats.margin.toFixed(1)}%`} icon={<TrendingUp size={18} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={stats.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
+      </div>
+
+      {/* Budget & Outstanding */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h4 className="font-semibold text-slate-800 mb-4">Contract / Budget Tracking</h4>
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-slate-500">Agreed Amount: {formatBDT(client.budget)}</span>
+            <span className="font-medium text-slate-800">Received: {formatBDT(stats.revenue)}</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2 overflow-hidden">
+            <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${Math.min(100, (stats.revenue / (client.budget || 1)) * 100)}%` }}></div>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Outstanding:</span>
+            <span className={`font-bold ${stats.outstanding > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+              {stats.outstanding > 0 ? formatBDT(stats.outstanding) : 'Fully Paid'}
+            </span>
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h4 className="font-semibold text-slate-800 mb-4">Performance Overview</h4>
+          <div className="h-32 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} tickFormatter={(val) => `৳${val/1000}k`} />
+                <Tooltip />
+                <Bar dataKey="revenue" name="Revenue (BDT)" fill="#22c55e" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="cost" name="Cost (BDT)" fill="#f97316" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Campaigns & Transactions Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Campaign Summary */}
+        <div className="bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50">
+            <h4 className="font-bold text-slate-800">Campaign Summary</h4>
+          </div>
+          <div className="overflow-y-auto max-h-80">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="bg-white text-slate-500 sticky top-0 border-b border-slate-100 shadow-sm">
+                <tr><th className="px-4 py-2">Campaign & Account</th><th className="px-4 py-2 text-right">Spend</th><th className="px-4 py-2 text-right">Tax</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {campaigns.length === 0 && <tr><td colSpan="3" className="text-center py-6 text-slate-500">No campaigns recorded.</td></tr>}
+                {campaigns.map((camp, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-slate-800">{camp.campaign}</div>
+                      <div className="text-xs text-slate-500">{camp.account}</div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium text-slate-800">{formatUSD(camp.spend)}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{formatUSD(camp.tax)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Client Ledger */}
+        <div className="bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+            <h4 className="font-bold text-slate-800">Client Ledger</h4>
+          </div>
+          <div className="overflow-y-auto max-h-80">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="bg-white text-slate-500 sticky top-0 border-b border-slate-100 shadow-sm">
+                <tr><th className="px-4 py-2">Date / Type</th><th className="px-4 py-2 text-right">Amount</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {clientTx.length === 0 && <tr><td colSpan="2" className="text-center py-6 text-slate-500">No transactions yet.</td></tr>}
+                {clientTx.map(tx => (
+                  <tr key={tx.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="text-xs text-slate-500">{formatDate(tx.date)}</div>
+                      <div className="font-medium text-slate-800">{tx.type.replace('_', ' ')}</div>
+                      <div className="text-xs text-slate-500 truncate max-w-[150px]">{tx.notes || tx.campaign}</div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {tx.type === 'PAYMENT_RECEIVED' ? (
+                        <span className="font-bold text-green-600">+{formatBDT(tx.amountBDT)}</span>
+                      ) : (
+                        <div>
+                          <span className="font-bold text-slate-800">{formatUSD(tx.amountUSD + (tx.taxUSD||0))}</span>
+                          <span className="block text-[10px] text-slate-400">({formatBDT((tx.amountUSD + (tx.taxUSD||0)) * metrics.avgUSDEffectiveRate)})</span>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function CardDetailsModal({ card, metrics, transactions, onClose }) {
+  const cardTxs = transactions.filter(t => t.cardId === card.id).sort((a,b) => new Date(a.date) - new Date(b.date));
+
   let runningBal = parseFloat(card.initialBalance || 0);
   const historyWithBalance = cardTxs.map(t => {
     let changeUSD = 0;
@@ -756,14 +1166,13 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
     if (t.type === 'AD_SPEND') changeUSD = -(parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0));
     runningBal += changeUSD;
     return { ...t, changeUSD, runningBal };
-  }).reverse(); // Reverse for display (newest first)
+  }).reverse(); 
 
   const stats = metrics.cardStats[card.id] || { loaded: 0, spent: 0 };
   const currentBal = metrics.cardBalances[card.id] || 0;
 
   return (
     <div className="flex flex-col h-full max-h-[80vh]">
-      {/* Details Header Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-xs text-slate-500 mb-1">Current Balance</p>
@@ -810,7 +1219,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
                 <td className="px-4 py-3 text-slate-600">{formatDate(tx.date)}</td>
                 <td className="px-4 py-3">
                   <div className="font-medium text-slate-800">{tx.type.replace('_', ' ')}</div>
-                  <div className="text-xs text-slate-500">{tx.notes}</div>
+                  <div className="text-xs text-slate-500">{tx.notes || tx.campaign}</div>
                 </td>
                 <td className={`px-4 py-3 text-right font-medium ${tx.changeUSD > 0 ? 'text-green-600' : 'text-slate-800'}`}>
                   {tx.changeUSD > 0 ? '+' : ''}{formatUSD(tx.changeUSD)}
@@ -826,13 +1235,14 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   );
 }
 
-function TransactionForm({ type, clients, cards, metrics, onSubmit, onCancel }) {
+function TransactionForm({ type, clients, cards, metrics, initialClientId, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     amountBDT: '', cashOutCharge: '', amountUSD: '',
-    clientId: clients?.[0]?.id || '',
+    clientId: initialClientId || (clients?.[0]?.id || ''),
     cardId: cards?.[0]?.id || '',
     taxUSD: '', notes: '',
+    adAccount: '', campaign: '' // New fields for Ad Spend
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -853,6 +1263,8 @@ function TransactionForm({ type, clients, cards, metrics, onSubmit, onCancel }) 
       payload.taxUSD = parseFloat(formData.taxUSD || 0);
       payload.clientId = formData.clientId;
       payload.cardId = formData.cardId;
+      payload.adAccount = formData.adAccount;
+      payload.campaign = formData.campaign;
     } else if (type === 'CARD_LOAD') {
       payload.amountUSD = parseFloat(formData.amountUSD);
       payload.cardId = formData.cardId;
@@ -869,6 +1281,19 @@ function TransactionForm({ type, clients, cards, metrics, onSubmit, onCancel }) 
       <div><label className={labelClass}>Date</label>
         <input type="date" name="date" value={formData.date} onChange={handleChange} required className={inputClass} />
       </div>
+
+      {type === 'PAYMENT_RECEIVED' && (
+        <>
+          <div><label className={labelClass}>Client</label>
+            <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>
+              {clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.company})</option>)}
+            </select>
+          </div>
+          <div><label className={labelClass}>Amount Received (BDT)</label>
+            <input type="number" step="0.01" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="0.00" className={inputClass} />
+          </div>
+        </>
+      )}
 
       {type === 'CARD_LOAD' && (
         <>
@@ -897,11 +1322,9 @@ function TransactionForm({ type, clients, cards, metrics, onSubmit, onCancel }) 
               <input type="number" name="cashOutCharge" value={formData.cashOutCharge} onChange={handleChange} placeholder="0" className={inputClass} />
             </div>
           </div>
-          
           <div><label className={labelClass}>USD Received</label>
             <input type="number" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={inputClass} />
           </div>
-
           {(formData.amountBDT && formData.amountUSD) ? (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded text-sm space-y-1">
               <div className="flex justify-between"><span>Total BDT Cost:</span> <strong>৳{parseFloat(formData.amountBDT || 0) + parseFloat(formData.cashOutCharge || 0)}</strong></div>
@@ -914,11 +1337,21 @@ function TransactionForm({ type, clients, cards, metrics, onSubmit, onCancel }) 
 
       {type === 'AD_SPEND' && (
         <>
-          <div><label className={labelClass}>Client Campaign</label>
-            <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>{clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}</select>
+          <div className="grid grid-cols-2 gap-4">
+             <div><label className={labelClass}>Client</label>
+              <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>{clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}</select>
+            </div>
+            <div><label className={labelClass}>Card Used</label>
+              <select name="cardId" value={formData.cardId} onChange={handleChange} className={inputClass}>{cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+            </div>
           </div>
-          <div><label className={labelClass}>Card Used</label>
-            <select name="cardId" value={formData.cardId} onChange={handleChange} className={inputClass}>{cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className={labelClass}>Ad Account Name</label>
+              <input type="text" name="adAccount" value={formData.adAccount} onChange={handleChange} placeholder="e.g. Client Ads 1" className={inputClass} />
+            </div>
+            <div><label className={labelClass}>Campaign Name</label>
+              <input type="text" name="campaign" value={formData.campaign} onChange={handleChange} placeholder="e.g. Lead Gen" className={inputClass} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelClass}>Ad Spend (USD)</label>
