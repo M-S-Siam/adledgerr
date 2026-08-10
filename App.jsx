@@ -4,7 +4,7 @@ import {
   Activity, FileText, Settings, Plus, Search, 
   ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
-  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Archive
+  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -172,8 +172,17 @@ export default function AdLedgerApp() {
     setActiveModal(null);
   };
 
-  const handleArchiveCard = (cardId) => {
-    setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'Archived' } : c));
+  const handleDeleteCard = (cardId) => {
+    const hasHistory = transactions.some(t => t.cardId === cardId);
+    
+    let msg = "Are you sure you want to delete this card?";
+    if (hasHistory) {
+      msg = "This card has transaction history. Deleting it may affect historical records. Are you sure?";
+    }
+    
+    if (window.confirm(msg)) {
+      setCards(prev => prev.filter(c => c.id !== cardId));
+    }
   };
 
   const openCardDetails = (card) => {
@@ -204,7 +213,7 @@ export default function AdLedgerApp() {
                   transactions={transactions} 
                   onAddCard={() => { setSelectedCard(null); setActiveModal('add-card'); }}
                   onEditCard={openEditCard}
-                  onArchiveCard={handleArchiveCard}
+                  onDeleteCard={handleDeleteCard}
                   onViewDetails={openCardDetails}
                   onLoadCard={openLoadCard}
                 />;
@@ -290,7 +299,7 @@ export default function AdLedgerApp() {
       )}
       {activeModal === 'spend' && (
         <Modal title="Record Meta Ad Spend" onClose={() => setActiveModal(null)}>
-          <TransactionForm type="AD_SPEND" clients={clients} cards={cards.filter(c=>c.status!=='Archived')} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          <TransactionForm type="AD_SPEND" clients={clients} cards={cards} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
         </Modal>
       )}
       {activeModal === 'load-card' && selectedCard && (
@@ -480,9 +489,8 @@ function LedgerView({ transactions, clients, cards }) {
   );
 }
 
-function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onArchiveCard, onViewDetails, onLoadCard }) {
+function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDeleteCard, onViewDetails, onLoadCard }) {
   const usdPurchases = transactions.filter(t => t.type === 'USD_PURCHASE');
-  const activeCards = cards.filter(c => c.status !== 'Archived');
   
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -513,7 +521,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onArch
         </div>
 
         {/* CARDS */}
-        {activeCards.map(card => (
+        {cards.map(card => (
           <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
             <div>
               <div className="flex justify-between items-start mb-4">
@@ -529,9 +537,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onArch
                   <CardDropdownMenu 
                     onEdit={() => onEditCard(card)} 
                     onDetails={() => onViewDetails(card)} 
-                    onArchive={() => {
-                      if(window.confirm(`Are you sure you want to archive ${card.name}? History will be saved.`)) onArchiveCard(card.id)
-                    }} 
+                    onDelete={() => onDeleteCard(card.id)} 
                   />
                 </div>
               </div>
@@ -553,14 +559,14 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onArch
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
               <tr>
-                <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Source/Seller</th>
-                <th className="px-5 py-3 text-right">BDT Paid</th>
-                <th className="px-5 py-3 text-right text-red-600">Cash-out Chg</th>
-                <th className="px-5 py-3 text-right font-bold text-slate-800">Total Cost</th>
-                <th className="px-5 py-3 text-right">USD Rcvd</th>
-                <th className="px-5 py-3 text-right">Base Rate</th>
-                <th className="px-5 py-3 text-right text-blue-600">Effective Rate</th>
+                <th className="px-5 py-3 whitespace-normal align-middle">Date</th>
+                <th className="px-5 py-3 whitespace-normal align-middle">Source</th>
+                <th className="px-5 py-3 text-right whitespace-normal align-middle">BDT Paid</th>
+                <th className="px-5 py-3 text-right text-red-600 whitespace-normal align-middle">C.O Rate</th>
+                <th className="px-5 py-3 text-right font-bold text-slate-800 whitespace-normal align-middle">Total Cost</th>
+                <th className="px-5 py-3 text-right whitespace-normal align-middle">USD Received</th>
+                <th className="px-5 py-3 text-right whitespace-normal align-middle">Base Rate</th>
+                <th className="px-5 py-3 text-right text-blue-600 whitespace-normal align-middle">Effective Rate</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -648,7 +654,7 @@ function Modal({ title, onClose, children, width = "max-w-md" }) {
   );
 }
 
-function CardDropdownMenu({ onEdit, onDetails, onArchive }) {
+function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -670,7 +676,7 @@ function CardDropdownMenu({ onEdit, onDetails, onArchive }) {
           <button onClick={() => {onEdit(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Edit Card</button>
           <button onClick={() => {onDetails(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">View Details</button>
           <div className="h-px w-full bg-slate-100 my-1"></div>
-          <button onClick={() => {onArchive(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Archive <Archive size={14}/></button>
+          <button onClick={() => {onDelete(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Delete Card <Trash2 size={14}/></button>
         </div>
       )}
     </div>
@@ -678,7 +684,6 @@ function CardDropdownMenu({ onEdit, onDetails, onArchive }) {
 }
 
 // --- FORMS & MODALS ---
-
 function CardForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(initialData || {
     name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
