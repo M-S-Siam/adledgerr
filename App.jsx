@@ -64,7 +64,7 @@ const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('en-GB', { 
 
 // --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
-  const [currentView, setCurrentView] = useState('cards');
+  const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // State Data (Persisted)
