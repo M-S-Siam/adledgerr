@@ -4,8 +4,7 @@ import {
   Activity, FileText, Settings, Plus, Search, 
   ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
-  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, 
-  Trash2, Edit, Eye, Filter, ArrowUpDown
+  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -43,14 +42,16 @@ function useLocalStorage(key, initialValue) {
 // --- INITIAL MOCK DATA ---
 const INITIAL_CLIENTS = [
   { 
-    id: 'c1', name: 'Mehedi Hasan', company: 'RITMO', phone: '01700000000', email: 'hello@ritmo.com', 
-    fb: 'fb.com/ritmo', ig: '@ritmo', website: 'ritmo.com', serviceType: 'Meta Ads',
-    status: 'Active', budget: 50000, dateAdded: '2026-07-15', notes: 'Premium retaining client.' 
+    id: 'c1', name: 'Mehedi Hasan', company: 'RITMO', status: 'Active', 
+    budgetType: 'Monthly', budgetAmount: 50000, 
+    startDate: '2026-07-15', endDate: '', currentlyWorking: true,
+    phone: '01700000000', email: 'hello@ritmo.com', fb: 'fb.com/ritmo', website: 'ritmo.com', serviceType: 'Meta Ads', notes: 'Premium client.'
   },
   { 
-    id: 'c2', name: 'John Doe', company: 'TechNova', phone: '01800000000', email: 'john@technova.com', 
-    fb: 'fb.com/technova', ig: '@technovatech', website: 'technova.com', serviceType: 'Social Media Management',
-    status: 'Active', budget: 25000, dateAdded: '2026-08-01', notes: 'Standard package.' 
+    id: 'c2', name: 'John Doe', company: 'TechNova', status: 'Active', 
+    budgetType: 'Monthly', budgetAmount: 25000, 
+    startDate: '2026-08-01', endDate: '', currentlyWorking: true,
+    phone: '01800000000', email: 'john@technova.com', fb: 'fb.com/technova', website: 'technova.com', serviceType: 'Social Media Management', notes: 'Standard package.'
   },
 ];
 
@@ -69,7 +70,70 @@ const INITIAL_TRANSACTIONS = [
 // --- UTILITIES ---
 const formatBDT = (amount) => `৳${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 const formatUSD = (amount) => `$${(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const formatDate = (dateStr) => {
+  if (!dateStr) return 'N/A';
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+// Client specific formatting helpers
+const getBudgetDisplay = (type, amount) => {
+  const formatted = formatBDT(amount);
+  if (type === 'Daily') return `${formatted} / day`;
+  if (type === 'Weekly') return `${formatted} / week`;
+  if (type === 'Monthly') return `${formatted} / month`;
+  if (type === 'Custom / Total') return `${formatted} total`;
+  return formatted;
+};
+
+const getClientDisplayStatus = (client) => {
+  if (client.currentlyWorking) return 'Active / Currently Working';
+  if (!client.endDate) return client.status || 'Active';
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const end = new Date(client.endDate);
+  end.setHours(0,0,0,0);
+
+  if (today > end) return 'Completed / Ended';
+  return 'Active';
+};
+
+const getDurationDays = (client) => {
+  if (!client.startDate) return 0;
+  const start = new Date(client.startDate);
+  start.setHours(0,0,0,0);
+  
+  let end;
+  if (client.currentlyWorking) {
+    end = new Date();
+  } else {
+    if (!client.endDate) return 0;
+    end = new Date(client.endDate);
+  }
+  end.setHours(0,0,0,0);
+
+  const diffTime = end - start;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+  return diffDays > 0 ? diffDays : 0;
+};
+
+const getCampaignDurationDisplay = (client) => {
+  const days = getDurationDays(client);
+  if (days === 0) return 'N/A';
+  if (client.currentlyWorking) return `${days} Days and counting`;
+  return `${days} Day${days !== 1 ? 's' : ''}`;
+};
+
+const getExpectedBudgetBDT = (client, durationDays) => {
+  const amt = parseFloat(client.budgetAmount || client.budget || 0); // fallback to old budget
+  if (!amt) return 0;
+  
+  const type = client.budgetType || 'Monthly';
+  if (type === 'Daily') return amt * durationDays;
+  if (type === 'Weekly') return (amt / 7) * durationDays;
+  if (type === 'Monthly') return (amt / 30) * durationDays;
+  return amt; // Custom / Total
+};
 
 // --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
@@ -82,7 +146,7 @@ export default function AdLedgerApp() {
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
   // Modal State
-  const [activeModal, setActiveModal] = useState(null); // 'payment', 'usd', 'spend', 'add-card', 'edit-card', 'card-details', 'load-card', 'add-client', 'edit-client', 'client-details'
+  const [activeModal, setActiveModal] = useState(null); 
   const [selectedCard, setSelectedCard] = useState(null); 
   const [selectedClient, setSelectedClient] = useState(null); 
 
@@ -410,7 +474,7 @@ function DashboardView({ metrics, chartData, transactions, clients }) {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col">
           <h3 className="font-semibold text-slate-800 mb-4">Quick Stats</h3>
           <div className="space-y-4 flex-1">
-            <StatRow label="Active Clients" value={clients.filter(c=>c.status==='Active').length} />
+            <StatRow label="Active Clients" value={clients.filter(c => c.status === 'Active' || c.currentlyWorking).length} />
             <StatRow label="Avg USD Effective Rate" value={`৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} />
             <StatRow label="Total USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} />
             <StatRow label="Total BDT Spent on USD" value={formatBDT(metrics.totalUSDPurchased * metrics.avgUSDEffectiveRate)} />
@@ -487,7 +551,6 @@ function LedgerView({ transactions, clients, cards }) {
 function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onReceivePayment, onAddAdSpend }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState({ key: 'revenue', direction: 'desc' });
 
   // Compute stats dynamically per client
   const clientStats = useMemo(() => {
@@ -506,38 +569,15 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
     });
   }, [clients, transactions, metrics.avgUSDEffectiveRate]);
 
-  // Filter & Sort
+  // Filter 
   const filteredClients = useMemo(() => {
-    let result = clientStats.filter(c => {
-      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.company.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchStatus = statusFilter === 'All' || c.status === statusFilter;
+    return clientStats.filter(c => {
+      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()));
+      const displayStatus = getClientDisplayStatus(c);
+      const matchStatus = statusFilter === 'All' || displayStatus.includes(statusFilter);
       return matchSearch && matchStatus;
     });
-
-    if (sortConfig.key) {
-      result.sort((a, b) => {
-        let valA = a[sortConfig.key];
-        let valB = b[sortConfig.key];
-        if (typeof valA === 'string') valA = valA.toLowerCase();
-        if (typeof valB === 'string') valB = valB.toLowerCase();
-        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-    return result;
-  }, [clientStats, searchTerm, statusFilter, sortConfig]);
-
-  const requestSort = (key) => {
-    let direction = 'desc';
-    if (sortConfig.key === key && sortConfig.direction === 'desc') direction = 'asc';
-    setSortConfig({ key, direction });
-  };
-
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) return <ArrowUpDown size={12} className="ml-1 inline text-slate-300" />;
-    return <ArrowUpDown size={12} className={`ml-1 inline text-blue-600 ${sortConfig.direction === 'asc' ? 'rotate-180' : ''}`} />;
-  };
+  }, [clientStats, searchTerm, statusFilter]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -565,9 +605,9 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
           onChange={e => setStatusFilter(e.target.value)}
         >
           <option value="All">All Statuses</option>
-          <option value="Active">Active</option>
+          <option value="Active">Active / Currently Working</option>
+          <option value="Completed">Completed / Ended</option>
           <option value="Paused">Paused</option>
-          <option value="Completed">Completed</option>
           <option value="Inactive">Inactive</option>
         </select>
       </div>
@@ -577,33 +617,21 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
               <tr>
-                <th className="px-5 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('name')}>
-                  Client <SortIcon columnKey="name"/>
-                </th>
-                <th className="px-5 py-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('status')}>
-                  Status <SortIcon columnKey="status"/>
-                </th>
-                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('revenue')}>
-                  Revenue (BDT) <SortIcon columnKey="revenue"/>
-                </th>
-                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('adSpendUSD')}>
-                  Ad Spend (USD) <SortIcon columnKey="adSpendUSD"/>
-                </th>
-                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" title={`Calculated using effective rate: ৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} onClick={() => requestSort('totalCostBDT')}>
-                  Total Cost (BDT) <SortIcon columnKey="totalCostBDT"/>
-                </th>
-                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitBDT')}>
-                  Profit (BDT) <SortIcon columnKey="profitBDT"/>
-                </th>
-                <th className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitMargin')}>
-                  Margin <SortIcon columnKey="profitMargin"/>
-                </th>
+                <th className="px-5 py-4">Client & Business</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4 text-right">Budget</th>
+                <th className="px-5 py-4 text-right">Revenue (BDT)</th>
+                <th className="px-5 py-4 text-right">Ad Spend (USD)</th>
+                <th className="px-5 py-4 text-right">Profit (BDT)</th>
                 <th className="px-5 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredClients.length === 0 && <tr><td colSpan="8" className="text-center py-8 text-slate-500">No clients found.</td></tr>}
-              {filteredClients.map(c => (
+              {filteredClients.length === 0 && <tr><td colSpan="7" className="text-center py-8 text-slate-500">No clients found.</td></tr>}
+              {filteredClients.map(c => {
+                const displayStatus = getClientDisplayStatus(c);
+                const isWorking = displayStatus.includes('Active') || displayStatus.includes('Currently Working');
+                return (
                 <tr key={c.id} className="hover:bg-slate-50 group">
                   <td className="px-5 py-4">
                     <div className="font-semibold text-slate-900">{c.name}</div>
@@ -611,21 +639,22 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                   </td>
                   <td className="px-5 py-4">
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
-                      ${c.status === 'Active' ? 'bg-green-100 text-green-700' : 
-                        c.status === 'Paused' ? 'bg-orange-100 text-orange-700' : 
-                        c.status === 'Completed' ? 'bg-blue-100 text-blue-700' : 
+                      ${isWorking ? 'bg-green-100 text-green-700' : 
+                        displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' : 
                         'bg-slate-100 text-slate-600'}`}>
-                      {c.status}
+                      {displayStatus}
                     </span>
                   </td>
+                  <td className="px-5 py-4 text-right text-slate-600 font-medium">
+                    {getBudgetDisplay(c.budgetType, c.budgetAmount || c.budget)}
+                  </td>
                   <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
-                  <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)} <span className="text-xs font-normal text-slate-400 block">+{formatUSD(c.taxUSD)} tax</span></td>
-                  <td className="px-5 py-4 text-right text-slate-600">{formatBDT(c.totalCostBDT)}</td>
-                  <td className="px-5 py-4 text-right font-bold text-slate-900">{formatBDT(c.profitBDT)}</td>
+                  <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
                   <td className="px-5 py-4 text-right">
-                    <span className={`font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin > 20 ? 'text-blue-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-orange-600'}`}>
-                      {c.profitMargin.toFixed(1)}%
-                    </span>
+                    <div className={`font-bold ${c.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
+                    <div className={`text-[10px] font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-slate-500'}`}>
+                      Margin: {c.profitMargin.toFixed(1)}%
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-center">
                     <ClientDropdownMenu 
@@ -637,7 +666,7 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                     />
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -875,14 +904,32 @@ function ClientDropdownMenu({ onViewDetails, onEdit, onReceivePayment, onAddAdSp
 // --- FORMS & MODALS ---
 
 function ClientForm({ initialData, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(initialData || {
-    name: '', company: '', phone: '', email: '', fb: '', ig: '', website: '',
-    serviceType: 'Meta Ads', budget: '', status: 'Active', 
-    dateAdded: new Date().toISOString().split('T')[0], notes: ''
+  const [formData, setFormData] = useState(() => {
+    if (initialData) {
+      return {
+        ...initialData,
+        budgetAmount: initialData.budgetAmount || initialData.budget || '',
+        budgetType: initialData.budgetType || 'Monthly',
+        currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : true,
+      };
+    }
+    return {
+      name: '', company: '', phone: '', email: '', fb: '', website: '',
+      serviceType: 'Meta Ads', budgetType: 'Monthly', budgetAmount: '', status: 'Active', 
+      startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true, notes: ''
+    };
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleSubmit = (e) => { e.preventDefault(); onSubmit({...formData, budget: parseFloat(formData.budget||0)}); };
+  
+  const handleSubmit = (e) => { 
+    e.preventDefault(); 
+    onSubmit({
+      ...formData, 
+      budgetAmount: parseFloat(formData.budgetAmount || 0),
+      endDate: formData.currentlyWorking ? '' : formData.endDate
+    }); 
+  };
 
   const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
   const labelClass = "block text-xs font-medium text-slate-700 uppercase tracking-wide";
@@ -897,25 +944,42 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
         <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} className={inputClass} /></div>
         
         <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
-        <div><label className={labelClass}>Instagram Account</label><input type="text" name="ig" value={formData.ig} onChange={handleChange} placeholder="@username" className={inputClass} /></div>
-        
         <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
+        
         <div>
           <label className={labelClass}>Service Type</label>
           <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
-            <option>Meta Ads</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
+            <option>Meta Ads</option><option>Facebook Marketing</option><option>Instagram Marketing</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
           </select>
         </div>
-        
-        <div><label className={labelClass}>Monthly Budget (Contract/Agreed BDT)</label><input type="number" name="budget" value={formData.budget} onChange={handleChange} placeholder="0.00" className={inputClass} /></div>
         <div>
-          <label className={labelClass}>Status</label>
+          <label className={labelClass}>Status (Manual Fallback)</label>
           <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
             <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
           </select>
         </div>
         
-        <div><label className={labelClass}>Start Date</label><input type="date" name="dateAdded" value={formData.dateAdded} onChange={handleChange} required className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>Budget Type</label>
+          <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
+            <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
+          </select>
+        </div>
+        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="0.00" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>End Date</label>
+          <div className="flex flex-col gap-2 mt-1">
+            <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
+              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({...formData, currentlyWorking: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+              Currently Working
+            </label>
+            {!formData.currentlyWorking && (
+              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{marginTop: 0}} />
+            )}
+          </div>
+        </div>
       </div>
       <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass}></textarea></div>
       <div className="flex gap-3 pt-4 border-t border-slate-100">
@@ -990,10 +1054,14 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
     const totalCostBDT = (adSpendUSD + taxUSD) * metrics.avgUSDEffectiveRate;
     const profitBDT = revenue - totalCostBDT;
     const margin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
-    const outstanding = client.budget ? client.budget - revenue : 0;
     
-    return { revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, margin, outstanding };
-  }, [clientTx, metrics.avgUSDEffectiveRate, client.budget]);
+    // Dynamic outstanding based on duration scaled budget
+    const durationDays = getDurationDays(client);
+    const targetBudgetBDT = getExpectedBudgetBDT(client, durationDays);
+    const outstanding = targetBudgetBDT > revenue ? targetBudgetBDT - revenue : 0;
+    
+    return { revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, margin, outstanding, targetBudgetBDT };
+  }, [clientTx, metrics.avgUSDEffectiveRate, client]);
 
   // Campaign Extraction
   const campaigns = useMemo(() => {
@@ -1019,26 +1087,32 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
     return Object.values(data);
   }, [clientTx, metrics.avgUSDEffectiveRate]);
 
+  const displayStatus = getClientDisplayStatus(client);
+
   return (
     <div className="flex flex-col h-full space-y-6">
       
       {/* Client Overview Header */}
       <div className="bg-slate-900 rounded-xl p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
+        <div className="w-full">
           <div className="flex items-center gap-3 mb-1">
             <h2 className="text-2xl font-bold">{client.name}</h2>
-            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${client.status === 'Active' ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-300'}`}>{client.status}</span>
+            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${displayStatus.includes('Active') || displayStatus.includes('Working') ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-300'}`}>{displayStatus}</span>
           </div>
           <p className="text-slate-400 font-medium">{client.company} • {client.serviceType}</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-sm text-slate-300">
-            {client.phone && <span>📞 {client.phone}</span>}
-            {client.email && <span>✉️ {client.email}</span>}
-            {client.fb && <span>🌐 {client.fb}</span>}
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-800 text-sm">
+            <div className="text-slate-300"><span className="text-slate-500 block text-xs">Budget Setting</span> <span className="font-medium text-blue-300">{getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</span></div>
+            <div className="text-slate-300"><span className="text-slate-500 block text-xs">Campaign Duration</span> {getCampaignDurationDisplay(client)}</div>
+            <div className="text-slate-300"><span className="text-slate-500 block text-xs">Dates</span> {formatDate(client.startDate)} - {client.currentlyWorking ? 'Present' : formatDate(client.endDate)}</div>
+            {client.phone && <div className="text-slate-300"><span className="text-slate-500 block text-xs">Phone</span> {client.phone}</div>}
+            {client.email && <div className="text-slate-300"><span className="text-slate-500 block text-xs">Email</span> {client.email}</div>}
+            {client.fb && <div className="text-slate-300"><span className="text-slate-500 block text-xs">Facebook</span> {client.fb}</div>}
           </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={onReceivePayment} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Payment</button>
-          <button onClick={onAdSpend} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Ad Spend</button>
+        <div className="flex flex-row md:flex-col gap-2 shrink-0 self-start md:self-stretch justify-center">
+          <button onClick={onReceivePayment} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Payment</button>
+          <button onClick={onAdSpend} className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Ad Spend</button>
         </div>
       </div>
 
@@ -1055,16 +1129,16 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <h4 className="font-semibold text-slate-800 mb-4">Contract / Budget Tracking</h4>
           <div className="flex justify-between text-sm mb-1">
-            <span className="text-slate-500">Agreed Amount: {formatBDT(client.budget)}</span>
+            <span className="text-slate-500">Target Budget (Scaled): {formatBDT(stats.targetBudgetBDT)}</span>
             <span className="font-medium text-slate-800">Received: {formatBDT(stats.revenue)}</span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2 overflow-hidden">
-            <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${Math.min(100, (stats.revenue / (client.budget || 1)) * 100)}%` }}></div>
+            <div className="bg-green-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (stats.revenue / (stats.targetBudgetBDT || 1)) * 100)}%` }}></div>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Outstanding:</span>
+            <span className="text-slate-500">Outstanding Expected:</span>
             <span className={`font-bold ${stats.outstanding > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-              {stats.outstanding > 0 ? formatBDT(stats.outstanding) : 'Fully Paid'}
+              {stats.outstanding > 0 ? formatBDT(stats.outstanding) : 'Fully Paid / Exceeded'}
             </span>
           </div>
         </div>
@@ -1219,7 +1293,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
                 <td className="px-4 py-3 text-slate-600">{formatDate(tx.date)}</td>
                 <td className="px-4 py-3">
                   <div className="font-medium text-slate-800">{tx.type.replace('_', ' ')}</div>
-                  <div className="text-xs text-slate-500">{tx.notes || tx.campaign}</div>
+                  <div className="text-xs text-slate-500">{tx.notes}</div>
                 </td>
                 <td className={`px-4 py-3 text-right font-medium ${tx.changeUSD > 0 ? 'text-green-600' : 'text-slate-800'}`}>
                   {tx.changeUSD > 0 ? '+' : ''}{formatUSD(tx.changeUSD)}
@@ -1242,7 +1316,7 @@ function TransactionForm({ type, clients, cards, metrics, initialClientId, onSub
     clientId: initialClientId || (clients?.[0]?.id || ''),
     cardId: cards?.[0]?.id || '',
     taxUSD: '', notes: '',
-    adAccount: '', campaign: '' // New fields for Ad Spend
+    adAccount: '', campaign: '' 
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
