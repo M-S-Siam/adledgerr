@@ -1,10 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, Users, CreditCard, DollarSign, 
   Activity, FileText, Settings, Plus, Search, 
   ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
-  AlertCircle, ChevronDown, Menu, X, Download
+  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Archive
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -12,114 +12,141 @@ import {
   AreaChart, Area
 } from 'recharts';
 
-// --- MOCK DATA ---
+// --- CUSTOM HOOK FOR LOCAL STORAGE PERSISTENCE ---
+function useLocalStorage(key, initialValue) {
+  const [storedValue, setStoredValue] = useState(() => {
+    if (typeof window === "undefined") return initialValue;
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.log(error);
+      return initialValue;
+    }
+  });
+
+  const setValue = (value) => {
+    try {
+      const valueToStore = value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  return [storedValue, setValue];
+}
+
+// --- INITIAL MOCK DATA ---
 const INITIAL_CLIENTS = [
   { id: 'c1', name: 'Mehedi Hasan', company: 'RITMO', status: 'Active', budget: 50000, dateAdded: '2026-07-15' },
   { id: 'c2', name: 'John Doe', company: 'TechNova', status: 'Active', budget: 25000, dateAdded: '2026-08-01' },
-  { id: 'c3', name: 'Sarah Lee', company: 'StyleBoutique', status: 'Inactive', budget: 10000, dateAdded: '2026-06-10' },
 ];
 
 const INITIAL_CARDS = [
-  { id: 'card1', name: 'RedotPay Primary', provider: 'RedotPay', currency: 'USD', initialBalance: 0 },
-  { id: 'card2', name: 'City Bank Dual Currency', provider: 'City Bank', currency: 'USD', initialBalance: 0 },
+  { id: 'card1', name: 'RedotPay Primary', provider: 'RedotPay', cardType: 'Virtual Card', currency: 'USD', initialBalance: 0, last4: '4567', expiry: '12/28', notes: 'Main Ads Card', status: 'Active' },
+  { id: 'card2', name: 'City Bank Dual Currency', provider: 'City Bank', cardType: 'Dual Currency', currency: 'USD', initialBalance: 0, last4: '8899', expiry: '05/27', notes: 'Backup Card', status: 'Active' },
 ];
 
 const INITIAL_TRANSACTIONS = [
-  // Payments Received (Revenue)
   { id: 't1', date: '2026-08-01', type: 'PAYMENT_RECEIVED', clientId: 'c1', amountBDT: 25000, method: 'bKash', notes: 'August Retainer' },
-  { id: 't2', date: '2026-08-05', type: 'PAYMENT_RECEIVED', clientId: 'c2', amountBDT: 15000, method: 'Bank Transfer', notes: 'Campaign Setup' },
-  
-  // USD Purchases
-  { id: 't3', date: '2026-08-02', type: 'USD_PURCHASE', amountBDT: 12500, amountUSD: 100, rate: 125, method: 'Bank Transfer', notes: 'Binance P2P' },
-  { id: 't4', date: '2026-08-08', type: 'USD_PURCHASE', amountBDT: 6300, amountUSD: 50, rate: 126, method: 'bKash', notes: 'Local Seller' },
-  
-  // Card Loads
+  { id: 't3', date: '2026-08-02', type: 'USD_PURCHASE', amountBDT: 12500, cashOutCharge: 150, amountUSD: 100, method: 'Bank Transfer', notes: 'Binance P2P' },
   { id: 't5', date: '2026-08-02', type: 'CARD_LOAD', cardId: 'card1', amountUSD: 100, notes: 'Initial Load' },
-  { id: 't6', date: '2026-08-09', type: 'CARD_LOAD', cardId: 'card1', amountUSD: 50, notes: 'Top up' },
-  
-  // Meta Ad Spend
   { id: 't7', date: '2026-08-04', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 25, taxUSD: 3.75, notes: 'RITMO Awareness' },
-  { id: 't8', date: '2026-08-06', type: 'AD_SPEND', clientId: 'c2', cardId: 'card1', amountUSD: 15, taxUSD: 2.25, notes: 'TechNova Leads' },
-  { id: 't9', date: '2026-08-10', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 10, taxUSD: 1.50, notes: 'RITMO Retargeting' },
 ];
 
 // --- UTILITIES ---
-const formatBDT = (amount) => `৳${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+const formatBDT = (amount) => `৳${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 const formatUSD = (amount) => `$${(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
 // --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [currentView, setCurrentView] = useState('cards');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // State Data
-  const [clients, setClients] = useState(INITIAL_CLIENTS);
-  const [cards, setCards] = useState(INITIAL_CARDS);
-  const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
+  // State Data (Persisted)
+  const [clients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
+  const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
+  const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
   // Modal State
-  const [activeModal, setActiveModal] = useState(null); // 'payment', 'usd', 'spend', null
+  const [activeModal, setActiveModal] = useState(null); // 'payment', 'usd', 'spend', 'add-card', 'edit-card', 'card-details', 'load-card'
+  const [selectedCard, setSelectedCard] = useState(null); // Stores card data for editing/details
 
   // --- FINANCIAL CALCULATIONS (Auto-derived from transactions) ---
   const metrics = useMemo(() => {
     let totalRevenueBDT = 0;
+    
+    // USD Variables
     let totalUSDPurchased = 0;
-    let totalBDTSpentOnUSD = 0;
+    let totalBDTSpentOnUSD = 0; // Base BDT
+    let totalCashOutCharges = 0; // Fees
+    
     let totalAdSpendUSD = 0;
     let totalTaxUSD = 0;
     
     let cardBalances = {};
-    cards.forEach(c => cardBalances[c.id] = c.initialBalance);
+    let cardStats = {}; // Tracks loads, spends per card
+    cards.forEach(c => {
+      cardBalances[c.id] = parseFloat(c.initialBalance || 0);
+      cardStats[c.id] = { loaded: 0, spent: 0 };
+    });
 
     transactions.forEach(t => {
       if (t.type === 'PAYMENT_RECEIVED') totalRevenueBDT += t.amountBDT || 0;
       if (t.type === 'USD_PURCHASE') {
         totalUSDPurchased += t.amountUSD || 0;
         totalBDTSpentOnUSD += t.amountBDT || 0;
+        totalCashOutCharges += t.cashOutCharge || 0;
       }
       if (t.type === 'CARD_LOAD') {
-        if (cardBalances[t.cardId] !== undefined) cardBalances[t.cardId] += t.amountUSD || 0;
+        if (cardBalances[t.cardId] !== undefined) {
+          cardBalances[t.cardId] += t.amountUSD || 0;
+          cardStats[t.cardId].loaded += t.amountUSD || 0;
+        }
       }
       if (t.type === 'AD_SPEND') {
+        const totalSpend = (t.amountUSD || 0) + (t.taxUSD || 0);
         totalAdSpendUSD += t.amountUSD || 0;
         totalTaxUSD += t.taxUSD || 0;
         if (cardBalances[t.cardId] !== undefined) {
-          cardBalances[t.cardId] -= (t.amountUSD + (t.taxUSD || 0));
+          cardBalances[t.cardId] -= totalSpend;
+          cardStats[t.cardId].spent += totalSpend;
         }
       }
     });
 
-    const avgUSDRate = totalUSDPurchased > 0 ? (totalBDTSpentOnUSD / totalUSDPurchased) : 125; // fallback rate
+    const totalBDTCostOfUSD = totalBDTSpentOnUSD + totalCashOutCharges;
+    const avgUSDEffectiveRate = totalUSDPurchased > 0 ? (totalBDTCostOfUSD / totalUSDPurchased) : 125; 
     
-    // Estimate cost of ads in BDT based on average purchase rate
-    const totalAdCostBDT = (totalAdSpendUSD + totalTaxUSD) * avgUSDRate;
+    const totalAdCostBDT = (totalAdSpendUSD + totalTaxUSD) * avgUSDEffectiveRate;
     const netProfitBDT = totalRevenueBDT - totalAdCostBDT;
     const profitMargin = totalRevenueBDT > 0 ? (netProfitBDT / totalRevenueBDT) * 100 : 0;
     
-    // Global USD Wallet Balance (Purchased - Loaded to cards)
     const totalLoadedToCards = transactions.filter(t => t.type === 'CARD_LOAD').reduce((sum, t) => sum + (t.amountUSD || 0), 0);
     const globalUSDBalance = totalUSDPurchased - totalLoadedToCards;
 
     return {
       totalRevenueBDT,
       totalUSDPurchased,
-      avgUSDRate,
+      avgUSDEffectiveRate,
       totalAdSpendUSD,
       totalTaxUSD,
       netProfitBDT,
       profitMargin,
       cardBalances,
+      cardStats,
       globalUSDBalance,
       totalLoadedToCards
     };
   }, [transactions, cards]);
 
-  // Chart Data preparation
   const revenueChartData = useMemo(() => {
-    // Grouping by date for simplicity in demo
     const grouped = transactions.filter(t => t.type === 'PAYMENT_RECEIVED' || t.type === 'AD_SPEND').reduce((acc, t) => {
-      const d = t.date.substring(5); // get MM-DD
+      const d = t.date.substring(5);
       if (!acc[d]) acc[d] = { date: d, revenue: 0, spendUSD: 0 };
       if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += t.amountBDT;
       if (t.type === 'AD_SPEND') acc[d].spendUSD += (t.amountUSD + t.taxUSD);
@@ -136,13 +163,51 @@ export default function AdLedgerApp() {
     setActiveModal(null);
   };
 
+  const handleSaveCard = (cardData) => {
+    if (activeModal === 'edit-card') {
+      setCards(prev => prev.map(c => c.id === cardData.id ? cardData : c));
+    } else {
+      setCards(prev => [...prev, { ...cardData, id: `card_${Date.now()}`, status: 'Active' }]);
+    }
+    setActiveModal(null);
+  };
+
+  const handleArchiveCard = (cardId) => {
+    setCards(prev => prev.map(c => c.id === cardId ? { ...c, status: 'Archived' } : c));
+  };
+
+  const openCardDetails = (card) => {
+    setSelectedCard(card);
+    setActiveModal('card-details');
+  };
+
+  const openEditCard = (card) => {
+    setSelectedCard(card);
+    setActiveModal('edit-card');
+  };
+
+  const openLoadCard = (card) => {
+    setSelectedCard(card);
+    setActiveModal('load-card');
+  };
+
   // --- RENDERERS ---
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} />;
       case 'clients': return <ClientsView clients={clients} transactions={transactions} />;
       case 'ledger': return <LedgerView transactions={transactions} clients={clients} cards={cards} />;
-      case 'cards': return <CardsView cards={cards} metrics={metrics} transactions={transactions} />;
+      case 'cards': 
+        return <CardsView 
+                  cards={cards} 
+                  metrics={metrics} 
+                  transactions={transactions} 
+                  onAddCard={() => setActiveModal('add-card')}
+                  onEditCard={openEditCard}
+                  onArchiveCard={handleArchiveCard}
+                  onViewDetails={openCardDetails}
+                  onLoadCard={openLoadCard}
+                />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} />;
     }
   };
@@ -172,13 +237,6 @@ export default function AdLedgerApp() {
         
         <div className="p-4 border-t border-slate-800">
           <NavItem icon={<Settings />} label="Settings" onClick={() => {}} />
-          <div className="mt-4 p-3 bg-slate-800 rounded-lg flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-medium">ME</div>
-            <div>
-              <p className="text-sm font-medium text-white">Mehedi</p>
-              <p className="text-xs text-slate-400">Pro Plan</p>
-            </div>
-          </div>
         </div>
       </aside>
 
@@ -199,7 +257,7 @@ export default function AdLedgerApp() {
           <div className="flex items-center gap-3">
             <div className="hidden lg:flex items-center gap-2 mr-4">
               <span className="text-xs font-medium text-slate-500 uppercase">Avg USD Rate:</span>
-              <span className="text-sm font-bold text-slate-800">৳{metrics.avgUSDRate.toFixed(2)}</span>
+              <span className="text-sm font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
             </div>
             <button onClick={() => setActiveModal('payment')} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
               <ArrowDownRight size={16} className="text-green-600"/> Receive BDT
@@ -232,8 +290,30 @@ export default function AdLedgerApp() {
       )}
       {activeModal === 'spend' && (
         <Modal title="Record Meta Ad Spend" onClose={() => setActiveModal(null)}>
-          <TransactionForm type="AD_SPEND" clients={clients} cards={cards} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          <TransactionForm type="AD_SPEND" clients={clients} cards={cards.filter(c=>c.status!=='Archived')} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
         </Modal>
+      )}
+      {activeModal === 'load-card' && selectedCard && (
+        <Modal title={`Load Money to ${selectedCard.name}`} onClose={() => setActiveModal(null)}>
+          <TransactionForm type="CARD_LOAD" cards={[selectedCard]} metrics={metrics} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+        </Modal>
+      )}
+      {(activeModal === 'add-card' || activeModal === 'edit-card') && (
+        <Modal title={activeModal === 'add-card' ? 'Add New Card' : 'Edit Card'} onClose={() => setActiveModal(null)}>
+          <CardForm 
+            initialData={activeModal === 'edit-card' ? selectedCard : null} 
+            onSubmit={handleSaveCard} 
+            onCancel={() => setActiveModal(null)} 
+          />
+        </Modal>
+      )}
+      {activeModal === 'card-details' && selectedCard && (
+        <CardDetailsModal 
+          card={selectedCard} 
+          metrics={metrics} 
+          transactions={transactions} 
+          onClose={() => setActiveModal(null)} 
+        />
       )}
 
     </div>
@@ -252,70 +332,30 @@ function DashboardView({ metrics, chartData, transactions }) {
           <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
           <p className="text-slate-500 text-sm">Track every dollar, know every taka.</p>
         </div>
-        <div className="flex bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
-          <button className="px-3 py-1 text-sm font-medium rounded bg-slate-100 text-slate-800">30 Days</button>
-          <button className="px-3 py-1 text-sm font-medium rounded text-slate-500 hover:text-slate-800">This Month</button>
-          <button className="px-3 py-1 text-sm font-medium rounded text-slate-500 hover:text-slate-800">All Time</button>
-        </div>
       </div>
 
-      {/* METRICS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <MetricCard 
-          title="Total Revenue" 
-          value={formatBDT(metrics.totalRevenueBDT)} 
-          trend="+12%" trendUp={true}
-          icon={<ArrowDownRight size={20} className="text-green-600" />}
-          bgColor="bg-green-50"
-        />
-        <MetricCard 
-          title="Net Profit" 
-          value={formatBDT(metrics.netProfitBDT)} 
-          subtitle={`Margin: ${metrics.profitMargin.toFixed(1)}%`}
-          icon={<TrendingUp size={20} className="text-blue-600" />}
-          bgColor="bg-blue-50"
-        />
-        <MetricCard 
-          title="Meta Ads Spend" 
-          value={formatUSD(metrics.totalAdSpendUSD)} 
-          subtitle={`+ Tax ${formatUSD(metrics.totalTaxUSD)}`}
-          icon={<Activity size={20} className="text-purple-600" />}
-          bgColor="bg-purple-50"
-        />
-        <MetricCard 
-          title="Current USD Balance" 
-          value={formatUSD(metrics.globalUSDBalance)} 
-          subtitle="Ready to load to cards"
-          icon={<Wallet size={20} className="text-orange-600" />}
-          bgColor="bg-orange-50"
-        />
+        <MetricCard title="Total Revenue" value={formatBDT(metrics.totalRevenueBDT)} icon={<ArrowDownRight size={20} className="text-green-600" />} bgColor="bg-green-50" />
+        <MetricCard title="Net Profit" value={formatBDT(metrics.netProfitBDT)} subtitle={`Margin: ${metrics.profitMargin.toFixed(1)}%`} icon={<TrendingUp size={20} className="text-blue-600" />} bgColor="bg-blue-50" />
+        <MetricCard title="Meta Ads Spend" value={formatUSD(metrics.totalAdSpendUSD)} subtitle={`+ Tax ${formatUSD(metrics.totalTaxUSD)}`} icon={<Activity size={20} className="text-purple-600" />} bgColor="bg-purple-50" />
+        <MetricCard title="Global USD Wallet" value={formatUSD(metrics.globalUSDBalance)} subtitle="Available to load" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" />
       </div>
 
-      {/* CHARTS & STATS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold text-slate-800">Revenue & Ad Spend Flow</h3>
-          </div>
+          <h3 className="font-semibold text-slate-800 mb-6">Revenue & Ad Spend Flow</h3>
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                  </linearGradient>
+                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#22c55e" stopOpacity={0.2}/><stop offset="95%" stopColor="#22c55e" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/><stop offset="95%" stopColor="#ef4444" stopOpacity={0}/></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
                 <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} tickFormatter={(val) => `৳${val/1000}k`} />
                 <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} tickFormatter={(val) => `$${val}`} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Legend iconType="circle" />
+                <Tooltip />
                 <Area yAxisId="left" type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#22c55e" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
                 <Area yAxisId="right" type="monotone" dataKey="spendUSD" name="Ad Spend (USD)" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorSpend)" />
               </AreaChart>
@@ -326,62 +366,13 @@ function DashboardView({ metrics, chartData, transactions }) {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col">
           <h3 className="font-semibold text-slate-800 mb-4">Quick Stats</h3>
           <div className="space-y-4 flex-1">
-            <StatRow label="Avg USD Exchange Rate" value={`৳${metrics.avgUSDRate.toFixed(2)}`} />
+            <StatRow label="Avg USD Effective Rate" value={`৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} />
             <StatRow label="Total USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} />
-            <StatRow label="Total BDT Spent on USD" value={formatBDT(metrics.totalUSDPurchased * metrics.avgUSDRate)} />
+            <StatRow label="Total BDT Spent (inc. fees)" value={formatBDT(metrics.totalUSDPurchased * metrics.avgUSDEffectiveRate)} />
             <Divider />
             <StatRow label="Total Meta Tax" value={formatUSD(metrics.totalTaxUSD)} className="text-red-600" />
             <StatRow label="Effective Tax Rate" value={`${metrics.totalAdSpendUSD > 0 ? ((metrics.totalTaxUSD / metrics.totalAdSpendUSD) * 100).toFixed(1) : 0}%`} />
           </div>
-        </div>
-      </div>
-
-      {/* RECENT TRANSACTIONS */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex justify-between items-center">
-          <h3 className="font-semibold text-slate-800">Recent Transactions</h3>
-          <button className="text-sm text-blue-600 font-medium hover:text-blue-700">View All</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-              <tr>
-                <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Description</th>
-                <th className="px-5 py-3 text-right">Amount</th>
-                <th className="px-5 py-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {recentTx.map(tx => (
-                <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
-                  <td className="px-5 py-3">
-                    <TransactionTypeBadge type={tx.type} />
-                  </td>
-                  <td className="px-5 py-3 text-slate-800 font-medium">{tx.notes || tx.type.replace('_', ' ')}</td>
-                  <td className="px-5 py-3 text-right font-medium">
-                    {tx.amountBDT ? (
-                      <span className={tx.type === 'PAYMENT_RECEIVED' ? 'text-green-600' : 'text-slate-800'}>
-                        {tx.type === 'PAYMENT_RECEIVED' ? '+' : ''}{formatBDT(tx.amountBDT)}
-                      </span>
-                    ) : (
-                      <span className="text-slate-800">{formatUSD(tx.amountUSD + (tx.taxUSD||0))}</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    <span className="inline-flex items-center text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                      <CheckCircle2 size={12} className="mr-1" /> Completed
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {recentTx.length === 0 && (
-                <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-500">No recent transactions</td></tr>
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
@@ -389,7 +380,6 @@ function DashboardView({ metrics, chartData, transactions }) {
 }
 
 function ClientsView({ clients, transactions }) {
-  // Calculate stats per client
   const clientStats = clients.map(client => {
     const clientTx = transactions.filter(t => t.clientId === client.id);
     const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + t.amountBDT, 0);
@@ -398,50 +388,34 @@ function ClientsView({ clients, transactions }) {
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
-        <button className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800">
-          <Plus size={16} /> New Client
-        </button>
-      </div>
-
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-              <tr>
-                <th className="px-5 py-4">Client</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4 text-right">Monthly Budget</th>
-                <th className="px-5 py-4 text-right">Total Revenue (BDT)</th>
-                <th className="px-5 py-4 text-right">Ad Spend (USD)</th>
-                <th className="px-5 py-4 text-center">Actions</th>
+        <table className="w-full text-sm text-left">
+          <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+            <tr>
+              <th className="px-5 py-4">Client</th>
+              <th className="px-5 py-4">Status</th>
+              <th className="px-5 py-4 text-right">Total Revenue (BDT)</th>
+              <th className="px-5 py-4 text-right">Ad Spend (USD)</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {clientStats.map(c => (
+              <tr key={c.id} className="hover:bg-slate-50">
+                <td className="px-5 py-4">
+                  <div className="font-semibold text-slate-900">{c.name}</div>
+                  <div className="text-xs text-slate-500">{c.company}</div>
+                </td>
+                <td className="px-5 py-4">
+                  <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">{c.status}</span>
+                </td>
+                <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
+                <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.spendUSD)}</td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {clientStats.map(c => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-4">
-                    <div className="font-semibold text-slate-900">{c.name}</div>
-                    <div className="text-xs text-slate-500">{c.company}</div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${c.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 text-right text-slate-600">{formatBDT(c.budget)}</td>
-                  <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
-                  <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.spendUSD)}</td>
-                  <td className="px-5 py-4 text-center">
-                    <button className="text-blue-600 hover:text-blue-800 font-medium">View Details</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -449,29 +423,20 @@ function ClientsView({ clients, transactions }) {
 
 function LedgerView({ transactions, clients, cards }) {
   const [filter, setFilter] = useState('ALL');
-  
   const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
-        <div className="flex items-center gap-2">
-          <select 
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 bg-white"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <option value="ALL">All Transactions</option>
-            <option value="PAYMENT_RECEIVED">Payments Received</option>
-            <option value="USD_PURCHASE">USD Purchases</option>
-            <option value="AD_SPEND">Meta Ad Spend</option>
-            <option value="CARD_LOAD">Card Loads</option>
-          </select>
-          <button className="p-2 border border-slate-300 rounded-lg bg-white text-slate-600 hover:bg-slate-50"><Download size={18} /></button>
-        </div>
+        <select className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white" value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="ALL">All Transactions</option>
+          <option value="PAYMENT_RECEIVED">Payments Received</option>
+          <option value="USD_PURCHASE">USD Purchases</option>
+          <option value="AD_SPEND">Meta Ad Spend</option>
+          <option value="CARD_LOAD">Card Loads</option>
+        </select>
       </div>
-
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
@@ -482,14 +447,12 @@ function LedgerView({ transactions, clients, cards }) {
                 <th className="px-5 py-3">Entity / Details</th>
                 <th className="px-5 py-3 text-right">In (BDT)</th>
                 <th className="px-5 py-3 text-right">Out (USD)</th>
-                <th className="px-5 py-3">Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map(tx => {
                 const client = clients.find(c => c.id === tx.clientId);
                 const card = cards.find(c => c.id === tx.cardId);
-                
                 return (
                 <tr key={tx.id} className="hover:bg-slate-50">
                   <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
@@ -497,7 +460,7 @@ function LedgerView({ transactions, clients, cards }) {
                   <td className="px-5 py-3">
                     {client && <div className="font-medium text-slate-800">{client.name}</div>}
                     {card && <div className="text-xs text-slate-500">Card: {card.name}</div>}
-                    {tx.type === 'USD_PURCHASE' && <div className="font-medium text-slate-800">Rate: ৳{tx.rate}</div>}
+                    {tx.type === 'USD_PURCHASE' && <div className="font-medium text-slate-800">Eff. Rate: ৳{((tx.amountBDT + (tx.cashOutCharge||0)) / tx.amountUSD).toFixed(2)}</div>}
                   </td>
                   <td className="px-5 py-3 text-right font-medium text-green-600">
                     {tx.type === 'PAYMENT_RECEIVED' ? `+${formatBDT(tx.amountBDT)}` : '-'}
@@ -507,7 +470,6 @@ function LedgerView({ transactions, clients, cards }) {
                       ? formatUSD(tx.amountUSD + (tx.taxUSD||0)) 
                       : '-'}
                   </td>
-                  <td className="px-5 py-3 text-slate-500 max-w-xs truncate" title={tx.notes}>{tx.notes}</td>
                 </tr>
               )})}
             </tbody>
@@ -518,12 +480,18 @@ function LedgerView({ transactions, clients, cards }) {
   );
 }
 
-function CardsView({ cards, metrics, transactions }) {
+function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onArchiveCard, onViewDetails, onLoadCard }) {
   const usdPurchases = transactions.filter(t => t.type === 'USD_PURCHASE');
+  const activeCards = cards.filter(c => c.status !== 'Archived');
   
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <h1 className="text-2xl font-bold text-slate-900">Cards & USD Ledger</h1>
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
+        <h1 className="text-2xl font-bold text-slate-900">Cards & USD Ledger</h1>
+        <button onClick={onAddCard} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
+          <Plus size={16} /> Add Card
+        </button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* GLOBAL USD POOL */}
@@ -540,27 +508,39 @@ function CardsView({ cards, metrics, transactions }) {
             </div>
           </div>
           <div className="mt-6 pt-4 border-t border-slate-700">
-            <p className="text-sm">Avg. Purchase Rate: <span className="font-bold text-white">৳{metrics.avgUSDRate.toFixed(2)}</span></p>
+            <p className="text-sm">Avg. Effective Rate: <span className="font-bold text-white">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span></p>
           </div>
         </div>
 
         {/* CARDS */}
-        {cards.map(card => (
-          <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
+        {activeCards.map(card => (
+          <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
             <div>
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900">{card.name}</h3>
-                  <p className="text-sm text-slate-500">{card.provider}</p>
+                  <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                    {card.name} 
+                    {card.last4 && <span className="text-xs font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">*{card.last4}</span>}
+                  </h3>
+                  <p className="text-sm text-slate-500">{card.provider} • {card.cardType}</p>
                 </div>
-                <div className="bg-blue-50 p-2 rounded-lg text-blue-600"><CreditCard size={24} /></div>
+                <div className="flex items-center gap-1">
+                  <div className="bg-blue-50 p-2 rounded-lg text-blue-600 mr-2"><CreditCard size={20} /></div>
+                  <CardDropdownMenu 
+                    onEdit={() => onEditCard(card)} 
+                    onDetails={() => onViewDetails(card)} 
+                    onArchive={() => {
+                      if(window.confirm(`Are you sure you want to archive ${card.name}? History will be saved.`)) onArchiveCard(card.id)
+                    }} 
+                  />
+                </div>
               </div>
               <p className="text-sm text-slate-500 mb-1">Current Balance</p>
               <h2 className="text-3xl font-bold text-slate-800">{formatUSD(metrics.cardBalances[card.id])}</h2>
             </div>
             <div className="mt-6 flex gap-2">
-              <button className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-medium transition-colors">Load Money</button>
-              <button className="flex-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-2 rounded-lg text-sm font-medium transition-colors">Details</button>
+              <button onClick={() => onLoadCard(card)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-lg text-sm font-medium transition-colors">Load Money</button>
+              <button onClick={() => onViewDetails(card)} className="flex-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-2 rounded-lg text-sm font-medium transition-colors">Details</button>
             </div>
           </div>
         ))}
@@ -569,28 +549,41 @@ function CardsView({ cards, metrics, transactions }) {
       {/* USD PURCHASE HISTORY */}
       <h3 className="text-lg font-bold text-slate-800 mt-8 mb-4">USD Purchase History</h3>
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-            <tr>
-              <th className="px-5 py-3">Date</th>
-              <th className="px-5 py-3">Source/Seller</th>
-              <th className="px-5 py-3 text-right">BDT Paid</th>
-              <th className="px-5 py-3 text-right">USD Received</th>
-              <th className="px-5 py-3 text-right">Exchange Rate</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {usdPurchases.map(tx => (
-              <tr key={tx.id} className="hover:bg-slate-50">
-                <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
-                <td className="px-5 py-3 font-medium text-slate-800">{tx.notes}</td>
-                <td className="px-5 py-3 text-right text-slate-600">{formatBDT(tx.amountBDT)}</td>
-                <td className="px-5 py-3 text-right font-bold text-green-600">{formatUSD(tx.amountUSD)}</td>
-                <td className="px-5 py-3 text-right font-medium text-slate-800">৳{tx.rate}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+              <tr>
+                <th className="px-5 py-3">Date</th>
+                <th className="px-5 py-3">Source/Seller</th>
+                <th className="px-5 py-3 text-right">BDT Paid</th>
+                <th className="px-5 py-3 text-right text-red-600">Cash-out Chg</th>
+                <th className="px-5 py-3 text-right font-bold text-slate-800">Total Cost</th>
+                <th className="px-5 py-3 text-right">USD Rcvd</th>
+                <th className="px-5 py-3 text-right">Base Rate</th>
+                <th className="px-5 py-3 text-right text-blue-600">Effective Rate</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {usdPurchases.map(tx => {
+                const baseRate = (tx.amountBDT / tx.amountUSD).toFixed(2);
+                const totalCost = tx.amountBDT + (tx.cashOutCharge || 0);
+                const effectiveRate = (totalCost / tx.amountUSD).toFixed(2);
+
+                return (
+                <tr key={tx.id} className="hover:bg-slate-50">
+                  <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
+                  <td className="px-5 py-3 font-medium text-slate-800">{tx.notes}</td>
+                  <td className="px-5 py-3 text-right text-slate-600">{formatBDT(tx.amountBDT)}</td>
+                  <td className="px-5 py-3 text-right text-red-500">{tx.cashOutCharge ? formatBDT(tx.cashOutCharge) : '-'}</td>
+                  <td className="px-5 py-3 text-right font-bold text-slate-800">{formatBDT(totalCost)}</td>
+                  <td className="px-5 py-3 text-right font-bold text-green-600">{formatUSD(tx.amountUSD)}</td>
+                  <td className="px-5 py-3 text-right text-slate-500">৳{baseRate}</td>
+                  <td className="px-5 py-3 text-right font-medium text-blue-600">৳{effectiveRate}</td>
+                </tr>
+              )})}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -600,18 +593,14 @@ function CardsView({ cards, metrics, transactions }) {
 
 function NavItem({ icon, label, isActive, onClick }) {
   return (
-    <button 
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium
-        ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-    >
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
       {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
       {label}
     </button>
   );
 }
 
-function MetricCard({ title, value, subtitle, trend, trendUp, icon, bgColor }) {
+function MetricCard({ title, value, subtitle, icon, bgColor }) {
   return (
     <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
       <div className="flex justify-between items-start mb-2">
@@ -620,12 +609,6 @@ function MetricCard({ title, value, subtitle, trend, trendUp, icon, bgColor }) {
       </div>
       <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{value}</h3>
       <div className="mt-2 flex items-center text-xs">
-        {trend && (
-          <span className={`font-medium mr-2 flex items-center ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
-            {trendUp ? <ArrowUpRight size={14} className="mr-0.5"/> : <ArrowDownRight size={14} className="mr-0.5"/>}
-            {trend}
-          </span>
-        )}
         {subtitle && <span className="text-slate-500">{subtitle}</span>}
       </div>
     </div>
@@ -641,35 +624,19 @@ function StatRow({ label, value, className = 'text-slate-900' }) {
   );
 }
 
-function Divider() {
-  return <div className="h-px w-full bg-slate-100 my-2"></div>;
-}
+function Divider() { return <div className="h-px w-full bg-slate-100 my-2"></div>; }
 
 function TransactionTypeBadge({ type }) {
-  const styles = {
-    PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200',
-    USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200',
-    AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200',
-    CARD_LOAD: 'bg-orange-100 text-orange-700 border-orange-200',
-  };
-  const labels = {
-    PAYMENT_RECEIVED: 'Payment In',
-    USD_PURCHASE: 'Buy USD',
-    AD_SPEND: 'Meta Ads',
-    CARD_LOAD: 'Card Load',
-  };
-  return (
-    <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>
-      {labels[type] || type}
-    </span>
-  );
+  const styles = { PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200', USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200', AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200', CARD_LOAD: 'bg-orange-100 text-orange-700 border-orange-200' };
+  const labels = { PAYMENT_RECEIVED: 'Payment In', USD_PURCHASE: 'Buy USD', AD_SPEND: 'Meta Ads', CARD_LOAD: 'Card Load' };
+  return <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>{labels[type] || type}</span>;
 }
 
-function Modal({ title, onClose, children }) {
+function Modal({ title, onClose, children, width = "max-w-md" }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center p-5 border-b border-slate-100">
+      <div className={`bg-white rounded-xl shadow-xl w-full ${width} overflow-hidden flex flex-col max-h-[90vh]`}>
+        <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
         </div>
@@ -681,84 +648,236 @@ function Modal({ title, onClose, children }) {
   );
 }
 
-// --- FORMS ---
+function CardDropdownMenu({ onEdit, onDetails, onArchive }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
 
-function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    amountBDT: '',
-    amountUSD: '',
-    rate: '',
-    clientId: clients?.[0]?.id || '',
-    cardId: cards?.[0]?.id || '',
-    taxUSD: '',
-    notes: '',
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) setIsOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuRef]);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button onClick={() => setIsOpen(!isOpen)} className="p-1 rounded hover:bg-slate-100 text-slate-400 transition-colors">
+        <MoreVertical size={20} />
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 overflow-hidden">
+          <button onClick={() => {onEdit(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Edit Card</button>
+          <button onClick={() => {onDetails(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">View Details</button>
+          <div className="h-px w-full bg-slate-100 my-1"></div>
+          <button onClick={() => {onArchive(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Archive <Archive size={14}/></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- FORMS & MODALS ---
+
+function CardForm({ initialData, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(initialData || {
+    name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
+    initialBalance: 0, last4: '', expiry: '', notes: '', status: 'Active'
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    let newFormData = { ...formData, [name]: value };
-    
-    // Auto calculate rate for USD Purchase
-    if (type === 'USD_PURCHASE') {
-      if (name === 'amountBDT' && newFormData.amountUSD) {
-        newFormData.rate = (parseFloat(value) / parseFloat(newFormData.amountUSD)).toFixed(2);
-      } else if (name === 'amountUSD' && newFormData.amountBDT) {
-        newFormData.rate = (parseFloat(newFormData.amountBDT) / parseFloat(value)).toFixed(2);
-      }
-    }
-    setFormData(newFormData);
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
   };
+
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div><label className="block text-sm font-medium text-slate-700">Card Name</label>
+        <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. RedotPay Primary" className={inputClass} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Provider</label>
+          <input type="text" name="provider" value={formData.provider} onChange={handleChange} required placeholder="e.g. RedotPay, City Bank" className={inputClass} />
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Card Type</label>
+          <select name="cardType" value={formData.cardType} onChange={handleChange} className={inputClass}>
+            <option>Virtual Card</option><option>Dual Currency</option><option>Credit Card</option><option>Prepaid Card</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Initial Balance</label>
+          <input type="number" step="0.01" name="initialBalance" value={formData.initialBalance} onChange={handleChange} disabled={!!initialData} className={`${inputClass} ${initialData ? 'bg-slate-100' : ''}`} />
+          {initialData && <p className="text-xs text-slate-500 mt-1">Cannot edit initial balance after creation.</p>}
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Currency</label>
+          <input type="text" name="currency" value={formData.currency} disabled className={`${inputClass} bg-slate-100`} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Last 4 Digits (Opt)</label>
+          <input type="text" maxLength="4" name="last4" value={formData.last4} onChange={handleChange} placeholder="1234" className={inputClass} />
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Expiry Date (Opt)</label>
+          <input type="text" name="expiry" value={formData.expiry} onChange={handleChange} placeholder="MM/YY" className={inputClass} />
+        </div>
+      </div>
+      <div><label className="block text-sm font-medium text-slate-700">Notes</label>
+        <textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass}></textarea>
+      </div>
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Card</button>
+      </div>
+    </form>
+  );
+}
+
+function CardDetailsModal({ card, metrics, transactions, onClose }) {
+  // Filter transactions for this specific card and sort chronologically
+  const cardTxs = transactions
+    .filter(t => t.cardId === card.id)
+    .sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  // Calculate Running Balance
+  let runningBal = parseFloat(card.initialBalance || 0);
+  const historyWithBalance = cardTxs.map(t => {
+    let changeUSD = 0;
+    if (t.type === 'CARD_LOAD') changeUSD = parseFloat(t.amountUSD || 0);
+    if (t.type === 'AD_SPEND') changeUSD = -(parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0));
+    runningBal += changeUSD;
+    return { ...t, changeUSD, runningBal };
+  }).reverse(); // Reverse for display (newest first)
+
+  const stats = metrics.cardStats[card.id] || { loaded: 0, spent: 0 };
+  const currentBal = metrics.cardBalances[card.id] || 0;
+
+  return (
+    <div className="flex flex-col h-full max-h-[80vh]">
+      {/* Details Header Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-xs text-slate-500 mb-1">Current Balance</p>
+          <p className="text-xl font-bold text-slate-900">{formatUSD(currentBal)}</p>
+        </div>
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-xs text-slate-500 mb-1">Total Loaded</p>
+          <p className="text-lg font-bold text-green-600">+{formatUSD(stats.loaded)}</p>
+        </div>
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-xs text-slate-500 mb-1">Total Spent</p>
+          <p className="text-lg font-bold text-red-600">-{formatUSD(stats.spent)}</p>
+        </div>
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-xs text-slate-500 mb-1">Initial Balance</p>
+          <p className="text-lg font-semibold text-slate-700">{formatUSD(card.initialBalance)}</p>
+        </div>
+      </div>
+      
+      <div className="text-sm text-slate-600 mb-4 bg-blue-50 p-3 rounded border border-blue-100 flex justify-between">
+        <span><strong>Provider:</strong> {card.provider}</span>
+        <span><strong>Type:</strong> {card.cardType}</span>
+        {card.last4 && <span><strong>Last 4:</strong> {card.last4}</span>}
+      </div>
+
+      <h4 className="font-bold text-slate-800 mb-3 border-b pb-2">Transaction History</h4>
+      
+      <div className="overflow-y-auto flex-1 border border-slate-200 rounded-lg">
+        <table className="w-full text-sm text-left whitespace-nowrap">
+          <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
+            <tr>
+              <th className="px-4 py-3">Date</th>
+              <th className="px-4 py-3">Type / Desc</th>
+              <th className="px-4 py-3 text-right">Amount (USD)</th>
+              <th className="px-4 py-3 text-right font-bold">Balance After</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {historyWithBalance.length === 0 && (
+              <tr><td colSpan="4" className="text-center py-6 text-slate-500">No transactions found for this card.</td></tr>
+            )}
+            {historyWithBalance.map(tx => (
+              <tr key={tx.id} className="hover:bg-slate-50">
+                <td className="px-4 py-3 text-slate-600">{formatDate(tx.date)}</td>
+                <td className="px-4 py-3">
+                  <div className="font-medium text-slate-800">{tx.type.replace('_', ' ')}</div>
+                  <div className="text-xs text-slate-500">{tx.notes}</div>
+                </td>
+                <td className={`px-4 py-3 text-right font-medium ${tx.changeUSD > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                  {tx.changeUSD > 0 ? '+' : ''}{formatUSD(tx.changeUSD)}
+                  {tx.taxUSD > 0 && <span className="block text-xs text-red-500 font-normal">inc. tax ${tx.taxUSD.toFixed(2)}</span>}
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-slate-900">{formatUSD(tx.runningBal)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function TransactionForm({ type, clients, cards, metrics, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    amountBDT: '', cashOutCharge: '', amountUSD: '',
+    clientId: clients?.[0]?.id || '',
+    cardId: cards?.[0]?.id || '',
+    taxUSD: '', notes: '',
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = {
-      type,
-      date: formData.date,
-      notes: formData.notes
-    };
+    const payload = { type, date: formData.date, notes: formData.notes };
 
     if (type === 'PAYMENT_RECEIVED') {
       payload.amountBDT = parseFloat(formData.amountBDT);
       payload.clientId = formData.clientId;
     } else if (type === 'USD_PURCHASE') {
       payload.amountBDT = parseFloat(formData.amountBDT);
+      payload.cashOutCharge = parseFloat(formData.cashOutCharge || 0);
       payload.amountUSD = parseFloat(formData.amountUSD);
-      payload.rate = parseFloat(formData.rate);
     } else if (type === 'AD_SPEND') {
       payload.amountUSD = parseFloat(formData.amountUSD);
       payload.taxUSD = parseFloat(formData.taxUSD || 0);
       payload.clientId = formData.clientId;
+      payload.cardId = formData.cardId;
+    } else if (type === 'CARD_LOAD') {
+      payload.amountUSD = parseFloat(formData.amountUSD);
       payload.cardId = formData.cardId;
     }
     
     onSubmit(payload);
   };
 
-  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm";
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
   const labelClass = "block text-sm font-medium text-slate-700";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className={labelClass}>Date</label>
+      <div><label className={labelClass}>Date</label>
         <input type="date" name="date" value={formData.date} onChange={handleChange} required className={inputClass} />
       </div>
 
-      {type === 'PAYMENT_RECEIVED' && (
+      {type === 'CARD_LOAD' && (
         <>
-          <div>
-            <label className={labelClass}>Client</label>
-            <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.company})</option>)}
+          <div className="bg-orange-50 p-3 rounded border border-orange-100 text-sm mb-4">
+            <span className="text-orange-800 font-medium block">Global USD Available: {formatUSD(metrics?.globalUSDBalance)}</span>
+            <span className="text-slate-600 text-xs">Loading will deduct from global balance.</span>
+          </div>
+          <div><label className={labelClass}>Target Card</label>
+            <select name="cardId" value={formData.cardId} onChange={handleChange} className={inputClass}>
+              {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
-          <div>
-            <label className={labelClass}>Amount Received (BDT)</label>
-            <div className="relative mt-1">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">৳</span>
-              <input type="number" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="0.00" className={`${inputClass} pl-8`} />
-            </div>
+          <div><label className={labelClass}>Amount to Load (USD)</label>
+            <input type="number" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={inputClass} />
           </div>
         </>
       )}
@@ -766,65 +885,50 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
       {type === 'USD_PURCHASE' && (
         <>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>BDT Paid</label>
-              <input type="number" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="৳0.00" className={inputClass} />
+            <div><label className={labelClass}>BDT Paid</label>
+              <input type="number" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="0" className={inputClass} />
             </div>
-            <div>
-              <label className={labelClass}>USD Received</label>
-              <input type="number" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="$0.00" className={inputClass} />
+            <div><label className={labelClass}>Cash-out Charge (BDT)</label>
+              <input type="number" name="cashOutCharge" value={formData.cashOutCharge} onChange={handleChange} placeholder="0" className={inputClass} />
             </div>
           </div>
-          <div>
-            <label className={labelClass}>Exchange Rate (Calculated)</label>
-            <input type="text" name="rate" value={formData.rate} readOnly className={`${inputClass} bg-slate-50 text-slate-500 cursor-not-allowed`} placeholder="Auto calculated" />
+          
+          <div><label className={labelClass}>USD Received</label>
+            <input type="number" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={inputClass} />
           </div>
+
+          {(formData.amountBDT && formData.amountUSD) ? (
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded text-sm space-y-1">
+              <div className="flex justify-between"><span>Total BDT Cost:</span> <strong>৳{parseFloat(formData.amountBDT || 0) + parseFloat(formData.cashOutCharge || 0)}</strong></div>
+              <div className="flex justify-between text-slate-500"><span>Base Rate:</span> <span>৳{(parseFloat(formData.amountBDT) / parseFloat(formData.amountUSD)).toFixed(2)}</span></div>
+              <div className="flex justify-between text-blue-600 font-medium"><span>Effective Rate:</span> <span>৳{((parseFloat(formData.amountBDT) + parseFloat(formData.cashOutCharge || 0)) / parseFloat(formData.amountUSD)).toFixed(2)}</span></div>
+            </div>
+          ) : null}
         </>
       )}
 
       {type === 'AD_SPEND' && (
         <>
-          <div>
-            <label className={labelClass}>Client Campaign</label>
-            <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
-            </select>
+          <div><label className={labelClass}>Client Campaign</label>
+            <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>{clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}</select>
           </div>
-          <div>
-            <label className={labelClass}>Card Used</label>
-            <select name="cardId" value={formData.cardId} onChange={handleChange} className={inputClass}>
-              {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+          <div><label className={labelClass}>Card Used</label>
+            <select name="cardId" value={formData.cardId} onChange={handleChange} className={inputClass}>{cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Ad Spend (USD)</label>
-              <div className="relative mt-1">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">$</span>
-                <input type="number" name="amountUSD" step="0.01" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={`${inputClass} pl-8`} />
-              </div>
+            <div><label className={labelClass}>Ad Spend (USD)</label>
+              <input type="number" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={inputClass} />
             </div>
-            <div>
-              <label className={labelClass}>Tax/VAT (USD)</label>
-              <div className="relative mt-1">
-                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">$</span>
-                <input type="number" name="taxUSD" step="0.01" value={formData.taxUSD} onChange={handleChange} placeholder="0.00" className={`${inputClass} pl-8`} />
-              </div>
+            <div><label className={labelClass}>Tax/VAT (USD)</label>
+              <input type="number" step="0.01" name="taxUSD" value={formData.taxUSD} onChange={handleChange} placeholder="0.00" className={inputClass} />
             </div>
           </div>
-          {formData.amountUSD && (
-            <div className="p-3 bg-blue-50 rounded border border-blue-100 text-sm text-blue-800">
-              Total Deduction from Card: <strong>${(parseFloat(formData.amountUSD) + parseFloat(formData.taxUSD || 0)).toFixed(2)}</strong>
-            </div>
-          )}
         </>
       )}
 
-      <div>
-        <label className={labelClass}>Notes / Description</label>
-        <textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass} placeholder="Optional details..."></textarea>
+      <div><label className={labelClass}>Notes / Details</label>
+        <textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass}></textarea>
       </div>
-
       <div className="flex gap-3 pt-4 border-t border-slate-100">
         <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
         <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Transaction</button>
