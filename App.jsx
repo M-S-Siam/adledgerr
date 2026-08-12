@@ -755,7 +755,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
   const [selectedCardFilter, setSelectedCardFilter] = useState('ALL');
   const [selectedTxForModal, setSelectedTxForModal] = useState(null);
 
-  const activeCards = cards; // Deletion removes them directly now.
+  const activeCards = cards; 
 
   const filteredUSDPurchases = useMemo(() => {
     let list = transactions.filter(t => t.type === 'USD_PURCHASE');
@@ -769,9 +769,11 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
   const periodSummary = useMemo(() => {
     const count = filteredUSDPurchases.length;
     const totalUSD = filteredUSDPurchases.reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
-    const totalBDT = filteredUSDPurchases.reduce((sum, t) => sum + parseFloat(t.amountBDT || 0) + parseFloat(t.cashOutCharge || 0), 0);
-    const avgEffectiveRate = totalUSD > 0 ? (totalBDT / totalUSD) : 0;
-    return { count, totalUSD, totalBDT, avgEffectiveRate };
+    const totalBDTPaid = filteredUSDPurchases.reduce((sum, t) => sum + parseFloat(t.amountBDT || 0), 0);
+    const totalCOCharge = filteredUSDPurchases.reduce((sum, t) => sum + parseFloat(t.cashOutCharge || 0), 0);
+    const totalCost = totalBDTPaid + totalCOCharge;
+    const avgEffectiveRate = totalUSD > 0 ? (totalCost / totalUSD) : 0;
+    return { count, totalUSD, totalBDTPaid, totalCOCharge, totalCost, avgEffectiveRate };
   }, [filteredUSDPurchases]);
 
   return (
@@ -808,7 +810,6 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         )}
         
         {activeCards.map(card => {
-          // Sort specific card's transactions to find the last true transaction
           const sortedTxs = [...transactions]
             .filter(t => t.cardId === card.id)
             .sort((a,b) => {
@@ -897,29 +898,36 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         </div>
       </div>
 
-      {/* Period Summary */}
-      <div className="bg-slate-100 p-3.5 rounded-xl border border-slate-200 mb-4 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-4 shadow-2xs">
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Selected Period</span>
-          <span className="font-bold text-slate-800">
-            {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label} 
-          </span>
+      {/* NEW PERIOD SUMMARY */}
+      <div className="bg-slate-100 p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
+        <div className="text-sm font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
+          Selected Period: {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label}
         </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">USD Purchased</span>
-          <span className="font-bold text-green-600">{formatUSD(periodSummary.totalUSD)}</span>
-        </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Total BDT Cost</span>
-          <span className="font-bold text-slate-800">{formatBDT(periodSummary.totalBDT)}</span>
-        </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Avg Effective Rate</span>
-          <span className="font-bold text-blue-600">৳{periodSummary.avgEffectiveRate.toFixed(2)}</span>
-        </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Purchases</span>
-          <span className="font-bold text-slate-800">{periodSummary.count}</span>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-6">
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total BDT Paid</span>
+            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalBDTPaid)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total C.O Charge</span>
+            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalCOCharge)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total Cost</span>
+            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalCost)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">USD Purchased</span>
+            <span className="font-bold text-green-600 text-base">{formatUSD(periodSummary.totalUSD)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Avg Effective Rate</span>
+            <span className="font-bold text-blue-600 text-base">৳{periodSummary.avgEffectiveRate.toFixed(2)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Purchases</span>
+            <span className="font-bold text-slate-800 text-base">{periodSummary.count}</span>
+          </div>
         </div>
       </div>
 
@@ -1089,19 +1097,15 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
             <tr>
               <th className="px-4 py-2.5">Date</th>
               <th className="px-4 py-2.5">Type</th>
-              <th className="px-4 py-2.5">Description</th>
               <th className="px-4 py-2.5 text-right">USD</th>
-              <th className="px-4 py-2.5 text-right">BDT</th>
               <th className="px-4 py-2.5 text-right font-bold">Balance After</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
             {historyWithBalance.length === 0 && (
-              <tr><td colSpan="6" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
+              <tr><td colSpan="4" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
             )}
             {historyWithBalance.map(tx => {
-              const bdtCost = tx.type === 'USD_PURCHASE' ? (parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0)) : null;
-              
               return (
               <tr key={tx.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
@@ -1113,14 +1117,8 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
                     </>
                   )}
                 </td>
-                <td className="px-4 py-2.5 text-slate-600">
-                  {tx.type === 'USD_PURCHASE' ? tx.notes : (tx.notes || tx.campaign || '-')}
-                </td>
                 <td className={`px-4 py-2.5 text-right font-medium ${tx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
                   {tx.type === 'USD_PURCHASE' ? '+' : '-'}{formatUSD(tx.amountUSD)}
-                </td>
-                <td className="px-4 py-2.5 text-right text-slate-600">
-                  {bdtCost ? formatBDT(bdtCost) : '—'}
                 </td>
                 <td className={`px-4 py-2.5 text-right font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatUSD(tx.runningBal)}</td>
               </tr>
