@@ -68,12 +68,14 @@ const INITIAL_TRANSACTIONS = [
 
 // --- NORMALIZED FORMATTERS (PREVENTS -$0.00) ---
 const formatBDT = (amount) => {
+  if (!amount || isNaN(amount)) return '৳0.00';
   const val = Math.abs(amount) < 0.005 ? 0 : amount;
   const sign = val < 0 ? '-' : '';
   return `${sign}৳${Math.abs(val).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 };
 
 const formatUSD = (amount) => {
+  if (!amount || isNaN(amount)) return '$0.00';
   const val = Math.abs(amount) < 0.005 ? 0 : amount;
   const sign = val < 0 ? '-' : '';
   return `${sign}$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -213,9 +215,9 @@ export default function AdLedgerApp() {
   
   // Scrub old $0.00 Meta Ads transactions on mount
   useEffect(() => {
-    const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (t.amountUSD || 0) === 0 && (t.taxUSD || 0) === 0);
+    const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (t.amountUSD || 0) < 0.005 && (t.taxUSD || 0) < 0.005);
     if (hasZeroAdSpend) {
-      setTransactions(prev => prev.filter(t => !(t.type === 'AD_SPEND' && (t.amountUSD || 0) === 0 && (t.taxUSD || 0) === 0)));
+      setTransactions(prev => prev.filter(t => !(t.type === 'AD_SPEND' && (t.amountUSD || 0) < 0.005 && (t.taxUSD || 0) < 0.005)));
     }
   }, [transactions, setTransactions]);
 
@@ -845,7 +847,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                       <span className={`font-bold ${lastTx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
                         {lastTx.type === 'USD_PURCHASE' 
                           ? `+${formatUSD(lastTx.amountUSD)}` 
-                          : ((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0) > 0 
+                          : (((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0)) >= 0.005 
                               ? `-${formatUSD((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0))}` 
                               : formatUSD(0))}
                       </span>
@@ -1034,19 +1036,19 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total USD Purchased</p>
           <p className="text-base font-bold text-green-600">
-            {stats.purchased > 0 ? '+' : ''}{formatUSD(stats.purchased)}
+            {stats.purchased >= 0.005 ? '+' : ''}{formatUSD(stats.purchased)}
           </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Meta Ad Spend</p>
           <p className="text-base font-bold text-red-600">
-            {stats.adSpend > 0 ? '-' : ''}{formatUSD(stats.adSpend)}
+            {stats.adSpend >= 0.005 ? '-' : ''}{formatUSD(stats.adSpend)}
           </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Tax</p>
           <p className="text-base font-bold text-slate-700">
-            {stats.tax > 0 ? '-' : ''}{formatUSD(stats.tax)}
+            {stats.tax >= 0.005 ? '-' : ''}{formatUSD(stats.tax)}
           </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
@@ -1107,8 +1109,8 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
                 <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
                 <td className="px-4 py-2.5 font-medium text-slate-800">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}</td>
                 <td className="px-4 py-2.5 text-slate-600">{tx.type === 'USD_PURCHASE' ? tx.notes : (tx.notes || tx.campaign || '-')}</td>
-                <td className={`px-4 py-2.5 text-right font-medium ${tx.changeUSD > 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {tx.changeUSD > 0 ? '+' : (tx.changeUSD < 0 ? '-' : '')}{formatUSD(Math.abs(tx.changeUSD))}
+                <td className={`px-4 py-2.5 text-right font-medium ${tx.changeUSD >= 0.005 ? 'text-green-600' : 'text-slate-800'}`}>
+                  {tx.changeUSD >= 0.005 ? '+' : ''}{tx.changeUSD <= -0.005 ? '-' : ''}{formatUSD(Math.abs(tx.changeUSD))}
                 </td>
                 <td className="px-4 py-2.5 text-right text-slate-600">
                   {bdtCost ? formatBDT(bdtCost) : '—'}
@@ -1738,7 +1740,7 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
       payload.taxUSD = parseFloat(formData.taxUSD || 0);
       
       // Prevent saving meaningless zero-value Meta Ads transactions
-      if (payload.amountUSD === 0 && payload.taxUSD === 0) {
+      if (payload.amountUSD < 0.005 && payload.taxUSD < 0.005) {
         return; 
       }
       
