@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, Users, CreditCard, DollarSign, 
   Activity, FileText, Settings, Plus, Search, 
@@ -371,6 +372,21 @@ export default function AdLedgerApp() {
     setActiveModal('spend');
   };
 
+  const openClientHistory = (client) => {
+    setSelectedClient(client);
+    setActiveModal('client-history');
+  };
+
+  const handleToggleClientCompletion = (clientId) => {
+    setClients(prev => prev.map(c => {
+      if (c.id !== clientId) return c;
+      const currentlyWorking = c.currentlyWorking !== false;
+      return currentlyWorking
+        ? { ...c, currentlyWorking: false, status: 'Completed', endDate: new Date().toISOString().split('T')[0] }
+        : { ...c, currentlyWorking: true, status: 'Active', endDate: '' };
+    }));
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} />;
@@ -385,6 +401,8 @@ export default function AdLedgerApp() {
                   onDeleteClient={handleDeleteClient}
                   onReceivePayment={openPaymentForClient}
                   onAddAdSpend={openAdSpendForClient}
+                  onViewHistory={openClientHistory}
+                  onToggleCompletion={handleToggleClientCompletion}
                 />;
       case 'ledger': return <LedgerView transactions={transactions} clients={clients} cards={cards} />;
       case 'cards': 
@@ -509,6 +527,15 @@ export default function AdLedgerApp() {
             />
         </Modal>
       )}
+      {activeModal === 'client-history' && selectedClient && (
+        <Modal title={`Transaction History: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-4xl">
+          <ClientTransactionHistoryModal
+            client={selectedClient}
+            transactions={transactions}
+            onClose={() => setActiveModal(null)}
+          />
+        </Modal>
+      )}
 
     </div>
   );
@@ -573,207 +600,21 @@ function DashboardView({ metrics, chartData, transactions, clients }) {
 }
 
 function LedgerView({ transactions, clients, cards }) {
-  const [typeFilter, setTypeFilter] = useState('ALL');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('ALL');
-
-  const filtered = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return [...transactions]
-      .filter(tx => {
-        const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
-
-        const search = searchTerm.trim().toLowerCase();
-        const client = clients.find(c => c.id === tx.clientId);
-        const card = cards.find(c => c.id === tx.cardId);
-
-        const searchableText = [
-          tx.notes,
-          tx.adAccount,
-          tx.campaign,
-          tx.type,
-          client?.name,
-          client?.company,
-          card?.name
-        ].filter(Boolean).join(' ').toLowerCase();
-
-        const matchesSearch = !search || searchableText.includes(search);
-
-        const txDate = new Date(tx.date);
-        txDate.setHours(0, 0, 0, 0);
-
-        let matchesDate = true;
-        if (dateFilter === 'TODAY') {
-          matchesDate = txDate.getTime() === today.getTime();
-        } else if (dateFilter === 'THIS_WEEK') {
-          const weekStart = new Date(today);
-          const day = weekStart.getDay();
-          const diff = day === 0 ? 6 : day - 1;
-          weekStart.setDate(weekStart.getDate() - diff);
-          matchesDate = txDate >= weekStart && txDate <= today;
-        } else if (dateFilter === 'THIS_MONTH') {
-          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-          matchesDate = txDate >= monthStart && txDate <= today;
-        }
-
-        return matchesType && matchesSearch && matchesDate;
-      })
-      .sort((a, b) => {
-        const timeA = a.timestamp || new Date(a.date).getTime();
-        const timeB = b.timestamp || new Date(b.date).getTime();
-        return timeB - timeA;
-      });
-  }, [transactions, clients, cards, typeFilter, searchTerm, dateFilter]);
-
-  const ledgerSummary = useMemo(() => {
-    let bdtIn = 0;
-    let bdtOut = 0;
-    let usdIn = 0;
-    let usdOut = 0;
-
-    filtered.forEach(tx => {
-      if (tx.type === 'PAYMENT_RECEIVED') {
-        bdtIn += parseFloat(tx.amountBDT || 0);
-      }
-
-      if (tx.type === 'USD_PURCHASE') {
-        bdtOut += parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0);
-        usdIn += parseFloat(tx.amountUSD || 0);
-      }
-
-      if (tx.type === 'AD_SPEND') {
-        usdOut += parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0);
-      }
-
-      if (tx.type === 'FEE') {
-        usdOut += parseFloat(tx.amountUSD || 0);
-      }
-    });
-
-    return {
-      bdtIn,
-      bdtOut,
-      netBDT: bdtIn - bdtOut,
-      usdIn,
-      usdOut,
-      netUSD: usdIn - usdOut,
-      count: filtered.length
-    };
-  }, [filtered]);
-
-  const clearFilters = () => {
-    setTypeFilter('ALL');
-    setDateFilter('ALL');
-    setSearchTerm('');
-  };
-
-  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || searchTerm.trim() !== '';
+  const [filter, setFilter] = useState('ALL');
+  const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
-          <p className="text-sm text-slate-500 mt-1">A clear view of every BDT and USD movement.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-          >
-            <option value="ALL">All Transactions</option>
-            <option value="PAYMENT_RECEIVED">Payments Received</option>
-            <option value="USD_PURCHASE">USD Purchases</option>
-            <option value="AD_SPEND">Meta Ad Spend</option>
-            <option value="FEE">Fees</option>
-          </select>
-
-          <select
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-          >
-            <option value="ALL">All Dates</option>
-            <option value="TODAY">Today</option>
-            <option value="THIS_WEEK">This Week</option>
-            <option value="THIS_MONTH">This Month</option>
-          </select>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
+        <select className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none" value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="ALL">All Transactions</option>
+          <option value="PAYMENT_RECEIVED">Payments Received</option>
+          <option value="USD_PURCHASE">USD Purchases</option>
+          <option value="AD_SPEND">Meta Ad Spend</option>
+        </select>
       </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search client, card, campaign, source..."
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-
-        {hasFilters && (
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-medium text-red-600 hover:bg-red-50"
-          >
-            Clear Filters
-          </button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">BDT In</p>
-          <p className="text-lg font-bold text-green-600 mt-1">{formatBDT(ledgerSummary.bdtIn)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">BDT Out</p>
-          <p className="text-lg font-bold text-red-600 mt-1">{formatBDT(ledgerSummary.bdtOut)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">Net BDT</p>
-          <p className={`text-lg font-bold mt-1 ${ledgerSummary.netBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-            {formatBDT(ledgerSummary.netBDT)}
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">USD In</p>
-          <p className="text-lg font-bold text-green-600 mt-1">{formatUSD(ledgerSummary.usdIn)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">USD Out</p>
-          <p className="text-lg font-bold text-red-600 mt-1">{formatUSD(ledgerSummary.usdOut)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">Transactions</p>
-          <p className="text-lg font-bold text-slate-900 mt-1">{ledgerSummary.count}</p>
-        </div>
-      </div>
-
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-slate-800">All Transactions</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Buy USD = BDT out + USD in • Meta Ads = USD out
-            </p>
-          </div>
-          <span className="text-xs font-medium text-slate-500">
-            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
-          </span>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
@@ -781,109 +622,35 @@ function LedgerView({ transactions, clients, cards }) {
                 <th className="px-5 py-3">Date</th>
                 <th className="px-5 py-3">Type</th>
                 <th className="px-5 py-3">Entity / Details</th>
-                <th className="px-5 py-3 text-right">BDT In</th>
-                <th className="px-5 py-3 text-right">BDT Out</th>
-                <th className="px-5 py-3 text-right">USD In</th>
-                <th className="px-5 py-3 text-right">USD Out</th>
+                <th className="px-5 py-3 text-right">In (BDT)</th>
+                <th className="px-5 py-3 text-right">Out (USD)</th>
               </tr>
             </thead>
-
             <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="text-center py-10 text-slate-500">
-                    No transactions found.
-                  </td>
-                </tr>
-              )}
-
+              {filtered.length === 0 && <tr><td colSpan="5" className="text-center py-8 text-slate-500">No transactions yet.</td></tr>}
               {filtered.map(tx => {
                 const client = clients.find(c => c.id === tx.clientId);
                 const card = cards.find(c => c.id === tx.cardId);
-
-                const isPayment = tx.type === 'PAYMENT_RECEIVED';
-                const isPurchase = tx.type === 'USD_PURCHASE';
-                const isAdSpend = tx.type === 'AD_SPEND';
-                const isFee = tx.type === 'FEE';
-
-                const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
-                const bdtOut = isPurchase
-                  ? parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)
-                  : 0;
-                const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
-                const usdOut = isAdSpend
-                  ? parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)
-                  : isFee
-                    ? parseFloat(tx.amountUSD || 0)
-                    : 0;
-
                 return (
-                  <tr key={tx.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
-
-                    <td className="px-5 py-4">
-                      <TransactionTypeBadge type={tx.type} />
-                    </td>
-
-                    <td className="px-5 py-4 min-w-[260px]">
-                      {client && (
-                        <div className="font-semibold text-slate-800">{client.name}</div>
-                      )}
-
-                      {card && (
-                        <div className="text-xs text-slate-500">Card: {card.name}</div>
-                      )}
-
-                      {tx.type === 'USD_PURCHASE' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'USD Purchase'} • Effective Rate: ৳
-                          {usdIn > 0
-                            ? ((parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) / usdIn).toFixed(2)
-                            : '0.00'}
-                        </div>
-                      )}
-
-                      {tx.type === 'AD_SPEND' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.adAccount || 'Ad Account'}{tx.campaign ? ` • ${tx.campaign}` : ''}
-                        </div>
-                      )}
-
-                      {tx.type === 'PAYMENT_RECEIVED' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'Client payment received'}
-                        </div>
-                      )}
-
-                      {tx.type === 'FEE' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'Card fee'}
-                        </div>
-                      )}
-
-                      {!client && !card && !isPurchase && !isAdSpend && !isPayment && !isFee && (
-                        <div className="text-xs text-slate-500">{tx.notes || '—'}</div>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-green-600">
-                      {bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-red-600">
-                      {bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-green-600">
-                      {usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-red-600">
-                      {usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
+                <tr key={tx.id} className="hover:bg-slate-50">
+                  <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
+                  <td className="px-5 py-3"><TransactionTypeBadge type={tx.type} /></td>
+                  <td className="px-5 py-3">
+                    {client && <div className="font-medium text-slate-800">{client.name}</div>}
+                    {card && <div className="text-xs text-slate-500">Card: {card.name}</div>}
+                    {tx.type === 'USD_PURCHASE' && <div className="font-medium text-slate-800">Eff. Rate: ৳{((parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0)) / parseFloat(tx.amountUSD||1)).toFixed(2)}</div>}
+                    {tx.type === 'AD_SPEND' && <div className="text-xs text-slate-500">{tx.adAccount} • {tx.campaign}</div>}
+                  </td>
+                  <td className="px-5 py-3 text-right font-medium text-green-600">
+                    {tx.type === 'PAYMENT_RECEIVED' ? `+${formatBDT(tx.amountBDT)}` : '-'}
+                  </td>
+                  <td className="px-5 py-3 text-right font-medium text-slate-800">
+                    {(tx.type === 'AD_SPEND' || tx.type === 'USD_PURCHASE') 
+                      ? formatUSD(parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0)) 
+                      : '-'}
+                  </td>
+                </tr>
+              )})}
             </tbody>
           </table>
         </div>
@@ -892,7 +659,7 @@ function LedgerView({ transactions, clients, cards }) {
   );
 }
 
-function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onReceivePayment, onAddAdSpend }) {
+function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onReceivePayment, onAddAdSpend, onViewHistory, onToggleCompletion }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -1004,7 +771,10 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                       onEdit={() => onEditClient(c)}
                       onReceivePayment={() => onReceivePayment(c)}
                       onAddAdSpend={() => onAddAdSpend(c)}
+                      onViewHistory={() => onViewHistory(c)}
+                      onToggleCompletion={() => onToggleCompletion(c.id)}
                       onDelete={() => onDeleteClient(c.id)}
+                      isCurrentlyWorking={c.currentlyWorking !== false}
                     />
                   </td>
                 </tr>
@@ -1555,18 +1325,8 @@ function StatRow({ label, value, className = 'text-slate-900' }) {
 function Divider() { return <div className="h-px w-full bg-slate-100 my-2"></div>; }
 
 function TransactionTypeBadge({ type }) {
-  const styles = {
-    PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200',
-    USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200',
-    AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200',
-    FEE: 'bg-orange-100 text-orange-700 border-orange-200'
-  };
-  const labels = {
-    PAYMENT_RECEIVED: 'Payment In',
-    USD_PURCHASE: 'Buy USD',
-    AD_SPEND: 'Meta Ads',
-    FEE: 'Card Fee'
-  };
+  const styles = { PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200', USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200', AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200' };
+  const labels = { PAYMENT_RECEIVED: 'Payment In', USD_PURCHASE: 'Buy USD', AD_SPEND: 'Meta Ads' };
   return <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>{labels[type] || type}</span>;
 }
 
@@ -1713,35 +1473,153 @@ function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   );
 }
 
-function ClientDropdownMenu({ onViewDetails, onEdit, onReceivePayment, onAddAdSpend, onDelete }) {
+function ClientDropdownMenu({
+  onViewDetails,
+  onEdit,
+  onReceivePayment,
+  onAddAdSpend,
+  onViewHistory,
+  onToggleCompletion,
+  onDelete,
+  isCurrentlyWorking
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, visibility: 'hidden' });
+  const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setIsOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuRef]);
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      const button = buttonRef.current;
+      const menu = menuRef.current;
+      if (!button || !menu) return;
+
+      const rect = button.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const gap = 8;
+      const padding = 8;
+
+      let top = rect.bottom + gap;
+      if (top + menuRect.height > window.innerHeight - padding) {
+        top = rect.top - menuRect.height - gap;
+      }
+
+      let left = rect.right - menuRect.width;
+      if (left < padding) left = padding;
+      if (left + menuRect.width > window.innerWidth - padding) {
+        left = window.innerWidth - menuRect.width - padding;
+      }
+
+      setMenuPosition({
+        top: Math.max(padding, top),
+        left: Math.max(padding, left),
+        visibility: 'visible'
+      });
+    };
+
+    const frame = requestAnimationFrame(updatePosition);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    const handlePointerDown = (event) => {
+      const button = buttonRef.current;
+      const menu = menuRef.current;
+      if (button?.contains(event.target) || menu?.contains(event.target)) return;
+      setIsOpen(false);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [isOpen]);
+
+  const runAction = (action) => {
+    setIsOpen(false);
+    action();
+  };
 
   return (
-    <div className="relative inline-block text-left" ref={menuRef}>
-      <button onClick={() => setIsOpen(!isOpen)} className="p-1 rounded hover:bg-slate-100 text-slate-400 transition-colors">
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label="Client actions"
+        aria-expanded={isOpen}
+        onClick={() => {
+          setIsOpen(prev => !prev);
+          setMenuPosition({ top: 0, left: 0, visibility: 'hidden' });
+        }}
+        className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+      >
         <MoreVertical size={20} />
       </button>
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 overflow-hidden">
-          <button onClick={() => {onViewDetails(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">View Details</button>
-          <button onClick={() => {onEdit(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Edit Client</button>
-          <div className="h-px w-full bg-slate-100 my-1"></div>
-          <button onClick={() => {onReceivePayment(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50">Receive Payment</button>
-          <button onClick={() => {onAddAdSpend(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">Add Ad Spend</button>
-          <div className="h-px w-full bg-slate-100 my-1"></div>
-          <button onClick={() => {onDelete(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Delete Client <Trash2 size={14}/></button>
-        </div>
+
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          className="fixed z-[9999] w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+            visibility: menuPosition.visibility
+          }}
+        >
+          <button type="button" onClick={() => runAction(onViewDetails)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+            View Details
+          </button>
+          <button type="button" onClick={() => runAction(onReceivePayment)}
+            className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50">
+            Receive Payment
+          </button>
+          <button type="button" onClick={() => runAction(onEdit)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+            Edit Client
+          </button>
+          <button type="button" onClick={() => runAction(onViewHistory)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+            Transaction History
+          </button>
+
+          <div className="h-px w-full bg-slate-100 my-1" />
+
+          <button type="button" onClick={() => runAction(onToggleCompletion)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+            {isCurrentlyWorking ? 'Mark Completed' : 'Mark Active'}
+          </button>
+
+          <div className="h-px w-full bg-slate-100 my-1" />
+
+          <button type="button" onClick={() => runAction(onDelete)}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">
+            Delete Client
+            <Trash2 size={14} />
+          </button>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
@@ -1888,6 +1766,92 @@ function CardForm({ initialData, onSubmit, onCancel }) {
         <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Card</button>
       </div>
     </form>
+  );
+}
+
+function ClientTransactionHistoryModal({ client, transactions, onClose }) {
+  const history = useMemo(() => {
+    return transactions
+      .filter(t => t.clientId === client.id)
+      .sort((a, b) => {
+        const timeA = a.timestamp || new Date(a.date).getTime();
+        const timeB = b.timestamp || new Date(b.date).getTime();
+        return timeB - timeA;
+      });
+  }, [transactions, client.id]);
+
+  const totals = useMemo(() => history.reduce((acc, tx) => {
+    if (tx.type === 'PAYMENT_RECEIVED') acc.bdtIn += parseFloat(tx.amountBDT || 0);
+    if (tx.type === 'AD_SPEND') {
+      acc.usdOut += parseFloat(tx.amountUSD || 0);
+      acc.tax += parseFloat(tx.taxUSD || 0);
+    }
+    return acc;
+  }, { bdtIn: 0, usdOut: 0, tax: 0 }), [history]);
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <MetricCard title="Payments Received" value={formatBDT(totals.bdtIn)}
+          icon={<ArrowDownRight size={18} className="text-green-600" />} bgColor="bg-green-50" />
+        <MetricCard title="Ad Spend" value={formatUSD(totals.usdOut)}
+          icon={<Activity size={18} className="text-purple-600" />} bgColor="bg-purple-50" />
+        <MetricCard title="Tax" value={formatUSD(totals.tax)}
+          icon={<FileText size={18} className="text-red-600" />} bgColor="bg-red-50" />
+        <MetricCard title="Transactions" value={history.length}
+          icon={<Hash size={18} className="text-blue-600" />} bgColor="bg-blue-50" />
+      </div>
+
+      <div className="border border-slate-200 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+              <tr>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Description</th>
+                <th className="px-4 py-3 text-right">BDT</th>
+                <th className="px-4 py-3 text-right">USD</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {history.length === 0 ? (
+                <tr><td colSpan="5" className="text-center py-10 text-slate-500">No transactions found for this client.</td></tr>
+              ) : history.map(tx => {
+                const isPayment = tx.type === 'PAYMENT_RECEIVED';
+                const usdAmount = parseFloat(tx.amountUSD || 0);
+                const tax = parseFloat(tx.taxUSD || 0);
+                return (
+                  <tr key={tx.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
+                    <td className="px-4 py-3"><TransactionTypeBadge type={tx.type} /></td>
+                    <td className="px-4 py-3 text-slate-700">{tx.notes || tx.campaign || tx.adAccount || '—'}</td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {isPayment ? <span className="text-green-600">+{formatBDT(tx.amountBDT)}</span> : <span className="text-slate-500">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {!isPayment ? (
+                        <div>
+                          <span className="text-red-600">-{formatUSD(usdAmount)}</span>
+                          {tax > 0 && <span className="block text-[10px] text-red-400">Tax: -{formatUSD(tax)}</span>}
+                        </div>
+                      ) : <span className="text-slate-500">—</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button type="button" onClick={onClose}
+          className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800">
+          Close
+        </button>
+      </div>
+    </div>
   );
 }
 
