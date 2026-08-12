@@ -12,7 +12,7 @@ import {
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  AreaChart, Area
+  AreaChart, Area, PieChart as RePieChart, Pie, Cell
 } from 'recharts';
 
 // --- SAFE VERSIONED DATA MIGRATION ---
@@ -214,12 +214,13 @@ export default function AdLedgerApp() {
   // Additive SaaS modules. Existing financial data remains untouched.
   const [campaigns, setCampaigns] = useLocalStorage('adledger_campaigns', []);
   const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', {
-    businessName: 'AdLedger',
+    businessName: 'AdLytic',
     timezone: 'Asia/Dhaka',
     alerts: true,
     defaultReportRange: 'This Month'
   });
   const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', []);
+  const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
   
   // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
   useEffect(() => {
@@ -437,6 +438,19 @@ export default function AdLedgerApp() {
     setWorkspaceSettings(prev => ({ ...prev, ...nextSettings }));
   };
 
+  const handleLogoUpload = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { window.alert('Please choose an image file.'); return; }
+    if (file.size > 2 * 1024 * 1024) { window.alert('Please choose a logo under 2 MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      if (typeof result === 'string') setWorkspaceLogo(result);
+    };
+    reader.readAsDataURL(file);
+  };
+  const handleRemoveLogo = () => setWorkspaceLogo('');
+
   const handleAddTeamMember = (member) => {
     setTeamMembers(prev => [...prev, { ...member, id: `team_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
   };
@@ -449,10 +463,10 @@ export default function AdLedgerApp() {
 
   const exportBackup = () => {
     const payload = {
-      app: 'AdLedger',
+      app: 'AdLytic',
       version: 1,
       exportedAt: new Date().toISOString(),
-      clients, cards, transactions, campaigns, workspaceSettings, teamMembers
+      clients, cards, transactions, campaigns, workspaceSettings, teamMembers, workspaceLogo
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -469,13 +483,14 @@ export default function AdLedgerApp() {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        if (!data || data.app !== 'AdLedger') throw new Error('Invalid backup');
+        if (!data || (data.app !== 'AdLytic' && data.app !== 'AdLedger')) throw new Error('Invalid backup');
         if (Array.isArray(data.clients)) setClients(data.clients);
         if (Array.isArray(data.cards)) setCards(data.cards);
         if (Array.isArray(data.transactions)) setTransactions(data.transactions);
         if (Array.isArray(data.campaigns)) setCampaigns(data.campaigns);
         if (data.workspaceSettings) setWorkspaceSettings(data.workspaceSettings);
         if (Array.isArray(data.teamMembers)) setTeamMembers(data.teamMembers);
+        if (typeof data.workspaceLogo === 'string') setWorkspaceLogo(data.workspaceLogo);
         window.alert('Backup restored successfully.');
       } catch (error) {
         window.alert('This file is not a valid AdLedger backup.');
@@ -491,8 +506,9 @@ export default function AdLedgerApp() {
     setTransactions([]);
     setCampaigns([]);
     setTeamMembers([]);
+    setWorkspaceLogo('');
     setWorkspaceSettings({
-      businessName: 'AdLedger',
+      businessName: 'AdLytic',
       timezone: 'Asia/Dhaka',
       alerts: true,
       defaultReportRange: 'This Month'
@@ -536,20 +552,22 @@ export default function AdLedgerApp() {
       case 'team':
         return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onRemove={handleRemoveTeamMember} />;
       case 'settings':
-        return <SettingsView settings={workspaceSettings} onSave={handleSaveWorkspaceSettings} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
+        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <>
+      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
+      <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
       
       {/* SIDEBAR */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
         <div className="p-6 flex items-center justify-between md:justify-center border-b border-slate-800">
-          <div className="flex items-center gap-2 text-white">
-            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-bold text-lg">A</div>
-            <span className="text-xl font-bold tracking-tight">AdLedger</span>
+          <div className="flex items-center gap-2.5 text-white min-w-0">
+            {workspaceLogo ? <img src={workspaceLogo} alt="Workspace logo" className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm" /> : <div className="adl-brand-mark w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-lg">A</div>}
+            <span className="text-xl font-bold tracking-tight truncate">AdLytic</span>
           </div>
           <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
             <X size={24} />
@@ -666,7 +684,8 @@ export default function AdLedgerApp() {
         </Modal>
       )}
 
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -952,7 +971,7 @@ function ReportsView({ clients, cards, transactions }) {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Financial performance from your existing AdLedger data.
+            Financial performance from your existing AdLytic data.
           </p>
         </div>
 
@@ -1080,13 +1099,13 @@ function ReportsView({ clients, cards, transactions }) {
             {dailyChart.length ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dailyChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#16A34A" strokeWidth={2} />
-                  <Line type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT Equivalent)" stroke="#F59E0B" strokeWidth={2} />
+                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} dy={8} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
+                  <Tooltip cursor={{ stroke: '#9edcf5', strokeDasharray: '4 4' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#10b981" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT Equivalent)" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -1102,11 +1121,11 @@ function ReportsView({ clients, cards, transactions }) {
             {expenseChart.some(x => x.value > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={expenseChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" name="USD" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
+                  <Tooltip cursor={{ fill: '#eefaff' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
+                  <Bar dataKey="value" name="USD" fill="#38bdf8" radius={[10, 10, 4, 4]} barSize={42} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -1464,20 +1483,16 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
             <h3 className="font-semibold text-slate-900">USD Expense Breakdown</h3>
             <p className="text-xs text-slate-500 mt-1">Where your USD outflow is going.</p>
           </div>
-          <div className="h-64">
+          <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dashboardData.expenseData} margin={{ top: 8, right: 4, left: -18, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="4 6" vertical={false} stroke="#e8edf3" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(value) => `$${value}`} />
-                <Tooltip
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: 14, border: '1px solid #e2e8f0', boxShadow: '0 12px 30px rgba(15,23,42,0.10)', fontSize: 12 }}
-                  formatter={(value) => [formatUSD(value), 'USD']}
-                />
-                <Bar dataKey="value" radius={[8, 8, 3, 3]} fill="#3b82f6" barSize={42} />
-              </BarChart>
+              <RePieChart>
+                <Pie data={dashboardData.expenseData.filter(item => item.value > 0)} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92} paddingAngle={4} cornerRadius={8} stroke="#fff" strokeWidth={4}>
+                  {dashboardData.expenseData.map((entry, index) => <Cell key={`expense-cell-${entry.name}`} fill={['#38bdf8','#f59e0b','#fb7185'][index % 3]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} formatter={(value) => [formatUSD(value), 'USD']} />
+              </RePieChart>
             </ResponsiveContainer>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="text-center"><p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Out</p><p className="text-lg font-bold text-slate-900">{formatUSD(dashboardData.totalUSDOut)}</p></div></div>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-2 text-center">
             <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Ads</p><p className="text-xs font-semibold text-slate-800">{formatUSD(metrics.totalAdSpendUSD)}</p></div>
@@ -2715,13 +2730,14 @@ function TeamView({ teamMembers, onAdd, onRemove }) {
   </div>;
 }
 
-function SettingsView({ settings, onSave, onExport, onImport, onReset }) {
+function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
   const [data,setData]=useState(settings); const fileRef=useRef(null);
   useEffect(()=>setData(settings),[settings]);
   return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
     <div><h1 className="text-2xl font-bold text-slate-900">Settings</h1><p className="text-sm text-slate-500 mt-1">Workspace preferences, data safety and operational controls.</p></div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-blue-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Basic preferences.</p></div></div><div className="mt-5 space-y-4">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-sky-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Branding and basic preferences.</p></div></div><div className="mt-5 space-y-4">
+        <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3 min-w-0">{logo ? <img src={logo} alt="Workspace logo preview" className="w-14 h-14 rounded-2xl object-cover bg-white border border-sky-100 shadow-sm" /> : <div className="adl-brand-mark w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold">A</div>}<div><p className="text-sm font-semibold text-slate-800">Workspace Logo</p><p className="text-xs text-slate-500 mt-0.5">Upload PNG, JPG or WebP. Max 2 MB.</p></div></div><div className="flex items-center gap-2"><label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600"><Upload size={14}/>{logo ? 'Change' : 'Upload'}<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={e=>{onLogoUpload(e.target.files?.[0]);e.target.value='';}}/></label>{logo && <button type="button" onClick={onRemoveLogo} className="px-3 py-2 rounded-lg border border-red-200 bg-white text-red-600 text-xs font-semibold">Remove</button>}</div></div></div>
         <Field label="Business / Workspace Name"><input value={data.businessName} onChange={e=>setData({...data,businessName:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field>
         <Field label="Timezone"><select value={data.timezone} onChange={e=>setData({...data,timezone:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Asia/Dhaka</option><option>UTC</option><option>Asia/Kolkata</option></select></Field>
         <Field label="Default Report Range"><select value={data.defaultReportRange} onChange={e=>setData({...data,defaultReportRange:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>This Month</option><option>Last 7 Days</option><option>Last 30 Days</option><option>Lifetime</option></select></Field>
@@ -2730,7 +2746,7 @@ function SettingsView({ settings, onSave, onExport, onImport, onReset }) {
       </div></div>
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><Database size={20} className="text-emerald-600"/><div><h3 className="font-semibold">Data & Backup</h3><p className="text-xs text-slate-500">Protect your workspace before major changes.</p></div></div><div className="mt-5 space-y-3">
         <button onClick={onExport} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Download size={18} className="text-blue-600"/><span className="text-left"><strong className="block text-sm">Export Full Backup</strong><small className="text-xs text-slate-500">Clients, cards, transactions, campaigns and settings.</small></span></span><ArrowUpRight size={16}/></button>
-        <button onClick={()=>fileRef.current?.click()} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Upload size={18} className="text-emerald-600"/><span className="text-left"><strong className="block text-sm">Restore Backup</strong><small className="text-xs text-slate-500">Import an AdLedger JSON backup.</small></span></span><ArrowUpRight size={16}/></button>
+        <button onClick={()=>fileRef.current?.click()} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Upload size={18} className="text-emerald-600"/><span className="text-left"><strong className="block text-sm">Restore Backup</strong><small className="text-xs text-slate-500">Import an AdLytic JSON backup.</small></span></span><ArrowUpRight size={16}/></button>
         <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={e=>{onImport(e.target.files?.[0]);e.target.value=''}}/>
         <button onClick={onReset} className="w-full flex items-center justify-between rounded-xl border border-red-100 bg-red-50/60 p-4 hover:bg-red-50"><span className="flex items-center gap-3"><RotateCcw size={18} className="text-red-600"/><span className="text-left"><strong className="block text-sm text-red-700">Reset Workspace Data</strong><small className="text-xs text-red-600/70">Permanently clear locally stored data.</small></span></span><AlertCircle size={16}/></button>
       </div></div>
