@@ -5,7 +5,9 @@ import {
   Activity, FileText, Settings, Plus, Search, 
   ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
-  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays
+  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
+  BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
+  UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
@@ -208,6 +210,16 @@ export default function AdLedgerApp() {
   const [clients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
+
+  // Additive SaaS modules. Existing financial data remains untouched.
+  const [campaigns, setCampaigns] = useLocalStorage('adledger_campaigns', []);
+  const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', {
+    businessName: 'AdLedger',
+    timezone: 'Asia/Dhaka',
+    alerts: true,
+    defaultReportRange: 'This Month'
+  });
+  const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', []);
   
   // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
   useEffect(() => {
@@ -406,6 +418,87 @@ export default function AdLedgerApp() {
     setActiveModal('spend');
   };
 
+  // --- SaaS MODULE HANDLERS (isolated from existing financial modules) ---
+  const handleSaveCampaign = (campaignData) => {
+    if (campaignData.id) {
+      setCampaigns(prev => prev.map(c => c.id === campaignData.id ? campaignData : c));
+    } else {
+      setCampaigns(prev => [...prev, { ...campaignData, id: `camp_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
+    }
+  };
+
+  const handleDeleteCampaign = (campaignId) => {
+    if (window.confirm('Delete this campaign? Historical transactions will not be deleted.')) {
+      setCampaigns(prev => prev.filter(c => c.id !== campaignId));
+    }
+  };
+
+  const handleSaveWorkspaceSettings = (nextSettings) => {
+    setWorkspaceSettings(prev => ({ ...prev, ...nextSettings }));
+  };
+
+  const handleAddTeamMember = (member) => {
+    setTeamMembers(prev => [...prev, { ...member, id: `team_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
+  };
+
+  const handleRemoveTeamMember = (memberId) => {
+    if (window.confirm('Remove this team member?')) {
+      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
+    }
+  };
+
+  const exportBackup = () => {
+    const payload = {
+      app: 'AdLedger',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      clients, cards, transactions, campaigns, workspaceSettings, teamMembers
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `adledger-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importBackup = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (!data || data.app !== 'AdLedger') throw new Error('Invalid backup');
+        if (Array.isArray(data.clients)) setClients(data.clients);
+        if (Array.isArray(data.cards)) setCards(data.cards);
+        if (Array.isArray(data.transactions)) setTransactions(data.transactions);
+        if (Array.isArray(data.campaigns)) setCampaigns(data.campaigns);
+        if (data.workspaceSettings) setWorkspaceSettings(data.workspaceSettings);
+        if (Array.isArray(data.teamMembers)) setTeamMembers(data.teamMembers);
+        window.alert('Backup restored successfully.');
+      } catch (error) {
+        window.alert('This file is not a valid AdLedger backup.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const resetAllData = () => {
+    if (!window.confirm('This will permanently clear all AdLedger data stored in this browser. Continue?')) return;
+    setClients([]);
+    setCards([]);
+    setTransactions([]);
+    setCampaigns([]);
+    setTeamMembers([]);
+    setWorkspaceSettings({
+      businessName: 'AdLedger',
+      timezone: 'Asia/Dhaka',
+      alerts: true,
+      defaultReportRange: 'This Month'
+    });
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
@@ -436,6 +529,14 @@ export default function AdLedgerApp() {
                 />;
       case 'reports':
         return <ReportsView clients={clients} cards={cards} transactions={transactions} />;
+      case 'campaigns':
+        return <CampaignsView campaigns={campaigns} clients={clients} transactions={transactions} metrics={metrics} onSave={handleSaveCampaign} onDelete={handleDeleteCampaign} />;
+      case 'integrations':
+        return <IntegrationsView />;
+      case 'team':
+        return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onRemove={handleRemoveTeamMember} />;
+      case 'settings':
+        return <SettingsView settings={workspaceSettings} onSave={handleSaveWorkspaceSettings} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
     }
   };
@@ -457,14 +558,21 @@ export default function AdLedgerApp() {
         
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Users />} label="Client Management" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Activity />} label="Transaction Ledger" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => {setCurrentView('campaigns'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => {setCurrentView('cards'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setIsMobileMenuOpen(false);}} />
+
+          <div className="pt-5 mt-4 border-t border-slate-800/80">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Workspace</p>
+            <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => {setCurrentView('integrations'); setIsMobileMenuOpen(false);}} />
+            <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => {setCurrentView('team'); setIsMobileMenuOpen(false);}} />
+          </div>
         </nav>
-        
+
         <div className="p-4 border-t border-slate-800">
-          <NavItem icon={<Settings />} label="Settings" onClick={() => {}} />
+          <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => {setCurrentView('settings'); setIsMobileMenuOpen(false);}} />
         </div>
       </aside>
 
@@ -1448,7 +1556,9 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
           <div className="space-y-3">
             {Object.keys(metrics.cardBalances || {}).length > 0 ? Object.keys(metrics.cardBalances).map(cardId => {
               const card = (metrics.cardStats && metrics.cardStats[cardId]) || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
-              const balance = metrics.cardBalances[cardId] || 0;
+              const foundCard = (dashboardData.allCards || []).find(c => c.id === cardId);
+              const openingBalance = parseFloat(foundCard?.initialBalance || 0);
+              const balance = openingBalance + card.purchased - card.adSpend - card.tax - card.fees;
               const cardName = (() => {
                 const allCards = dashboardData.allCards || [];
                 const found = allCards.find(c => c.id === cardId);
@@ -2469,6 +2579,173 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
     </Modal>
   );
 }
+
+
+/* ==========================================================================
+   SAAS MODULES
+   Additive modules. Existing financial view component bodies remain untouched.
+   ========================================================================== */
+
+function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDelete }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+
+  const rows = useMemo(() => campaigns.map(c => {
+    const matching = transactions.filter(t =>
+      String(t.campaign || '').trim().toLowerCase() === String(c.name || '').trim().toLowerCase()
+    );
+    const spendUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.amountUSD || 0) : 0), 0);
+    const taxUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.taxUSD || 0) : 0), 0);
+    const spendBDT = (spendUSD + taxUSD) * (metrics.avgUSDEffectiveRate || 0);
+    const revenueBDT = parseFloat(c.revenueBDT || 0);
+    const roas = spendBDT > 0 ? revenueBDT / spendBDT : 0;
+    const client = clients.find(x => x.id === c.clientId);
+    return { ...c, clientName: client?.name || 'Unassigned', spendUSD, taxUSD, spendBDT, revenueBDT, roas };
+  }), [campaigns, clients, transactions, metrics.avgUSDEffectiveRate]);
+
+  const filtered = rows.filter(c => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || [c.name, c.clientName, c.platform, c.goal].some(v => String(v || '').toLowerCase().includes(q));
+    const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div><h1 className="text-2xl font-bold text-slate-900">Campaigns</h1><p className="text-sm text-slate-500 mt-1">Track budgets, ad spend, results and profitability by campaign.</p></div>
+        <button onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"><Plus size={17}/> Add Campaign</button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MiniKpi title="Campaigns" value={campaigns.length} icon={<Target size={16}/>} />
+        <MiniKpi title="Active" value={campaigns.filter(c => c.status === 'Active').length} icon={<Activity size={16}/>} />
+        <MiniKpi title="Tracked Spend" value={formatUSD(rows.reduce((s, c) => s + c.spendUSD, 0))} icon={<DollarSign size={16}/>} />
+        <MiniKpi title="Tracked Revenue" value={formatBDT(rows.reduce((s, c) => s + c.revenueBDT, 0))} icon={<TrendingUp size={16}/>} />
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row gap-3">
+        <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3"><Search size={17} className="text-slate-400"/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search campaigns, clients, platforms..." className="w-full bg-transparent border-none focus:outline-none px-2 py-2 text-sm"/></div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"><option>All</option><option>Active</option><option>Paused</option><option>Completed</option></select>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between"><div><h3 className="font-semibold text-slate-900">Campaign Performance</h3><p className="text-xs text-slate-500 mt-1">Spend is matched automatically from existing transaction entries using the campaign name.</p></div><BarChart3 size={19} className="text-slate-400"/></div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-slate-50 text-xs text-slate-500">
+              <th className="px-5 py-3 text-left font-medium">Campaign</th><th className="px-3 py-3 text-left font-medium">Client</th><th className="px-3 py-3 text-left font-medium">Platform</th><th className="px-3 py-3 text-right font-medium">Budget</th><th className="px-3 py-3 text-right font-medium">Spent</th><th className="px-3 py-3 text-right font-medium">Revenue</th><th className="px-3 py-3 text-right font-medium">ROAS</th><th className="px-5 py-3 text-right font-medium">Status</th><th className="px-5 py-3 text-right font-medium">Actions</th>
+            </tr></thead>
+            <tbody>
+              {filtered.length ? filtered.map(c => (
+                <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                  <td className="px-5 py-4"><div className="font-medium text-slate-800">{c.name}</div><div className="text-[11px] text-slate-400">{c.goal || '—'}</div></td>
+                  <td className="px-3 py-4 text-slate-600">{c.clientName}</td><td className="px-3 py-4"><span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs">{c.platform || 'Meta'}</span></td>
+                  <td className="px-3 py-4 text-right text-slate-700">{c.budget ? `${c.budgetType === 'USD' ? '$' : '৳'}${Number(c.budget).toLocaleString('en-US', {maximumFractionDigits:2})}` : '—'}</td>
+                  <td className="px-3 py-4 text-right text-red-600">{formatUSD(c.spendUSD)}</td><td className="px-3 py-4 text-right text-emerald-600">{formatBDT(c.revenueBDT)}</td><td className="px-3 py-4 text-right font-semibold">{c.roas ? `${c.roas.toFixed(2)}x` : '—'}</td>
+                  <td className="px-5 py-4 text-right"><span className={`px-2 py-1 rounded-full border text-[10px] font-medium ${c.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : c.status === 'Completed' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{c.status}</span></td>
+                  <td className="px-5 py-4 text-right whitespace-nowrap"><button onClick={() => { setEditing(c); setShowForm(true); }} className="text-xs font-medium text-blue-600 mr-3">Edit</button><button onClick={() => onDelete(c.id)} className="text-xs font-medium text-red-500">Delete</button></td>
+                </tr>
+              )) : <tr><td colSpan="9" className="py-14 text-center text-slate-400">No campaigns yet. Add your first campaign to start tracking performance.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showForm && <CampaignForm initialData={editing} clients={clients} onCancel={() => setShowForm(false)} onSubmit={data => { onSave(data); setShowForm(false); }}/>}
+    </div>
+  );
+}
+
+function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
+  const [data, setData] = useState(initialData || { name:'', clientId:clients[0]?.id || '', platform:'Meta', budget:'', budgetType:'USD', status:'Active', startDate:new Date().toISOString().slice(0,10), endDate:'', goal:'', resultValue:'', resultLabel:'Leads', revenueBDT:'', notes:'' });
+  const set = (key, value) => setData(prev => ({...prev, [key]:value}));
+  const input = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  return (
+    <div className="fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{initialData ? 'Edit Campaign' : 'Add Campaign'}</h2><p className="text-xs text-slate-500 mt-1">Create a campaign record; ad spend will be linked from matching ledger entries.</p></div><button onClick={onCancel} className="text-slate-400"><X size={20}/></button></div>
+        <form onSubmit={e => {e.preventDefault(); if(!data.name.trim()) return; onSubmit(data);}} className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Campaign Name"><input required value={data.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Ramadan Lead Campaign" className={input}/></Field>
+            <Field label="Client"><select value={data.clientId} onChange={e=>set('clientId',e.target.value)} className={input}><option value="">Unassigned</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
+            <Field label="Platform"><select value={data.platform} onChange={e=>set('platform',e.target.value)} className={input}><option>Meta</option><option>Google</option><option>TikTok</option><option>Other</option></select></Field>
+            <Field label="Status"><select value={data.status} onChange={e=>set('status',e.target.value)} className={input}><option>Active</option><option>Paused</option><option>Completed</option></select></Field>
+            <Field label="Budget"><input type="number" min="0" step="0.01" value={data.budget} onChange={e=>set('budget',e.target.value)} placeholder="Enter budget" className={input}/></Field>
+            <Field label="Budget Currency"><select value={data.budgetType} onChange={e=>set('budgetType',e.target.value)} className={input}><option value="USD">USD</option><option value="BDT">BDT</option></select></Field>
+            <Field label="Start Date"><input type="date" value={data.startDate} onChange={e=>set('startDate',e.target.value)} className={input}/></Field>
+            <Field label="End Date"><input type="date" value={data.endDate} onChange={e=>set('endDate',e.target.value)} className={input}/></Field>
+            <Field label="Campaign Goal"><input value={data.goal} onChange={e=>set('goal',e.target.value)} placeholder="Leads, Sales, Traffic..." className={input}/></Field>
+            <Field label="Results"><div className="grid grid-cols-2 gap-2"><input type="number" min="0" step="1" value={data.resultValue} onChange={e=>set('resultValue',e.target.value)} placeholder="0" className={input}/><select value={data.resultLabel} onChange={e=>set('resultLabel',e.target.value)} className={input}><option>Leads</option><option>Sales</option><option>Messages</option><option>Clicks</option><option>Conversions</option></select></div></Field>
+            <Field label="Revenue Attributed (BDT)"><input type="number" min="0" step="0.01" value={data.revenueBDT} onChange={e=>set('revenueBDT',e.target.value)} placeholder="Optional" className={input}/></Field>
+          </div>
+          <Field label="Notes"><textarea value={data.notes} onChange={e=>set('notes',e.target.value)} rows="3" placeholder="Campaign notes..." className={input}/></Field>
+          <div className="flex gap-3 pt-4 border-t border-slate-100"><button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium">Cancel</button><button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold">Save Campaign</button></div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function IntegrationsView() {
+  const items = [
+    ['Meta Ads','Sync ad accounts, campaigns and spend automatically.',<Globe2 size={22}/>],
+    ['Google Ads','Bring Google campaign spend into the same ledger.',<BarChart3 size={22}/>],
+    ['TikTok Ads','Track TikTok spend alongside Meta and Google.',<Target size={22}/>],
+    ['Google Sheets','Export and sync operational reports.',<Database size={22}/>],
+    ['Payments','Connect payment providers when automated verification is available.',<Link2 size={22}/>]
+  ];
+  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div><h1 className="text-2xl font-bold text-slate-900">Integrations</h1><p className="text-sm text-slate-500 mt-1">Connect your marketing stack when automated sync is enabled.</p></div>
+    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-800 text-sm flex gap-3"><ShieldCheck size={19}/><span>Integrations are marked <strong>Planned</strong> until a real API connection is available.</span></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map(([name,desc,icon])=><div key={name} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><div className="flex items-start justify-between"><div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">{icon}</div><span className="text-[10px] font-semibold uppercase px-2 py-1 rounded-full bg-slate-100 text-slate-500">Planned</span></div><h3 className="mt-4 font-semibold">{name}</h3><p className="text-sm text-slate-500 mt-1 leading-6">{desc}</p><button disabled className="mt-4 w-full px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-sm">Connect later</button></div>)}</div>
+  </div>;
+}
+
+function TeamView({ teamMembers, onAdd, onRemove }) {
+  const [email,setEmail]=useState(''); const [role,setRole]=useState('Manager');
+  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLedger for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length+1} member{teamMembers.length+1===1?'':'s'}</span></div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Workspace Members</h3><div className="mt-4 space-y-2"><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"><div><p className="font-medium">Workspace Owner</p><p className="text-xs text-slate-500">Owner · full access</p></div><span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">Owner</span></div>{teamMembers.map(m=><div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{m.email}</p><p className="text-xs text-slate-500">{m.role}</p></div><button onClick={()=>onRemove(m.id)} className="text-xs text-red-500">Remove</button></div>)}</div></div>
+      <form onSubmit={e=>{e.preventDefault();if(!email.trim())return;onAdd({email:email.trim(),role});setEmail('')}} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Invite Member</h3><p className="text-xs text-slate-500 mt-1">Local workspace placeholder until real email invitations are connected.</p><Field label="Email"><input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@email.com" className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field><Field label="Role"><select value={role} onChange={e=>setRole(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Manager</option><option>Staff</option><option>Viewer</option></select></Field><button className="w-full mt-4 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold"><UserPlus size={16} className="inline mr-2"/>Add Member</button></form>
+    </div>
+  </div>;
+}
+
+function SettingsView({ settings, onSave, onExport, onImport, onReset }) {
+  const [data,setData]=useState(settings); const fileRef=useRef(null);
+  useEffect(()=>setData(settings),[settings]);
+  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div><h1 className="text-2xl font-bold text-slate-900">Settings</h1><p className="text-sm text-slate-500 mt-1">Workspace preferences, data safety and operational controls.</p></div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-blue-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Basic preferences.</p></div></div><div className="mt-5 space-y-4">
+        <Field label="Business / Workspace Name"><input value={data.businessName} onChange={e=>setData({...data,businessName:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field>
+        <Field label="Timezone"><select value={data.timezone} onChange={e=>setData({...data,timezone:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Asia/Dhaka</option><option>UTC</option><option>Asia/Kolkata</option></select></Field>
+        <Field label="Default Report Range"><select value={data.defaultReportRange} onChange={e=>setData({...data,defaultReportRange:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>This Month</option><option>Last 7 Days</option><option>Last 30 Days</option><option>Lifetime</option></select></Field>
+        <label className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 p-3"><span><span className="block text-sm font-medium">Financial alerts</span><span className="block text-xs text-slate-500 mt-0.5">Show negative card balance warnings.</span></span><input type="checkbox" checked={!!data.alerts} onChange={e=>setData({...data,alerts:e.target.checked})} className="w-4 h-4"/></label>
+        <button onClick={()=>{onSave(data);window.alert('Settings saved.')}} className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold"><Save size={16}/>Save Settings</button>
+      </div></div>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><Database size={20} className="text-emerald-600"/><div><h3 className="font-semibold">Data & Backup</h3><p className="text-xs text-slate-500">Protect your workspace before major changes.</p></div></div><div className="mt-5 space-y-3">
+        <button onClick={onExport} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Download size={18} className="text-blue-600"/><span className="text-left"><strong className="block text-sm">Export Full Backup</strong><small className="text-xs text-slate-500">Clients, cards, transactions, campaigns and settings.</small></span></span><ArrowUpRight size={16}/></button>
+        <button onClick={()=>fileRef.current?.click()} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Upload size={18} className="text-emerald-600"/><span className="text-left"><strong className="block text-sm">Restore Backup</strong><small className="text-xs text-slate-500">Import an AdLedger JSON backup.</small></span></span><ArrowUpRight size={16}/></button>
+        <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={e=>{onImport(e.target.files?.[0]);e.target.value=''}}/>
+        <button onClick={onReset} className="w-full flex items-center justify-between rounded-xl border border-red-100 bg-red-50/60 p-4 hover:bg-red-50"><span className="flex items-center gap-3"><RotateCcw size={18} className="text-red-600"/><span className="text-left"><strong className="block text-sm text-red-700">Reset Workspace Data</strong><small className="text-xs text-red-600/70">Permanently clear locally stored data.</small></span></span><AlertCircle size={16}/></button>
+      </div></div>
+    </div>
+  </div>;
+}
+
+function MiniKpi({ title, value, icon }) {
+  return <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs text-slate-500">{title}</span><span className="text-slate-400">{icon}</span></div><div className="mt-2 text-lg font-bold text-slate-900">{value}</div></div>;
+}
+
+function Field({ label, children }) {
+  return <div><label className="block text-xs font-medium text-slate-600">{label}</label>{children}</div>;
+}
+
 
 function NavItem({ icon, label, isActive, onClick }) {
   return (
