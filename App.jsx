@@ -434,6 +434,8 @@ export default function AdLedgerApp() {
                   onDeleteCard={handleDeleteCard}
                   onViewDetails={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
                 />;
+      case 'reports':
+        return <ReportsView clients={clients} cards={cards} transactions={transactions} />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} />;
     }
   };
@@ -458,7 +460,7 @@ export default function AdLedgerApp() {
           <NavItem icon={<Users />} label="Client Management" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<Activity />} label="Transaction Ledger" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => {setCurrentView('cards'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {}} />
+          <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setIsMobileMenuOpen(false);}} />
         </nav>
         
         <div className="p-4 border-t border-slate-800">
@@ -561,6 +563,582 @@ export default function AdLedgerApp() {
 }
 
 // --- VIEWS ---
+
+// --- REPORTS VIEW ---
+// This view is read-only: it derives its numbers from the existing clients/cards/transactions.
+// It does not mutate Card Ledger, Transaction Ledger, or Client Management data.
+function ReportsView({ clients, cards, transactions }) {
+  const [datePreset, setDatePreset] = useState('This Month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [clientFilter, setClientFilter] = useState('all');
+  const [cardFilter, setCardFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  const dateRange = useMemo(() => {
+    if (datePreset === 'Custom') {
+      return { start: customStart || null, end: customEnd || null };
+    }
+    return getPresetDates(datePreset);
+  }, [datePreset, customStart, customEnd]);
+
+  const inRange = (dateValue) => {
+    if (!dateValue) return false;
+    const date = String(dateValue).slice(0, 10);
+    if (dateRange.start && date < dateRange.start) return false;
+    if (dateRange.end && date > dateRange.end) return false;
+    return true;
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      if (!inRange(t.date)) return false;
+      if (clientFilter !== 'all' && t.clientId !== clientFilter) return false;
+      if (cardFilter !== 'all' && t.cardId !== cardFilter) return false;
+      if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+      return true;
+    });
+  }, [transactions, dateRange.start, dateRange.end, clientFilter, cardFilter, typeFilter]);
+
+  const report = useMemo(() => {
+    const result = {
+      revenueBDT: 0,
+      bdtOut: 0,
+      usdPurchased: 0,
+      usdSpent: 0,
+      taxUSD: 0,
+      feesUSD: 0,
+      cashOutBDT: 0,
+      usdPurchaseBDT: 0,
+      transactionCount: filteredTransactions.length
+    };
+
+    filteredTransactions.forEach(t => {
+      if (t.type === 'PAYMENT_RECEIVED') {
+        result.revenueBDT += parseFloat(t.amountBDT || 0);
+      }
+
+      if (t.type === 'USD_PURCHASE') {
+        const bdt = parseFloat(t.amountBDT || 0);
+        const charge = parseFloat(t.cashOutCharge || 0);
+        const usd = parseFloat(t.amountUSD || 0);
+        result.usdPurchaseBDT += bdt;
+        result.cashOutBDT += charge;
+        result.usdPurchased += usd;
+        result.bdtOut += bdt + charge;
+      }
+
+      if (t.type === 'AD_SPEND') {
+        result.usdSpent += parseFloat(t.amountUSD || 0);
+        result.taxUSD += parseFloat(t.taxUSD || 0);
+      }
+
+      if (t.type === 'FEE') {
+        result.feesUSD += parseFloat(t.amountUSD || 0);
+      }
+    });
+
+    const totalUSDOut = result.usdSpent + result.taxUSD + result.feesUSD;
+    const totalBDTCost = result.usdPurchaseBDT + result.cashOutBDT;
+    const effectiveRate = result.usdPurchased > 0 ? totalBDTCost / result.usdPurchased : 0;
+    const adCostBDT = (result.usdSpent + result.taxUSD) * effectiveRate;
+    const profitBDT = result.revenueBDT - adCostBDT;
+    const margin = result.revenueBDT > 0 ? (profitBDT / result.revenueBDT) * 100 : 0;
+
+    return {
+      ...result,
+      totalUSDOut,
+      totalBDTCost,
+      effectiveRate,
+      adCostBDT,
+      profitBDT,
+      margin,
+      netBDT: result.revenueBDT - result.bdtOut
+    };
+  }, [filteredTransactions]);
+
+  const clientRows = useMemo(() => {
+    const map = {};
+    clients.forEach(c => {
+      map[c.id] = {
+        id: c.id,
+        name: c.name || 'Unnamed Client',
+        revenue: 0,
+        adSpend: 0,
+        tax: 0,
+        profit: 0,
+        transactions: 0
+      };
+    });
+
+    filteredTransactions.forEach(t => {
+      if (!t.clientId) return;
+      if (!map[t.clientId]) {
+        const fallback = clients.find(c => c.id === t.clientId);
+        map[t.clientId] = {
+          id: t.clientId,
+          name: fallback?.name || 'Unknown Client',
+          revenue: 0,
+          adSpend: 0,
+          tax: 0,
+          profit: 0,
+          transactions: 0
+        };
+      }
+
+      const row = map[t.clientId];
+      row.transactions += 1;
+
+      if (t.type === 'PAYMENT_RECEIVED') row.revenue += parseFloat(t.amountBDT || 0);
+      if (t.type === 'AD_SPEND') {
+        row.adSpend += parseFloat(t.amountUSD || 0);
+        row.tax += parseFloat(t.taxUSD || 0);
+      }
+    });
+
+    const rate = report.effectiveRate || 0;
+    return Object.values(map)
+      .map(row => ({
+        ...row,
+        costBDT: (row.adSpend + row.tax) * rate,
+        profit: row.revenue - ((row.adSpend + row.tax) * rate)
+      }))
+      .filter(row => row.transactions > 0)
+      .sort((a, b) => b.profit - a.profit);
+  }, [clients, filteredTransactions, report.effectiveRate]);
+
+  const cardRows = useMemo(() => {
+    const map = {};
+    cards.forEach(c => {
+      map[c.id] = {
+        id: c.id,
+        name: c.name || 'Unnamed Card',
+        purchased: 0,
+        adSpend: 0,
+        tax: 0,
+        fees: 0,
+        current: parseFloat(c.initialBalance || 0)
+      };
+    });
+
+    filteredTransactions.forEach(t => {
+      if (!t.cardId || !map[t.cardId]) return;
+      const row = map[t.cardId];
+
+      if (t.type === 'USD_PURCHASE') row.purchased += parseFloat(t.amountUSD || 0);
+      if (t.type === 'AD_SPEND') {
+        row.adSpend += parseFloat(t.amountUSD || 0);
+        row.tax += parseFloat(t.taxUSD || 0);
+      }
+      if (t.type === 'FEE') row.fees += parseFloat(t.amountUSD || 0);
+    });
+
+    return Object.values(map).map(row => ({
+      ...row,
+      current: row.current + row.purchased - row.adSpend - row.tax - row.fees
+    }));
+  }, [cards, filteredTransactions]);
+
+  const dailyChart = useMemo(() => {
+    const map = {};
+    filteredTransactions.forEach(t => {
+      const key = String(t.date || '').slice(0, 10);
+      if (!key) return;
+      if (!map[key]) map[key] = { date: key, revenue: 0, adSpend: 0, usdPurchased: 0 };
+
+      if (t.type === 'PAYMENT_RECEIVED') map[key].revenue += parseFloat(t.amountBDT || 0);
+      if (t.type === 'AD_SPEND') map[key].adSpend += parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0);
+      if (t.type === 'USD_PURCHASE') map[key].usdPurchased += parseFloat(t.amountUSD || 0);
+    });
+
+    return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredTransactions]);
+
+  const expenseChart = [
+    { name: 'Ad Spend', value: report.usdSpent },
+    { name: 'Tax', value: report.taxUSD },
+    { name: 'Fees', value: report.feesUSD }
+  ];
+
+  const exportCSV = () => {
+    const headers = ['Date', 'Type', 'Description', 'Client', 'Card', 'BDT In', 'BDT Out', 'USD In', 'USD Out'];
+    const rows = filteredTransactions.map(t => {
+      const client = clients.find(c => c.id === t.clientId)?.name || '';
+      const card = cards.find(c => c.id === t.cardId)?.name || '';
+      const bdtIn = t.type === 'PAYMENT_RECEIVED' ? parseFloat(t.amountBDT || 0) : 0;
+      const bdtOut = t.type === 'USD_PURCHASE'
+        ? parseFloat(t.amountBDT || 0) + parseFloat(t.cashOutCharge || 0)
+        : 0;
+      const usdIn = t.type === 'USD_PURCHASE' ? parseFloat(t.amountUSD || 0) : 0;
+      const usdOut = t.type === 'AD_SPEND'
+        ? parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0)
+        : t.type === 'FEE' ? parseFloat(t.amountUSD || 0) : 0;
+
+      return [
+        t.date || '',
+        t.type || '',
+        t.description || t.source || '',
+        client,
+        card,
+        bdtIn.toFixed(2),
+        bdtOut.toFixed(2),
+        usdIn.toFixed(2),
+        usdOut.toFixed(2)
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `adledger-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const resetFilters = () => {
+    setDatePreset('This Month');
+    setCustomStart('');
+    setCustomEnd('');
+    setClientFilter('all');
+    setCardFilter('all');
+    setTypeFilter('all');
+  };
+
+  const selectedRangeLabel = datePreset === 'Custom'
+    ? `${customStart || 'Start'} → ${customEnd || 'End'}`
+    : datePreset;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Financial performance from your existing AdLedger data.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={datePreset}
+            onChange={e => setDatePreset(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option>Today</option>
+            <option>Yesterday</option>
+            <option>This Week</option>
+            <option>Last Week</option>
+            <option>This Month</option>
+            <option>Last Month</option>
+            <option>This Year</option>
+            <option>Last Year</option>
+            <option>Lifetime</option>
+            <option>Custom</option>
+          </select>
+
+          <select
+            value={clientFilter}
+            onChange={e => setClientFilter(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Clients</option>
+            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+
+          <select
+            value={cardFilter}
+            onChange={e => setCardFilter(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Cards</option>
+            {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+
+          <select
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Transactions</option>
+            <option value="PAYMENT_RECEIVED">Client Payment</option>
+            <option value="USD_PURCHASE">Buy USD</option>
+            <option value="AD_SPEND">Meta Ads</option>
+            <option value="FEE">Card Fee</option>
+          </select>
+
+          <button
+            onClick={resetFilters}
+            className="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+          >
+            Reset
+          </button>
+
+          <button
+            onClick={exportCSV}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            <Download size={15} /> Export CSV
+          </button>
+
+          <button
+            onClick={() => window.print()}
+            className="px-3 py-2 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+          >
+            Print / PDF
+          </button>
+        </div>
+      </div>
+
+      {datePreset === 'Custom' && (
+        <div className="flex flex-wrap items-center gap-3 bg-white border border-slate-200 rounded-xl p-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Start Date</label>
+            <input
+              type="date"
+              value={customStart}
+              onChange={e => setCustomStart(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">End Date</label>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={e => setCustomEnd(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <span className="text-xs text-slate-500 mt-5">{selectedRangeLabel}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <ReportMetric title="Total BDT Received" value={formatBDT(report.revenueBDT)} />
+        <ReportMetric title="Total BDT Cost" value={formatBDT(report.totalBDTCost)} />
+        <ReportMetric title="Net BDT" value={formatBDT(report.netBDT)} />
+        <ReportMetric title="USD Purchased" value={formatUSD(report.usdPurchased)} />
+        <ReportMetric title="USD Spent" value={formatUSD(report.totalUSDOut)} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <ReportMetric title="C.O Charge" value={formatBDT(report.cashOutBDT)} />
+        <ReportMetric title="Tax" value={formatUSD(report.taxUSD)} />
+        <ReportMetric title="Fees" value={formatUSD(report.feesUSD)} />
+        <ReportMetric title="Profit" value={formatBDT(report.profitBDT)} />
+        <ReportMetric title="Profit Margin" value={`${report.margin.toFixed(1)}%`} />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-slate-800">Revenue vs Ad Cost</h3>
+              <p className="text-xs text-slate-500">BDT revenue and USD ad cost over the selected period.</p>
+            </div>
+          </div>
+          <div className="h-72">
+            {dailyChart.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dailyChart}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" strokeWidth={2} />
+                  <Line type="monotone" dataKey="adSpend" name="Ad Cost (USD)" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <ReportEmptyState />
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <h3 className="font-semibold text-slate-800 mb-1">USD Expense Breakdown</h3>
+          <p className="text-xs text-slate-500 mb-4">Meta Ads, tax and card fees.</p>
+          <div className="h-72">
+            {expenseChart.some(x => x.value > 0) ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={expenseChart}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" name="USD" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <ReportEmptyState />
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h3 className="font-semibold text-slate-800">Client Performance</h3>
+            <p className="text-xs text-slate-500 mt-1">Revenue, ad cost and estimated profit.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="text-left px-5 py-3 font-medium">Client</th>
+                  <th className="text-right px-4 py-3 font-medium">Revenue</th>
+                  <th className="text-right px-4 py-3 font-medium">Ad Cost</th>
+                  <th className="text-right px-5 py-3 font-medium">Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clientRows.length ? clientRows.map(row => (
+                  <tr key={row.id} className="border-t border-slate-100">
+                    <td className="px-5 py-3 font-medium text-slate-700">{row.name}</td>
+                    <td className="px-4 py-3 text-right">{formatBDT(row.revenue)}</td>
+                    <td className="px-4 py-3 text-right">{formatBDT(row.costBDT)}</td>
+                    <td className={`px-5 py-3 text-right font-semibold ${row.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatBDT(row.profit)}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400">No client data for this period.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h3 className="font-semibold text-slate-800">Card Performance</h3>
+            <p className="text-xs text-slate-500 mt-1">Purchased, spent and calculated period-end balance.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="text-left px-5 py-3 font-medium">Card</th>
+                  <th className="text-right px-4 py-3 font-medium">Purchased</th>
+                  <th className="text-right px-4 py-3 font-medium">Spent</th>
+                  <th className="text-right px-5 py-3 font-medium">Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cardRows.length ? cardRows.map(row => (
+                  <tr key={row.id} className="border-t border-slate-100">
+                    <td className="px-5 py-3 font-medium text-slate-700">{row.name}</td>
+                    <td className="px-4 py-3 text-right">{formatUSD(row.purchased)}</td>
+                    <td className="px-4 py-3 text-right">{formatUSD(row.adSpend + row.tax + row.fees)}</td>
+                    <td className={`px-5 py-3 text-right font-semibold ${row.current >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+                      {formatUSD(row.current)}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400">No card data for this period.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-slate-800">Detailed Report</h3>
+              <p className="text-xs text-slate-500 mt-1">{report.transactionCount} transaction(s) in the selected range.</p>
+            </div>
+            <span className="text-xs text-slate-500">{selectedRangeLabel}</span>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm whitespace-nowrap">
+            <thead className="bg-slate-50 text-slate-500">
+              <tr>
+                <th className="text-left px-5 py-3 font-medium">Date</th>
+                <th className="text-left px-4 py-3 font-medium">Type</th>
+                <th className="text-left px-4 py-3 font-medium">Client / Card</th>
+                <th className="text-right px-4 py-3 font-medium">BDT In</th>
+                <th className="text-right px-4 py-3 font-medium">BDT Out</th>
+                <th className="text-right px-4 py-3 font-medium">USD In</th>
+                <th className="text-right px-5 py-3 font-medium">USD Out</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.length ? filteredTransactions.map(t => {
+                const client = clients.find(c => c.id === t.clientId)?.name;
+                const card = cards.find(c => c.id === t.cardId)?.name;
+                const bdtIn = t.type === 'PAYMENT_RECEIVED' ? parseFloat(t.amountBDT || 0) : 0;
+                const bdtOut = t.type === 'USD_PURCHASE'
+                  ? parseFloat(t.amountBDT || 0) + parseFloat(t.cashOutCharge || 0)
+                  : 0;
+                const usdIn = t.type === 'USD_PURCHASE' ? parseFloat(t.amountUSD || 0) : 0;
+                const usdOut = t.type === 'AD_SPEND'
+                  ? parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0)
+                  : t.type === 'FEE' ? parseFloat(t.amountUSD || 0) : 0;
+
+                return (
+                  <tr key={t.id} className="border-t border-slate-100">
+                    <td className="px-5 py-3">{formatDate(t.date)}</td>
+                    <td className="px-4 py-3">{t.type}</td>
+                    <td className="px-4 py-3">{client || card || t.source || t.description || '—'}</td>
+                    <td className="px-4 py-3 text-right text-green-600">{bdtIn ? formatBDT(bdtIn) : '—'}</td>
+                    <td className="px-4 py-3 text-right text-red-600">{bdtOut ? formatBDT(bdtOut) : '—'}</td>
+                    <td className="px-4 py-3 text-right text-green-600">{usdIn ? formatUSD(usdIn) : '—'}</td>
+                    <td className="px-5 py-3 text-right text-red-600">{usdOut ? formatUSD(usdOut) : '—'}</td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan="7" className="px-5 py-10 text-center text-slate-400">
+                    No transactions found for the selected filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          aside, header, button, select, input { display: none !important; }
+          main { overflow: visible !important; height: auto !important; }
+          main > div { overflow: visible !important; }
+          body { background: white !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function ReportMetric({ title, value }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-4">
+      <p className="text-xs font-medium text-slate-500">{title}</p>
+      <p className="text-xl font-bold text-slate-900 mt-2">{value}</p>
+    </div>
+  );
+}
+
+function ReportEmptyState() {
+  return (
+    <div className="h-full flex items-center justify-center text-sm text-slate-400">
+      No report data for the selected period.
+    </div>
+  );
+}
 
 function DashboardView({ metrics, chartData, transactions, clients }) {
   return (
