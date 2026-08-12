@@ -219,7 +219,8 @@ export default function AdLedgerApp() {
   // Modal State
   const [activeModal, setActiveModal] = useState(null); 
   const [selectedCard, setSelectedCard] = useState(null); 
-  const [selectedClient, setSelectedClient] = useState(null); 
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedClientHistory, setSelectedClientHistory] = useState(null); 
 
   // --- FINANCIAL CALCULATIONS (Auto-derived from transactions) ---
   const metrics = useMemo(() => {
@@ -361,26 +362,18 @@ export default function AdLedgerApp() {
     }
   };
 
-  const handleToggleClientStatus = (client) => {
-    setClients(prev => prev.map(c => {
-      if (c.id !== client.id) return c;
-
-      if (c.currentlyWorking) {
-        return {
-          ...c,
-          currentlyWorking: false,
-          status: 'Completed',
-          endDate: new Date().toISOString().split('T')[0]
-        };
+  const handleMarkClientStatus = (client) => {
+    const isWorking = client.currentlyWorking || getClientDisplayStatus(client).includes('Active');
+    if (isWorking) {
+      const today = new Date().toISOString().split('T')[0];
+      if (window.confirm(`Mark ${client.name} as completed?`)) {
+        setClients(prev => prev.map(c => c.id === client.id ? { ...c, status: 'Completed', currentlyWorking: false, endDate: c.endDate || today } : c));
       }
-
-      return {
-        ...c,
-        currentlyWorking: true,
-        status: 'Active',
-        endDate: ''
-      };
-    }));
+    } else {
+      if (window.confirm(`Mark ${client.name} as active/currently working?`)) {
+        setClients(prev => prev.map(c => c.id === client.id ? { ...c, status: 'Active', currentlyWorking: true, endDate: '' } : c));
+      }
+    }
   };
 
   const openPaymentForClient = (client) => {
@@ -407,8 +400,6 @@ export default function AdLedgerApp() {
                   onDeleteClient={handleDeleteClient}
                   onReceivePayment={openPaymentForClient}
                   onAddAdSpend={openAdSpendForClient}
-                   onViewHistory={(c) => { setSelectedClient(c); setActiveModal('client-history'); }}
-                   onToggleStatus={handleToggleClientStatus}
                 />;
       case 'ledger': return <LedgerView transactions={transactions} clients={clients} cards={cards} />;
       case 'cards': 
@@ -463,7 +454,7 @@ export default function AdLedgerApp() {
             </button>
             <div className="hidden sm:flex items-center bg-slate-100 rounded-md px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500">
               <Search size={18} className="text-slate-400" />
-              <input type="text" placeholder="Search transactions..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
+              <input type="text" placeholder="Search..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
             </div>
           </div>
           
@@ -521,6 +512,13 @@ export default function AdLedgerApp() {
           <ClientForm initialData={activeModal === 'edit-client' ? selectedClient : null} onSubmit={handleSaveClient} onCancel={() => setActiveModal(null)} />
         </Modal>
       )}
+      {selectedClientHistory && (
+        <ClientTransactionHistoryModal
+          client={selectedClientHistory}
+          transactions={transactions}
+          onClose={() => setSelectedClientHistory(null)}
+        />
+      )}
       {activeModal === 'client-details' && selectedClient && (
         <Modal title={`Client Dashboard: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-6xl">
            <ClientDetailsModal 
@@ -531,15 +529,6 @@ export default function AdLedgerApp() {
               onReceivePayment={() => openPaymentForClient(selectedClient)}
               onAdSpend={() => openAdSpendForClient(selectedClient)}
             />
-        </Modal>
-      )}
-      {activeModal === 'client-history' && selectedClient && (
-        <Modal title={`Transaction History: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-5xl">
-          <ClientTransactionHistoryModal
-            client={selectedClient}
-            transactions={transactions}
-            metrics={metrics}
-          />
         </Modal>
       )}
 
@@ -606,317 +595,204 @@ function DashboardView({ metrics, chartData, transactions, clients }) {
 }
 
 function LedgerView({ transactions, clients, cards }) {
+  const [dateRange, setDateRange] = useState({ label: 'Lifetime', start: null, end: null });
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState('ALL');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTxForModal, setSelectedTxForModal] = useState(null);
 
-  const filtered = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const flatTransactions = useMemo(() => {
+    let list = [];
+    transactions.forEach(t => {
+      const client = clients.find(c => c.id === t.clientId);
+      const card = cards.find(c => c.id === t.cardId);
+      const clientName = client ? client.name : '';
+      const cardName = card ? card.name : '';
 
-    return [...transactions]
-      .filter(tx => {
-        const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
-
-        const search = searchTerm.trim().toLowerCase();
-        const client = clients.find(c => c.id === tx.clientId);
-        const card = cards.find(c => c.id === tx.cardId);
-
-        const searchableText = [
-          tx.notes,
-          tx.adAccount,
-          tx.campaign,
-          tx.type,
-          client?.name,
-          client?.company,
-          card?.name
-        ].filter(Boolean).join(' ').toLowerCase();
-
-        const matchesSearch = !search || searchableText.includes(search);
-
-        const txDate = new Date(tx.date);
-        txDate.setHours(0, 0, 0, 0);
-
-        let matchesDate = true;
-        if (dateFilter === 'TODAY') {
-          matchesDate = txDate.getTime() === today.getTime();
-        } else if (dateFilter === 'THIS_WEEK') {
-          const weekStart = new Date(today);
-          const day = weekStart.getDay();
-          const diff = day === 0 ? 6 : day - 1;
-          weekStart.setDate(weekStart.getDate() - diff);
-          matchesDate = txDate >= weekStart && txDate <= today;
-        } else if (dateFilter === 'THIS_MONTH') {
-          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-          matchesDate = txDate >= monthStart && txDate <= today;
+      if (t.type === 'AD_SPEND') {
+        const spend = parseFloat(t.amountUSD || 0);
+        const tax = parseFloat(t.taxUSD || 0);
+        
+        if (spend > 0) {
+          list.push({
+            ...t, displayType: 'AD_SPEND', inBDT: null, outUSD: spend,
+            clientName, cardName, entityDesc: clientName,
+            desc: t.notes || 'Meta Ads Spend',
+            searchString: `${t.notes||''} ${clientName} ${cardName} Meta Ads`.toLowerCase()
+          });
         }
-
-        return matchesType && matchesSearch && matchesDate;
-      })
-      .sort((a, b) => {
-        const timeA = a.timestamp || new Date(a.date).getTime();
-        const timeB = b.timestamp || new Date(b.date).getTime();
-        return timeB - timeA;
-      });
-  }, [transactions, clients, cards, typeFilter, searchTerm, dateFilter]);
-
-  const ledgerSummary = useMemo(() => {
-    let bdtIn = 0;
-    let bdtOut = 0;
-    let usdIn = 0;
-    let usdOut = 0;
-
-    filtered.forEach(tx => {
-      if (tx.type === 'PAYMENT_RECEIVED') {
-        bdtIn += parseFloat(tx.amountBDT || 0);
-      }
-
-      if (tx.type === 'USD_PURCHASE') {
-        bdtOut += parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0);
-        usdIn += parseFloat(tx.amountUSD || 0);
-      }
-
-      if (tx.type === 'AD_SPEND') {
-        usdOut += parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0);
-      }
-
-      if (tx.type === 'FEE') {
-        usdOut += parseFloat(tx.amountUSD || 0);
+        if (tax > 0) {
+          list.push({
+            ...t, id: t.id + '_tax', displayType: 'TAX', inBDT: null, outUSD: tax,
+            desc: 'Meta Ads Tax' + (t.notes ? ' - ' + t.notes : ''),
+            clientName, cardName, entityDesc: clientName,
+            searchString: `meta ads tax ${t.notes||''} ${clientName} ${cardName}`.toLowerCase()
+          });
+        }
+      } else if (t.type === 'USD_PURCHASE') {
+        list.push({
+          ...t, displayType: 'USD_PURCHASE', inBDT: parseFloat(t.amountBDT || 0), outUSD: parseFloat(t.amountUSD || 0),
+          clientName, cardName, entityDesc: cardName,
+          desc: t.notes || 'Buy USD',
+          searchString: `${t.notes||''} ${cardName} USD Purchase`.toLowerCase()
+        });
+      } else if (t.type === 'PAYMENT_RECEIVED') {
+        list.push({
+          ...t, displayType: 'PAYMENT_RECEIVED', inBDT: parseFloat(t.amountBDT || 0), outUSD: null,
+          clientName, cardName, entityDesc: clientName,
+          desc: t.notes || 'Payment Received',
+          searchString: `${t.notes||''} ${clientName} Payment Received`.toLowerCase()
+        });
+      } else {
+        list.push({
+          ...t, displayType: t.type, inBDT: parseFloat(t.amountBDT || 0), outUSD: parseFloat(t.amountUSD || 0),
+          clientName, cardName, entityDesc: clientName || cardName,
+          desc: t.notes || t.type,
+          searchString: `${t.notes||''} ${clientName} ${cardName} ${t.type}`.toLowerCase()
+        });
       }
     });
+    
+    return list.sort((a, b) => {
+      const tA = a.timestamp || new Date(a.date).getTime();
+      const tB = b.timestamp || new Date(b.date).getTime();
+      return tB - tA; // Newest first
+    });
+  }, [transactions, clients, cards]);
 
-    return {
-      bdtIn,
-      bdtOut,
-      netBDT: bdtIn - bdtOut,
-      usdIn,
-      usdOut,
-      netUSD: usdIn - usdOut,
-      count: filtered.length
+  const filteredTransactions = useMemo(() => {
+    return flatTransactions.filter(t => {
+      if (dateRange.start && dateRange.end) {
+        if (t.date < dateRange.start || t.date > dateRange.end) return false;
+      }
+      if (typeFilter !== 'ALL' && t.displayType !== typeFilter) return false;
+      if (searchQuery) {
+        if (!t.searchString.includes(searchQuery.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [flatTransactions, dateRange, typeFilter, searchQuery]);
+
+  const summary = useMemo(() => {
+    let totalBDTIn = 0;
+    let totalUSDOut = 0;
+    filteredTransactions.forEach(t => {
+      if (t.inBDT) totalBDTIn += t.inBDT;
+      if (t.outUSD) totalUSDOut += t.outUSD;
+    });
+    return { totalBDTIn, totalUSDOut, count: filteredTransactions.length };
+  }, [filteredTransactions]);
+
+  const getTypeLabel = (type) => {
+    const map = {
+      'USD_PURCHASE': 'Buy USD',
+      'AD_SPEND': 'Meta Ads',
+      'TAX': 'Tax',
+      'PAYMENT_RECEIVED': 'Receive BDT',
+      'FEE': 'Card Fee'
     };
-  }, [filtered]);
-
-  const clearFilters = () => {
-    setTypeFilter('ALL');
-    setDateFilter('ALL');
-    setSearchTerm('');
+    return map[type] || type;
   };
 
-  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || searchTerm.trim() !== '';
-
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
-          <p className="text-sm text-slate-500 mt-1">A clear view of every BDT and USD movement.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-            value={typeFilter}
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search transactions..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+            />
+          </div>
+          <select 
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none cursor-pointer"
+            value={typeFilter} 
             onChange={(e) => setTypeFilter(e.target.value)}
           >
-            <option value="ALL">All Transactions</option>
-            <option value="PAYMENT_RECEIVED">Payments Received</option>
-            <option value="USD_PURCHASE">USD Purchases</option>
-            <option value="AD_SPEND">Meta Ad Spend</option>
-            <option value="FEE">Fees</option>
+            <option value="ALL">All Types</option>
+            <option value="USD_PURCHASE">Buy USD</option>
+            <option value="AD_SPEND">Meta Ads</option>
+            <option value="TAX">Tax</option>
+            <option value="PAYMENT_RECEIVED">Receive BDT</option>
+            <option value="FEE">Card Fee</option>
           </select>
-
-          <select
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+          <button 
+            onClick={() => setIsDatePickerOpen(true)} 
+            className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
           >
-            <option value="ALL">All Dates</option>
-            <option value="TODAY">Today</option>
-            <option value="THIS_WEEK">This Week</option>
-            <option value="THIS_MONTH">This Month</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search client, card, campaign, source..."
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
-          />
-        </div>
-
-        {hasFilters && (
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-medium text-red-600 hover:bg-red-50"
-          >
-            Clear Filters
+            <CalendarDays size={16} className="text-blue-600" /> 
+            {dateRange.label === 'Lifetime' ? 'Filter Date' : dateRange.label}
           </button>
-        )}
+          {dateRange.label !== 'Lifetime' && (
+            <button onClick={() => setDateRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline font-medium">Clear</button>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">BDT In</p>
-          <p className="text-lg font-bold text-green-600 mt-1">{formatBDT(ledgerSummary.bdtIn)}</p>
-        </div>
+      {isDatePickerOpen && (
+        <DateRangePickerModal 
+          onClose={() => setIsDatePickerOpen(false)} 
+          onApply={(range) => { setDateRange(range); setIsDatePickerOpen(false); }} 
+          initialRange={dateRange}
+        />
+      )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">BDT Out</p>
-          <p className="text-lg font-bold text-red-600 mt-1">{formatBDT(ledgerSummary.bdtOut)}</p>
-        </div>
+      {selectedTxForModal && (
+        <LedgerTransactionModal tx={selectedTxForModal} onClose={() => setSelectedTxForModal(null)} />
+      )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">Net BDT</p>
-          <p className={`text-lg font-bold mt-1 ${ledgerSummary.netBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-            {formatBDT(ledgerSummary.netBDT)}
-          </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Total BDT In</p>
+          <p className="text-xl font-bold text-green-600">{formatBDT(summary.totalBDTIn)}</p>
         </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">USD In</p>
-          <p className="text-lg font-bold text-green-600 mt-1">{formatUSD(ledgerSummary.usdIn)}</p>
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Total USD Out</p>
+          <p className="text-xl font-bold text-slate-800">{formatUSD(summary.totalUSDOut)}</p>
         </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">USD Out</p>
-          <p className="text-lg font-bold text-red-600 mt-1">{formatUSD(ledgerSummary.usdOut)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">Transactions</p>
-          <p className="text-lg font-bold text-slate-900 mt-1">{ledgerSummary.count}</p>
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Transactions</p>
+          <p className="text-xl font-bold text-blue-600">{summary.count}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-slate-800">All Transactions</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Buy USD = BDT out + USD in • Meta Ads = USD out
-            </p>
-          </div>
-          <span className="text-xs font-medium text-slate-500">
-            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
-          </span>
-        </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
               <tr>
                 <th className="px-5 py-3">Date</th>
                 <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Entity / Details</th>
-                <th className="px-5 py-3 text-right">BDT In</th>
-                <th className="px-5 py-3 text-right">BDT Out</th>
-                <th className="px-5 py-3 text-right">USD In</th>
-                <th className="px-5 py-3 text-right">USD Out</th>
+                <th className="px-5 py-3">Description</th>
+                <th className="px-5 py-3">Card / Client</th>
+                <th className="px-5 py-3 text-right">In (BDT)</th>
+                <th className="px-5 py-3 text-right">Out (USD)</th>
               </tr>
             </thead>
-
             <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="text-center py-10 text-slate-500">
-                    No transactions found.
+              {filteredTransactions.length === 0 && (
+                <tr><td colSpan="6" className="text-center py-12 text-slate-500">No transactions found.</td></tr>
+              )}
+              {filteredTransactions.map(tx => (
+                <tr key={tx.id} onClick={() => setSelectedTxForModal(tx)} className="hover:bg-blue-50/50 cursor-pointer transition-colors group">
+                  <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
+                  <td className="px-5 py-3 font-medium text-slate-700">{getTypeLabel(tx.displayType)}</td>
+                  <td className="px-5 py-3 text-slate-600 max-w-[200px] truncate" title={tx.desc}>{tx.desc}</td>
+                  <td className="px-5 py-3 font-medium text-slate-800">{tx.entityDesc || '—'}</td>
+                  <td className="px-5 py-3 text-right font-semibold text-green-600">
+                    {tx.inBDT ? formatBDT(tx.inBDT) : '—'}
+                  </td>
+                  <td className="px-5 py-3 text-right font-semibold text-slate-800">
+                    {tx.outUSD ? formatUSD(tx.outUSD) : '—'}
                   </td>
                 </tr>
-              )}
-
-              {filtered.map(tx => {
-                const client = clients.find(c => c.id === tx.clientId);
-                const card = cards.find(c => c.id === tx.cardId);
-
-                const isPayment = tx.type === 'PAYMENT_RECEIVED';
-                const isPurchase = tx.type === 'USD_PURCHASE';
-                const isAdSpend = tx.type === 'AD_SPEND';
-                const isFee = tx.type === 'FEE';
-
-                const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
-                const bdtOut = isPurchase
-                  ? parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)
-                  : 0;
-                const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
-                const usdOut = isAdSpend
-                  ? parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)
-                  : isFee
-                    ? parseFloat(tx.amountUSD || 0)
-                    : 0;
-
-                return (
-                  <tr key={tx.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
-
-                    <td className="px-5 py-4">
-                      <TransactionTypeBadge type={tx.type} />
-                    </td>
-
-                    <td className="px-5 py-4 min-w-[260px]">
-                      {client && (
-                        <div className="font-semibold text-slate-800">{client.name}</div>
-                      )}
-
-                      {card && (
-                        <div className="text-xs text-slate-500">Card: {card.name}</div>
-                      )}
-
-                      {tx.type === 'USD_PURCHASE' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'USD Purchase'} • Effective Rate: ৳
-                          {usdIn > 0
-                            ? ((parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) / usdIn).toFixed(2)
-                            : '0.00'}
-                        </div>
-                      )}
-
-                      {tx.type === 'AD_SPEND' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.adAccount || 'Ad Account'}{tx.campaign ? ` • ${tx.campaign}` : ''}
-                        </div>
-                      )}
-
-                      {tx.type === 'PAYMENT_RECEIVED' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'Client payment received'}
-                        </div>
-                      )}
-
-                      {tx.type === 'FEE' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'Card fee'}
-                        </div>
-                      )}
-
-                      {!client && !card && !isPurchase && !isAdSpend && !isPayment && !isFee && (
-                        <div className="text-xs text-slate-500">{tx.notes || '—'}</div>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-green-600">
-                      {bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-red-600">
-                      {bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-green-600">
-                      {usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-red-600">
-                      {usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
+              ))}
             </tbody>
           </table>
         </div>
@@ -925,9 +801,72 @@ function LedgerView({ transactions, clients, cards }) {
   );
 }
 
-function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onViewHistory, onReceivePayment, onAddAdSpend, onToggleStatus }) {
+function LedgerTransactionModal({ tx, onClose }) {
+  return (
+    <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
+      <div className="space-y-4 text-sm">
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
+          <div>
+            <span className="text-xs text-slate-400 uppercase font-medium block">Reference ID</span>
+            <span className="font-mono text-xs font-bold text-slate-800">{tx.id.replace('_tax', '')}</span>
+          </div>
+          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">{tx.displayType.replace('_', ' ')}</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Date</span><span className="font-bold text-slate-800">{formatDate(tx.date)}</span></div>
+          {tx.clientName && <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Client</span><span className="font-bold text-slate-800">{tx.clientName}</span></div>}
+          {tx.cardName && <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Card</span><span className="font-bold text-blue-600">{tx.cardName}</span></div>}
+          {tx.type === 'USD_PURCHASE' && <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Source</span><span className="font-bold text-slate-800">{tx.notes || 'N/A'}</span></div>}
+        </div>
+
+        {tx.type === 'USD_PURCHASE' && (
+          <>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
+              <div className="flex justify-between"><span>BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(tx.amountBDT)}</span></div>
+              <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-slate-800">{formatBDT(tx.cashOutCharge)}</span></div>
+              <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total Cost:</span><span className="text-slate-900">{formatBDT(parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0))}</span></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">USD Received</span><span className="font-bold text-green-600">{formatUSD(tx.amountUSD)}</span></div>
+              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded"><span className="text-blue-600 block font-medium">Effective Rate</span><span className="font-bold text-blue-700">৳{((parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0)) / parseFloat(tx.amountUSD||1)).toFixed(2)}</span></div>
+            </div>
+          </>
+        )}
+
+        {(tx.type === 'AD_SPEND') && (
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
+            <div className="flex justify-between"><span>Ad Spend:</span><span className="font-medium text-slate-800">{formatUSD(tx.amountUSD)}</span></div>
+            <div className="flex justify-between"><span>Tax:</span><span className="font-medium text-slate-800">{formatUSD(tx.taxUSD)}</span></div>
+            <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total Card Deduction:</span><span className="text-red-600">{formatUSD(parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0))}</span></div>
+          </div>
+        )}
+
+        {tx.type === 'PAYMENT_RECEIVED' && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm flex justify-between font-bold">
+            <span className="text-green-800">Amount Received:</span>
+            <span className="text-green-700">{formatBDT(tx.amountBDT)}</span>
+          </div>
+        )}
+
+        <div className="p-3 bg-white border border-slate-200 rounded-lg">
+          <span className="text-xs text-slate-400 block mb-1">Description / Notes</span>
+          <p className="text-sm text-slate-800">{tx.desc || tx.notes || 'No description provided.'}</p>
+        </div>
+
+        <div className="pt-2 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800">Close</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onReceivePayment, onAddAdSpend, onClientHistory, onMarkClientStatus }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [serviceFilter, setServiceFilter] = useState('All');
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
 
   const clientStats = useMemo(() => {
     return clients.map(client => {
@@ -941,21 +880,48 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
       const profitBDT = revenue - totalCostBDT;
       const profitMargin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
       
-      return { ...client, revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, profitMargin };
+      const durationDays = getDurationDays(client);
+      const targetBudgetBDT = getExpectedBudgetBDT(client, durationDays);
+      const outstanding = targetBudgetBDT > revenue ? targetBudgetBDT - revenue : 0;
+      
+      return { ...client, revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, profitMargin, outstanding };
     });
   }, [clients, transactions, metrics.avgUSDEffectiveRate]);
 
-  const filteredClients = useMemo(() => {
-    return clientStats.filter(c => {
-      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()));
+  const sortedAndFilteredClients = useMemo(() => {
+    let result = clientStats.filter(c => {
+      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (c.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (c.email || '').toLowerCase().includes(searchTerm.toLowerCase()));
       const displayStatus = getClientDisplayStatus(c);
       const matchStatus = statusFilter === 'All' || displayStatus.includes(statusFilter);
-      return matchSearch && matchStatus;
+      const matchService = serviceFilter === 'All' || c.serviceType === serviceFilter;
+      return matchSearch && matchStatus && matchService;
     });
-  }, [clientStats, searchTerm, statusFilter]);
+
+    result.sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
+    return result;
+  }, [clientStats, searchTerm, statusFilter, serviceFilter, sortConfig]);
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) return <span className="ml-1 opacity-20 text-[10px]">▼</span>;
+    return <span className="ml-1 text-[10px] text-blue-600">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>;
+  };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
         <button onClick={onAddClient} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
@@ -963,82 +929,89 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col md:flex-row gap-3 mb-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+        <div className="relative flex-1 min-w-[200px]">
           <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search clients, business..." 
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Search clients, business, phone..." 
+            className="w-full pl-10 pr-4 py-2 border-none bg-slate-50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <select 
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white min-w-[150px]"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
+        <select className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none bg-slate-50 min-w-[140px]" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="All">All Statuses</option>
-          <option value="Active">Active / Currently Working</option>
-          <option value="Completed">Completed / Ended</option>
+          <option value="Active">Active / Working</option>
+          <option value="Completed">Completed</option>
           <option value="Paused">Paused</option>
           <option value="Inactive">Inactive</option>
+        </select>
+        <select className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none bg-slate-50 min-w-[140px]" value={serviceFilter} onChange={e => setServiceFilter(e.target.value)}>
+          <option value="All">All Services</option>
+          <option value="Meta Ads">Meta Ads</option>
+          <option value="Facebook Marketing">Facebook Marketing</option>
+          <option value="Google Ads">Google Ads</option>
+          <option value="Social Media Management">Social Media</option>
+          <option value="Content Marketing">Content Marketing</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200 select-none">
               <tr>
-                <th className="px-5 py-4">Client & Business</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4 text-right">Budget</th>
-                <th className="px-5 py-4 text-right">Revenue (BDT)</th>
-                <th className="px-5 py-4 text-right">Ad Spend (USD)</th>
-                <th className="px-5 py-4 text-right">Profit (BDT)</th>
-                <th className="px-5 py-4 text-center">Actions</th>
+                <th className="px-5 py-3 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('name')}>Client & Business <SortIcon columnKey="name"/></th>
+                <th className="px-5 py-3 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('status')}>Status <SortIcon columnKey="status"/></th>
+                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('revenue')}>Revenue (BDT) <SortIcon columnKey="revenue"/></th>
+                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('adSpendUSD')}>Ad Spend (USD) <SortIcon columnKey="adSpendUSD"/></th>
+                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('taxUSD')}>Tax (USD) <SortIcon columnKey="taxUSD"/></th>
+                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('totalCostBDT')}>Total Cost (BDT) <SortIcon columnKey="totalCostBDT"/></th>
+                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitBDT')}>Profit (BDT) <SortIcon columnKey="profitBDT"/></th>
+                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitMargin')}>Margin <SortIcon columnKey="profitMargin"/></th>
+                <th className="px-5 py-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredClients.length === 0 && <tr><td colSpan="7" className="text-center py-8 text-slate-500">No clients yet.</td></tr>}
-              {filteredClients.map(c => {
+              {sortedAndFilteredClients.length === 0 && <tr><td colSpan="9" className="text-center py-12 text-slate-500">No clients found matching your filters.</td></tr>}
+              {sortedAndFilteredClients.map(c => {
                 const displayStatus = getClientDisplayStatus(c);
                 const isWorking = displayStatus.includes('Active') || displayStatus.includes('Currently Working');
                 return (
-                <tr key={c.id} className="hover:bg-slate-50 group">
-                  <td className="px-5 py-4">
-                    <div className="font-semibold text-slate-900">{c.name}</div>
+                <tr key={c.id} className="hover:bg-slate-50 group transition-colors">
+                  <td className="px-5 py-3">
+                    <div className="font-semibold text-slate-900 cursor-pointer hover:text-blue-600" onClick={() => onViewDetails(c)}>{c.name}</div>
                     <div className="text-xs text-slate-500">{c.company}</div>
                   </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
+                  <td className="px-5 py-3">
+                    <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide uppercase
                       ${isWorking ? 'bg-green-100 text-green-700' : 
                         displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' : 
                         'bg-slate-100 text-slate-600'}`}>
                       {displayStatus}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-right text-slate-600 font-medium">
-                    {getBudgetDisplay(c.budgetType, c.budgetAmount || c.budget)}
+                  <td className="px-5 py-3 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
+                  <td className="px-5 py-3 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
+                  <td className="px-5 py-3 text-right text-slate-500">{formatUSD(c.taxUSD)}</td>
+                  <td className="px-5 py-3 text-right text-orange-600">{formatBDT(c.totalCostBDT)}</td>
+                  <td className="px-5 py-3 text-right font-bold text-slate-900">{formatBDT(c.profitBDT)}</td>
+                  <td className="px-5 py-3 text-right">
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold ${c.profitMargin > 50 ? 'text-green-700 bg-green-50' : c.profitMargin < 0 ? 'text-red-700 bg-red-50' : 'text-slate-600 bg-slate-50'}`}>
+                      {c.profitMargin.toFixed(1)}%
+                    </span>
                   </td>
-                  <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
-                  <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
-                  <td className="px-5 py-4 text-right">
-                    <div className={`font-bold ${c.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
-                    <div className={`text-[10px] font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-slate-500'}`}>
-                      Margin: {c.profitMargin.toFixed(1)}%
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    <ClientActionsMenu
+                  <td className="px-5 py-3 text-center">
+                    <ClientDropdownMenu 
                       client={c}
                       onViewDetails={() => onViewDetails(c)}
-                      onHistory={() => onViewHistory(c)}
                       onEdit={() => onEditClient(c)}
                       onReceivePayment={() => onReceivePayment(c)}
-                                            onToggleStatus={() => onToggleStatus(c)}
+                      onAddAdSpend={() => onAddAdSpend(c)}
+                      onClientHistory={() => onClientHistory(c)}
+                      onMarkStatus={() => onMarkClientStatus(c)}
                       onDelete={() => onDeleteClient(c.id)}
                     />
                   </td>
@@ -1120,7 +1093,12 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
               const timeB = b.timestamp || new Date(b.date).getTime();
               return timeB - timeA;
             });
-          const lastTx = sortedTxs[0];
+          
+          const validTxs = sortedTxs.filter(t => {
+             if (t.type === 'AD_SPEND' && parseFloat(t.amountUSD||0) <= 0) return false;
+             return true;
+          });
+          const lastTx = validTxs[0];
           const bal = metrics.cardBalances[card.id] || 0;
 
           return (
@@ -1192,7 +1170,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
           
           <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
             <CalendarDays size={14} className="text-blue-600" /> 
-            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `History: ${globalDateRange.label}`}
+            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : globalDateRange.label}
           </button>
 
           <select 
@@ -1208,8 +1186,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         </div>
       </div>
 
-      {/* NEW PERIOD SUMMARY */}
-      <div className="bg-slate-100 p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
+      {/* PERIOD SUMMARY */}
+      <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
         <div className="text-sm font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
           Selected Period: {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label}
         </div>
@@ -1259,7 +1237,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases yet.</td></tr>}
+              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases in this period.</td></tr>}
               {filteredUSDPurchases.map(tx => {
                 const bdtPaid = parseFloat(tx.amountBDT||0);
                 const coRate = parseFloat(tx.cashOutCharge||0);
@@ -1315,33 +1293,45 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
     // 2. Compute exact historical running balances (Balance After)
     const initialBal = parseFloat(card.initialBalance || 0);
     let currentRunningBal = initialBal;
-    const fullHistory = allCardTxsAsc.map(t => {
+    
+    const fullHistory = allCardTxsAsc.reduce((acc, t) => {
       let changeUSD = 0;
+      let displayTx = { ...t };
+      let includeTx = true;
+
       if (t.type === 'USD_PURCHASE') {
         changeUSD = parseFloat(t.amountUSD || 0);
-      }
-      if (t.type === 'AD_SPEND') {
+      } else if (t.type === 'AD_SPEND') {
         const spend = parseFloat(t.amountUSD || 0);
         const tax = parseFloat(t.taxUSD || 0);
-        changeUSD = -(spend + tax); // Deducts both from balance
-      }
-      if (t.type === 'FEE') {
+        if (spend <= 0) {
+            includeTx = false; // Exclude zeroes 
+        } else {
+            changeUSD = -(spend + tax); // Deducts both from mathematical balance
+        }
+      } else if (t.type === 'FEE') {
         changeUSD = -parseFloat(t.amountUSD || 0);
       }
-      currentRunningBal += changeUSD;
-      return { ...t, changeUSD, runningBal: currentRunningBal };
-    });
+
+      if (includeTx) {
+        currentRunningBal += changeUSD;
+        displayTx.changeUSD = changeUSD;
+        displayTx.runningBal = currentRunningBal;
+        acc.push(displayTx);
+      }
+      return acc;
+    }, []);
 
     // 3. Reverse for UI (Newest first)
     fullHistory.reverse();
 
-    // 4. Apply history date filter solely for visual isolation
+    // 4. Apply history date filter purely for visual isolation
     let displayedHistory = fullHistory;
     if (filterRange.start && filterRange.end) {
       displayedHistory = fullHistory.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
     }
 
-    // Diagnostics / Breakdown Verification
+    // 5. Diagnostics / Breakdown Verification
     const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
     const expBal = initialBal + stats.purchased - stats.adSpend - stats.tax - stats.fees;
     const curBal = metrics.cardBalances[card.id] || 0;
@@ -1372,7 +1362,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Meta Ad Spend</p>
-          <p className="text-base font-bold text-red-600">
+          <p className="text-base font-bold text-slate-800">
             {stats.adSpend > 0 ? '-' : ''}{formatUSD(stats.adSpend)}
           </p>
         </div>
@@ -1401,48 +1391,51 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       </div>
 
       {/* BALANCE BREAKDOWN & INTEGRITY CHECK */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 shrink-0">
-        <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">Balance Breakdown</h4>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-slate-600">Opening Balance</span>
-            <span className="font-medium text-slate-800">+{formatUSD(openingBalance)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">USD Purchased</span>
-            <span className="font-medium text-green-600">+{formatUSD(stats.purchased)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Meta Ad Spend</span>
-            <span className="font-medium text-red-600">-{formatUSD(stats.adSpend)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Tax</span>
-            <span className="font-medium text-red-600">-{formatUSD(stats.tax)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Fees</span>
-            <span className="font-medium text-red-600">-{formatUSD(stats.fees)}</span>
-          </div>
-          <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold">
-            <span className="text-slate-800">Current Balance</span>
-            <span className={currentBal < 0 ? 'text-red-600' : 'text-slate-900'}>{formatUSD(currentBal)}</span>
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 shrink-0 flex flex-col md:flex-row gap-6">
+        <div className="flex-1">
+          <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">Balance Breakdown</h4>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-600">Opening Balance</span>
+              <span className="font-medium text-slate-800">+{formatUSD(openingBalance)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">USD Purchased</span>
+              <span className="font-medium text-green-600">+{formatUSD(stats.purchased)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">Meta Ad Spend</span>
+              <span className="font-medium text-slate-800">-{formatUSD(stats.adSpend)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">Tax</span>
+              <span className="font-medium text-slate-700">-{formatUSD(stats.tax)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">Fees</span>
+              <span className="font-medium text-slate-700">-{formatUSD(stats.fees)}</span>
+            </div>
+            <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold">
+              <span className="text-slate-800">Current Balance</span>
+              <span className={currentBal < 0 ? 'text-red-600' : 'text-slate-900'}>{formatUSD(currentBal)}</span>
+            </div>
           </div>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-slate-200">
+        <div className="flex-1 bg-white border border-slate-200 rounded p-4 flex flex-col justify-center">
+          <h5 className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">System Diagnostics</h5>
           {isMatch ? (
-            <span className="inline-flex items-center text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded">
-              <CheckCircle2 size={14} className="mr-1" /> Balance Verified
-            </span>
+            <div className="bg-green-50 text-green-800 p-3 rounded flex items-center gap-2 font-medium text-sm">
+              <CheckCircle2 size={18} className="text-green-600" /> Balance Verified
+            </div>
           ) : (
-            <div className="text-xs text-red-700 bg-red-50 p-2 rounded border border-red-100">
-              <div className="font-bold flex items-center mb-1">
-                <AlertCircle size={14} className="mr-1" /> Balance Mismatch
+            <div className="text-xs text-red-700 bg-red-50 p-3 rounded border border-red-100">
+              <div className="font-bold flex items-center mb-2 text-sm">
+                <AlertCircle size={16} className="mr-1.5" /> Balance Mismatch
               </div>
-              <div className="flex justify-between"><span>Expected Balance:</span> <span>{formatUSD(expectedBalance)}</span></div>
-              <div className="flex justify-between"><span>Current Balance:</span> <span>{formatUSD(currentBal)}</span></div>
-              <div className="flex justify-between font-medium border-t border-red-200 mt-1 pt-1"><span>Difference:</span> <span>{formatUSD(diff)}</span></div>
+              <div className="flex justify-between mb-1"><span>Expected Balance:</span> <span className="font-medium">{formatUSD(expectedBalance)}</span></div>
+              <div className="flex justify-between mb-1"><span>Current Balance:</span> <span className="font-medium">{formatUSD(currentBal)}</span></div>
+              <div className="flex justify-between font-bold border-t border-red-200 mt-2 pt-2"><span>Difference:</span> <span>{formatUSD(diff)}</span></div>
             </div>
           )}
         </div>
@@ -1452,9 +1445,9 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <h4 className="font-bold text-slate-800">Transaction History</h4>
         <div className="flex items-center gap-3">
           {filterRange.label !== 'Lifetime' && <button onClick={() => setFilterRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline font-medium">Clear Filter</button>}
-          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
+          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
             <CalendarDays size={14} className="text-blue-600" /> 
-            {filterRange.label === 'Lifetime' ? 'Filter History' : `Showing: ${filterRange.label}`}
+            {filterRange.label === 'Lifetime' ? 'Filter History' : filterRange.label}
           </button>
         </div>
       </div>
@@ -1471,32 +1464,33 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <table className="w-full text-sm text-left whitespace-nowrap">
           <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
             <tr>
-              <th className="px-4 py-2.5">Type</th>
-              <th className="px-4 py-2.5">USD</th>
-              <th className="px-4 py-2.5">Balance After</th>
+              <th className="px-4 py-2.5">Date</th>
+              <th className="px-4 py-2.5">Type / Desc</th>
+              <th className="px-4 py-2.5 text-right">USD</th>
+              <th className="px-4 py-2.5 text-right font-bold">Balance After</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
             {historyWithBalance.length === 0 && (
-              <tr><td colSpan="3" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
+              <tr><td colSpan="4" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
             )}
             {historyWithBalance.map(tx => {
-              // Ensure we strictly format to negative/positive correctly
               const isAdSpend = tx.type === 'AD_SPEND';
-              const displayAmount = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
+              const faceUSDValue = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
               const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
 
               return (
               <tr key={tx.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2.5 font-medium text-slate-800">
+                <td className="px-4 py-2.5 text-slate-600 align-top pt-3">{formatDate(tx.date)}</td>
+                <td className="px-4 py-2.5 font-medium text-slate-800 align-top pt-3">
                   <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
-                  <div className="text-[10px] text-slate-400 font-normal">{formatDate(tx.date)} {tx.notes && `• ${tx.notes}`}</div>
+                  <div className="text-[10px] text-slate-500 font-normal">{tx.notes || (isAdSpend ? 'Campaign Spend' : 'N/A')}</div>
                 </td>
-                <td className={`px-4 py-2.5 font-medium ${displayAmount > 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {displayAmount > 0 ? '+' : ''}{formatUSD(displayAmount)}
-                  {displayTax > 0 && <span className="block text-[10px] text-red-500 font-normal mt-0.5">+ tax {formatUSD(displayTax)}</span>}
+                <td className={`px-4 py-2.5 text-right font-medium align-top pt-3 ${faceUSDValue > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                  {faceUSDValue > 0 ? '+' : ''}{formatUSD(faceUSDValue)}
+                  {displayTax > 0 && <span className="block text-[10px] text-slate-500 font-normal mt-1">+ tax {formatUSD(displayTax)}</span>}
                 </td>
-                <td className={`px-4 py-2.5 font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                <td className={`px-4 py-2.5 text-right font-bold align-top pt-3 ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
                   {formatUSD(tx.runningBal)}
                 </td>
               </tr>
@@ -1512,7 +1506,6 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
   const bdtPaid = parseFloat(tx.amountBDT||0);
   const coRate = parseFloat(tx.cashOutCharge||0);
   const usdRcv = parseFloat(tx.amountUSD||1);
-  
   const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
   const totalCost = bdtPaid + coRate;
   const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
@@ -1536,9 +1529,9 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
         </div>
 
         <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
-          <div className="flex justify-between"><span>Base BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(bdtPaid)}</span></div>
-          <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-red-600">{formatBDT(coRate)}</span></div>
-          <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total BDT Cost:</span><span className="text-slate-900">{formatBDT(totalCost)}</span></div>
+          <div className="flex justify-between"><span>BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(bdtPaid)}</span></div>
+          <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-slate-800">{formatBDT(coRate)}</span></div>
+          <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total Cost:</span><span className="text-slate-900">{formatBDT(totalCost)}</span></div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1551,73 +1544,6 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
         </div>
       </div>
     </Modal>
-  );
-}
-
-function NavItem({ icon, label, isActive, onClick }) {
-  return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-      {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
-      {label}
-    </button>
-  );
-}
-
-function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
-  return (
-    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
-      <div className="flex justify-between items-start mb-2">
-        <p className="text-sm font-medium text-slate-500">{title}</p>
-        <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
-      </div>
-      <h3 className={`text-2xl font-bold tracking-tight ${textColorClass}`}>{value}</h3>
-      <div className="mt-2 flex items-center text-xs">
-        {subtitle && <span className="text-slate-500">{subtitle}</span>}
-      </div>
-    </div>
-  );
-}
-
-function StatRow({ label, value, className = 'text-slate-900' }) {
-  return (
-    <div className="flex justify-between items-center text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className={`font-bold ${className}`}>{value}</span>
-    </div>
-  );
-}
-
-function Divider() { return <div className="h-px w-full bg-slate-100 my-2"></div>; }
-
-function TransactionTypeBadge({ type }) {
-  const styles = {
-    PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200',
-    USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200',
-    AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200',
-    FEE: 'bg-orange-100 text-orange-700 border-orange-200'
-  };
-  const labels = {
-    PAYMENT_RECEIVED: 'Payment In',
-    USD_PURCHASE: 'Buy USD',
-    AD_SPEND: 'Meta Ads',
-    FEE: 'Card Fee'
-  };
-  return <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>{labels[type] || type}</span>;
-}
-
-function Modal({ title, onClose, children, width = "max-w-md" }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
-      <div className={`bg-white rounded-xl shadow-xl w-full ${width} overflow-hidden flex flex-col max-h-[95vh]`}>
-        <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50 shrink-0">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
-        </div>
-        <div className="p-5 overflow-y-auto">
-          {children}
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -1676,7 +1602,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
             <h4 className="text-sm font-bold text-slate-800 mb-4">Custom Date Range</h4>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date (DD / MM / YYYY)</label>
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date</label>
                 <div className="relative">
                   <input 
                     type="date" 
@@ -1687,7 +1613,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date (DD / MM / YYYY)</label>
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date</label>
                 <div className="relative">
                   <input 
                     type="date" 
@@ -1748,7 +1674,7 @@ function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   );
 }
 
-function ClientActionsMenu({ client, onViewDetails, onHistory, onEdit, onReceivePayment, onToggleStatus, onDelete }) {
+function ClientDropdownMenu({ client, onViewDetails, onEdit, onReceivePayment, onAddAdSpend, onClientHistory, onMarkStatus, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
@@ -1756,395 +1682,92 @@ function ClientActionsMenu({ client, onViewDetails, onHistory, onEdit, onReceive
 
   const updateMenuPosition = () => {
     if (!buttonRef.current) return;
-
     const rect = buttonRef.current.getBoundingClientRect();
     const menuWidth = 224;
-    const menuHeight = 300;
-    const gap = 6;
-
+    const estimatedMenuHeight = 270;
+    const gap = 8;
     let left = rect.right - menuWidth;
-    left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
-
     let top = rect.bottom + gap;
-    if (top + menuHeight > window.innerHeight - 8) {
-      top = rect.top - menuHeight - gap;
-    }
-    top = Math.max(8, top);
-
+    if (top + estimatedMenuHeight > window.innerHeight - 12) top = rect.top - estimatedMenuHeight - gap;
+    if (top < 12) top = 12;
+    if (left < 12) left = 12;
+    if (left + menuWidth > window.innerWidth - 12) left = window.innerWidth - menuWidth - 12;
     setMenuPosition({ top, left });
+  };
+
+  const toggleMenu = (e) => {
+    e.stopPropagation();
+    if (!isOpen) updateMenuPosition();
+    setIsOpen(v => !v);
   };
 
   useEffect(() => {
     if (!isOpen) return;
-
-    updateMenuPosition();
-
-    const handleOutside = (event) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)) setIsOpen(false);
     };
-
-    const handleViewportChange = () => updateMenuPosition();
-
-    document.addEventListener('mousedown', handleOutside);
-    window.addEventListener('resize', handleViewportChange);
-    window.addEventListener('scroll', handleViewportChange, true);
-
+    const handleEscape = (event) => { if (event.key === 'Escape') setIsOpen(false); };
+    const handleReposition = () => updateMenuPosition();
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
     return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      window.removeEventListener('resize', handleViewportChange);
-      window.removeEventListener('scroll', handleViewportChange, true);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
     };
   }, [isOpen]);
 
-  const closeAndRun = (callback) => {
-    setIsOpen(false);
-    if (typeof callback === 'function') callback();
-  };
-
-  const isWorking = !!client?.currentlyWorking;
+  const closeAndRun = (action) => { setIsOpen(false); action(); };
+  const isWorking = client?.currentlyWorking || getClientDisplayStatus(client).includes('Active');
 
   return (
-    <div className="inline-block text-left">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => {
-          if (!isOpen) updateMenuPosition();
-          setIsOpen(prev => !prev);
-        }}
-        className="p-1 rounded hover:bg-slate-100 text-slate-400 transition-colors"
-        aria-label={`Actions for ${client?.name || 'client'}`}
-      >
+    <>
+      <button ref={buttonRef} type="button" onClick={toggleMenu} aria-label={`Actions for ${client?.name || 'client'}`} aria-expanded={isOpen} className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors">
         <MoreVertical size={20} />
       </button>
-
       {isOpen && (
-        <div
-          ref={menuRef}
-          className="fixed w-56 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] py-1 overflow-hidden"
-          style={{ top: menuPosition.top, left: menuPosition.left }}
-        >
-          <button
-            type="button"
-            onClick={() => closeAndRun(onViewDetails)}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
-          >
-            View Details
-          </button>
-
-          <button
-            type="button"
-            onClick={() => closeAndRun(onReceivePayment)}
-            className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50"
-          >
-            Receive Payment
-          </button>
-
-          <button
-            type="button"
-            onClick={() => closeAndRun(onEdit)}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
-          >
-            Edit Client
-          </button>
-
-          <button
-            type="button"
-            onClick={() => closeAndRun(onHistory)}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
-          >
-            Transaction History
-          </button>
-
+        <div ref={menuRef} style={{ top: menuPosition.top, left: menuPosition.left }} className="fixed w-56 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] py-1 overflow-hidden" role="menu">
+          <button onClick={() => closeAndRun(onViewDetails)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600" role="menuitem">View Details</button>
+          <button onClick={() => closeAndRun(onEdit)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600" role="menuitem">Edit Client</button>
+          <button onClick={() => closeAndRun(onClientHistory)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600" role="menuitem">Transaction History</button>
           <div className="h-px w-full bg-slate-100 my-1" />
-
-          <button
-            type="button"
-            onClick={() => closeAndRun(onToggleStatus)}
-            className={`w-full text-left px-4 py-2.5 text-sm ${
-              isWorking
-                ? 'text-orange-700 hover:bg-orange-50'
-                : 'text-blue-700 hover:bg-blue-50'
-            }`}
-          >
-            {isWorking ? 'Mark Completed' : 'Mark Active'}
-          </button>
-
+          <button onClick={() => closeAndRun(onReceivePayment)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50" role="menuitem">Receive Payment</button>
+          <button onClick={() => closeAndRun(onAddAdSpend)} className="w-full text-left px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50" role="menuitem">Add Ad Spend</button>
+          <button onClick={() => closeAndRun(onMarkStatus)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50" role="menuitem">{isWorking ? 'Mark Completed' : 'Mark Active'}</button>
           <div className="h-px w-full bg-slate-100 my-1" />
-
-          <button
-            type="button"
-            onClick={() => closeAndRun(onDelete)}
-            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between"
-          >
-            Delete Client <Trash2 size={14} />
-          </button>
+          <button onClick={() => closeAndRun(onDelete)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between" role="menuitem">Delete Client <Trash2 size={14} /></button>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
-function ClientTransactionHistoryModal({ client, transactions, metrics }) {
-  const clientTx = useMemo(() => {
-    return transactions
-      .filter(t => t.clientId === client.id)
-      .sort((a, b) => {
-        const timeA = a.timestamp || new Date(a.date).getTime();
-        const timeB = b.timestamp || new Date(b.date).getTime();
-        return timeB - timeA;
-      });
-  }, [transactions, client.id]);
-
-  const totalReceived = clientTx
-    .filter(t => t.type === 'PAYMENT_RECEIVED')
-    .reduce((sum, t) => sum + parseFloat(t.amountBDT || 0), 0);
-
-  const totalAdSpend = clientTx
-    .filter(t => t.type === 'AD_SPEND')
-    .reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
-
-  const totalTax = clientTx
-    .filter(t => t.type === 'AD_SPEND')
-    .reduce((sum, t) => sum + parseFloat(t.taxUSD || 0), 0);
-
+function ClientTransactionHistoryModal({ client, transactions, onClose }) {
+  const clientTransactions = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a,b) => (b.timestamp || new Date(b.date).getTime()) - (a.timestamp || new Date(a.date).getTime())), [transactions, client.id]);
+  const totalReceived = clientTransactions.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum,t) => sum + parseFloat(t.amountBDT || 0), 0);
+  const totalAdSpend = clientTransactions.filter(t => t.type === 'AD_SPEND').reduce((sum,t) => sum + parseFloat(t.amountUSD || 0), 0);
+  const totalTax = clientTransactions.filter(t => t.type === 'AD_SPEND').reduce((sum,t) => sum + parseFloat(t.taxUSD || 0), 0);
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-          <p className="text-xs text-green-700">Payments Received</p>
-          <p className="text-lg font-bold text-green-700 mt-1">{formatBDT(totalReceived)}</p>
+    <Modal title={`Transaction History: ${client.name}`} onClose={onClose} width="max-w-3xl">
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-green-50 border border-green-100 rounded-lg p-3"><p className="text-xs text-slate-500">Received (BDT)</p><p className="font-bold text-green-700">{formatBDT(totalReceived)}</p></div>
+          <div className="bg-purple-50 border border-purple-100 rounded-lg p-3"><p className="text-xs text-slate-500">Ad Spend (USD)</p><p className="font-bold text-purple-700">{formatUSD(totalAdSpend)}</p></div>
+          <div className="bg-red-50 border border-red-100 rounded-lg p-3"><p className="text-xs text-slate-500">Tax (USD)</p><p className="font-bold text-red-700">{formatUSD(totalTax)}</p></div>
         </div>
-        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-          <p className="text-xs text-purple-700">Ad Spend</p>
-          <p className="text-lg font-bold text-purple-700 mt-1">{formatUSD(totalAdSpend)}</p>
-        </div>
-        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-          <p className="text-xs text-red-700">Tax</p>
-          <p className="text-lg font-bold text-red-700 mt-1">{formatUSD(totalTax)}</p>
-        </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-500">Transactions</p>
-          <p className="text-lg font-bold text-slate-900 mt-1">{clientTx.length}</p>
-        </div>
+        <div className="border border-slate-200 rounded-lg overflow-hidden"><div className="max-h-[55vh] overflow-y-auto">
+          <table className="w-full text-sm text-left"><thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Description</th><th className="px-4 py-3 text-right">Amount</th></tr></thead>
+          <tbody className="divide-y divide-slate-100">
+            {clientTransactions.length === 0 && <tr><td colSpan="4" className="text-center py-10 text-slate-500">No transactions for this client yet.</td></tr>}
+            {clientTransactions.map(t => <tr key={t.id} className="hover:bg-slate-50"><td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(t.date)}</td><td className="px-4 py-3 font-medium text-slate-800">{t.type === 'PAYMENT_RECEIVED' ? 'Payment Received' : t.type === 'AD_SPEND' ? 'Meta Ads' : t.type.replace(/_/g, ' ')}</td><td className="px-4 py-3 text-slate-500">{t.notes || t.campaign || '—'}</td><td className="px-4 py-3 text-right font-semibold">{t.type === 'PAYMENT_RECEIVED' ? <span className="text-green-600">+{formatBDT(t.amountBDT)}</span> : <span className="text-red-600">-{formatUSD(parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0))}</span>}</td></tr>)}
+          </tbody></table>
+        </div></div>
+        <div className="flex justify-end"><button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm font-medium hover:bg-slate-800">Close</button></div>
       </div>
-
-      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-          <h3 className="font-semibold text-slate-800">Client Transaction History</h3>
-          <p className="text-xs text-slate-500 mt-1">All transactions linked to {client.name}</p>
-        </div>
-
-        <div className="overflow-x-auto max-h-[55vh]">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-white text-slate-500 font-medium border-b border-slate-200 sticky top-0">
-              <tr>
-                <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Details</th>
-                <th className="px-5 py-3 text-right">BDT</th>
-                <th className="px-5 py-3 text-right">USD</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {clientTx.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="text-center py-10 text-slate-500">No transactions for this client yet.</td>
-                </tr>
-              )}
-
-              {clientTx.map(tx => {
-                const isPayment = tx.type === 'PAYMENT_RECEIVED';
-                const isAdSpend = tx.type === 'AD_SPEND';
-                const usdAmount = isAdSpend
-                  ? parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)
-                  : 0;
-
-                return (
-                  <tr key={tx.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
-                    <td className="px-5 py-4"><TransactionTypeBadge type={tx.type} /></td>
-                    <td className="px-5 py-4 min-w-[260px]">
-                      <div className="font-medium text-slate-800">
-                        {tx.notes || tx.campaign || tx.adAccount || tx.type.replaceAll('_', ' ')}
-                      </div>
-                      {tx.adAccount && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.adAccount}{tx.campaign ? ` • ${tx.campaign}` : ''}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-right font-semibold">
-                      {isPayment ? <span className="text-green-600">+{formatBDT(tx.amountBDT)}</span> : '—'}
-                    </td>
-                    <td className="px-5 py-4 text-right font-semibold">
-                      {isAdSpend ? <span className="text-red-600">-{formatUSD(usdAmount)}</span> : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="text-xs text-slate-400">
-        BDT conversion uses the app's current average USD effective rate of ৳{metrics.avgUSDEffectiveRate.toFixed(2)}.
-      </div>
-    </div>
-  );
-}
-
-function ClientForm({ initialData, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(() => {
-    if (initialData) {
-      return {
-        ...initialData,
-        budgetAmount: initialData.budgetAmount || '',
-        budgetType: initialData.budgetType || 'Monthly',
-        currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : true,
-      };
-    }
-    return {
-      name: '', company: '', phone: '', email: '', fb: '', website: '',
-      serviceType: 'Meta Ads', budgetType: 'Monthly', budgetAmount: '', status: 'Active', 
-      startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true, notes: ''
-    };
-  });
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  
-  const handleSubmit = (e) => { 
-    e.preventDefault(); 
-    onSubmit({
-      ...formData, 
-      budgetAmount: parseFloat(formData.budgetAmount) || 0,
-      endDate: formData.currentlyWorking ? '' : formData.endDate
-    }); 
-  };
-
-  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
-  const labelClass = "block text-xs font-medium text-slate-700 uppercase tracking-wide";
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter client name" className={inputClass} /></div>
-        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="Enter company name" className={inputClass} /></div>
-        
-        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
-        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
-        
-        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
-        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
-        
-        <div>
-          <label className={labelClass}>Service Type</label>
-          <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
-            <option>Meta Ads</option><option>Facebook Marketing</option><option>Instagram Marketing</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelClass}>Status</label>
-          <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
-            <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
-          </select>
-        </div>
-        
-        <div>
-          <label className={labelClass}>Budget Period</label>
-          <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
-            <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
-          </select>
-        </div>
-        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="Enter BDT amount" className={inputClass} /></div>
-        
-        <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
-        <div>
-          <label className={labelClass}>End Date</label>
-          <div className="flex flex-col gap-2 mt-1">
-            <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
-              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({...formData, currentlyWorking: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
-              Currently Working
-            </label>
-            {!formData.currentlyWorking && (
-              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{marginTop: 0}} />
-            )}
-          </div>
-        </div>
-      </div>
-      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea></div>
-      <div className="flex gap-3 pt-4 border-t border-slate-100">
-        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
-        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
-      </div>
-    </form>
-  );
-}
-
-function CardForm({ initialData, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(initialData || {
-    name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
-    initialBalance: '', last4: '', expiry: '', notes: '', status: 'Active'
-  });
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleSubmit = (e) => { 
-    e.preventDefault(); 
-    onSubmit({
-      ...formData,
-      initialBalance: parseFloat(formData.initialBalance) || 0
-    }); 
-  };
-  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div><label className="block text-sm font-medium text-slate-700">Card Name</label>
-        <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter card name" className={inputClass} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Provider / Bank</label>
-          <input type="text" name="provider" value={formData.provider} onChange={handleChange} required placeholder="Enter provider name" className={inputClass} />
-        </div>
-        <div><label className="block text-sm font-medium text-slate-700">Card Type</label>
-          <select name="cardType" value={formData.cardType} onChange={handleChange} className={inputClass}>
-            <option>Virtual Card</option><option>Dual Currency</option><option>Credit Card</option><option>Prepaid Card</option>
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Initial Balance (USD)</label>
-          <input type="number" min="0" step="0.01" name="initialBalance" value={formData.initialBalance} onChange={handleChange} disabled={!!initialData} placeholder="Enter USD amount" className={`${inputClass} ${initialData ? 'bg-slate-100' : ''}`} />
-          {initialData && <p className="text-xs text-slate-500 mt-1">Cannot edit initial balance after creation.</p>}
-        </div>
-        <div><label className="block text-sm font-medium text-slate-700">Currency</label>
-          <input type="text" name="currency" value={formData.currency} disabled className={`${inputClass} bg-slate-100`} />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Last 4 Digits</label>
-          <input type="text" maxLength="4" name="last4" value={formData.last4} onChange={handleChange} placeholder="Optional 4 digits" className={inputClass} />
-        </div>
-        <div><label className="block text-sm font-medium text-slate-700">Expiry Date</label>
-          <input type="text" name="expiry" value={formData.expiry} onChange={handleChange} placeholder="MM/YY (Optional)" className={inputClass} />
-        </div>
-      </div>
-      <div><label className="block text-sm font-medium text-slate-700">Notes</label>
-        <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea>
-      </div>
-      <div className="flex gap-3 pt-4 border-t border-slate-100">
-        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
-        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Card</button>
-      </div>
-    </form>
+    </Modal>
   );
 }
 
@@ -2322,6 +1945,154 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
   );
 }
 
+function ClientForm({ initialData, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(() => {
+    if (initialData) {
+      return {
+        ...initialData,
+        budgetAmount: initialData.budgetAmount || '',
+        budgetType: initialData.budgetType || 'Monthly',
+        currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : true,
+      };
+    }
+    return {
+      name: '', company: '', phone: '', email: '', fb: '', website: '',
+      serviceType: 'Meta Ads', budgetType: 'Monthly', budgetAmount: '', status: 'Active', 
+      startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true, notes: ''
+    };
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  
+  const handleSubmit = (e) => { 
+    e.preventDefault(); 
+    onSubmit({
+      ...formData, 
+      budgetAmount: parseFloat(formData.budgetAmount) || 0,
+      endDate: formData.currentlyWorking ? '' : formData.endDate
+    }); 
+  };
+
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
+  const labelClass = "block text-xs font-medium text-slate-700 uppercase tracking-wide";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter client name" className={inputClass} /></div>
+        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="Enter company name" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
+        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
+        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
+        
+        <div>
+          <label className={labelClass}>Service Type</label>
+          <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
+            <option>Meta Ads</option><option>Facebook Marketing</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Status</label>
+          <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
+            <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className={labelClass}>Budget Period</label>
+          <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
+            <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
+          </select>
+        </div>
+        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="Enter BDT amount" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>End Date</label>
+          <div className="flex flex-col gap-2 mt-1">
+            <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
+              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({...formData, currentlyWorking: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+              Currently Working
+            </label>
+            {!formData.currentlyWorking && (
+              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{marginTop: 0}} />
+            )}
+          </div>
+        </div>
+      </div>
+      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea></div>
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
+      </div>
+    </form>
+  );
+}
+
+function CardForm({ initialData, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(initialData || {
+    name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
+    initialBalance: '', last4: '', expiry: '', notes: '', status: 'Active'
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      initialBalance: parseFloat(formData.initialBalance) || 0
+    });
+  };
+
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div><label className="block text-sm font-medium text-slate-700">Card Name</label>
+        <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter card name" className={inputClass} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Provider / Bank</label>
+          <input type="text" name="provider" value={formData.provider} onChange={handleChange} required placeholder="Enter provider name" className={inputClass} />
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Card Type</label>
+          <select name="cardType" value={formData.cardType} onChange={handleChange} className={inputClass}>
+            <option>Virtual Card</option><option>Dual Currency</option><option>Credit Card</option><option>Prepaid Card</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Initial Balance (USD)</label>
+          <input type="number" step="0.01" name="initialBalance" value={formData.initialBalance} onChange={handleChange} disabled={!!initialData} placeholder="Enter initial balance" className={`${inputClass} ${initialData ? 'bg-slate-100' : ''}`} />
+          {initialData && <p className="text-xs text-slate-500 mt-1">Cannot edit initial balance after creation.</p>}
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Currency</label>
+          <input type="text" name="currency" value={formData.currency} disabled className={`${inputClass} bg-slate-100`} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Last 4 Digits</label>
+          <input type="text" maxLength="4" name="last4" value={formData.last4} onChange={handleChange} placeholder="Optional 4 digits" className={inputClass} />
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Expiry Date</label>
+          <input type="text" name="expiry" value={formData.expiry} onChange={handleChange} placeholder="MM/YY (Optional)" className={inputClass} />
+        </div>
+      </div>
+      <div><label className="block text-sm font-medium text-slate-700">Notes</label>
+        <textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass} placeholder="Optional details..."></textarea>
+      </div>
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Card</button>
+      </div>
+    </form>
+  );
+}
+
 function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -2351,11 +2122,7 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
     } else if (type === 'AD_SPEND') {
       payload.amountUSD = parseFloat(formData.amountUSD) || 0;
       payload.taxUSD = parseFloat(formData.taxUSD) || 0;
-      
-      // Strict block for empty / zero meta ads spend
-      if (payload.amountUSD <= 0 || !formData.cardId || !formData.clientId) {
-        return; 
-      }
+      if (payload.amountUSD <= 0 || !formData.cardId || !formData.clientId) return;
       
       payload.clientId = formData.clientId;
       payload.cardId = formData.cardId;
@@ -2480,3 +2247,15 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
     </form>
   );
 }
+
+function NavItem({ icon, label, isActive, onClick }) {
+  return <button type="button" onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}><span className="w-5 h-5 flex items-center justify-center">{React.cloneElement(icon, { size: 18 })}</span><span>{label}</span></button>;
+}
+function Modal({ title, onClose, children, width = 'max-w-2xl' }) {
+  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"><div className={`bg-white rounded-xl shadow-2xl w-full ${width} max-h-[90vh] overflow-hidden flex flex-col`}><div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0"><h3 className="text-lg font-bold text-slate-900">{title}</h3><button type="button" onClick={onClose} className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700"><X size={20}/></button></div><div className="p-5 overflow-y-auto">{children}</div></div></div>;
+}
+function MetricCard({ title, value, subtitle, icon, bgColor='bg-slate-50', textColorClass='text-slate-900' }) {
+  return <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-slate-500 font-medium">{title}</p><p className={`text-xl font-bold mt-1 ${textColorClass}`}>{value}</p>{subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}</div>{icon && <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>}</div></div>;
+}
+function StatRow({ label, value, className='' }) { return <div className={`flex items-center justify-between text-sm ${className}`}><span className="text-slate-500">{label}</span><span className="font-semibold text-slate-800">{value}</span></div>; }
+function Divider() { return <div className="h-px bg-slate-200 my-2"/>; }
