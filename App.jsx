@@ -1032,14 +1032,13 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                     </div>
                   </td>
                   <td className="px-5 py-4 text-center">
-                    <ClientDropdownMenu
+                    <ClientActionsMenu
                       client={c}
                       onViewDetails={() => onViewDetails(c)}
                       onHistory={() => onViewHistory(c)}
                       onEdit={() => onEditClient(c)}
                       onReceivePayment={() => onReceivePayment(c)}
-                      onAddAdSpend={() => onAddAdSpend(c)}
-                      onToggleStatus={() => onToggleStatus(c)}
+                                            onToggleStatus={() => onToggleStatus(c)}
                       onDelete={() => onDeleteClient(c.id)}
                     />
                   </td>
@@ -1749,8 +1748,17 @@ function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   );
 }
 
-function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceivePayment, onAddAdSpend, onToggleStatus, onDelete }) {
+function ClientActionsMenu({
+  client,
+  onViewDetails,
+  onHistory,
+  onEdit,
+  onReceivePayment,
+  onToggleStatus,
+  onDelete
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -1760,7 +1768,7 @@ function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceiv
 
     const rect = buttonRef.current.getBoundingClientRect();
     const menuWidth = 224;
-    const menuHeight = 330;
+    const menuHeight = 270;
     const gap = 6;
 
     let left = rect.right - menuWidth;
@@ -1770,8 +1778,8 @@ function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceiv
     if (top + menuHeight > window.innerHeight - 8) {
       top = rect.top - menuHeight - gap;
     }
-    top = Math.max(8, top);
 
+    top = Math.max(8, top);
     setMenuPosition({ top, left });
   };
 
@@ -1788,6 +1796,7 @@ function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceiv
         !buttonRef.current.contains(event.target)
       ) {
         setIsOpen(false);
+        setShowStatusMenu(false);
       }
     };
 
@@ -1806,21 +1815,24 @@ function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceiv
 
   const closeAndRun = (callback) => {
     setIsOpen(false);
-    callback();
+    setShowStatusMenu(false);
+    if (typeof callback === 'function') {
+      callback();
+    }
   };
-
-  const isWorking = !!client?.currentlyWorking;
 
   return (
     <div className="inline-block text-left">
       <button
         ref={buttonRef}
+        type="button"
         onClick={() => {
           if (!isOpen) updateMenuPosition();
           setIsOpen(prev => !prev);
         }}
         className="p-1 rounded hover:bg-slate-100 text-slate-400 transition-colors"
         aria-label={`Actions for ${client?.name || 'client'}`}
+        aria-expanded={isOpen}
       >
         <MoreVertical size={20} />
       </button>
@@ -1828,40 +1840,89 @@ function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceiv
       {isOpen && (
         <div
           ref={menuRef}
-          className="fixed w-56 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] py-1 overflow-hidden"
+          className="fixed w-56 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] py-1"
           style={{ top: menuPosition.top, left: menuPosition.left }}
         >
-          <button onClick={() => closeAndRun(onViewDetails)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+          <button
+            type="button"
+            onClick={() => closeAndRun(onViewDetails)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+          >
             View Details
           </button>
-          <button onClick={() => closeAndRun(onHistory)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+
+          <button
+            type="button"
+            onClick={() => closeAndRun(onHistory)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+          >
             Transaction History
           </button>
-          <button onClick={() => closeAndRun(onEdit)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+
+          <button
+            type="button"
+            onClick={() => closeAndRun(onEdit)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+          >
             Edit Client
           </button>
 
-          <div className="h-px w-full bg-slate-100 my-1"></div>
-
-          <button onClick={() => closeAndRun(onReceivePayment)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50">
+          <button
+            type="button"
+            onClick={() => closeAndRun(onReceivePayment)}
+            className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50"
+          >
             Receive Payment
           </button>
-          <button onClick={() => closeAndRun(onAddAdSpend)} className="w-full text-left px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50">
-            Add Ad Spend
-          </button>
+
+          <div className="h-px w-full bg-slate-100 my-1" />
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowStatusMenu(prev => !prev)}
+              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center justify-between"
+            >
+              <span>Change Status</span>
+              <span className="text-slate-400">›</span>
+            </button>
+
+            {showStatusMenu && (
+              <div className="absolute right-full top-0 mr-2 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-[10000] py-1">
+                <button
+                  type="button"
+                  onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
+                  className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50"
+                >
+                  Mark Active
+                </button>
+                <button
+                  type="button"
+                  onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
+                  className="w-full text-left px-4 py-2.5 text-sm text-orange-700 hover:bg-orange-50"
+                >
+                  Mark Inactive
+                </button>
+                <button
+                  type="button"
+                  onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
+                  className="w-full text-left px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50"
+                >
+                  Mark Completed
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="h-px w-full bg-slate-100 my-1" />
+
           <button
-            onClick={() => closeAndRun(onToggleStatus)}
-            className={`w-full text-left px-4 py-2.5 text-sm ${
-              isWorking ? 'text-orange-700 hover:bg-orange-50' : 'text-blue-700 hover:bg-blue-50'
-            }`}
+            type="button"
+            onClick={() => closeAndRun(onDelete)}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between"
           >
-            {isWorking ? 'Mark Completed' : 'Mark Active'}
-          </button>
-
-          <div className="h-px w-full bg-slate-100 my-1"></div>
-
-          <button onClick={() => closeAndRun(onDelete)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">
-            Delete Client <Trash2 size={14}/>
+            <span>Delete Client</span>
+            <Trash2 size={14} />
           </button>
         </div>
       )}
