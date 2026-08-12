@@ -96,7 +96,9 @@ const isMeaningfulTransaction = (t) => {
   if (t.type === 'PAYMENT_RECEIVED') return Math.abs(Number(t.amountBDT) || 0) >= EPSILON;
   if (t.type === 'USD_PURCHASE') return Math.abs(Number(t.amountUSD) || 0) >= EPSILON;
   if (t.type === 'AD_SPEND') {
-    return Math.abs(Number(t.amountUSD) || 0) >= EPSILON || Math.abs(Number(t.taxUSD) || 0) >= EPSILON;
+    // Tax belongs to a real Meta Ads spend. A tax-only / zero-spend record is
+    // not a valid AD_SPEND transaction in this ledger and must be removed.
+    return Math.abs(Number(t.amountUSD) || 0) >= EPSILON;
   }
   return true;
 };
@@ -248,14 +250,15 @@ export default function AdLedgerApp() {
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
-  // One-time data hygiene: remove phantom zero-value transactions from persisted localStorage.
-  // This intentionally removes them from the source data, not just from the UI.
+  // Data hygiene: remove invalid zero-value financial transactions from the
+  // persisted source data. This is deliberately done at the data layer, not
+  // merely hidden in the UI.
   useEffect(() => {
     const cleaned = transactions.filter(isMeaningfulTransaction);
     if (cleaned.length !== transactions.length) {
       setTransactions(cleaned);
     }
-  }, [transactions, setTransactions]);
+  }, [transactions]);
 
   // Modal State
   const [activeModal, setActiveModal] = useState(null); 
@@ -348,18 +351,17 @@ export default function AdLedgerApp() {
   }, [transactions]);
 
   const handleAddTransaction = (newTx) => {
+    const now = new Date().toISOString();
     const tx = {
       ...newTx,
-      id: `t${Date.now()}`,
-      createdAt: new Date().toISOString(),
+      id: `t${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: now,
     };
 
     // Never store a zero-value financial transaction.
     if (!isMeaningfulTransaction(tx)) return;
 
-    setTransactions(prev =>
-      [...prev, tx].sort(compareTransactionsChronologically).reverse()
-    );
+    setTransactions(prev => [...prev, tx].sort(compareTransactionsChronologically).reverse());
     setActiveModal(null);
   };
 
@@ -903,8 +905,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                       <span className={`font-bold ${lastTx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
                         {lastTx.type === 'USD_PURCHASE' 
                           ? `+${formatUSD(lastTx.amountUSD)}` 
-                          : (((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0)) >= 0.005 
-                              ? `-${formatUSD((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0))}` 
+                          : ((lastTx.amountUSD || 0) >= EPSILON
+                              ? `-${formatUSD(lastTx.amountUSD || 0)}`
                               : formatUSD(0))}
                       </span>
                     </div>
@@ -1044,12 +1046,12 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   }, [transactions, card.id]);
 
   // Dynamic historical running-balance calculation.
-  // Calculate balances oldest -> newest, then reverse ONLY for display.
+  // IMPORTANT: calculate oldest -> newest, then reverse only for display.
+  // Meta Ads amount shown in the USD column is the actual ad spend. Tax is
+  // shown in the description and is included exactly once in Balance After.
   const { historyWithBalance, periodSummary } = useMemo(() => {
     let historyStartBal = Number(card.initialBalance) || 0;
 
-    // Include every valid transaction before the selected period in the opening
-    // balance so a filtered history still shows the real Balance After values.
     if (filterRange.start) {
       const preTxs = cardTxs.filter(t => t.date < filterRange.start);
       preTxs.forEach(t => {
@@ -1061,38 +1063,37 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       });
     }
 
-    let filteredTxs = cardTxs;
-    if (filterRange.start && filterRange.end) {
-      filteredTxs = cardTxs.filter(
-        t => t.date >= filterRange.start && t.date <= filterRange.end
-      );
-    }
+    const filteredTxs = (filterRange.start && filterRange.end)
+      ? cardTxs.filter(t => t.date >= filterRange.start && t.date <= filterRange.end)
+      : cardTxs;
 
     let summary = { purchased: 0, ads: 0, tax: 0, net: 0 };
     let runningBal = historyStartBal;
 
     const chronologicalHistory = filteredTxs.map(t => {
-      let changeUSD = 0;
+      let displayedChangeUSD = 0;
+      let balanceChangeUSD = 0;
 
       if (t.type === 'USD_PURCHASE') {
-        changeUSD = Number(t.amountUSD) || 0;
-        summary.purchased += changeUSD;
+        const purchased = Number(t.amountUSD) || 0;
+        displayedChangeUSD = purchased;
+        balanceChangeUSD = purchased;
+        summary.purchased += purchased;
       } else if (t.type === 'AD_SPEND') {
         const spend = Number(t.amountUSD) || 0;
         const tax = Number(t.taxUSD) || 0;
-        changeUSD = -(spend + tax);
+        displayedChangeUSD = -spend;
+        balanceChangeUSD = -(spend + tax);
         summary.ads += spend;
         summary.tax += tax;
       }
 
-      runningBal += changeUSD;
-      summary.net += changeUSD;
+      runningBal += balanceChangeUSD;
+      summary.net += balanceChangeUSD;
 
-      return { ...t, changeUSD, runningBal };
+      return { ...t, changeUSD: displayedChangeUSD, balanceChangeUSD, runningBal };
     });
 
-    // Newest first for the UI. Each Balance After remains tied to the
-    // transaction that produced it.
     return {
       historyWithBalance: chronologicalHistory.reverse(),
       periodSummary: summary,
@@ -1182,9 +1183,15 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
               <tr key={tx.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
                 <td className="px-4 py-2.5 font-medium text-slate-800">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}</td>
-                <td className="px-4 py-2.5 text-slate-600">{tx.type === 'USD_PURCHASE' ? tx.notes : (tx.notes || tx.campaign || '-')}</td>
-                <td className={`px-4 py-2.5 text-right font-medium ${tx.changeUSD >= 0.005 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {tx.changeUSD >= 0.005 ? '+' : ''}{tx.changeUSD <= -0.005 ? '-' : ''}{formatUSD(Math.abs(tx.changeUSD))}
+                <td className="px-4 py-2.5 text-slate-600">
+                  {tx.type === 'USD_PURCHASE'
+                    ? (tx.notes || 'USD Purchase')
+                    : (Number(tx.taxUSD || 0) >= EPSILON
+                        ? `${tx.notes || tx.campaign || 'Meta Ads'} • Tax: ${formatUSD(Number(tx.taxUSD))}`
+                        : (tx.notes || tx.campaign || 'Meta Ads'))}
+                </td>
+                <td className={`px-4 py-2.5 text-right font-medium ${tx.changeUSD >= EPSILON ? 'text-green-600' : tx.changeUSD <= -EPSILON ? 'text-red-600' : 'text-slate-800'}`}>
+                  {tx.changeUSD >= EPSILON ? '+' : ''}{tx.changeUSD <= -EPSILON ? '-' : ''}{formatUSD(Math.abs(tx.changeUSD))}
                 </td>
                 <td className="px-4 py-2.5 text-right text-slate-600">
                   {bdtCost ? formatBDT(bdtCost) : '—'}
