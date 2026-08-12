@@ -87,6 +87,41 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
+const EPSILON = 0.005;
+
+// A transaction is financially meaningful only when it actually changes a balance.
+// This prevents phantom $0.00 / -$0.00 rows from entering any calculation.
+const isMeaningfulTransaction = (t) => {
+  if (!t) return false;
+  if (t.type === 'PAYMENT_RECEIVED') return Math.abs(Number(t.amountBDT) || 0) >= EPSILON;
+  if (t.type === 'USD_PURCHASE') return Math.abs(Number(t.amountUSD) || 0) >= EPSILON;
+  if (t.type === 'AD_SPEND') {
+    return Math.abs(Number(t.amountUSD) || 0) >= EPSILON || Math.abs(Number(t.taxUSD) || 0) >= EPSILON;
+  }
+  return true;
+};
+
+const getTransactionTimestamp = (t) => {
+  // New transactions store createdAt, which gives exact same-day ordering.
+  if (t?.createdAt) return new Date(t.createdAt).getTime();
+
+  // Legacy records did not store time. Keep USD purchases before ad spend
+  // on the same date so a purchase can fund the same-day ad spend.
+  const typeOrder = {
+    PAYMENT_RECEIVED: 10,
+    USD_PURCHASE: 20,
+    AD_SPEND: 30,
+  };
+  const base = new Date(`${t?.date || '1970-01-01'}T00:00:00`).getTime();
+  return base + (typeOrder[t?.type] || 50);
+};
+
+const compareTransactionsChronologically = (a, b) => {
+  const timeDiff = getTransactionTimestamp(a) - getTransactionTimestamp(b);
+  if (timeDiff !== 0) return timeDiff;
+  return String(a?.id || '').localeCompare(String(b?.id || ''));
+};
+
 // Client specific formatting helpers
 const getBudgetDisplay = (type, amount) => {
   const formatted = formatBDT(amount);
@@ -213,11 +248,12 @@ export default function AdLedgerApp() {
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
-  // Scrub old $0.00 Meta Ads transactions on mount
+  // One-time data hygiene: remove phantom zero-value transactions from persisted localStorage.
+  // This intentionally removes them from the source data, not just from the UI.
   useEffect(() => {
-    const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (t.amountUSD || 0) < 0.005 && (t.taxUSD || 0) < 0.005);
-    if (hasZeroAdSpend) {
-      setTransactions(prev => prev.filter(t => !(t.type === 'AD_SPEND' && (t.amountUSD || 0) < 0.005 && (t.taxUSD || 0) < 0.005)));
+    const cleaned = transactions.filter(isMeaningfulTransaction);
+    if (cleaned.length !== transactions.length) {
+      setTransactions(cleaned);
     }
   }, [transactions, setTransactions]);
 
@@ -245,28 +281,34 @@ export default function AdLedgerApp() {
       cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0 };
     });
 
-    transactions.forEach(t => {
-      if (t.type === 'PAYMENT_RECEIVED') totalRevenueBDT += t.amountBDT || 0;
-      
+    transactions.filter(isMeaningfulTransaction).forEach(t => {
+      if (t.type === 'PAYMENT_RECEIVED') {
+        totalRevenueBDT += Number(t.amountBDT) || 0;
+      }
+
       if (t.type === 'USD_PURCHASE') {
-        const usdVal = t.amountUSD || 0;
+        const usdVal = Number(t.amountUSD) || 0;
+        const bdtVal = Number(t.amountBDT) || 0;
+        const cashOut = Number(t.cashOutCharge) || 0;
+
         totalUSDPurchased += usdVal;
-        totalBDTSpentOnUSD += t.amountBDT || 0;
-        totalCashOutCharges += t.cashOutCharge || 0;
-        
-        // Direct assignment to card
+        totalBDTSpentOnUSD += bdtVal;
+        totalCashOutCharges += cashOut;
+
         if (t.cardId && cardBalances[t.cardId] !== undefined) {
           cardBalances[t.cardId] += usdVal;
           cardStats[t.cardId].purchased += usdVal;
         }
       }
-      
+
       if (t.type === 'AD_SPEND') {
-        const spend = t.amountUSD || 0;
-        const tax = t.taxUSD || 0;
+        const spend = Number(t.amountUSD) || 0;
+        const tax = Number(t.taxUSD) || 0;
         const totalSpend = spend + tax;
+
         totalAdSpendUSD += spend;
         totalTaxUSD += tax;
+
         if (t.cardId && cardBalances[t.cardId] !== undefined) {
           cardBalances[t.cardId] -= totalSpend;
           cardStats[t.cardId].adSpend += spend;
@@ -292,7 +334,10 @@ export default function AdLedgerApp() {
   }, [transactions, cards]);
 
   const revenueChartData = useMemo(() => {
-    const grouped = transactions.filter(t => t.type === 'PAYMENT_RECEIVED' || t.type === 'AD_SPEND').reduce((acc, t) => {
+    const grouped = transactions.filter(t =>
+      isMeaningfulTransaction(t) &&
+      (t.type === 'PAYMENT_RECEIVED' || t.type === 'AD_SPEND')
+    ).reduce((acc, t) => {
       const d = t.date.substring(5);
       if (!acc[d]) acc[d] = { date: d, revenue: 0, spendUSD: 0 };
       if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += t.amountBDT;
@@ -303,8 +348,18 @@ export default function AdLedgerApp() {
   }, [transactions]);
 
   const handleAddTransaction = (newTx) => {
-    const tx = { ...newTx, id: `t${Date.now()}` };
-    setTransactions(prev => [tx, ...prev].sort((a,b) => new Date(b.date) - new Date(a.date)));
+    const tx = {
+      ...newTx,
+      id: `t${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Never store a zero-value financial transaction.
+    if (!isMeaningfulTransaction(tx)) return;
+
+    setTransactions(prev =>
+      [...prev, tx].sort(compareTransactionsChronologically).reverse()
+    );
     setActiveModal(null);
   };
 
@@ -809,8 +864,9 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         {activeCards.map(card => {
           // Calculate Last Transaction for this card
           const lastTx = transactions
-            .filter(t => t.cardId === card.id)
-            .sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+            .filter(t => t.cardId === card.id && isMeaningfulTransaction(t))
+            .sort(compareTransactionsChronologically)
+            .at(-1);
 
           return (
             <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
@@ -978,51 +1034,69 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   const [filterRange, setFilterRange] = useState({ label: 'Lifetime', start: null, end: null });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // All transactions for this card
+  // All valid transactions for this card, in true chronological order.
+  // Same-day transactions use createdAt; legacy records fall back to a stable
+  // type order so a USD purchase can fund a same-day Meta Ads transaction.
   const cardTxs = useMemo(() => {
-    return transactions.filter(t => t.cardId === card.id).sort((a,b) => new Date(a.date) - new Date(b.date));
+    return transactions
+      .filter(t => t.cardId === card.id && isMeaningfulTransaction(t))
+      .sort(compareTransactionsChronologically);
   }, [transactions, card.id]);
 
-  // Dynamic Historical Running Balance Calculation
+  // Dynamic historical running-balance calculation.
+  // Calculate balances oldest -> newest, then reverse ONLY for display.
   const { historyWithBalance, periodSummary } = useMemo(() => {
-    let historyStartBal = parseFloat(card.initialBalance || 0);
-    
-    // Accumulate transactions BEFORE selected start date
+    let historyStartBal = Number(card.initialBalance) || 0;
+
+    // Include every valid transaction before the selected period in the opening
+    // balance so a filtered history still shows the real Balance After values.
     if (filterRange.start) {
-       const preTxs = cardTxs.filter(t => t.date < filterRange.start);
-       preTxs.forEach(t => {
-         if (t.type === 'USD_PURCHASE') historyStartBal += parseFloat(t.amountUSD || 0);
-         if (t.type === 'AD_SPEND') historyStartBal -= (parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0));
-       });
+      const preTxs = cardTxs.filter(t => t.date < filterRange.start);
+      preTxs.forEach(t => {
+        if (t.type === 'USD_PURCHASE') {
+          historyStartBal += Number(t.amountUSD) || 0;
+        } else if (t.type === 'AD_SPEND') {
+          historyStartBal -= (Number(t.amountUSD) || 0) + (Number(t.taxUSD) || 0);
+        }
+      });
     }
 
     let filteredTxs = cardTxs;
     if (filterRange.start && filterRange.end) {
-       filteredTxs = cardTxs.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
+      filteredTxs = cardTxs.filter(
+        t => t.date >= filterRange.start && t.date <= filterRange.end
+      );
     }
 
     let summary = { purchased: 0, ads: 0, tax: 0, net: 0 };
-    
     let runningBal = historyStartBal;
-    const historyList = filteredTxs.map(t => {
+
+    const chronologicalHistory = filteredTxs.map(t => {
       let changeUSD = 0;
+
       if (t.type === 'USD_PURCHASE') {
-        changeUSD = parseFloat(t.amountUSD || 0);
+        changeUSD = Number(t.amountUSD) || 0;
         summary.purchased += changeUSD;
-      }
-      if (t.type === 'AD_SPEND') {
-        const spend = parseFloat(t.amountUSD || 0);
-        const tax = parseFloat(t.taxUSD || 0);
+      } else if (t.type === 'AD_SPEND') {
+        const spend = Number(t.amountUSD) || 0;
+        const tax = Number(t.taxUSD) || 0;
         changeUSD = -(spend + tax);
         summary.ads += spend;
         summary.tax += tax;
       }
-      summary.net += changeUSD;
-      runningBal += changeUSD;
-      return { ...t, changeUSD, runningBal };
-    }).reverse();
 
-    return { historyWithBalance: historyList, periodSummary: summary };
+      runningBal += changeUSD;
+      summary.net += changeUSD;
+
+      return { ...t, changeUSD, runningBal };
+    });
+
+    // Newest first for the UI. Each Balance After remains tied to the
+    // transaction that produced it.
+    return {
+      historyWithBalance: chronologicalHistory.reverse(),
+      periodSummary: summary,
+    };
   }, [cardTxs, filterRange, card.initialBalance]);
 
   const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0 };
@@ -1730,26 +1804,45 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
     if (type === 'PAYMENT_RECEIVED') {
       payload.amountBDT = parseFloat(formData.amountBDT);
       payload.clientId = formData.clientId;
+
+      if (!Number.isFinite(payload.amountBDT) || payload.amountBDT < EPSILON) {
+        window.alert('Enter a valid BDT amount greater than 0.');
+        return;
+      }
     } else if (type === 'USD_PURCHASE') {
       payload.amountBDT = parseFloat(formData.amountBDT);
       payload.cashOutCharge = parseFloat(formData.cashOutCharge || 0);
       payload.amountUSD = parseFloat(formData.amountUSD);
       payload.cardId = formData.cardId;
+
+      if (!Number.isFinite(payload.amountBDT) || payload.amountBDT < EPSILON ||
+          !Number.isFinite(payload.amountUSD) || payload.amountUSD < EPSILON) {
+        window.alert('Enter valid BDT Paid and USD Received amounts greater than 0.');
+        return;
+      }
+      if (payload.cashOutCharge < 0) {
+        window.alert('C.O Rate cannot be negative.');
+        return;
+      }
     } else if (type === 'AD_SPEND') {
       payload.amountUSD = parseFloat(formData.amountUSD || 0);
       payload.taxUSD = parseFloat(formData.taxUSD || 0);
-      
-      // Prevent saving meaningless zero-value Meta Ads transactions
-      if (payload.amountUSD < 0.005 && payload.taxUSD < 0.005) {
-        return; 
+
+      if (!Number.isFinite(payload.amountUSD) || payload.amountUSD < EPSILON) {
+        window.alert('Ad Spend must be greater than 0.');
+        return;
       }
-      
+      if (!Number.isFinite(payload.taxUSD) || payload.taxUSD < 0) {
+        window.alert('Tax/VAT cannot be negative.');
+        return;
+      }
+
       payload.clientId = formData.clientId;
       payload.cardId = formData.cardId;
       payload.adAccount = formData.adAccount;
       payload.campaign = formData.campaign;
     }
-    
+
     onSubmit(payload);
   };
 
