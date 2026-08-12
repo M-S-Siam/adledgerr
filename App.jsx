@@ -573,21 +573,207 @@ function DashboardView({ metrics, chartData, transactions, clients }) {
 }
 
 function LedgerView({ transactions, clients, cards }) {
-  const [filter, setFilter] = useState('ALL');
-  const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('ALL');
+
+  const filtered = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return [...transactions]
+      .filter(tx => {
+        const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
+
+        const search = searchTerm.trim().toLowerCase();
+        const client = clients.find(c => c.id === tx.clientId);
+        const card = cards.find(c => c.id === tx.cardId);
+
+        const searchableText = [
+          tx.notes,
+          tx.adAccount,
+          tx.campaign,
+          tx.type,
+          client?.name,
+          client?.company,
+          card?.name
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        const matchesSearch = !search || searchableText.includes(search);
+
+        const txDate = new Date(tx.date);
+        txDate.setHours(0, 0, 0, 0);
+
+        let matchesDate = true;
+        if (dateFilter === 'TODAY') {
+          matchesDate = txDate.getTime() === today.getTime();
+        } else if (dateFilter === 'THIS_WEEK') {
+          const weekStart = new Date(today);
+          const day = weekStart.getDay();
+          const diff = day === 0 ? 6 : day - 1;
+          weekStart.setDate(weekStart.getDate() - diff);
+          matchesDate = txDate >= weekStart && txDate <= today;
+        } else if (dateFilter === 'THIS_MONTH') {
+          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          matchesDate = txDate >= monthStart && txDate <= today;
+        }
+
+        return matchesType && matchesSearch && matchesDate;
+      })
+      .sort((a, b) => {
+        const timeA = a.timestamp || new Date(a.date).getTime();
+        const timeB = b.timestamp || new Date(b.date).getTime();
+        return timeB - timeA;
+      });
+  }, [transactions, clients, cards, typeFilter, searchTerm, dateFilter]);
+
+  const ledgerSummary = useMemo(() => {
+    let bdtIn = 0;
+    let bdtOut = 0;
+    let usdIn = 0;
+    let usdOut = 0;
+
+    filtered.forEach(tx => {
+      if (tx.type === 'PAYMENT_RECEIVED') {
+        bdtIn += parseFloat(tx.amountBDT || 0);
+      }
+
+      if (tx.type === 'USD_PURCHASE') {
+        bdtOut += parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0);
+        usdIn += parseFloat(tx.amountUSD || 0);
+      }
+
+      if (tx.type === 'AD_SPEND') {
+        usdOut += parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0);
+      }
+
+      if (tx.type === 'FEE') {
+        usdOut += parseFloat(tx.amountUSD || 0);
+      }
+    });
+
+    return {
+      bdtIn,
+      bdtOut,
+      netBDT: bdtIn - bdtOut,
+      usdIn,
+      usdOut,
+      netUSD: usdIn - usdOut,
+      count: filtered.length
+    };
+  }, [filtered]);
+
+  const clearFilters = () => {
+    setTypeFilter('ALL');
+    setDateFilter('ALL');
+    setSearchTerm('');
+  };
+
+  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || searchTerm.trim() !== '';
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
-        <select className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="ALL">All Transactions</option>
-          <option value="PAYMENT_RECEIVED">Payments Received</option>
-          <option value="USD_PURCHASE">USD Purchases</option>
-          <option value="AD_SPEND">Meta Ad Spend</option>
-        </select>
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
+          <p className="text-sm text-slate-500 mt-1">A clear view of every BDT and USD movement.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="ALL">All Transactions</option>
+            <option value="PAYMENT_RECEIVED">Payments Received</option>
+            <option value="USD_PURCHASE">USD Purchases</option>
+            <option value="AD_SPEND">Meta Ad Spend</option>
+            <option value="FEE">Fees</option>
+          </select>
+
+          <select
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          >
+            <option value="ALL">All Dates</option>
+            <option value="TODAY">Today</option>
+            <option value="THIS_WEEK">This Week</option>
+            <option value="THIS_MONTH">This Month</option>
+          </select>
+        </div>
       </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search client, card, campaign, source..."
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">BDT In</p>
+          <p className="text-lg font-bold text-green-600 mt-1">{formatBDT(ledgerSummary.bdtIn)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">BDT Out</p>
+          <p className="text-lg font-bold text-red-600 mt-1">{formatBDT(ledgerSummary.bdtOut)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">Net BDT</p>
+          <p className={`text-lg font-bold mt-1 ${ledgerSummary.netBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+            {formatBDT(ledgerSummary.netBDT)}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">USD In</p>
+          <p className="text-lg font-bold text-green-600 mt-1">{formatUSD(ledgerSummary.usdIn)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">USD Out</p>
+          <p className="text-lg font-bold text-red-600 mt-1">{formatUSD(ledgerSummary.usdOut)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">Transactions</p>
+          <p className="text-lg font-bold text-slate-900 mt-1">{ledgerSummary.count}</p>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-slate-800">All Transactions</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Buy USD = BDT out + USD in • Meta Ads = USD out
+            </p>
+          </div>
+          <span className="text-xs font-medium text-slate-500">
+            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
+          </span>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
@@ -595,35 +781,109 @@ function LedgerView({ transactions, clients, cards }) {
                 <th className="px-5 py-3">Date</th>
                 <th className="px-5 py-3">Type</th>
                 <th className="px-5 py-3">Entity / Details</th>
-                <th className="px-5 py-3 text-right">In (BDT)</th>
-                <th className="px-5 py-3 text-right">Out (USD)</th>
+                <th className="px-5 py-3 text-right">BDT In</th>
+                <th className="px-5 py-3 text-right">BDT Out</th>
+                <th className="px-5 py-3 text-right">USD In</th>
+                <th className="px-5 py-3 text-right">USD Out</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 && <tr><td colSpan="5" className="text-center py-8 text-slate-500">No transactions yet.</td></tr>}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center py-10 text-slate-500">
+                    No transactions found.
+                  </td>
+                </tr>
+              )}
+
               {filtered.map(tx => {
                 const client = clients.find(c => c.id === tx.clientId);
                 const card = cards.find(c => c.id === tx.cardId);
+
+                const isPayment = tx.type === 'PAYMENT_RECEIVED';
+                const isPurchase = tx.type === 'USD_PURCHASE';
+                const isAdSpend = tx.type === 'AD_SPEND';
+                const isFee = tx.type === 'FEE';
+
+                const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
+                const bdtOut = isPurchase
+                  ? parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)
+                  : 0;
+                const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
+                const usdOut = isAdSpend
+                  ? parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)
+                  : isFee
+                    ? parseFloat(tx.amountUSD || 0)
+                    : 0;
+
                 return (
-                <tr key={tx.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
-                  <td className="px-5 py-3"><TransactionTypeBadge type={tx.type} /></td>
-                  <td className="px-5 py-3">
-                    {client && <div className="font-medium text-slate-800">{client.name}</div>}
-                    {card && <div className="text-xs text-slate-500">Card: {card.name}</div>}
-                    {tx.type === 'USD_PURCHASE' && <div className="font-medium text-slate-800">Eff. Rate: ৳{((parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0)) / parseFloat(tx.amountUSD||1)).toFixed(2)}</div>}
-                    {tx.type === 'AD_SPEND' && <div className="text-xs text-slate-500">{tx.adAccount} • {tx.campaign}</div>}
-                  </td>
-                  <td className="px-5 py-3 text-right font-medium text-green-600">
-                    {tx.type === 'PAYMENT_RECEIVED' ? `+${formatBDT(tx.amountBDT)}` : '-'}
-                  </td>
-                  <td className="px-5 py-3 text-right font-medium text-slate-800">
-                    {(tx.type === 'AD_SPEND' || tx.type === 'USD_PURCHASE') 
-                      ? formatUSD(parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0)) 
-                      : '-'}
-                  </td>
-                </tr>
-              )})}
+                  <tr key={tx.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
+
+                    <td className="px-5 py-4">
+                      <TransactionTypeBadge type={tx.type} />
+                    </td>
+
+                    <td className="px-5 py-4 min-w-[260px]">
+                      {client && (
+                        <div className="font-semibold text-slate-800">{client.name}</div>
+                      )}
+
+                      {card && (
+                        <div className="text-xs text-slate-500">Card: {card.name}</div>
+                      )}
+
+                      {tx.type === 'USD_PURCHASE' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.notes || 'USD Purchase'} • Effective Rate: ৳
+                          {usdIn > 0
+                            ? ((parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) / usdIn).toFixed(2)
+                            : '0.00'}
+                        </div>
+                      )}
+
+                      {tx.type === 'AD_SPEND' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.adAccount || 'Ad Account'}{tx.campaign ? ` • ${tx.campaign}` : ''}
+                        </div>
+                      )}
+
+                      {tx.type === 'PAYMENT_RECEIVED' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.notes || 'Client payment received'}
+                        </div>
+                      )}
+
+                      {tx.type === 'FEE' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.notes || 'Card fee'}
+                        </div>
+                      )}
+
+                      {!client && !card && !isPurchase && !isAdSpend && !isPayment && !isFee && (
+                        <div className="text-xs text-slate-500">{tx.notes || '—'}</div>
+                      )}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-green-600">
+                      {bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-red-600">
+                      {bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-green-600">
+                      {usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-red-600">
+                      {usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -1295,8 +1555,18 @@ function StatRow({ label, value, className = 'text-slate-900' }) {
 function Divider() { return <div className="h-px w-full bg-slate-100 my-2"></div>; }
 
 function TransactionTypeBadge({ type }) {
-  const styles = { PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200', USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200', AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200' };
-  const labels = { PAYMENT_RECEIVED: 'Payment In', USD_PURCHASE: 'Buy USD', AD_SPEND: 'Meta Ads' };
+  const styles = {
+    PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200',
+    USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200',
+    AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200',
+    FEE: 'bg-orange-100 text-orange-700 border-orange-200'
+  };
+  const labels = {
+    PAYMENT_RECEIVED: 'Payment In',
+    USD_PURCHASE: 'Buy USD',
+    AD_SPEND: 'Meta Ads',
+    FEE: 'Card Fee'
+  };
   return <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>{labels[type] || type}</span>;
 }
 
