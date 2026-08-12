@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, Users, CreditCard, DollarSign, 
   Activity, FileText, Settings, Plus, Search, 
@@ -361,11 +362,28 @@ export default function AdLedgerApp() {
     }
   };
 
-  const handleToggleClientStatus = (client) => {
+  const handleToggleClientStatus = (client, nextStatus) => {
     setClients(prev => prev.map(c => {
       if (c.id !== client.id) return c;
 
-      if (c.currentlyWorking) {
+      if (nextStatus === 'active') {
+        return {
+          ...c,
+          currentlyWorking: true,
+          status: 'Active',
+          endDate: ''
+        };
+      }
+
+      if (nextStatus === 'inactive') {
+        return {
+          ...c,
+          currentlyWorking: false,
+          status: 'Inactive'
+        };
+      }
+
+      if (nextStatus === 'completed') {
         return {
           ...c,
           currentlyWorking: false,
@@ -374,12 +392,7 @@ export default function AdLedgerApp() {
         };
       }
 
-      return {
-        ...c,
-        currentlyWorking: true,
-        status: 'Active',
-        endDate: ''
-      };
+      return c;
     }));
   };
 
@@ -1038,7 +1051,7 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                       onHistory={() => onViewHistory(c)}
                       onEdit={() => onEditClient(c)}
                       onReceivePayment={() => onReceivePayment(c)}
-                                            onToggleStatus={() => onToggleStatus(c)}
+                                            onToggleStatus={(status) => onToggleStatus(c, status)}
                       onDelete={() => onDeleteClient(c.id)}
                     />
                   </td>
@@ -1760,26 +1773,35 @@ function ClientActionsMenu({
   const [isOpen, setIsOpen] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-  const menuRef = useRef(null);
   const buttonRef = useRef(null);
+  const menuRef = useRef(null);
 
   const updateMenuPosition = () => {
     if (!buttonRef.current) return;
 
     const rect = buttonRef.current.getBoundingClientRect();
-    const menuWidth = 224;
-    const menuHeight = 270;
-    const gap = 6;
+    const menuWidth = 240;
+    const menuHeight = showStatusMenu ? 350 : 300;
+    const gap = 8;
+    const viewportPadding = 8;
 
     let left = rect.right - menuWidth;
-    left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+    left = Math.max(
+      viewportPadding,
+      Math.min(left, window.innerWidth - menuWidth - viewportPadding)
+    );
 
     let top = rect.bottom + gap;
-    if (top + menuHeight > window.innerHeight - 8) {
+
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
       top = rect.top - menuHeight - gap;
     }
 
-    top = Math.max(8, top);
+    top = Math.max(
+      viewportPadding,
+      Math.min(top, window.innerHeight - menuHeight - viewportPadding)
+    );
+
     setMenuPosition({ top, left });
   };
 
@@ -1811,42 +1833,39 @@ function ClientActionsMenu({
       window.removeEventListener('resize', handleViewportChange);
       window.removeEventListener('scroll', handleViewportChange, true);
     };
-  }, [isOpen]);
+  }, [isOpen, showStatusMenu]);
 
   const closeAndRun = (callback) => {
     setIsOpen(false);
     setShowStatusMenu(false);
-    if (typeof callback === 'function') {
-      callback();
-    }
+    if (typeof callback === 'function') callback();
   };
 
-  return (
-    <div className="inline-block text-left">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => {
-          if (!isOpen) updateMenuPosition();
-          setIsOpen(prev => !prev);
-        }}
-        className="p-1 rounded hover:bg-slate-100 text-slate-400 transition-colors"
-        aria-label={`Actions for ${client?.name || 'client'}`}
-        aria-expanded={isOpen}
-      >
-        <MoreVertical size={20} />
-      </button>
+  const openMenu = () => {
+    setIsOpen(prev => {
+      const next = !prev;
+      if (!next) setShowStatusMenu(false);
+      return next;
+    });
+  };
 
-      {isOpen && (
+  const menu = isOpen && typeof document !== 'undefined'
+    ? createPortal(
         <div
           ref={menuRef}
-          className="fixed w-56 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] py-1"
-          style={{ top: menuPosition.top, left: menuPosition.left }}
+          className="fixed bg-white border border-slate-200 rounded-xl shadow-2xl z-[99999] p-1.5"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+            width: 240
+          }}
+          role="menu"
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={() => closeAndRun(onViewDetails)}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
           >
             View Details
           </button>
@@ -1854,7 +1873,7 @@ function ClientActionsMenu({
           <button
             type="button"
             onClick={() => closeAndRun(onHistory)}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
           >
             Transaction History
           </button>
@@ -1862,7 +1881,7 @@ function ClientActionsMenu({
           <button
             type="button"
             onClick={() => closeAndRun(onEdit)}
-            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
           >
             Edit Client
           </button>
@@ -1870,63 +1889,83 @@ function ClientActionsMenu({
           <button
             type="button"
             onClick={() => closeAndRun(onReceivePayment)}
-            className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50"
+            className="w-full text-left px-4 py-3 text-sm text-green-700 rounded-lg hover:bg-green-50"
           >
             Receive Payment
           </button>
 
-          <div className="h-px w-full bg-slate-100 my-1" />
+          <div className="h-px bg-slate-100 my-1.5" />
 
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowStatusMenu(prev => !prev)}
-              className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 flex items-center justify-between"
-            >
-              <span>Change Status</span>
-              <span className="text-slate-400">›</span>
-            </button>
+          <button
+            type="button"
+            onClick={() => setShowStatusMenu(prev => !prev)}
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 flex items-center justify-between"
+            aria-expanded={showStatusMenu}
+          >
+            <span>Change Status</span>
+            <ChevronDown
+              size={15}
+              className={`transition-transform ${showStatusMenu ? 'rotate-180' : ''}`}
+            />
+          </button>
 
-            {showStatusMenu && (
-              <div className="absolute right-full top-0 mr-2 w-44 bg-white border border-slate-200 rounded-lg shadow-xl z-[10000] py-1">
-                <button
-                  type="button"
-                  onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
-                  className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50"
-                >
-                  Mark Active
-                </button>
-                <button
-                  type="button"
-                  onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
-                  className="w-full text-left px-4 py-2.5 text-sm text-orange-700 hover:bg-orange-50"
-                >
-                  Mark Inactive
-                </button>
-                <button
-                  type="button"
-                  onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
-                  className="w-full text-left px-4 py-2.5 text-sm text-blue-700 hover:bg-blue-50"
-                >
-                  Mark Completed
-                </button>
-              </div>
-            )}
-          </div>
+          {showStatusMenu && (
+            <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 border border-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
+                className="w-full text-left px-3 py-2.5 text-sm text-green-700 rounded-md hover:bg-green-100"
+              >
+                Mark Active
+              </button>
 
-          <div className="h-px w-full bg-slate-100 my-1" />
+              <button
+                type="button"
+                onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
+                className="w-full text-left px-3 py-2.5 text-sm text-orange-700 rounded-md hover:bg-orange-100"
+              >
+                Mark Inactive
+              </button>
+
+              <button
+                type="button"
+                onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
+                className="w-full text-left px-3 py-2.5 text-sm text-blue-700 rounded-md hover:bg-blue-100"
+              >
+                Mark Completed
+              </button>
+            </div>
+          )}
+
+          <div className="h-px bg-slate-100 my-1.5" />
 
           <button
             type="button"
             onClick={() => closeAndRun(onDelete)}
-            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between"
+            className="w-full text-left px-4 py-3 text-sm text-red-600 rounded-lg hover:bg-red-50 flex items-center justify-between"
           >
             <span>Delete Client</span>
-            <Trash2 size={14} />
+            <Trash2 size={15} />
           </button>
-        </div>
-      )}
-    </div>
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={openMenu}
+        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
+        aria-label={`Actions for ${client?.name || 'client'}`}
+        aria-expanded={isOpen}
+      >
+        <MoreVertical size={20} />
+      </button>
+      {menu}
+    </>
   );
 }
 
