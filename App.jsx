@@ -64,17 +64,17 @@ const INITIAL_TRANSACTIONS = [];
 
 // --- NORMALIZED FORMATTERS (PREVENTS -$0.00) ---
 const formatBDT = (amount) => {
-  const val = parseFloat(amount) || 0;
-  if (Math.abs(val) < 0.005) return '৳0.00';
-  const sign = val < 0 ? '-' : '';
-  return `${sign}৳${Math.abs(val).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+  let val = parseFloat(amount) || 0;
+  if (Math.abs(val) < 0.005) val = 0; // Normalize microscopic negative values
+  return `৳${val.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 };
 
 const formatUSD = (amount) => {
-  const val = parseFloat(amount) || 0;
-  if (Math.abs(val) < 0.005) return '$0.00';
-  const sign = val < 0 ? '-' : '';
-  return `${sign}$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  let val = parseFloat(amount) || 0;
+  if (Math.abs(val) < 0.005) val = 0; // Normalize to true zero
+  const isNegative = val < 0;
+  const absVal = Math.abs(val);
+  return `${isNegative ? '-' : ''}$${absVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const formatDate = (dateStr) => {
@@ -208,7 +208,7 @@ export default function AdLedgerApp() {
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
-  // Clean invalid Meta Ads on load
+  // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
   useEffect(() => {
     const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0);
     if (hasZeroAdSpend) {
@@ -1105,13 +1105,19 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
               return (
               <tr key={tx.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
-                <td className="px-4 py-2.5 font-medium text-slate-800">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}</td>
+                <td className="px-4 py-2.5 font-medium text-slate-800">
+                  {tx.type === 'USD_PURCHASE' ? 'USD Purchase' : (
+                    <>
+                      Meta Ads
+                      {parseFloat(tx.taxUSD) > 0 && <span className="text-slate-400 font-normal text-xs ml-1">• Tax {formatUSD(tx.taxUSD)}</span>}
+                    </>
+                  )}
+                </td>
                 <td className="px-4 py-2.5 text-slate-600">
                   {tx.type === 'USD_PURCHASE' ? tx.notes : (tx.notes || tx.campaign || '-')}
                 </td>
                 <td className={`px-4 py-2.5 text-right font-medium ${tx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
                   {tx.type === 'USD_PURCHASE' ? '+' : '-'}{formatUSD(tx.amountUSD)}
-                  {parseFloat(tx.taxUSD) > 0 && <span className="block text-[10px] text-red-500 font-normal mt-0.5">+ tax: {formatUSD(tx.taxUSD)}</span>}
                 </td>
                 <td className="px-4 py-2.5 text-right text-slate-600">
                   {bdtCost ? formatBDT(bdtCost) : '—'}
