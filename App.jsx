@@ -1032,14 +1032,13 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                     </div>
                   </td>
                   <td className="px-5 py-4 text-center">
-                    <ClientDropdownMenu
+                    <ClientActionsMenu
                       client={c}
                       onViewDetails={() => onViewDetails(c)}
                       onHistory={() => onViewHistory(c)}
                       onEdit={() => onEditClient(c)}
                       onReceivePayment={() => onReceivePayment(c)}
-                      onAddAdSpend={() => onAddAdSpend(c)}
-                      onToggleStatus={() => onToggleStatus(c)}
+                                            onToggleStatus={() => onToggleStatus(c)}
                       onDelete={() => onDeleteClient(c.id)}
                     />
                   </td>
@@ -1749,7 +1748,7 @@ function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   );
 }
 
-function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceivePayment, onAddAdSpend, onToggleStatus, onDelete }) {
+function ClientActionsMenu({ client, onViewDetails, onHistory, onEdit, onReceivePayment, onToggleStatus, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
