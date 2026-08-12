@@ -873,7 +873,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
           {globalDateRange.label !== 'Lifetime' && (
             <button onClick={() => setGlobalDateRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 font-medium hover:underline mr-1">
-              Clear Date Filter
+              Clear Filter
             </button>
           )}
           
@@ -1784,7 +1784,7 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
             <div><label className={labelClass}>BDT Paid</label>
               <input type="number" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="0" className={inputClass} />
             </div>
-            <div><label className={labelClass}>C.O Rate / Cash-out Charge (BDT)</label>
+            <div><label className={labelClass}>C.O Rate (Cash-out Fee)</label>
               <input type="number" name="cashOutCharge" value={formData.cashOutCharge} onChange={handleChange} placeholder="0" className={inputClass} />
             </div>
           </div>
