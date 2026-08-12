@@ -39,7 +39,6 @@ function useLocalStorage(key, initialValue) {
   return [storedValue, setValue];
 }
 
-// --- INITIAL MOCK DATA ---
 const INITIAL_CLIENTS = [
   { 
     id: 'c1', name: 'Mehedi Hasan', company: 'RITMO', status: 'Active', 
@@ -67,12 +66,13 @@ const INITIAL_TRANSACTIONS = [
   { id: 't7', date: '2026-08-04', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 25, taxUSD: 3.75, adAccount: 'RITMO Ads 1', campaign: 'Awareness Q3', notes: 'RITMO Awareness' },
 ];
 
-// --- UTILITIES ---
 const formatBDT = (amount) => `৳${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 const formatUSD = (amount) => `$${(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Produces: 12 Aug 2026 (DD MMM YYYY)
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
-  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 // Client specific formatting helpers
@@ -107,13 +107,13 @@ const getDurationDays = (client) => {
   if (client.currentlyWorking) {
     end = new Date();
   } else {
-    if (!client.endDate) return 0;
+    if (!client.endDate) return 0; // fallback if no end date provided but not currently working
     end = new Date(client.endDate);
   }
   end.setHours(0,0,0,0);
 
   const diffTime = end - start;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include start day
   return diffDays > 0 ? diffDays : 0;
 };
 
@@ -131,11 +131,10 @@ const getExpectedBudgetBDT = (client, durationDays) => {
   const type = client.budgetType || 'Monthly';
   if (type === 'Daily') return amt * durationDays;
   if (type === 'Weekly') return (amt / 7) * durationDays;
-  if (type === 'Monthly') return (amt / 30) * durationDays;
-  return amt;
+  if (type === 'Monthly') return (amt / 30) * durationDays; // Simplified monthly projection
+  return amt; // Custom / Total
 };
 
-// --- DATE FILTER UTILITIES ---
 const DATE_PRESETS = [
   'Lifetime', 'Today', 'Yesterday', 'Last 7 Days', 'Last 14 Days', 
   'Last 28 Days', 'Last 30 Days', 'This Week', 'Last Week', 
@@ -169,7 +168,7 @@ const getPresetDates = (preset) => {
     case 'Last 30 Days': start.setDate(start.getDate() - 29); break;
     case 'This Week': 
       const day = start.getDay(); 
-      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+      const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
       start.setDate(diff);
       break;
     case 'Last Week':
@@ -193,7 +192,6 @@ const getPresetDates = (preset) => {
   return { start: formatDateString(start), end: formatDateString(end) };
 };
 
-// --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -282,7 +280,6 @@ export default function AdLedgerApp() {
     return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
   }, [transactions]);
 
-  // --- HANDLERS ---
   const handleAddTransaction = (newTx) => {
     const tx = { ...newTx, id: `t${Date.now()}` };
     setTransactions(prev => [tx, ...prev].sort((a,b) => new Date(b.date) - new Date(a.date)));
@@ -339,7 +336,6 @@ export default function AdLedgerApp() {
     setActiveModal('spend');
   };
 
-  // --- RENDERERS ---
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} />;
@@ -482,8 +478,6 @@ export default function AdLedgerApp() {
     </div>
   );
 }
-
-// --- VIEWS ---
 
 function DashboardView({ metrics, chartData, transactions, clients }) {
   return (
@@ -743,17 +737,10 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      
+      {/* Top Header - Kept Add Card strictly here */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-slate-900">Cards & USD Ledger</h1>
-          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
-            <CalendarDays size={16} className="text-blue-600" /> 
-            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `Showing: ${globalDateRange.label}`}
-          </button>
-          {globalDateRange.label !== 'Lifetime' && (
-            <button onClick={() => setGlobalDateRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline">Clear Filter</button>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold text-slate-900">Cards & USD Ledger</h1>
         <button onClick={onAddCard} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
           <Plus size={16} /> Add Card
         </button>
@@ -768,8 +755,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         />
       )}
       
+      {/* CARDS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* CARDS */}
         {cards.map(card => (
           <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
             <div>
@@ -800,11 +787,19 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         ))}
       </div>
 
-      {/* USD PURCHASE HISTORY */}
+      {/* USD PURCHASE HISTORY SECTION - History filter moved here exactly */}
       <div className="flex justify-between items-end mt-8 mb-4">
         <h3 className="text-lg font-bold text-slate-800">USD Purchase History</h3>
-        {globalDateRange.label !== 'Lifetime' && <span className="text-sm text-blue-600 font-medium">Filtered: {globalDateRange.label}</span>}
+        
+        <div className="flex items-center gap-3">
+          {globalDateRange.label !== 'Lifetime' && <button onClick={() => setGlobalDateRange({label: 'Lifetime', start: null, end: null})} className="text-sm text-red-600 font-medium hover:underline">Clear Filter</button>}
+          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
+            <CalendarDays size={16} className="text-blue-600" /> 
+            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `Showing: ${globalDateRange.label}`}
+          </button>
+        </div>
       </div>
+
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -852,8 +847,6 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
     </div>
   );
 }
-
-// --- COMPONENTS ---
 
 function NavItem({ icon, label, isActive, onClick }) {
   return (
@@ -912,7 +905,6 @@ function Modal({ title, onClose, children, width = "max-w-md" }) {
   );
 }
 
-// --- DATE RANGE PICKER COMPONENT ---
 function DateRangePickerModal({ onClose, onApply, initialRange }) {
   const [selectedPreset, setSelectedPreset] = useState(initialRange?.label || 'Lifetime');
   const [customStart, setCustomStart] = useState(initialRange?.start || '');
@@ -971,21 +963,27 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date</label>
-                <input 
-                  type="date" 
-                  value={customStart} 
-                  onChange={(e) => { setCustomStart(e.target.value); setSelectedPreset('Custom Range'); }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
-                />
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    value={customStart} 
+                    onChange={(e) => { setCustomStart(e.target.value); setSelectedPreset('Custom Range'); }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
+                  />
+                  {!customStart && <span className="absolute left-3 top-2.5 text-slate-400 text-sm pointer-events-none bg-white">DD / MM / YYYY</span>}
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date</label>
-                <input 
-                  type="date" 
-                  value={customEnd} 
-                  onChange={(e) => { setCustomEnd(e.target.value); setSelectedPreset('Custom Range'); }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
-                />
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    value={customEnd} 
+                    onChange={(e) => { setCustomEnd(e.target.value); setSelectedPreset('Custom Range'); }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
+                  />
+                  {!customEnd && <span className="absolute left-3 top-2.5 text-slate-400 text-sm pointer-events-none bg-white">DD / MM / YYYY</span>}
+                </div>
               </div>
             </div>
             {customStart && customEnd && (
@@ -1008,7 +1006,6 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
     </div>
   );
 }
-
 
 function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -1070,8 +1067,6 @@ function ClientDropdownMenu({ onViewDetails, onEdit, onReceivePayment, onAddAdSp
     </div>
   );
 }
-
-// --- FORMS & MODALS ---
 
 function ClientForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(() => {
