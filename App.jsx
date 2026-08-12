@@ -680,8 +680,12 @@ function ReportsView({ clients, cards, transactions }) {
         ? clients.find(c => String(c.name || '').trim().toLowerCase() === explicitClientName)
         : null;
 
-      const targetClientId = t.clientId || namedClient?.id || (
-        clients.length === 1 ? clients[0].id : null
+      const clientIdExists = t.clientId && clients.some(c => c.id === t.clientId);
+
+      const targetClientId = (
+        (clientIdExists ? t.clientId : null) ||
+        namedClient?.id ||
+        (clients.length === 1 ? clients[0].id : null)
       );
 
       if (!targetClientId) return;
