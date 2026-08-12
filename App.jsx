@@ -237,7 +237,7 @@ export default function AdLedgerApp() {
     let cardStats = {}; 
     cards.forEach(c => {
       cardBalances[c.id] = parseFloat(c.initialBalance || 0);
-      cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+      cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0 };
     });
 
     transactions.forEach(t => {
@@ -265,14 +265,6 @@ export default function AdLedgerApp() {
           cardBalances[t.cardId] -= totalSpend;
           cardStats[t.cardId].adSpend += spend;
           cardStats[t.cardId].tax += tax;
-        }
-      }
-
-      if (t.type === 'FEE') {
-        const fee = parseFloat(t.amountUSD || 0);
-        if (t.cardId && cardBalances[t.cardId] !== undefined) {
-          cardBalances[t.cardId] -= fee;
-          cardStats[t.cardId].fees += fee;
         }
       }
     });
@@ -439,7 +431,7 @@ export default function AdLedgerApp() {
             </button>
             <div className="hidden sm:flex items-center bg-slate-100 rounded-md px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500">
               <Search size={18} className="text-slate-400" />
-              <input type="text" placeholder="Search..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
+              <input type="text" placeholder="Search transactions..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
             </div>
           </div>
           
@@ -573,173 +565,20 @@ function DashboardView({ metrics, chartData, transactions, clients }) {
 }
 
 function LedgerView({ transactions, clients, cards }) {
-  const [dateRange, setDateRange] = useState({ label: 'Lifetime', start: null, end: null });
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [typeFilter, setTypeFilter] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTxForModal, setSelectedTxForModal] = useState(null);
-
-  const flatTransactions = useMemo(() => {
-    let list = [];
-    transactions.forEach(t => {
-      const client = clients.find(c => c.id === t.clientId);
-      const card = cards.find(c => c.id === t.cardId);
-      const clientName = client ? client.name : '';
-      const cardName = card ? card.name : '';
-
-      if (t.type === 'AD_SPEND') {
-        const spend = parseFloat(t.amountUSD || 0);
-        const tax = parseFloat(t.taxUSD || 0);
-        
-        if (spend > 0) {
-          list.push({
-            ...t, displayType: 'AD_SPEND', inBDT: null, outUSD: spend,
-            clientName, cardName, entityDesc: clientName,
-            desc: t.notes || 'Meta Ads Spend',
-            searchString: `${t.notes||''} ${clientName} ${cardName} Meta Ads`.toLowerCase()
-          });
-        }
-        if (tax > 0) {
-          list.push({
-            ...t, id: t.id + '_tax', displayType: 'TAX', inBDT: null, outUSD: tax,
-            desc: 'Meta Ads Tax' + (t.notes ? ' - ' + t.notes : ''),
-            clientName, cardName, entityDesc: clientName,
-            searchString: `meta ads tax ${t.notes||''} ${clientName} ${cardName}`.toLowerCase()
-          });
-        }
-      } else if (t.type === 'USD_PURCHASE') {
-        list.push({
-          ...t, displayType: 'USD_PURCHASE', inBDT: parseFloat(t.amountBDT || 0), outUSD: parseFloat(t.amountUSD || 0),
-          clientName, cardName, entityDesc: cardName,
-          desc: t.notes || 'Buy USD',
-          searchString: `${t.notes||''} ${cardName} USD Purchase`.toLowerCase()
-        });
-      } else if (t.type === 'PAYMENT_RECEIVED') {
-        list.push({
-          ...t, displayType: 'PAYMENT_RECEIVED', inBDT: parseFloat(t.amountBDT || 0), outUSD: null,
-          clientName, cardName, entityDesc: clientName,
-          desc: t.notes || 'Payment Received',
-          searchString: `${t.notes||''} ${clientName} Payment Received`.toLowerCase()
-        });
-      } else {
-        list.push({
-          ...t, displayType: t.type, inBDT: parseFloat(t.amountBDT || 0), outUSD: parseFloat(t.amountUSD || 0),
-          clientName, cardName, entityDesc: clientName || cardName,
-          desc: t.notes || t.type,
-          searchString: `${t.notes||''} ${clientName} ${cardName} ${t.type}`.toLowerCase()
-        });
-      }
-    });
-    
-    return list.sort((a, b) => {
-      const tA = a.timestamp || new Date(a.date).getTime();
-      const tB = b.timestamp || new Date(b.date).getTime();
-      return tB - tA; // Newest first
-    });
-  }, [transactions, clients, cards]);
-
-  const filteredTransactions = useMemo(() => {
-    return flatTransactions.filter(t => {
-      if (dateRange.start && dateRange.end) {
-        if (t.date < dateRange.start || t.date > dateRange.end) return false;
-      }
-      if (typeFilter !== 'ALL' && t.displayType !== typeFilter) return false;
-      if (searchQuery) {
-        if (!t.searchString.includes(searchQuery.toLowerCase())) return false;
-      }
-      return true;
-    });
-  }, [flatTransactions, dateRange, typeFilter, searchQuery]);
-
-  const summary = useMemo(() => {
-    let totalBDTIn = 0;
-    let totalUSDOut = 0;
-    filteredTransactions.forEach(t => {
-      if (t.inBDT) totalBDTIn += t.inBDT;
-      if (t.outUSD) totalUSDOut += t.outUSD;
-    });
-    return { totalBDTIn, totalUSDOut, count: filteredTransactions.length };
-  }, [filteredTransactions]);
-
-  const getTypeLabel = (type) => {
-    const map = {
-      'USD_PURCHASE': 'Buy USD',
-      'AD_SPEND': 'Meta Ads',
-      'TAX': 'Tax',
-      'PAYMENT_RECEIVED': 'Receive BDT',
-      'FEE': 'Card Fee'
-    };
-    return map[type] || type;
-  };
+  const [filter, setFilter] = useState('ALL');
+  const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search transactions..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
-            />
-          </div>
-          <select 
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none cursor-pointer"
-            value={typeFilter} 
-            onChange={(e) => setTypeFilter(e.target.value)}
-          >
-            <option value="ALL">All Types</option>
-            <option value="USD_PURCHASE">Buy USD</option>
-            <option value="AD_SPEND">Meta Ads</option>
-            <option value="TAX">Tax</option>
-            <option value="PAYMENT_RECEIVED">Receive BDT</option>
-            <option value="FEE">Card Fee</option>
-          </select>
-          <button 
-            onClick={() => setIsDatePickerOpen(true)} 
-            className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
-          >
-            <CalendarDays size={16} className="text-blue-600" /> 
-            {dateRange.label === 'Lifetime' ? 'Filter Date' : dateRange.label}
-          </button>
-          {dateRange.label !== 'Lifetime' && (
-            <button onClick={() => setDateRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline font-medium">Clear</button>
-          )}
-        </div>
+        <select className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none" value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="ALL">All Transactions</option>
+          <option value="PAYMENT_RECEIVED">Payments Received</option>
+          <option value="USD_PURCHASE">USD Purchases</option>
+          <option value="AD_SPEND">Meta Ad Spend</option>
+        </select>
       </div>
-
-      {isDatePickerOpen && (
-        <DateRangePickerModal 
-          onClose={() => setIsDatePickerOpen(false)} 
-          onApply={(range) => { setDateRange(range); setIsDatePickerOpen(false); }} 
-          initialRange={dateRange}
-        />
-      )}
-
-      {selectedTxForModal && (
-        <LedgerTransactionModal tx={selectedTxForModal} onClose={() => setSelectedTxForModal(null)} />
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Total BDT In</p>
-          <p className="text-xl font-bold text-green-600">{formatBDT(summary.totalBDTIn)}</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Total USD Out</p>
-          <p className="text-xl font-bold text-slate-800">{formatUSD(summary.totalUSDOut)}</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide mb-1">Transactions</p>
-          <p className="text-xl font-bold text-blue-600">{summary.count}</p>
-        </div>
-      </div>
-
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
@@ -747,30 +586,36 @@ function LedgerView({ transactions, clients, cards }) {
               <tr>
                 <th className="px-5 py-3">Date</th>
                 <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Description</th>
-                <th className="px-5 py-3">Card / Client</th>
+                <th className="px-5 py-3">Entity / Details</th>
                 <th className="px-5 py-3 text-right">In (BDT)</th>
                 <th className="px-5 py-3 text-right">Out (USD)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredTransactions.length === 0 && (
-                <tr><td colSpan="6" className="text-center py-12 text-slate-500">No transactions found.</td></tr>
-              )}
-              {filteredTransactions.map(tx => (
-                <tr key={tx.id} onClick={() => setSelectedTxForModal(tx)} className="hover:bg-blue-50/50 cursor-pointer transition-colors group">
+              {filtered.length === 0 && <tr><td colSpan="5" className="text-center py-8 text-slate-500">No transactions yet.</td></tr>}
+              {filtered.map(tx => {
+                const client = clients.find(c => c.id === tx.clientId);
+                const card = cards.find(c => c.id === tx.cardId);
+                return (
+                <tr key={tx.id} className="hover:bg-slate-50">
                   <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
-                  <td className="px-5 py-3 font-medium text-slate-700">{getTypeLabel(tx.displayType)}</td>
-                  <td className="px-5 py-3 text-slate-600 max-w-[200px] truncate" title={tx.desc}>{tx.desc}</td>
-                  <td className="px-5 py-3 font-medium text-slate-800">{tx.entityDesc || '—'}</td>
-                  <td className="px-5 py-3 text-right font-semibold text-green-600">
-                    {tx.inBDT ? formatBDT(tx.inBDT) : '—'}
+                  <td className="px-5 py-3"><TransactionTypeBadge type={tx.type} /></td>
+                  <td className="px-5 py-3">
+                    {client && <div className="font-medium text-slate-800">{client.name}</div>}
+                    {card && <div className="text-xs text-slate-500">Card: {card.name}</div>}
+                    {tx.type === 'USD_PURCHASE' && <div className="font-medium text-slate-800">Eff. Rate: ৳{((parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0)) / parseFloat(tx.amountUSD||1)).toFixed(2)}</div>}
+                    {tx.type === 'AD_SPEND' && <div className="text-xs text-slate-500">{tx.adAccount} • {tx.campaign}</div>}
                   </td>
-                  <td className="px-5 py-3 text-right font-semibold text-slate-800">
-                    {tx.outUSD ? formatUSD(tx.outUSD) : '—'}
+                  <td className="px-5 py-3 text-right font-medium text-green-600">
+                    {tx.type === 'PAYMENT_RECEIVED' ? `+${formatBDT(tx.amountBDT)}` : '-'}
+                  </td>
+                  <td className="px-5 py-3 text-right font-medium text-slate-800">
+                    {(tx.type === 'AD_SPEND' || tx.type === 'USD_PURCHASE') 
+                      ? formatUSD(parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0)) 
+                      : '-'}
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -779,72 +624,9 @@ function LedgerView({ transactions, clients, cards }) {
   );
 }
 
-function LedgerTransactionModal({ tx, onClose }) {
-  return (
-    <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
-      <div className="space-y-4 text-sm">
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
-          <div>
-            <span className="text-xs text-slate-400 uppercase font-medium block">Reference ID</span>
-            <span className="font-mono text-xs font-bold text-slate-800">{tx.id.replace('_tax', '')}</span>
-          </div>
-          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">{tx.displayType.replace('_', ' ')}</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Date</span><span className="font-bold text-slate-800">{formatDate(tx.date)}</span></div>
-          {tx.clientName && <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Client</span><span className="font-bold text-slate-800">{tx.clientName}</span></div>}
-          {tx.cardName && <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Card</span><span className="font-bold text-blue-600">{tx.cardName}</span></div>}
-          {tx.type === 'USD_PURCHASE' && <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Source</span><span className="font-bold text-slate-800">{tx.notes || 'N/A'}</span></div>}
-        </div>
-
-        {tx.type === 'USD_PURCHASE' && (
-          <>
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
-              <div className="flex justify-between"><span>BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(tx.amountBDT)}</span></div>
-              <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-slate-800">{formatBDT(tx.cashOutCharge)}</span></div>
-              <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total Cost:</span><span className="text-slate-900">{formatBDT(parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0))}</span></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">USD Received</span><span className="font-bold text-green-600">{formatUSD(tx.amountUSD)}</span></div>
-              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded"><span className="text-blue-600 block font-medium">Effective Rate</span><span className="font-bold text-blue-700">৳{((parseFloat(tx.amountBDT||0) + parseFloat(tx.cashOutCharge||0)) / parseFloat(tx.amountUSD||1)).toFixed(2)}</span></div>
-            </div>
-          </>
-        )}
-
-        {(tx.type === 'AD_SPEND') && (
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
-            <div className="flex justify-between"><span>Ad Spend:</span><span className="font-medium text-slate-800">{formatUSD(tx.amountUSD)}</span></div>
-            <div className="flex justify-between"><span>Tax:</span><span className="font-medium text-slate-800">{formatUSD(tx.taxUSD)}</span></div>
-            <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total Card Deduction:</span><span className="text-red-600">{formatUSD(parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0))}</span></div>
-          </div>
-        )}
-
-        {tx.type === 'PAYMENT_RECEIVED' && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm flex justify-between font-bold">
-            <span className="text-green-800">Amount Received:</span>
-            <span className="text-green-700">{formatBDT(tx.amountBDT)}</span>
-          </div>
-        )}
-
-        <div className="p-3 bg-white border border-slate-200 rounded-lg">
-          <span className="text-xs text-slate-400 block mb-1">Description / Notes</span>
-          <p className="text-sm text-slate-800">{tx.desc || tx.notes || 'No description provided.'}</p>
-        </div>
-
-        <div className="pt-2 flex justify-end">
-          <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800">Close</button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
 function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onReceivePayment, onAddAdSpend }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [serviceFilter, setServiceFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
 
   const clientStats = useMemo(() => {
     return clients.map(client => {
@@ -858,48 +640,21 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
       const profitBDT = revenue - totalCostBDT;
       const profitMargin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
       
-      const durationDays = getDurationDays(client);
-      const targetBudgetBDT = getExpectedBudgetBDT(client, durationDays);
-      const outstanding = targetBudgetBDT > revenue ? targetBudgetBDT - revenue : 0;
-      
-      return { ...client, revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, profitMargin, outstanding };
+      return { ...client, revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, profitMargin };
     });
   }, [clients, transactions, metrics.avgUSDEffectiveRate]);
 
-  const sortedAndFilteredClients = useMemo(() => {
-    let result = clientStats.filter(c => {
-      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (c.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (c.email || '').toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredClients = useMemo(() => {
+    return clientStats.filter(c => {
+      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()));
       const displayStatus = getClientDisplayStatus(c);
       const matchStatus = statusFilter === 'All' || displayStatus.includes(statusFilter);
-      const matchService = serviceFilter === 'All' || c.serviceType === serviceFilter;
-      return matchSearch && matchStatus && matchService;
+      return matchSearch && matchStatus;
     });
-
-    result.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-    
-    return result;
-  }, [clientStats, searchTerm, statusFilter, serviceFilter, sortConfig]);
-
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
-    setSortConfig({ key, direction });
-  };
-
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) return <span className="ml-1 opacity-20 text-[10px]">▼</span>;
-    return <span className="ml-1 text-[10px] text-blue-600">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>;
-  };
+  }, [clientStats, searchTerm, statusFilter]);
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
         <button onClick={onAddClient} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
@@ -907,81 +662,75 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 mb-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+        <div className="relative flex-1 max-w-md">
           <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Search clients, business, phone..." 
-            className="w-full pl-10 pr-4 py-2 border-none bg-slate-50 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Search clients, business..." 
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <select className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none bg-slate-50 min-w-[140px]" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+        <select 
+          className="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white min-w-[150px]"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+        >
           <option value="All">All Statuses</option>
-          <option value="Active">Active / Working</option>
-          <option value="Completed">Completed</option>
+          <option value="Active">Active / Currently Working</option>
+          <option value="Completed">Completed / Ended</option>
           <option value="Paused">Paused</option>
           <option value="Inactive">Inactive</option>
-        </select>
-        <select className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none bg-slate-50 min-w-[140px]" value={serviceFilter} onChange={e => setServiceFilter(e.target.value)}>
-          <option value="All">All Services</option>
-          <option value="Meta Ads">Meta Ads</option>
-          <option value="Facebook Marketing">Facebook Marketing</option>
-          <option value="Google Ads">Google Ads</option>
-          <option value="Social Media Management">Social Media</option>
-          <option value="Content Marketing">Content Marketing</option>
-          <option value="Other">Other</option>
         </select>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200 select-none">
+            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
               <tr>
-                <th className="px-5 py-3 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('name')}>Client & Business <SortIcon columnKey="name"/></th>
-                <th className="px-5 py-3 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('status')}>Status <SortIcon columnKey="status"/></th>
-                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('revenue')}>Revenue (BDT) <SortIcon columnKey="revenue"/></th>
-                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('adSpendUSD')}>Ad Spend (USD) <SortIcon columnKey="adSpendUSD"/></th>
-                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('taxUSD')}>Tax (USD) <SortIcon columnKey="taxUSD"/></th>
-                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('totalCostBDT')}>Total Cost (BDT) <SortIcon columnKey="totalCostBDT"/></th>
-                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitBDT')}>Profit (BDT) <SortIcon columnKey="profitBDT"/></th>
-                <th className="px-5 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => requestSort('profitMargin')}>Margin <SortIcon columnKey="profitMargin"/></th>
-                <th className="px-5 py-3 text-center">Actions</th>
+                <th className="px-5 py-4">Client & Business</th>
+                <th className="px-5 py-4">Status</th>
+                <th className="px-5 py-4 text-right">Budget</th>
+                <th className="px-5 py-4 text-right">Revenue (BDT)</th>
+                <th className="px-5 py-4 text-right">Ad Spend (USD)</th>
+                <th className="px-5 py-4 text-right">Profit (BDT)</th>
+                <th className="px-5 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sortedAndFilteredClients.length === 0 && <tr><td colSpan="9" className="text-center py-12 text-slate-500">No clients found matching your filters.</td></tr>}
-              {sortedAndFilteredClients.map(c => {
+              {filteredClients.length === 0 && <tr><td colSpan="7" className="text-center py-8 text-slate-500">No clients yet.</td></tr>}
+              {filteredClients.map(c => {
                 const displayStatus = getClientDisplayStatus(c);
                 const isWorking = displayStatus.includes('Active') || displayStatus.includes('Currently Working');
                 return (
-                <tr key={c.id} className="hover:bg-slate-50 group transition-colors">
-                  <td className="px-5 py-3">
-                    <div className="font-semibold text-slate-900 cursor-pointer hover:text-blue-600" onClick={() => onViewDetails(c)}>{c.name}</div>
+                <tr key={c.id} className="hover:bg-slate-50 group">
+                  <td className="px-5 py-4">
+                    <div className="font-semibold text-slate-900">{c.name}</div>
                     <div className="text-xs text-slate-500">{c.company}</div>
                   </td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide uppercase
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
                       ${isWorking ? 'bg-green-100 text-green-700' : 
                         displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' : 
                         'bg-slate-100 text-slate-600'}`}>
                       {displayStatus}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
-                  <td className="px-5 py-3 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
-                  <td className="px-5 py-3 text-right text-slate-500">{formatUSD(c.taxUSD)}</td>
-                  <td className="px-5 py-3 text-right text-orange-600">{formatBDT(c.totalCostBDT)}</td>
-                  <td className="px-5 py-3 text-right font-bold text-slate-900">{formatBDT(c.profitBDT)}</td>
-                  <td className="px-5 py-3 text-right">
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold ${c.profitMargin > 50 ? 'text-green-700 bg-green-50' : c.profitMargin < 0 ? 'text-red-700 bg-red-50' : 'text-slate-600 bg-slate-50'}`}>
-                      {c.profitMargin.toFixed(1)}%
-                    </span>
+                  <td className="px-5 py-4 text-right text-slate-600 font-medium">
+                    {getBudgetDisplay(c.budgetType, c.budgetAmount || c.budget)}
                   </td>
-                  <td className="px-5 py-3 text-center">
+                  <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
+                  <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
+                  <td className="px-5 py-4 text-right">
+                    <div className={`font-bold ${c.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
+                    <div className={`text-[10px] font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-slate-500'}`}>
+                      Margin: {c.profitMargin.toFixed(1)}%
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-center">
                     <ClientDropdownMenu 
                       onViewDetails={() => onViewDetails(c)}
                       onEdit={() => onEditClient(c)}
@@ -1068,12 +817,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
               const timeB = b.timestamp || new Date(b.date).getTime();
               return timeB - timeA;
             });
-          
-          const validTxs = sortedTxs.filter(t => {
-             if (t.type === 'AD_SPEND' && parseFloat(t.amountUSD||0) <= 0) return false;
-             return true;
-          });
-          const lastTx = validTxs[0];
+          const lastTx = sortedTxs[0];
           const bal = metrics.cardBalances[card.id] || 0;
 
           return (
@@ -1098,14 +842,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 </div>
 
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Current Balance</p>
-                <div className="flex flex-col items-start gap-1">
-                  <h2 className={`text-3xl font-bold ${bal < 0 ? 'text-red-600' : 'text-slate-800'}`}>{formatUSD(bal)}</h2>
-                  {bal < 0 && (
-                    <span className="inline-flex items-center text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                      <AlertCircle size={12} className="mr-1" /> Negative Balance
-                    </span>
-                  )}
-                </div>
+                <h2 className={`text-3xl font-bold ${bal < 0 ? 'text-red-600' : 'text-slate-800'}`}>{formatUSD(bal)}</h2>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 text-xs">
                   <span className="text-slate-400 block font-medium mb-1">Last Transaction</span>
@@ -1145,7 +882,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
           
           <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
             <CalendarDays size={14} className="text-blue-600" /> 
-            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : globalDateRange.label}
+            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `History: ${globalDateRange.label}`}
           </button>
 
           <select 
@@ -1161,8 +898,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         </div>
       </div>
 
-      {/* PERIOD SUMMARY */}
-      <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
+      {/* NEW PERIOD SUMMARY */}
+      <div className="bg-slate-100 p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
         <div className="text-sm font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
           Selected Period: {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label}
         </div>
@@ -1212,14 +949,14 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases in this period.</td></tr>}
+              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases yet.</td></tr>}
               {filteredUSDPurchases.map(tx => {
                 const bdtPaid = parseFloat(tx.amountBDT||0);
                 const coRate = parseFloat(tx.cashOutCharge||0);
                 const usdRcv = parseFloat(tx.amountUSD||1);
                 const totalCost = bdtPaid + coRate;
-                const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
-                const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
+                const baseRate = (bdtPaid / usdRcv).toFixed(2);
+                const effectiveRate = (totalCost / usdRcv).toFixed(2);
                 const targetCard = cards.find(c => c.id === tx.cardId);
                 const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
 
@@ -1254,7 +991,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   const [filterRange, setFilterRange] = useState({ label: 'Lifetime', start: null, end: null });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const { historyWithBalance, openingBalance, expectedBalance, isMatch, diff } = useMemo(() => {
+  const { historyWithBalance } = useMemo(() => {
     // 1. Get ALL txs for card, sorted Oldest to Newest for true chronological running balance
     const allCardTxsAsc = [...transactions]
       .filter(t => t.cardId === card.id)
@@ -1266,62 +1003,34 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       });
 
     // 2. Compute exact historical running balances (Balance After)
-    const initialBal = parseFloat(card.initialBalance || 0);
-    let currentRunningBal = initialBal;
-    
-    const fullHistory = allCardTxsAsc.reduce((acc, t) => {
+    let currentRunningBal = parseFloat(card.initialBalance || 0);
+    const fullHistory = allCardTxsAsc.map(t => {
       let changeUSD = 0;
-      let displayTx = { ...t };
-      let includeTx = true;
-
       if (t.type === 'USD_PURCHASE') {
         changeUSD = parseFloat(t.amountUSD || 0);
-      } else if (t.type === 'AD_SPEND') {
+      }
+      if (t.type === 'AD_SPEND') {
         const spend = parseFloat(t.amountUSD || 0);
         const tax = parseFloat(t.taxUSD || 0);
-        if (spend <= 0) {
-            includeTx = false; // Exclude zeroes 
-        } else {
-            changeUSD = -(spend + tax); // Deducts both from mathematical balance
-        }
-      } else if (t.type === 'FEE') {
-        changeUSD = -parseFloat(t.amountUSD || 0);
+        changeUSD = -(spend + tax); // Deducts both from balance
       }
-
-      if (includeTx) {
-        currentRunningBal += changeUSD;
-        displayTx.changeUSD = changeUSD;
-        displayTx.runningBal = currentRunningBal;
-        acc.push(displayTx);
-      }
-      return acc;
-    }, []);
+      currentRunningBal += changeUSD;
+      return { ...t, changeUSD, runningBal: currentRunningBal };
+    });
 
     // 3. Reverse for UI (Newest first)
     fullHistory.reverse();
 
-    // 4. Apply history date filter purely for visual isolation
+    // 4. Apply history date filter solely for visual isolation
     let displayedHistory = fullHistory;
     if (filterRange.start && filterRange.end) {
       displayedHistory = fullHistory.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
     }
-
-    // 5. Diagnostics / Breakdown Verification
-    const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
-    const expBal = initialBal + stats.purchased - stats.adSpend - stats.tax - stats.fees;
-    const curBal = metrics.cardBalances[card.id] || 0;
-    const difference = Math.abs(expBal - curBal);
     
-    return { 
-      historyWithBalance: displayedHistory,
-      openingBalance: initialBal,
-      expectedBalance: expBal,
-      isMatch: difference < 0.005,
-      diff: difference
-    };
-  }, [transactions, card.id, card.initialBalance, filterRange, metrics]);
+    return { historyWithBalance: displayedHistory };
+  }, [transactions, card.id, card.initialBalance, filterRange]);
 
-  const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+  const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0 };
   const currentBal = metrics.cardBalances[card.id] || 0;
 
   return (
@@ -1337,7 +1046,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Meta Ad Spend</p>
-          <p className="text-base font-bold text-slate-800">
+          <p className="text-base font-bold text-red-600">
             {stats.adSpend > 0 ? '-' : ''}{formatUSD(stats.adSpend)}
           </p>
         </div>
@@ -1349,9 +1058,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Fees</p>
-          <p className="text-base font-bold text-slate-700">
-             {stats.fees > 0 ? '-' : ''}{formatUSD(stats.fees)}
-          </p>
+          <p className="text-base font-bold text-slate-700">$0.00</p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Current Balance</p>
@@ -1365,64 +1072,13 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         {card.last4 && <span><strong>Last 4 Digits:</strong> {card.last4}</span>}
       </div>
 
-      {/* BALANCE BREAKDOWN & INTEGRITY CHECK */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 shrink-0 flex flex-col md:flex-row gap-6">
-        <div className="flex-1">
-          <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">Balance Breakdown</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-600">Opening Balance</span>
-              <span className="font-medium text-slate-800">+{formatUSD(openingBalance)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">USD Purchased</span>
-              <span className="font-medium text-green-600">+{formatUSD(stats.purchased)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Meta Ad Spend</span>
-              <span className="font-medium text-slate-800">-{formatUSD(stats.adSpend)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Tax</span>
-              <span className="font-medium text-slate-700">-{formatUSD(stats.tax)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Fees</span>
-              <span className="font-medium text-slate-700">-{formatUSD(stats.fees)}</span>
-            </div>
-            <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold">
-              <span className="text-slate-800">Current Balance</span>
-              <span className={currentBal < 0 ? 'text-red-600' : 'text-slate-900'}>{formatUSD(currentBal)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 bg-white border border-slate-200 rounded p-4 flex flex-col justify-center">
-          <h5 className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">System Diagnostics</h5>
-          {isMatch ? (
-            <div className="bg-green-50 text-green-800 p-3 rounded flex items-center gap-2 font-medium text-sm">
-              <CheckCircle2 size={18} className="text-green-600" /> Balance Verified
-            </div>
-          ) : (
-            <div className="text-xs text-red-700 bg-red-50 p-3 rounded border border-red-100">
-              <div className="font-bold flex items-center mb-2 text-sm">
-                <AlertCircle size={16} className="mr-1.5" /> Balance Mismatch
-              </div>
-              <div className="flex justify-between mb-1"><span>Expected Balance:</span> <span className="font-medium">{formatUSD(expectedBalance)}</span></div>
-              <div className="flex justify-between mb-1"><span>Current Balance:</span> <span className="font-medium">{formatUSD(currentBal)}</span></div>
-              <div className="flex justify-between font-bold border-t border-red-200 mt-2 pt-2"><span>Difference:</span> <span>{formatUSD(diff)}</span></div>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="flex justify-between items-end mb-3 border-b pb-2 shrink-0">
         <h4 className="font-bold text-slate-800">Transaction History</h4>
         <div className="flex items-center gap-3">
           {filterRange.label !== 'Lifetime' && <button onClick={() => setFilterRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline font-medium">Clear Filter</button>}
-          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
+          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
             <CalendarDays size={14} className="text-blue-600" /> 
-            {filterRange.label === 'Lifetime' ? 'Filter History' : filterRange.label}
+            {filterRange.label === 'Lifetime' ? 'Filter History' : `Showing: ${filterRange.label}`}
           </button>
         </div>
       </div>
@@ -1440,7 +1096,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
           <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
             <tr>
               <th className="px-4 py-2.5">Date</th>
-              <th className="px-4 py-2.5">Type / Desc</th>
+              <th className="px-4 py-2.5">Type</th>
               <th className="px-4 py-2.5 text-right">USD</th>
               <th className="px-4 py-2.5 text-right font-bold">Balance After</th>
             </tr>
@@ -1450,24 +1106,21 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
               <tr><td colSpan="4" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
             )}
             {historyWithBalance.map(tx => {
-              const isAdSpend = tx.type === 'AD_SPEND';
-              const faceUSDValue = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
-              const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
-
               return (
               <tr key={tx.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2.5 text-slate-600 align-top pt-3">{formatDate(tx.date)}</td>
-                <td className="px-4 py-2.5 font-medium text-slate-800 align-top pt-3">
-                  <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
-                  <div className="text-[10px] text-slate-500 font-normal">{tx.notes || (isAdSpend ? 'Campaign Spend' : 'N/A')}</div>
+                <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
+                <td className="px-4 py-2.5 font-medium text-slate-800">
+                  {tx.type === 'USD_PURCHASE' ? 'USD Purchase' : (
+                    <>
+                      Meta Ads
+                      {parseFloat(tx.taxUSD) > 0 && <span className="text-slate-400 font-normal text-xs ml-1">• Tax {formatUSD(tx.taxUSD)}</span>}
+                    </>
+                  )}
                 </td>
-                <td className={`px-4 py-2.5 text-right font-medium align-top pt-3 ${faceUSDValue > 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {faceUSDValue > 0 ? '+' : ''}{formatUSD(faceUSDValue)}
-                  {displayTax > 0 && <span className="block text-[10px] text-slate-500 font-normal mt-1">+ tax {formatUSD(displayTax)}</span>}
+                <td className={`px-4 py-2.5 text-right font-medium ${tx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
+                  {tx.type === 'USD_PURCHASE' ? '+' : '-'}{formatUSD(tx.amountUSD)}
                 </td>
-                <td className={`px-4 py-2.5 text-right font-bold align-top pt-3 ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                  {formatUSD(tx.runningBal)}
-                </td>
+                <td className={`px-4 py-2.5 text-right font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatUSD(tx.runningBal)}</td>
               </tr>
             )})}
           </tbody>
@@ -1481,9 +1134,10 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
   const bdtPaid = parseFloat(tx.amountBDT||0);
   const coRate = parseFloat(tx.cashOutCharge||0);
   const usdRcv = parseFloat(tx.amountUSD||1);
-  const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
+  
+  const baseRate = (bdtPaid / usdRcv).toFixed(2);
   const totalCost = bdtPaid + coRate;
-  const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
+  const effectiveRate = (totalCost / usdRcv).toFixed(2);
 
   return (
     <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
@@ -1504,9 +1158,9 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
         </div>
 
         <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
-          <div className="flex justify-between"><span>BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(bdtPaid)}</span></div>
-          <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-slate-800">{formatBDT(coRate)}</span></div>
-          <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total Cost:</span><span className="text-slate-900">{formatBDT(totalCost)}</span></div>
+          <div className="flex justify-between"><span>Base BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(bdtPaid)}</span></div>
+          <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-red-600">{formatBDT(coRate)}</span></div>
+          <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total BDT Cost:</span><span className="text-slate-900">{formatBDT(totalCost)}</span></div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs">
@@ -1519,6 +1173,63 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
         </div>
       </div>
     </Modal>
+  );
+}
+
+function NavItem({ icon, label, isActive, onClick }) {
+  return (
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+      {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
+      {label}
+    </button>
+  );
+}
+
+function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
+  return (
+    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
+      <div className="flex justify-between items-start mb-2">
+        <p className="text-sm font-medium text-slate-500">{title}</p>
+        <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
+      </div>
+      <h3 className={`text-2xl font-bold tracking-tight ${textColorClass}`}>{value}</h3>
+      <div className="mt-2 flex items-center text-xs">
+        {subtitle && <span className="text-slate-500">{subtitle}</span>}
+      </div>
+    </div>
+  );
+}
+
+function StatRow({ label, value, className = 'text-slate-900' }) {
+  return (
+    <div className="flex justify-between items-center text-sm">
+      <span className="text-slate-500">{label}</span>
+      <span className={`font-bold ${className}`}>{value}</span>
+    </div>
+  );
+}
+
+function Divider() { return <div className="h-px w-full bg-slate-100 my-2"></div>; }
+
+function TransactionTypeBadge({ type }) {
+  const styles = { PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200', USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200', AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200' };
+  const labels = { PAYMENT_RECEIVED: 'Payment In', USD_PURCHASE: 'Buy USD', AD_SPEND: 'Meta Ads' };
+  return <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>{labels[type] || type}</span>;
+}
+
+function Modal({ title, onClose, children, width = "max-w-md" }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
+      <div className={`bg-white rounded-xl shadow-xl w-full ${width} overflow-hidden flex flex-col max-h-[95vh]`}>
+        <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50 shrink-0">
+          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+        </div>
+        <div className="p-5 overflow-y-auto">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1577,7 +1288,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
             <h4 className="text-sm font-bold text-slate-800 mb-4">Custom Date Range</h4>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date</label>
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date (DD / MM / YYYY)</label>
                 <div className="relative">
                   <input 
                     type="date" 
@@ -1588,7 +1299,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date</label>
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date (DD / MM / YYYY)</label>
                 <div className="relative">
                   <input 
                     type="date" 
@@ -1678,6 +1389,152 @@ function ClientDropdownMenu({ onViewDetails, onEdit, onReceivePayment, onAddAdSp
         </div>
       )}
     </div>
+  );
+}
+
+function ClientForm({ initialData, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(() => {
+    if (initialData) {
+      return {
+        ...initialData,
+        budgetAmount: initialData.budgetAmount || '',
+        budgetType: initialData.budgetType || 'Monthly',
+        currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : true,
+      };
+    }
+    return {
+      name: '', company: '', phone: '', email: '', fb: '', website: '',
+      serviceType: 'Meta Ads', budgetType: 'Monthly', budgetAmount: '', status: 'Active', 
+      startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true, notes: ''
+    };
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  
+  const handleSubmit = (e) => { 
+    e.preventDefault(); 
+    onSubmit({
+      ...formData, 
+      budgetAmount: parseFloat(formData.budgetAmount) || 0,
+      endDate: formData.currentlyWorking ? '' : formData.endDate
+    }); 
+  };
+
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
+  const labelClass = "block text-xs font-medium text-slate-700 uppercase tracking-wide";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter client name" className={inputClass} /></div>
+        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="Enter company name" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
+        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
+        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
+        
+        <div>
+          <label className={labelClass}>Service Type</label>
+          <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
+            <option>Meta Ads</option><option>Facebook Marketing</option><option>Instagram Marketing</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Status</label>
+          <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
+            <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className={labelClass}>Budget Period</label>
+          <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
+            <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
+          </select>
+        </div>
+        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="Enter BDT amount" className={inputClass} /></div>
+        
+        <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>End Date</label>
+          <div className="flex flex-col gap-2 mt-1">
+            <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
+              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({...formData, currentlyWorking: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+              Currently Working
+            </label>
+            {!formData.currentlyWorking && (
+              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{marginTop: 0}} />
+            )}
+          </div>
+        </div>
+      </div>
+      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea></div>
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
+      </div>
+    </form>
+  );
+}
+
+function CardForm({ initialData, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(initialData || {
+    name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
+    initialBalance: '', last4: '', expiry: '', notes: '', status: 'Active'
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleSubmit = (e) => { 
+    e.preventDefault(); 
+    onSubmit({
+      ...formData,
+      initialBalance: parseFloat(formData.initialBalance) || 0
+    }); 
+  };
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div><label className="block text-sm font-medium text-slate-700">Card Name</label>
+        <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter card name" className={inputClass} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Provider / Bank</label>
+          <input type="text" name="provider" value={formData.provider} onChange={handleChange} required placeholder="Enter provider name" className={inputClass} />
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Card Type</label>
+          <select name="cardType" value={formData.cardType} onChange={handleChange} className={inputClass}>
+            <option>Virtual Card</option><option>Dual Currency</option><option>Credit Card</option><option>Prepaid Card</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Initial Balance (USD)</label>
+          <input type="number" min="0" step="0.01" name="initialBalance" value={formData.initialBalance} onChange={handleChange} disabled={!!initialData} placeholder="Enter USD amount" className={`${inputClass} ${initialData ? 'bg-slate-100' : ''}`} />
+          {initialData && <p className="text-xs text-slate-500 mt-1">Cannot edit initial balance after creation.</p>}
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Currency</label>
+          <input type="text" name="currency" value={formData.currency} disabled className={`${inputClass} bg-slate-100`} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div><label className="block text-sm font-medium text-slate-700">Last 4 Digits</label>
+          <input type="text" maxLength="4" name="last4" value={formData.last4} onChange={handleChange} placeholder="Optional 4 digits" className={inputClass} />
+        </div>
+        <div><label className="block text-sm font-medium text-slate-700">Expiry Date</label>
+          <input type="text" name="expiry" value={formData.expiry} onChange={handleChange} placeholder="MM/YY (Optional)" className={inputClass} />
+        </div>
+      </div>
+      <div><label className="block text-sm font-medium text-slate-700">Notes</label>
+        <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea>
+      </div>
+      <div className="flex gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Card</button>
+      </div>
+    </form>
   );
 }
 
@@ -1855,154 +1712,6 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
   );
 }
 
-function ClientForm({ initialData, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(() => {
-    if (initialData) {
-      return {
-        ...initialData,
-        budgetAmount: initialData.budgetAmount || '',
-        budgetType: initialData.budgetType || 'Monthly',
-        currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : true,
-      };
-    }
-    return {
-      name: '', company: '', phone: '', email: '', fb: '', website: '',
-      serviceType: 'Meta Ads', budgetType: 'Monthly', budgetAmount: '', status: 'Active', 
-      startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true, notes: ''
-    };
-  });
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  
-  const handleSubmit = (e) => { 
-    e.preventDefault(); 
-    onSubmit({
-      ...formData, 
-      budgetAmount: parseFloat(formData.budgetAmount) || 0,
-      endDate: formData.currentlyWorking ? '' : formData.endDate
-    }); 
-  };
-
-  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
-  const labelClass = "block text-xs font-medium text-slate-700 uppercase tracking-wide";
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter client name" className={inputClass} /></div>
-        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="Enter company name" className={inputClass} /></div>
-        
-        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
-        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
-        
-        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
-        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
-        
-        <div>
-          <label className={labelClass}>Service Type</label>
-          <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
-            <option>Meta Ads</option><option>Facebook Marketing</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelClass}>Status</label>
-          <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
-            <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
-          </select>
-        </div>
-        
-        <div>
-          <label className={labelClass}>Budget Period</label>
-          <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
-            <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
-          </select>
-        </div>
-        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="Enter BDT amount" className={inputClass} /></div>
-        
-        <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
-        <div>
-          <label className={labelClass}>End Date</label>
-          <div className="flex flex-col gap-2 mt-1">
-            <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
-              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({...formData, currentlyWorking: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
-              Currently Working
-            </label>
-            {!formData.currentlyWorking && (
-              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{marginTop: 0}} />
-            )}
-          </div>
-        </div>
-      </div>
-      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea></div>
-      <div className="flex gap-3 pt-4 border-t border-slate-100">
-        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
-        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
-      </div>
-    </form>
-  );
-}
-
-function CardForm({ initialData, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(initialData || {
-    name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
-    initialBalance: '', last4: '', expiry: '', notes: '', status: 'Active'
-  });
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      initialBalance: parseFloat(formData.initialBalance) || 0
-    });
-  };
-
-  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div><label className="block text-sm font-medium text-slate-700">Card Name</label>
-        <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter card name" className={inputClass} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Provider / Bank</label>
-          <input type="text" name="provider" value={formData.provider} onChange={handleChange} required placeholder="Enter provider name" className={inputClass} />
-        </div>
-        <div><label className="block text-sm font-medium text-slate-700">Card Type</label>
-          <select name="cardType" value={formData.cardType} onChange={handleChange} className={inputClass}>
-            <option>Virtual Card</option><option>Dual Currency</option><option>Credit Card</option><option>Prepaid Card</option>
-          </select>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Initial Balance (USD)</label>
-          <input type="number" step="0.01" name="initialBalance" value={formData.initialBalance} onChange={handleChange} disabled={!!initialData} placeholder="Enter initial balance" className={`${inputClass} ${initialData ? 'bg-slate-100' : ''}`} />
-          {initialData && <p className="text-xs text-slate-500 mt-1">Cannot edit initial balance after creation.</p>}
-        </div>
-        <div><label className="block text-sm font-medium text-slate-700">Currency</label>
-          <input type="text" name="currency" value={formData.currency} disabled className={`${inputClass} bg-slate-100`} />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Last 4 Digits</label>
-          <input type="text" maxLength="4" name="last4" value={formData.last4} onChange={handleChange} placeholder="Optional 4 digits" className={inputClass} />
-        </div>
-        <div><label className="block text-sm font-medium text-slate-700">Expiry Date</label>
-          <input type="text" name="expiry" value={formData.expiry} onChange={handleChange} placeholder="MM/YY (Optional)" className={inputClass} />
-        </div>
-      </div>
-      <div><label className="block text-sm font-medium text-slate-700">Notes</label>
-        <textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass} placeholder="Optional details..."></textarea>
-      </div>
-      <div className="flex gap-3 pt-4 border-t border-slate-100">
-        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
-        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Card</button>
-      </div>
-    </form>
-  );
-}
-
 function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -2032,7 +1741,11 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
     } else if (type === 'AD_SPEND') {
       payload.amountUSD = parseFloat(formData.amountUSD) || 0;
       payload.taxUSD = parseFloat(formData.taxUSD) || 0;
-      if (payload.amountUSD <= 0 || !formData.cardId || !formData.clientId) return;
+      
+      // Strict block for empty / zero meta ads spend
+      if (payload.amountUSD <= 0 || !formData.cardId || !formData.clientId) {
+        return; 
+      }
       
       payload.clientId = formData.clientId;
       payload.cardId = formData.cardId;
