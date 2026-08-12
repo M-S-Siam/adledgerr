@@ -672,11 +672,16 @@ function ReportsView({ clients, cards, transactions }) {
     });
 
     filteredTransactions.forEach(t => {
-      if (!t.clientId) return;
-      if (!map[t.clientId]) {
-        const fallback = clients.find(c => c.id === t.clientId);
-        map[t.clientId] = {
-          id: t.clientId,
+      const targetClientId = t.clientId || (
+        clients.length === 1 ? clients[0].id : null
+      );
+
+      if (!targetClientId) return;
+
+      if (!map[targetClientId]) {
+        const fallback = clients.find(c => c.id === targetClientId);
+        map[targetClientId] = {
+          id: targetClientId,
           name: fallback?.name || 'Unknown Client',
           revenue: 0,
           adSpend: 0,
@@ -686,7 +691,7 @@ function ReportsView({ clients, cards, transactions }) {
         };
       }
 
-      const row = map[t.clientId];
+      const row = map[targetClientId];
       row.transactions += 1;
 
       if (t.type === 'PAYMENT_RECEIVED') row.revenue += parseFloat(t.amountBDT || 0);
@@ -744,15 +749,21 @@ function ReportsView({ clients, cards, transactions }) {
     filteredTransactions.forEach(t => {
       const key = String(t.date || '').slice(0, 10);
       if (!key) return;
-      if (!map[key]) map[key] = { date: key, revenue: 0, adSpend: 0, usdPurchased: 0 };
+      if (!map[key]) map[key] = { date: key, revenue: 0, adSpendUSD: 0, usdPurchased: 0 };
 
       if (t.type === 'PAYMENT_RECEIVED') map[key].revenue += parseFloat(t.amountBDT || 0);
-      if (t.type === 'AD_SPEND') map[key].adSpend += parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0);
+      if (t.type === 'AD_SPEND') map[key].adSpendUSD += parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0);
       if (t.type === 'USD_PURCHASE') map[key].usdPurchased += parseFloat(t.amountUSD || 0);
     });
 
-    return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
-  }, [filteredTransactions]);
+    const rate = report.effectiveRate || 0;
+    return Object.values(map)
+      .map(row => ({
+        ...row,
+        adCostBDT: row.adSpendUSD * rate
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredTransactions, report.effectiveRate]);
 
   const expenseChart = [
     { name: 'Ad Spend', value: report.usdSpent },
@@ -925,13 +936,14 @@ function ReportsView({ clients, cards, transactions }) {
         <ReportMetric title="Total BDT Cost" value={formatBDT(report.totalBDTCost)} />
         <ReportMetric title="Net BDT" value={formatBDT(report.netBDT)} />
         <ReportMetric title="USD Purchased" value={formatUSD(report.usdPurchased)} />
-        <ReportMetric title="USD Spent" value={formatUSD(report.totalUSDOut)} />
+        <ReportMetric title="Meta Ads Spend" value={formatUSD(report.usdSpent)} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <ReportMetric title="C.O Charge" value={formatBDT(report.cashOutBDT)} />
         <ReportMetric title="Tax" value={formatUSD(report.taxUSD)} />
         <ReportMetric title="Fees" value={formatUSD(report.feesUSD)} />
+        <ReportMetric title="Total USD Out" value={formatUSD(report.totalUSDOut)} />
         <ReportMetric title="Profit" value={formatBDT(report.profitBDT)} />
         <ReportMetric title="Profit Margin" value={`${report.margin.toFixed(1)}%`} />
       </div>
@@ -953,8 +965,8 @@ function ReportsView({ clients, cards, transactions }) {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="adSpend" name="Ad Cost (USD)" strokeWidth={2} />
+                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#16A34A" strokeWidth={2} />
+                  <Line type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT Equivalent)" stroke="#F59E0B" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -974,7 +986,7 @@ function ReportsView({ clients, cards, transactions }) {
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="value" name="USD" />
+                  <Bar dataKey="value" name="USD" fill="#3B82F6" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
