@@ -237,7 +237,7 @@ export default function AdLedgerApp() {
     let cardStats = {}; 
     cards.forEach(c => {
       cardBalances[c.id] = parseFloat(c.initialBalance || 0);
-      cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0 };
+      cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
     });
 
     transactions.forEach(t => {
@@ -265,6 +265,14 @@ export default function AdLedgerApp() {
           cardBalances[t.cardId] -= totalSpend;
           cardStats[t.cardId].adSpend += spend;
           cardStats[t.cardId].tax += tax;
+        }
+      }
+
+      if (t.type === 'FEE') {
+        const fee = parseFloat(t.amountUSD || 0);
+        if (t.cardId && cardBalances[t.cardId] !== undefined) {
+          cardBalances[t.cardId] -= fee;
+          cardStats[t.cardId].fees += fee;
         }
       }
     });
@@ -842,7 +850,14 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 </div>
 
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Current Balance</p>
-                <h2 className={`text-3xl font-bold ${bal < 0 ? 'text-red-600' : 'text-slate-800'}`}>{formatUSD(bal)}</h2>
+                <div className="flex flex-col items-start gap-1">
+                  <h2 className={`text-3xl font-bold ${bal < 0 ? 'text-red-600' : 'text-slate-800'}`}>{formatUSD(bal)}</h2>
+                  {bal < 0 && (
+                    <span className="inline-flex items-center text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                      <AlertCircle size={12} className="mr-1" /> Negative Balance
+                    </span>
+                  )}
+                </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 text-xs">
                   <span className="text-slate-400 block font-medium mb-1">Last Transaction</span>
@@ -955,8 +970,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 const coRate = parseFloat(tx.cashOutCharge||0);
                 const usdRcv = parseFloat(tx.amountUSD||1);
                 const totalCost = bdtPaid + coRate;
-                const baseRate = (bdtPaid / usdRcv).toFixed(2);
-                const effectiveRate = (totalCost / usdRcv).toFixed(2);
+                const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
+                const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
                 const targetCard = cards.find(c => c.id === tx.cardId);
                 const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
 
@@ -991,7 +1006,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   const [filterRange, setFilterRange] = useState({ label: 'Lifetime', start: null, end: null });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const { historyWithBalance } = useMemo(() => {
+  const { historyWithBalance, openingBalance, expectedBalance, isMatch, diff } = useMemo(() => {
     // 1. Get ALL txs for card, sorted Oldest to Newest for true chronological running balance
     const allCardTxsAsc = [...transactions]
       .filter(t => t.cardId === card.id)
@@ -1003,7 +1018,8 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       });
 
     // 2. Compute exact historical running balances (Balance After)
-    let currentRunningBal = parseFloat(card.initialBalance || 0);
+    const initialBal = parseFloat(card.initialBalance || 0);
+    let currentRunningBal = initialBal;
     const fullHistory = allCardTxsAsc.map(t => {
       let changeUSD = 0;
       if (t.type === 'USD_PURCHASE') {
@@ -1013,6 +1029,9 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         const spend = parseFloat(t.amountUSD || 0);
         const tax = parseFloat(t.taxUSD || 0);
         changeUSD = -(spend + tax); // Deducts both from balance
+      }
+      if (t.type === 'FEE') {
+        changeUSD = -parseFloat(t.amountUSD || 0);
       }
       currentRunningBal += changeUSD;
       return { ...t, changeUSD, runningBal: currentRunningBal };
@@ -1026,11 +1045,23 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
     if (filterRange.start && filterRange.end) {
       displayedHistory = fullHistory.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
     }
-    
-    return { historyWithBalance: displayedHistory };
-  }, [transactions, card.id, card.initialBalance, filterRange]);
 
-  const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0 };
+    // Diagnostics / Breakdown Verification
+    const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+    const expBal = initialBal + stats.purchased - stats.adSpend - stats.tax - stats.fees;
+    const curBal = metrics.cardBalances[card.id] || 0;
+    const difference = Math.abs(expBal - curBal);
+    
+    return { 
+      historyWithBalance: displayedHistory,
+      openingBalance: initialBal,
+      expectedBalance: expBal,
+      isMatch: difference < 0.005,
+      diff: difference
+    };
+  }, [transactions, card.id, card.initialBalance, filterRange, metrics]);
+
+  const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
   const currentBal = metrics.cardBalances[card.id] || 0;
 
   return (
@@ -1058,7 +1089,9 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Fees</p>
-          <p className="text-base font-bold text-slate-700">$0.00</p>
+          <p className="text-base font-bold text-slate-700">
+             {stats.fees > 0 ? '-' : ''}{formatUSD(stats.fees)}
+          </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Current Balance</p>
@@ -1070,6 +1103,54 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <span><strong>Provider:</strong> {card.provider}</span>
         <span><strong>Type:</strong> {card.cardType}</span>
         {card.last4 && <span><strong>Last 4 Digits:</strong> {card.last4}</span>}
+      </div>
+
+      {/* BALANCE BREAKDOWN & INTEGRITY CHECK */}
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 shrink-0">
+        <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">Balance Breakdown</h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-600">Opening Balance</span>
+            <span className="font-medium text-slate-800">+{formatUSD(openingBalance)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">USD Purchased</span>
+            <span className="font-medium text-green-600">+{formatUSD(stats.purchased)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Meta Ad Spend</span>
+            <span className="font-medium text-red-600">-{formatUSD(stats.adSpend)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Tax</span>
+            <span className="font-medium text-red-600">-{formatUSD(stats.tax)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Fees</span>
+            <span className="font-medium text-red-600">-{formatUSD(stats.fees)}</span>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold">
+            <span className="text-slate-800">Current Balance</span>
+            <span className={currentBal < 0 ? 'text-red-600' : 'text-slate-900'}>{formatUSD(currentBal)}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-200">
+          {isMatch ? (
+            <span className="inline-flex items-center text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded">
+              <CheckCircle2 size={14} className="mr-1" /> Balance Verified
+            </span>
+          ) : (
+            <div className="text-xs text-red-700 bg-red-50 p-2 rounded border border-red-100">
+              <div className="font-bold flex items-center mb-1">
+                <AlertCircle size={14} className="mr-1" /> Balance Mismatch
+              </div>
+              <div className="flex justify-between"><span>Expected Balance:</span> <span>{formatUSD(expectedBalance)}</span></div>
+              <div className="flex justify-between"><span>Current Balance:</span> <span>{formatUSD(currentBal)}</span></div>
+              <div className="flex justify-between font-medium border-t border-red-200 mt-1 pt-1"><span>Difference:</span> <span>{formatUSD(diff)}</span></div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-between items-end mb-3 border-b pb-2 shrink-0">
@@ -1095,32 +1176,34 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <table className="w-full text-sm text-left whitespace-nowrap">
           <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
             <tr>
-              <th className="px-4 py-2.5">Date</th>
               <th className="px-4 py-2.5">Type</th>
-              <th className="px-4 py-2.5 text-right">USD</th>
-              <th className="px-4 py-2.5 text-right font-bold">Balance After</th>
+              <th className="px-4 py-2.5">USD</th>
+              <th className="px-4 py-2.5">Balance After</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
             {historyWithBalance.length === 0 && (
-              <tr><td colSpan="4" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
+              <tr><td colSpan="3" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
             )}
             {historyWithBalance.map(tx => {
+              // Ensure we strictly format to negative/positive correctly
+              const isAdSpend = tx.type === 'AD_SPEND';
+              const displayAmount = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
+              const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
+
               return (
               <tr key={tx.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
                 <td className="px-4 py-2.5 font-medium text-slate-800">
-                  {tx.type === 'USD_PURCHASE' ? 'USD Purchase' : (
-                    <>
-                      Meta Ads
-                      {parseFloat(tx.taxUSD) > 0 && <span className="text-slate-400 font-normal text-xs ml-1">• Tax {formatUSD(tx.taxUSD)}</span>}
-                    </>
-                  )}
+                  <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
+                  <div className="text-[10px] text-slate-400 font-normal">{formatDate(tx.date)} {tx.notes && `• ${tx.notes}`}</div>
                 </td>
-                <td className={`px-4 py-2.5 text-right font-medium ${tx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
-                  {tx.type === 'USD_PURCHASE' ? '+' : '-'}{formatUSD(tx.amountUSD)}
+                <td className={`px-4 py-2.5 font-medium ${displayAmount > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                  {displayAmount > 0 ? '+' : ''}{formatUSD(displayAmount)}
+                  {displayTax > 0 && <span className="block text-[10px] text-red-500 font-normal mt-0.5">+ tax {formatUSD(displayTax)}</span>}
                 </td>
-                <td className={`px-4 py-2.5 text-right font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatUSD(tx.runningBal)}</td>
+                <td className={`px-4 py-2.5 font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                  {formatUSD(tx.runningBal)}
+                </td>
               </tr>
             )})}
           </tbody>
@@ -1135,9 +1218,9 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
   const coRate = parseFloat(tx.cashOutCharge||0);
   const usdRcv = parseFloat(tx.amountUSD||1);
   
-  const baseRate = (bdtPaid / usdRcv).toFixed(2);
+  const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
   const totalCost = bdtPaid + coRate;
-  const effectiveRate = (totalCost / usdRcv).toFixed(2);
+  const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
 
   return (
     <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
