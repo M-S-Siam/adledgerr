@@ -672,7 +672,15 @@ function ReportsView({ clients, cards, transactions }) {
     });
 
     filteredTransactions.forEach(t => {
-      const targetClientId = t.clientId || (
+      const explicitClientName = String(
+        t.clientName || t.client || t.sourceClient || t.clientNameSnapshot || ''
+      ).trim().toLowerCase();
+
+      const namedClient = explicitClientName
+        ? clients.find(c => String(c.name || '').trim().toLowerCase() === explicitClientName)
+        : null;
+
+      const targetClientId = t.clientId || namedClient?.id || (
         clients.length === 1 ? clients[0].id : null
       );
 
