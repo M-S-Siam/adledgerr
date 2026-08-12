@@ -1027,7 +1027,10 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                   </td>
                   <td className="px-5 py-4">
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
-                      \1displayStatus === 'Inactive' ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'}`}>
+                      ${isWorking ? 'bg-green-100 text-green-700' : 
+                        displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' : 
+                        displayStatus === 'Inactive' ? 'bg-orange-100 text-orange-700' :
+                        'bg-slate-100 text-slate-600'}`}>
                       {displayStatus}
                     </span>
                   </td>
