@@ -66,10 +66,20 @@ const INITIAL_TRANSACTIONS = [
   { id: 't7', date: '2026-08-04', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 25, taxUSD: 3.75, adAccount: 'RITMO Ads 1', campaign: 'Awareness Q3', notes: 'RITMO Awareness' },
 ];
 
-const formatBDT = (amount) => `৳${(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
-const formatUSD = (amount) => `$${(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// --- NORMALIZED FORMATTERS (PREVENTS -$0.00) ---
+const formatBDT = (amount) => {
+  const val = Math.abs(amount) < 0.005 ? 0 : amount;
+  const sign = val < 0 ? '-' : '';
+  return `${sign}৳${Math.abs(val).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+};
 
-// Produces: 12 Aug 2026 (DD MMM YYYY)
+const formatUSD = (amount) => {
+  const val = Math.abs(amount) < 0.005 ? 0 : amount;
+  const sign = val < 0 ? '-' : '';
+  return `${sign}$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+// Produces: 12 Aug 2026
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
   return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -201,6 +211,14 @@ export default function AdLedgerApp() {
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
+  // Scrub old $0.00 Meta Ads transactions on mount
+  useEffect(() => {
+    const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (t.amountUSD || 0) === 0 && (t.taxUSD || 0) === 0);
+    if (hasZeroAdSpend) {
+      setTransactions(prev => prev.filter(t => !(t.type === 'AD_SPEND' && (t.amountUSD || 0) === 0 && (t.taxUSD || 0) === 0)));
+    }
+  }, [transactions, setTransactions]);
+
   // Modal State
   const [activeModal, setActiveModal] = useState(null); 
   const [selectedCard, setSelectedCard] = useState(null); 
@@ -822,10 +840,14 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                   {lastTx ? (
                     <div className="flex justify-between items-center">
                       <span className="text-slate-700 font-medium truncate max-w-[150px]">
-                        {formatDate(lastTx.date)} • {lastTx.type === 'USD_PURCHASE' ? 'USD Purchase' : (lastTx.notes || 'Meta Ads')}
+                        {formatDate(lastTx.date)} • {lastTx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}
                       </span>
                       <span className={`font-bold ${lastTx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
-                        {lastTx.type === 'USD_PURCHASE' ? `+${formatUSD(lastTx.amountUSD)}` : `-${formatUSD((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0))}`}
+                        {lastTx.type === 'USD_PURCHASE' 
+                          ? `+${formatUSD(lastTx.amountUSD)}` 
+                          : ((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0) > 0 
+                              ? `-${formatUSD((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0))}` 
+                              : formatUSD(0))}
                       </span>
                     </div>
                   ) : (
@@ -932,7 +954,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                   <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
                   <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">{tx.notes}</td>
                   <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(tx.amountBDT)}</td>
-                  <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{tx.cashOutCharge ? formatBDT(tx.cashOutCharge) : '-'}</td>
+                  <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{tx.cashOutCharge ? formatBDT(tx.cashOutCharge) : formatBDT(0)}</td>
                   <td className="px-5 py-3 text-right font-bold text-slate-800 whitespace-nowrap">{formatBDT(totalCost)}</td>
                   <td className="px-5 py-3 text-right font-bold text-green-600 whitespace-nowrap">{formatUSD(tx.amountUSD)}</td>
                   <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
@@ -990,8 +1012,8 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         const spend = parseFloat(t.amountUSD || 0);
         const tax = parseFloat(t.taxUSD || 0);
         changeUSD = -(spend + tax);
-        summary.ads -= spend;
-        summary.tax -= tax;
+        summary.ads += spend;
+        summary.tax += tax;
       }
       summary.net += changeUSD;
       runningBal += changeUSD;
@@ -1011,15 +1033,21 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6 shrink-0">
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total USD Purchased</p>
-          <p className="text-base font-bold text-green-600">+{formatUSD(stats.purchased)}</p>
+          <p className="text-base font-bold text-green-600">
+            {stats.purchased > 0 ? '+' : ''}{formatUSD(stats.purchased)}
+          </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Meta Ad Spend</p>
-          <p className="text-base font-bold text-red-600">-{formatUSD(stats.adSpend)}</p>
+          <p className="text-base font-bold text-red-600">
+            {stats.adSpend > 0 ? '-' : ''}{formatUSD(stats.adSpend)}
+          </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Tax</p>
-          <p className="text-base font-bold text-slate-700">-{formatUSD(stats.tax)}</p>
+          <p className="text-base font-bold text-slate-700">
+            {stats.tax > 0 ? '-' : ''}{formatUSD(stats.tax)}
+          </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Fees</p>
@@ -1078,9 +1106,9 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
               <tr key={tx.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
                 <td className="px-4 py-2.5 font-medium text-slate-800">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}</td>
-                <td className="px-4 py-2.5 text-slate-600">{tx.notes || tx.campaign || '-'}</td>
+                <td className="px-4 py-2.5 text-slate-600">{tx.type === 'USD_PURCHASE' ? tx.notes : (tx.notes || tx.campaign || '-')}</td>
                 <td className={`px-4 py-2.5 text-right font-medium ${tx.changeUSD > 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {tx.changeUSD > 0 ? '+' : ''}{formatUSD(tx.changeUSD)}
+                  {tx.changeUSD > 0 ? '+' : (tx.changeUSD < 0 ? '-' : '')}{formatUSD(Math.abs(tx.changeUSD))}
                 </td>
                 <td className="px-4 py-2.5 text-right text-slate-600">
                   {bdtCost ? formatBDT(bdtCost) : '—'}
@@ -1706,8 +1734,14 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
       payload.amountUSD = parseFloat(formData.amountUSD);
       payload.cardId = formData.cardId;
     } else if (type === 'AD_SPEND') {
-      payload.amountUSD = parseFloat(formData.amountUSD);
+      payload.amountUSD = parseFloat(formData.amountUSD || 0);
       payload.taxUSD = parseFloat(formData.taxUSD || 0);
+      
+      // Prevent saving meaningless zero-value Meta Ads transactions
+      if (payload.amountUSD === 0 && payload.taxUSD === 0) {
+        return; 
+      }
+      
       payload.clientId = formData.clientId;
       payload.cardId = formData.cardId;
       payload.adAccount = formData.adAccount;
