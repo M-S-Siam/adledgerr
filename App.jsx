@@ -1759,7 +1759,7 @@ function ClientActionsMenu({ client, onViewDetails, onHistory, onEdit, onReceive
 
     const rect = buttonRef.current.getBoundingClientRect();
     const menuWidth = 224;
-    const menuHeight = 330;
+    const menuHeight = 300;
     const gap = 6;
 
     let left = rect.right - menuWidth;
@@ -1805,7 +1805,7 @@ function ClientActionsMenu({ client, onViewDetails, onHistory, onEdit, onReceive
 
   const closeAndRun = (callback) => {
     setIsOpen(false);
-    callback();
+    if (typeof callback === 'function') callback();
   };
 
   const isWorking = !!client?.currentlyWorking;
@@ -1814,6 +1814,7 @@ function ClientActionsMenu({ client, onViewDetails, onHistory, onEdit, onReceive
     <div className="inline-block text-left">
       <button
         ref={buttonRef}
+        type="button"
         onClick={() => {
           if (!isOpen) updateMenuPosition();
           setIsOpen(prev => !prev);
@@ -1830,37 +1831,60 @@ function ClientActionsMenu({ client, onViewDetails, onHistory, onEdit, onReceive
           className="fixed w-56 bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] py-1 overflow-hidden"
           style={{ top: menuPosition.top, left: menuPosition.left }}
         >
-          <button onClick={() => closeAndRun(onViewDetails)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+          <button
+            type="button"
+            onClick={() => closeAndRun(onViewDetails)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+          >
             View Details
           </button>
 
-          <button onClick={() => closeAndRun(onReceivePayment)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50">
+          <button
+            type="button"
+            onClick={() => closeAndRun(onReceivePayment)}
+            className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50"
+          >
             Receive Payment
           </button>
 
-          <button onClick={() => closeAndRun(onEdit)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+          <button
+            type="button"
+            onClick={() => closeAndRun(onEdit)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+          >
             Edit Client
           </button>
 
-          <button onClick={() => closeAndRun(onHistory)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+          <button
+            type="button"
+            onClick={() => closeAndRun(onHistory)}
+            className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+          >
             Transaction History
           </button>
 
-          <div className="h-px w-full bg-slate-100 my-1"></div>
+          <div className="h-px w-full bg-slate-100 my-1" />
 
           <button
+            type="button"
             onClick={() => closeAndRun(onToggleStatus)}
             className={`w-full text-left px-4 py-2.5 text-sm ${
-              isWorking ? 'text-orange-700 hover:bg-orange-50' : 'text-blue-700 hover:bg-blue-50'
+              isWorking
+                ? 'text-orange-700 hover:bg-orange-50'
+                : 'text-blue-700 hover:bg-blue-50'
             }`}
           >
             {isWorking ? 'Mark Completed' : 'Mark Active'}
           </button>
 
-          <div className="h-px w-full bg-slate-100 my-1"></div>
+          <div className="h-px w-full bg-slate-100 my-1" />
 
-          <button onClick={() => closeAndRun(onDelete)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">
-            Delete Client <Trash2 size={14}/>
+          <button
+            type="button"
+            onClick={() => closeAndRun(onDelete)}
+            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between"
+          >
+            Delete Client <Trash2 size={14} />
           </button>
         </div>
       )}
