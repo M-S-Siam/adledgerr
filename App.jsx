@@ -63,7 +63,7 @@ const INITIAL_CARDS = [
 const INITIAL_TRANSACTIONS = [
   { id: 't1', date: '2026-08-01', type: 'PAYMENT_RECEIVED', clientId: 'c1', amountBDT: 25000, method: 'bKash', notes: 'August Retainer' },
   { id: 't3', date: '2026-08-02', type: 'USD_PURCHASE', cardId: 'card1', amountBDT: 12500, cashOutCharge: 150, amountUSD: 100, method: 'Bank Transfer', notes: 'Binance P2P' },
-  { id: 't4', date: '2026-08-08', type: 'USD_PURCHASE', cardId: 'global', amountBDT: 6300, cashOutCharge: 100, amountUSD: 50, method: 'bKash', notes: 'Local Seller' },
+  { id: 't4', date: '2026-08-08', type: 'USD_PURCHASE', cardId: 'card2', amountBDT: 6300, cashOutCharge: 100, amountUSD: 50, method: 'bKash', notes: 'Local Seller' },
   { id: 't7', date: '2026-08-04', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 25, taxUSD: 3.75, adAccount: 'RITMO Ads 1', campaign: 'Awareness Q3', notes: 'RITMO Awareness' },
 ];
 
@@ -216,7 +216,6 @@ export default function AdLedgerApp() {
     let totalUSDPurchased = 0;
     let totalBDTSpentOnUSD = 0; 
     let totalCashOutCharges = 0; 
-    let globalUSDBalance = 0;
     
     let totalAdSpendUSD = 0;
     let totalTaxUSD = 0;
@@ -237,12 +236,10 @@ export default function AdLedgerApp() {
         totalBDTSpentOnUSD += t.amountBDT || 0;
         totalCashOutCharges += t.cashOutCharge || 0;
         
-        // Direct assignment to card or global wallet
-        if (t.cardId && t.cardId !== 'global' && cardBalances[t.cardId] !== undefined) {
+        // Direct assignment to card
+        if (t.cardId && cardBalances[t.cardId] !== undefined) {
           cardBalances[t.cardId] += usdVal;
           cardStats[t.cardId].purchased += usdVal;
-        } else {
-          globalUSDBalance += usdVal;
         }
       }
       
@@ -263,11 +260,14 @@ export default function AdLedgerApp() {
     const totalAdCostBDT = (totalAdSpendUSD + totalTaxUSD) * avgUSDEffectiveRate;
     const netProfitBDT = totalRevenueBDT - totalAdCostBDT;
     const profitMargin = totalRevenueBDT > 0 ? (netProfitBDT / totalRevenueBDT) * 100 : 0;
+    
+    // Calculate total funds available across all cards for the dashboard
+    const totalCardBalance = Object.values(cardBalances).reduce((a, b) => a + b, 0);
 
     return {
       totalRevenueBDT, totalUSDPurchased, avgUSDEffectiveRate,
       totalAdSpendUSD, totalTaxUSD, netProfitBDT, profitMargin,
-      cardBalances, cardStats, globalUSDBalance
+      cardBalances, cardStats, totalCardBalance
     };
   }, [transactions, cards]);
 
@@ -499,7 +499,7 @@ function DashboardView({ metrics, chartData, transactions, clients }) {
         <MetricCard title="Total Revenue" value={formatBDT(metrics.totalRevenueBDT)} icon={<ArrowDownRight size={20} className="text-green-600" />} bgColor="bg-green-50" />
         <MetricCard title="Net Profit" value={formatBDT(metrics.netProfitBDT)} subtitle={`Margin: ${metrics.profitMargin.toFixed(1)}%`} icon={<TrendingUp size={20} className="text-blue-600" />} bgColor="bg-blue-50" />
         <MetricCard title="Meta Ads Spend" value={formatUSD(metrics.totalAdSpendUSD)} subtitle={`+ Tax ${formatUSD(metrics.totalTaxUSD)}`} icon={<Activity size={20} className="text-purple-600" />} bgColor="bg-purple-50" />
-        <MetricCard title="Global USD Wallet" value={formatUSD(metrics.globalUSDBalance)} subtitle="Unallocated USD" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" />
+        <MetricCard title="Total Card Balance" value={formatUSD(metrics.totalCardBalance)} subtitle="Available across all cards" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -769,23 +769,6 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* GLOBAL USD POOL */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 text-white shadow-md flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <DollarSign size={100} />
-          </div>
-          <div>
-            <p className="text-slate-400 font-medium mb-1">Global USD Wallet</p>
-            <h2 className="text-4xl font-bold mb-4">{formatUSD(metrics.globalUSDBalance)}</h2>
-            <div className="space-y-1 text-sm text-slate-300">
-              <div className="flex justify-between"><span>Total Unallocated USD</span></div>
-            </div>
-          </div>
-          <div className="mt-6 pt-4 border-t border-slate-700">
-            <p className="text-sm">Avg. Effective Rate: <span className="font-bold text-white">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span></p>
-          </div>
-        </div>
-
         {/* CARDS */}
         {cards.map(card => (
           <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
@@ -845,7 +828,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 const totalCost = tx.amountBDT + (tx.cashOutCharge || 0);
                 const effectiveRate = (totalCost / tx.amountUSD).toFixed(2);
                 const targetCard = cards.find(c => c.id === tx.cardId);
-                const cardLabel = targetCard ? targetCard.name : 'Global USD Wallet';
+                const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
 
                 return (
                 <tr key={tx.id} className="hover:bg-slate-50">
@@ -1573,7 +1556,7 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
     date: new Date().toISOString().split('T')[0],
     amountBDT: '', cashOutCharge: '', amountUSD: '',
     clientId: initialClientId || (clients?.[0]?.id || ''),
-    cardId: cards?.[0]?.id || 'global',
+    cardId: cards?.filter(c => c.status !== 'Archived')?.[0]?.id || '',
     taxUSD: '', notes: '',
     adAccount: '', campaign: '' 
   });
@@ -1643,8 +1626,8 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
             <input type="number" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={inputClass} />
           </div>
           <div><label className={labelClass}>Add USD To Card / Destination</label>
-            <select name="cardId" value={formData.cardId} onChange={handleChange} className={inputClass}>
-              <option value="global">Global USD Wallet</option>
+            <select name="cardId" value={formData.cardId} onChange={handleChange} required className={inputClass}>
+              <option value="" disabled>Select a card</option>
               {cards?.filter(c => c.status !== 'Archived').map(c => (
                 <option key={c.id} value={c.id}>{c.name} ({c.provider})</option>
               ))}
