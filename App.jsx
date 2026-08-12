@@ -107,13 +107,13 @@ const getDurationDays = (client) => {
   if (client.currentlyWorking) {
     end = new Date();
   } else {
-    if (!client.endDate) return 0; // fallback if no end date provided but not currently working
+    if (!client.endDate) return 0; 
     end = new Date(client.endDate);
   }
   end.setHours(0,0,0,0);
 
   const diffTime = end - start;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include start day
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; 
   return diffDays > 0 ? diffDays : 0;
 };
 
@@ -131,8 +131,8 @@ const getExpectedBudgetBDT = (client, durationDays) => {
   const type = client.budgetType || 'Monthly';
   if (type === 'Daily') return amt * durationDays;
   if (type === 'Weekly') return (amt / 7) * durationDays;
-  if (type === 'Monthly') return (amt / 30) * durationDays; // Simplified monthly projection
-  return amt; // Custom / Total
+  if (type === 'Monthly') return (amt / 30) * durationDays;
+  return amt; 
 };
 
 const DATE_PRESETS = [
@@ -168,7 +168,7 @@ const getPresetDates = (preset) => {
     case 'Last 30 Days': start.setDate(start.getDate() - 29); break;
     case 'This Week': 
       const day = start.getDay(); 
-      const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
+      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
       start.setDate(diff);
       break;
     case 'Last Week':
@@ -222,7 +222,7 @@ export default function AdLedgerApp() {
     let cardStats = {}; 
     cards.forEach(c => {
       cardBalances[c.id] = parseFloat(c.initialBalance || 0);
-      cardStats[c.id] = { purchased: 0, spent: 0 };
+      cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0 };
     });
 
     transactions.forEach(t => {
@@ -242,12 +242,15 @@ export default function AdLedgerApp() {
       }
       
       if (t.type === 'AD_SPEND') {
-        const totalSpend = (t.amountUSD || 0) + (t.taxUSD || 0);
-        totalAdSpendUSD += t.amountUSD || 0;
-        totalTaxUSD += t.taxUSD || 0;
+        const spend = t.amountUSD || 0;
+        const tax = t.taxUSD || 0;
+        const totalSpend = spend + tax;
+        totalAdSpendUSD += spend;
+        totalTaxUSD += tax;
         if (t.cardId && cardBalances[t.cardId] !== undefined) {
           cardBalances[t.cardId] -= totalSpend;
-          cardStats[t.cardId].spent += totalSpend;
+          cardStats[t.cardId].adSpend += spend;
+          cardStats[t.cardId].tax += tax;
         }
       }
     });
@@ -259,7 +262,6 @@ export default function AdLedgerApp() {
     const netProfitBDT = totalRevenueBDT - totalAdCostBDT;
     const profitMargin = totalRevenueBDT > 0 ? (netProfitBDT / totalRevenueBDT) * 100 : 0;
     
-    // Calculate total funds available across all cards for the dashboard
     const totalCardBalance = Object.values(cardBalances).reduce((a, b) => a + b, 0);
 
     return {
@@ -725,20 +727,38 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
   // Global filter state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [globalDateRange, setGlobalDateRange] = useState({ label: 'Lifetime', start: null, end: null });
+  const [selectedCardFilter, setSelectedCardFilter] = useState('ALL');
+  const [selectedTxForModal, setSelectedTxForModal] = useState(null);
+
+  const activeCards = cards.filter(c => c.status !== 'Archived');
 
   // Filtered USD purchases for the global view table
   const filteredUSDPurchases = useMemo(() => {
     let list = transactions.filter(t => t.type === 'USD_PURCHASE');
+    
+    if (selectedCardFilter !== 'ALL') {
+      list = list.filter(t => t.cardId === selectedCardFilter);
+    }
+
     if (globalDateRange.start && globalDateRange.end) {
       list = list.filter(t => t.date >= globalDateRange.start && t.date <= globalDateRange.end);
     }
     return list;
-  }, [transactions, globalDateRange]);
+  }, [transactions, globalDateRange, selectedCardFilter]);
+
+  // USD Purchase Period Summary
+  const periodSummary = useMemo(() => {
+    const count = filteredUSDPurchases.length;
+    const totalUSD = filteredUSDPurchases.reduce((sum, t) => sum + (t.amountUSD || 0), 0);
+    const totalBDT = filteredUSDPurchases.reduce((sum, t) => sum + (t.amountBDT || 0) + (t.cashOutCharge || 0), 0);
+    const avgEffectiveRate = totalUSD > 0 ? (totalBDT / totalUSD) : 0;
+    return { count, totalUSD, totalBDT, avgEffectiveRate };
+  }, [filteredUSDPurchases]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
       
-      {/* Top Header - Kept Add Card strictly here */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
         <h1 className="text-2xl font-bold text-slate-900">Cards & USD Ledger</h1>
         <button onClick={onAddCard} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
@@ -754,49 +774,127 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
           initialRange={globalDateRange}
         />
       )}
+
+      {/* Transaction Details Modal */}
+      {selectedTxForModal && (
+        <TransactionDetailsModal 
+          tx={selectedTxForModal} 
+          cardName={cards.find(c => c.id === selectedTxForModal.cardId)?.name || 'Unknown Card'} 
+          onClose={() => setSelectedTxForModal(null)} 
+        />
+      )}
       
       {/* CARDS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {cards.map(card => (
-          <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                    {card.name} 
-                    {card.last4 && <span className="text-xs font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">*{card.last4}</span>}
-                  </h3>
-                  <p className="text-sm text-slate-500">{card.provider} • {card.cardType}</p>
+        {activeCards.map(card => {
+          // Calculate Last Transaction for this card
+          const lastTx = transactions
+            .filter(t => t.cardId === card.id)
+            .sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+
+          return (
+            <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
+              <div>
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
+                      {card.name} 
+                      {card.last4 && <span className="text-xs font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">*{card.last4}</span>}
+                    </h3>
+                    <p className="text-sm text-slate-500">{card.provider} • {card.cardType}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="bg-blue-50 p-2 rounded-lg text-blue-600 mr-1"><CreditCard size={20} /></div>
+                    <CardDropdownMenu 
+                      onEdit={() => onEditCard(card)} 
+                      onDetails={() => onViewDetails(card)} 
+                      onDelete={() => onDeleteCard(card.id)} 
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="bg-blue-50 p-2 rounded-lg text-blue-600 mr-2"><CreditCard size={20} /></div>
-                  <CardDropdownMenu 
-                    onEdit={() => onEditCard(card)} 
-                    onDetails={() => onViewDetails(card)} 
-                    onDelete={() => onDeleteCard(card.id)} 
-                  />
+
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Current Balance</p>
+                <h2 className="text-3xl font-bold text-slate-800">{formatUSD(metrics.cardBalances[card.id])}</h2>
+
+                {/* Last Transaction Section */}
+                <div className="mt-4 pt-3 border-t border-slate-100 text-xs">
+                  <span className="text-slate-400 block font-medium mb-1">Last Transaction</span>
+                  {lastTx ? (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-700 font-medium truncate max-w-[150px]">
+                        {formatDate(lastTx.date)} • {lastTx.type === 'USD_PURCHASE' ? 'USD Purchase' : (lastTx.notes || 'Meta Ads')}
+                      </span>
+                      <span className={`font-bold ${lastTx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
+                        {lastTx.type === 'USD_PURCHASE' ? `+${formatUSD(lastTx.amountUSD)}` : `-${formatUSD((lastTx.amountUSD || 0) + (lastTx.taxUSD || 0))}`}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 italic">No transactions yet</span>
+                  )}
                 </div>
               </div>
-              <p className="text-sm text-slate-500 mb-1">Current Balance</p>
-              <h2 className="text-3xl font-bold text-slate-800">{formatUSD(metrics.cardBalances[card.id])}</h2>
+
+              <div className="mt-5 flex gap-2">
+                <button onClick={() => onViewDetails(card)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 rounded-lg text-sm font-medium transition-colors">Details & History</button>
+              </div>
             </div>
-            <div className="mt-6 flex gap-2">
-              <button onClick={() => onViewDetails(card)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 rounded-lg text-sm font-medium transition-colors">Details & History</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* USD PURCHASE HISTORY SECTION - History filter moved here exactly */}
-      <div className="flex justify-between items-end mt-8 mb-4">
+      {/* USD PURCHASE HISTORY SECTION */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-8 mb-4 gap-3">
         <h3 className="text-lg font-bold text-slate-800">USD Purchase History</h3>
         
-        <div className="flex items-center gap-3">
-          {globalDateRange.label !== 'Lifetime' && <button onClick={() => setGlobalDateRange({label: 'Lifetime', start: null, end: null})} className="text-sm text-red-600 font-medium hover:underline">Clear Filter</button>}
-          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm transition-colors">
-            <CalendarDays size={16} className="text-blue-600" /> 
-            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `Showing: ${globalDateRange.label}`}
+        <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+          {globalDateRange.label !== 'Lifetime' && (
+            <button onClick={() => setGlobalDateRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 font-medium hover:underline mr-1">
+              Clear Date Filter
+            </button>
+          )}
+          
+          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
+            <CalendarDays size={14} className="text-blue-600" /> 
+            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `History: ${globalDateRange.label}`}
           </button>
+
+          <select 
+            value={selectedCardFilter} 
+            onChange={(e) => setSelectedCardFilter(e.target.value)}
+            className="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs outline-none cursor-pointer"
+          >
+            <option value="ALL">All Cards ▼</option>
+            {activeCards.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* USD Purchase Period Summary Box */}
+      <div className="bg-slate-100 p-3.5 rounded-xl border border-slate-200 mb-4 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+        <div>
+          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Selected Period</span>
+          <span className="font-bold text-slate-800">
+            {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label} 
+            {selectedCardFilter !== 'ALL' && ` (${activeCards.find(c => c.id === selectedCardFilter)?.name || 'Filtered Card'})`}
+          </span>
+        </div>
+        <div>
+          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">USD Purchased</span>
+          <span className="font-bold text-green-600">{formatUSD(periodSummary.totalUSD)}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Total BDT Cost</span>
+          <span className="font-bold text-slate-800">{formatBDT(periodSummary.totalBDT)}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Avg Effective Rate</span>
+          <span className="font-bold text-blue-600">৳{periodSummary.avgEffectiveRate.toFixed(2)}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Purchases</span>
+          <span className="font-bold text-slate-800">{periodSummary.count}</span>
         </div>
       </div>
 
@@ -817,7 +915,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases found in this period.</td></tr>}
+              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases found.</td></tr>}
               {filteredUSDPurchases.map(tx => {
                 const baseRate = (tx.amountBDT / tx.amountUSD).toFixed(2);
                 const totalCost = tx.amountBDT + (tx.cashOutCharge || 0);
@@ -826,7 +924,11 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
 
                 return (
-                <tr key={tx.id} className="hover:bg-slate-50">
+                <tr 
+                  key={tx.id} 
+                  onClick={() => setSelectedTxForModal(tx)}
+                  className="hover:bg-blue-50/50 cursor-pointer transition-colors group"
+                >
                   <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
                   <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">{tx.notes}</td>
                   <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(tx.amountBDT)}</td>
@@ -834,7 +936,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                   <td className="px-5 py-3 text-right font-bold text-slate-800 whitespace-nowrap">{formatBDT(totalCost)}</td>
                   <td className="px-5 py-3 text-right font-bold text-green-600 whitespace-nowrap">{formatUSD(tx.amountUSD)}</td>
                   <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
-                    <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-xs">{cardLabel}</span>
+                    <span className="bg-slate-100 group-hover:bg-white border border-slate-200 px-2 py-0.5 rounded text-xs">{cardLabel}</span>
                   </td>
                   <td className="px-5 py-3 text-right text-slate-500 whitespace-nowrap">৳{baseRate}</td>
                   <td className="px-5 py-3 text-right font-medium text-blue-600 whitespace-nowrap">৳{effectiveRate}</td>
@@ -845,6 +947,193 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         </div>
       </div>
     </div>
+  );
+}
+
+function CardDetailsModal({ card, metrics, transactions, onClose }) {
+  const [filterRange, setFilterRange] = useState({ label: 'Lifetime', start: null, end: null });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // All transactions for this card
+  const cardTxs = useMemo(() => {
+    return transactions.filter(t => t.cardId === card.id).sort((a,b) => new Date(a.date) - new Date(b.date));
+  }, [transactions, card.id]);
+
+  // Dynamic Historical Running Balance Calculation
+  const { historyWithBalance, periodSummary } = useMemo(() => {
+    let historyStartBal = parseFloat(card.initialBalance || 0);
+    
+    // Accumulate transactions BEFORE selected start date
+    if (filterRange.start) {
+       const preTxs = cardTxs.filter(t => t.date < filterRange.start);
+       preTxs.forEach(t => {
+         if (t.type === 'USD_PURCHASE') historyStartBal += parseFloat(t.amountUSD || 0);
+         if (t.type === 'AD_SPEND') historyStartBal -= (parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0));
+       });
+    }
+
+    let filteredTxs = cardTxs;
+    if (filterRange.start && filterRange.end) {
+       filteredTxs = cardTxs.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
+    }
+
+    let summary = { purchased: 0, ads: 0, tax: 0, net: 0 };
+    
+    let runningBal = historyStartBal;
+    const historyList = filteredTxs.map(t => {
+      let changeUSD = 0;
+      if (t.type === 'USD_PURCHASE') {
+        changeUSD = parseFloat(t.amountUSD || 0);
+        summary.purchased += changeUSD;
+      }
+      if (t.type === 'AD_SPEND') {
+        const spend = parseFloat(t.amountUSD || 0);
+        const tax = parseFloat(t.taxUSD || 0);
+        changeUSD = -(spend + tax);
+        summary.ads -= spend;
+        summary.tax -= tax;
+      }
+      summary.net += changeUSD;
+      runningBal += changeUSD;
+      return { ...t, changeUSD, runningBal };
+    }).reverse();
+
+    return { historyWithBalance: historyList, periodSummary: summary };
+  }, [cardTxs, filterRange, card.initialBalance]);
+
+  const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0 };
+  const currentBal = metrics.cardBalances[card.id] || 0;
+
+  return (
+    <div className="flex flex-col h-full max-h-[80vh]">
+      
+      {/* Financial Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6 shrink-0">
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-[11px] text-slate-500 mb-0.5">Total USD Purchased</p>
+          <p className="text-base font-bold text-green-600">+{formatUSD(stats.purchased)}</p>
+        </div>
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-[11px] text-slate-500 mb-0.5">Total Meta Ad Spend</p>
+          <p className="text-base font-bold text-red-600">-{formatUSD(stats.adSpend)}</p>
+        </div>
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-[11px] text-slate-500 mb-0.5">Total Tax</p>
+          <p className="text-base font-bold text-slate-700">-{formatUSD(stats.tax)}</p>
+        </div>
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-[11px] text-slate-500 mb-0.5">Total Fees</p>
+          <p className="text-base font-bold text-slate-700">$0.00</p>
+        </div>
+        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+          <p className="text-[11px] text-slate-500 mb-0.5">Current Balance</p>
+          <p className="text-base font-bold text-blue-600">{formatUSD(currentBal)}</p>
+        </div>
+      </div>
+      
+      <div className="text-xs text-slate-600 mb-4 bg-blue-50 p-3 rounded border border-blue-100 flex justify-between shrink-0">
+        <span><strong>Provider:</strong> {card.provider}</span>
+        <span><strong>Type:</strong> {card.cardType}</span>
+        {card.last4 && <span><strong>Last 4 Digits:</strong> {card.last4}</span>}
+      </div>
+
+      <div className="flex justify-between items-end mb-3 border-b pb-2 shrink-0">
+        <h4 className="font-bold text-slate-800">Transaction History</h4>
+        <div className="flex items-center gap-3">
+          {filterRange.label !== 'Lifetime' && <button onClick={() => setFilterRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline font-medium">Clear Filter</button>}
+          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
+            <CalendarDays size={14} className="text-blue-600" /> 
+            {filterRange.label === 'Lifetime' ? 'Filter History' : `Showing: ${filterRange.label}`}
+          </button>
+        </div>
+      </div>
+
+      {isFilterOpen && (
+        <DateRangePickerModal 
+          onClose={() => setIsFilterOpen(false)} 
+          onApply={(range) => { setFilterRange(range); setIsFilterOpen(false); }} 
+          initialRange={filterRange}
+        />
+      )}
+      
+      <div className="overflow-y-auto flex-1 border border-slate-200 rounded-lg">
+        <table className="w-full text-sm text-left whitespace-nowrap">
+          <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
+            <tr>
+              <th className="px-4 py-2.5">Date</th>
+              <th className="px-4 py-2.5">Type</th>
+              <th className="px-4 py-2.5">Description</th>
+              <th className="px-4 py-2.5 text-right">USD</th>
+              <th className="px-4 py-2.5 text-right">BDT</th>
+              <th className="px-4 py-2.5 text-right font-bold">Balance After</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-xs">
+            {historyWithBalance.length === 0 && (
+              <tr><td colSpan="6" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
+            )}
+            {historyWithBalance.map(tx => {
+              const bdtCost = tx.type === 'USD_PURCHASE' ? (tx.amountBDT + (tx.cashOutCharge || 0)) : null;
+              return (
+              <tr key={tx.id} className="hover:bg-slate-50">
+                <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
+                <td className="px-4 py-2.5 font-medium text-slate-800">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}</td>
+                <td className="px-4 py-2.5 text-slate-600">{tx.notes || tx.campaign || '-'}</td>
+                <td className={`px-4 py-2.5 text-right font-medium ${tx.changeUSD > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                  {tx.changeUSD > 0 ? '+' : ''}{formatUSD(tx.changeUSD)}
+                </td>
+                <td className="px-4 py-2.5 text-right text-slate-600">
+                  {bdtCost ? formatBDT(bdtCost) : '—'}
+                </td>
+                <td className="px-4 py-2.5 text-right font-bold text-slate-900">{formatUSD(tx.runningBal)}</td>
+              </tr>
+            )})}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function TransactionDetailsModal({ tx, cardName, onClose }) {
+  const baseRate = (tx.amountBDT / tx.amountUSD).toFixed(2);
+  const totalCost = tx.amountBDT + (tx.cashOutCharge || 0);
+  const effectiveRate = (totalCost / tx.amountUSD).toFixed(2);
+
+  return (
+    <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
+      <div className="space-y-4 text-sm">
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
+          <div>
+            <span className="text-xs text-slate-400 uppercase font-medium block">Reference ID</span>
+            <span className="font-mono text-xs font-bold text-slate-800">{tx.id}</span>
+          </div>
+          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">USD Purchase</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Date</span><span className="font-bold text-slate-800">{formatDate(tx.date)}</span></div>
+          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Source</span><span className="font-bold text-slate-800">{tx.notes || 'N/A'}</span></div>
+          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Destination Card</span><span className="font-bold text-blue-600">{cardName}</span></div>
+          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">USD Received</span><span className="font-bold text-green-600">{formatUSD(tx.amountUSD)}</span></div>
+        </div>
+
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
+          <div className="flex justify-between"><span>Base BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(tx.amountBDT)}</span></div>
+          <div className="flex justify-between"><span>C.O Rate (Cash-out Fee):</span><span className="font-medium text-red-600">{formatBDT(tx.cashOutCharge || 0)}</span></div>
+          <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total BDT Cost:</span><span className="text-slate-900">{formatBDT(totalCost)}</span></div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="p-2.5 bg-slate-50 border border-slate-200 rounded"><span className="text-slate-500 block">Base Rate</span><span className="font-bold text-slate-800">৳{baseRate} / USD</span></div>
+          <div className="p-2.5 bg-blue-50 border border-blue-200 rounded"><span className="text-blue-600 block font-medium">Effective Rate</span><span className="font-bold text-blue-700">৳{effectiveRate} / USD</span></div>
+        </div>
+
+        <div className="pt-2 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800">Close</button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -962,7 +1251,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
             <h4 className="text-sm font-bold text-slate-800 mb-4">Custom Date Range</h4>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date</label>
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date (DD / MM / YYYY)</label>
                 <div className="relative">
                   <input 
                     type="date" 
@@ -970,11 +1259,10 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
                     onChange={(e) => { setCustomStart(e.target.value); setSelectedPreset('Custom Range'); }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
                   />
-                  {!customStart && <span className="absolute left-3 top-2.5 text-slate-400 text-sm pointer-events-none bg-white">DD / MM / YYYY</span>}
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date</label>
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date (DD / MM / YYYY)</label>
                 <div className="relative">
                   <input 
                     type="date" 
@@ -982,7 +1270,6 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
                     onChange={(e) => { setCustomEnd(e.target.value); setSelectedPreset('Custom Range'); }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
                   />
-                  {!customEnd && <span className="absolute left-3 top-2.5 text-slate-400 text-sm pointer-events-none bg-white">DD / MM / YYYY</span>}
                 </div>
               </div>
             </div>
@@ -1220,7 +1507,6 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
     const profitBDT = revenue - totalCostBDT;
     const margin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
     
-    // Dynamic outstanding based on duration scaled budget
     const durationDays = getDurationDays(client);
     const targetBudgetBDT = getExpectedBudgetBDT(client, durationDays);
     const outstanding = targetBudgetBDT > revenue ? targetBudgetBDT - revenue : 0;
@@ -1243,7 +1529,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
   // Chart Data Preparation
   const chartData = useMemo(() => {
     const data = [...clientTx].reverse().reduce((acc, t) => {
-      const d = t.date.substring(5); // MM-DD
+      const d = t.date.substring(5);
       if(!acc[d]) acc[d] = { date: d, revenue: 0, cost: 0 };
       if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += t.amountBDT;
       if (t.type === 'AD_SPEND') acc[d].cost += ((t.amountUSD + (t.taxUSD||0)) * metrics.avgUSDEffectiveRate);
@@ -1390,157 +1676,6 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
           </div>
         </div>
 
-      </div>
-    </div>
-  );
-}
-
-function CardDetailsModal({ card, metrics, transactions, onClose }) {
-  const [filterRange, setFilterRange] = useState({ label: 'Lifetime', start: null, end: null });
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  // All transactions for this specific card sorted chronologically
-  const cardTxs = useMemo(() => {
-    return transactions.filter(t => t.cardId === card.id).sort((a,b) => new Date(a.date) - new Date(b.date));
-  }, [transactions, card.id]);
-
-  // Dynamic Historical Running Balance Calculation
-  const { historyWithBalance, periodSummary } = useMemo(() => {
-    let historyStartBal = parseFloat(card.initialBalance || 0);
-    
-    // 1. Accumulate all transactions BEFORE the selected start date
-    if (filterRange.start) {
-       const preTxs = cardTxs.filter(t => t.date < filterRange.start);
-       preTxs.forEach(t => {
-         if (t.type === 'USD_PURCHASE') historyStartBal += parseFloat(t.amountUSD || 0);
-         if (t.type === 'AD_SPEND') historyStartBal -= (parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0));
-       });
-    }
-
-    // 2. Process transactions WITHIN the selected date range
-    let filteredTxs = cardTxs;
-    if (filterRange.start && filterRange.end) {
-       filteredTxs = cardTxs.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
-    }
-
-    // 3. Generate summary stats for this specific period
-    let summary = { purchased: 0, ads: 0, tax: 0, net: 0 };
-    
-    let runningBal = historyStartBal;
-    const historyList = filteredTxs.map(t => {
-      let changeUSD = 0;
-      if (t.type === 'USD_PURCHASE') {
-        changeUSD = parseFloat(t.amountUSD || 0);
-        summary.purchased += changeUSD;
-      }
-      if (t.type === 'AD_SPEND') {
-        const spend = parseFloat(t.amountUSD || 0);
-        const tax = parseFloat(t.taxUSD || 0);
-        changeUSD = -(spend + tax);
-        summary.ads -= spend;
-        summary.tax -= tax;
-      }
-      summary.net += changeUSD;
-      runningBal += changeUSD;
-      return { ...t, changeUSD, runningBal };
-    }).reverse(); // Reverse for display (newest first)
-
-    return { historyWithBalance: historyList, periodSummary: summary };
-  }, [cardTxs, filterRange, card.initialBalance]);
-
-  // Overall Absolute Stats
-  const stats = metrics.cardStats[card.id] || { purchased: 0, spent: 0 };
-  const currentBal = metrics.cardBalances[card.id] || 0;
-
-  return (
-    <div className="flex flex-col h-full max-h-[80vh]">
-      
-      {/* Absolute Details Header Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 shrink-0">
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-xs text-slate-500 mb-1">Current Balance</p>
-          <p className="text-xl font-bold text-slate-900">{formatUSD(currentBal)}</p>
-        </div>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-xs text-slate-500 mb-1">Total USD Purchased</p>
-          <p className="text-lg font-bold text-green-600">+{formatUSD(stats.purchased)}</p>
-        </div>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-xs text-slate-500 mb-1">Total Spent</p>
-          <p className="text-lg font-bold text-red-600">-{formatUSD(stats.spent)}</p>
-        </div>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-xs text-slate-500 mb-1">Initial Balance</p>
-          <p className="text-lg font-semibold text-slate-700">{formatUSD(card.initialBalance)}</p>
-        </div>
-      </div>
-      
-      <div className="text-sm text-slate-600 mb-4 bg-blue-50 p-3 rounded border border-blue-100 flex justify-between shrink-0">
-        <span><strong>Provider:</strong> {card.provider}</span>
-        <span><strong>Type:</strong> {card.cardType}</span>
-        {card.last4 && <span><strong>Last 4:</strong> {card.last4}</span>}
-      </div>
-
-      <div className="flex justify-between items-end mb-3 border-b pb-2 shrink-0">
-        <h4 className="font-bold text-slate-800">Transaction History</h4>
-        <div className="flex items-center gap-3">
-          {filterRange.label !== 'Lifetime' && <button onClick={() => setFilterRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline font-medium">Clear Filter</button>}
-          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-medium hover:bg-slate-50 shadow-sm transition-colors">
-            <CalendarDays size={14} className="text-blue-600" /> 
-            {filterRange.label === 'Lifetime' ? 'Filter History' : `Showing: ${filterRange.label}`}
-          </button>
-        </div>
-      </div>
-
-      {isFilterOpen && (
-        <DateRangePickerModal 
-          onClose={() => setIsFilterOpen(false)} 
-          onApply={(range) => { setFilterRange(range); setIsFilterOpen(false); }} 
-          initialRange={filterRange}
-        />
-      )}
-      
-      {/* Filter Period Summary Box */}
-      {filterRange.label !== 'Lifetime' && (
-        <div className="mb-4 bg-slate-100 p-3 rounded-lg border border-slate-200 text-sm flex gap-6 shrink-0 overflow-x-auto">
-           <div><span className="text-slate-500 block text-xs">Period</span><span className="font-medium text-slate-800">{filterRange.label}</span></div>
-           <div><span className="text-slate-500 block text-xs">USD Purchased</span><span className="font-medium text-green-600">+{formatUSD(periodSummary.purchased)}</span></div>
-           <div><span className="text-slate-500 block text-xs">Meta Ads</span><span className="font-medium text-red-600">{formatUSD(periodSummary.ads)}</span></div>
-           <div><span className="text-slate-500 block text-xs">Tax</span><span className="font-medium text-red-600">{formatUSD(periodSummary.tax)}</span></div>
-           <div><span className="text-slate-500 block text-xs">Net Movement</span><span className={`font-bold ${periodSummary.net > 0 ? 'text-green-600' : 'text-slate-900'}`}>{periodSummary.net > 0 ? '+' : ''}{formatUSD(periodSummary.net)}</span></div>
-        </div>
-      )}
-      
-      <div className="overflow-y-auto flex-1 border border-slate-200 rounded-lg">
-        <table className="w-full text-sm text-left whitespace-nowrap">
-          <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
-            <tr>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Type / Desc</th>
-              <th className="px-4 py-3 text-right">Amount (USD)</th>
-              <th className="px-4 py-3 text-right font-bold">Balance After</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {historyWithBalance.length === 0 && (
-              <tr><td colSpan="4" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
-            )}
-            {historyWithBalance.map(tx => (
-              <tr key={tx.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-600">{formatDate(tx.date)}</td>
-                <td className="px-4 py-3">
-                  <div className="font-medium text-slate-800">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type.replace('_', ' ')}</div>
-                  <div className="text-xs text-slate-500">{tx.notes}</div>
-                </td>
-                <td className={`px-4 py-3 text-right font-medium ${tx.changeUSD > 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {tx.changeUSD > 0 ? '+' : ''}{formatUSD(tx.changeUSD)}
-                  {tx.taxUSD > 0 && <span className="block text-xs text-red-500 font-normal">inc. tax ${tx.taxUSD.toFixed(2)}</span>}
-                </td>
-                <td className="px-4 py-3 text-right font-bold text-slate-900">{formatUSD(tx.runningBal)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );
