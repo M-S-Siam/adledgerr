@@ -13,8 +13,7 @@ import {
 } from 'recharts';
 
 // --- SAFE VERSIONED DATA MIGRATION ---
-// BUMPED TO 3: This will force a clean wipe of any corrupted state from previous iterations.
-const APP_DATA_VERSION = "3";
+const APP_DATA_VERSION = "2";
 
 if (typeof window !== "undefined") {
   try {
@@ -37,15 +36,9 @@ function useLocalStorage(key, initialValue) {
     if (typeof window === "undefined") return initialValue;
     try {
       const item = window.localStorage.getItem(key);
-      if (!item) return initialValue;
-      const parsed = JSON.parse(item);
-      // Extra protection: if we expect an array but local storage has an object, discard it.
-      if (Array.isArray(initialValue) && !Array.isArray(parsed)) {
-        return initialValue;
-      }
-      return parsed;
+      return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error(`Local storage error for ${key}:`, error);
+      console.log(error);
       return initialValue;
     }
   });
@@ -58,7 +51,7 @@ function useLocalStorage(key, initialValue) {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
       }
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   };
   return [storedValue, setValue];
@@ -72,13 +65,13 @@ const INITIAL_TRANSACTIONS = [];
 // --- NORMALIZED FORMATTERS (PREVENTS -$0.00) ---
 const formatBDT = (amount) => {
   let val = parseFloat(amount) || 0;
-  if (Math.abs(val) < 0.005) val = 0; 
+  if (Math.abs(val) < 0.005) val = 0; // Normalize microscopic negative values
   return `৳${val.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 };
 
 const formatUSD = (amount) => {
   let val = parseFloat(amount) || 0;
-  if (Math.abs(val) < 0.005) val = 0; 
+  if (Math.abs(val) < 0.005) val = 0; // Normalize to true zero
   const isNegative = val < 0;
   const absVal = Math.abs(val);
   return `${isNegative ? '-' : ''}$${absVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -86,9 +79,7 @@ const formatUSD = (amount) => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return 'Invalid Date';
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 const getBudgetDisplay = (type, amount) => {
@@ -107,17 +98,15 @@ const getClientDisplayStatus = (client) => {
   const today = new Date();
   today.setHours(0,0,0,0);
   const end = new Date(client.endDate);
-  if (!isNaN(end.getTime())) {
-    end.setHours(0,0,0,0);
-    if (today > end) return 'Completed / Ended';
-  }
+  end.setHours(0,0,0,0);
+
+  if (today > end) return 'Completed / Ended';
   return client.status || 'Active';
 };
 
 const getDurationDays = (client) => {
   if (!client.startDate) return 0;
   const start = new Date(client.startDate);
-  if (isNaN(start.getTime())) return 0;
   start.setHours(0,0,0,0);
   
   let end;
@@ -126,7 +115,6 @@ const getDurationDays = (client) => {
   } else {
     if (!client.endDate) return 0; 
     end = new Date(client.endDate);
-    if (isNaN(end.getTime())) return 0;
   }
   end.setHours(0,0,0,0);
 
@@ -210,20 +198,23 @@ const getPresetDates = (preset) => {
   return { start: formatDateString(start), end: formatDateString(end) };
 };
 
-// --- MAIN APPLICATION COMPONENT ---
-function AdLedgerApp() {
+// --- MAIN APPLICATION ---
+export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // State Data (Persisted)
-  const [rawClients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
-  const [rawCards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
-  const [rawTransactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
+  const [clients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
+  const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
+  const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   
-  // Extra safety layer to prevent crashes if local storage is malformed
-  const clients = Array.isArray(rawClients) ? rawClients : [];
-  const cards = Array.isArray(rawCards) ? rawCards : [];
-  const transactions = Array.isArray(rawTransactions) ? rawTransactions : [];
+  // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
+  useEffect(() => {
+    const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0);
+    if (hasZeroAdSpend) {
+      setTransactions(prev => prev.filter(t => !(t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0)));
+    }
+  }, [transactions, setTransactions]);
 
   // Modal State
   const [activeModal, setActiveModal] = useState(null); 
@@ -244,7 +235,6 @@ function AdLedgerApp() {
     
     let cardBalances = {};
     let cardStats = {}; 
-    
     cards.forEach(c => {
       cardBalances[c.id] = parseFloat(c.initialBalance || 0);
       cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
@@ -305,13 +295,13 @@ function AdLedgerApp() {
 
   const revenueChartData = useMemo(() => {
     const grouped = transactions.filter(t => t.type === 'PAYMENT_RECEIVED' || t.type === 'AD_SPEND').reduce((acc, t) => {
-      const d = t.date ? t.date.substring(5) : 'Unknown';
+      const d = t.date.substring(5);
       if (!acc[d]) acc[d] = { date: d, revenue: 0, spendUSD: 0 };
       if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += parseFloat(t.amountBDT || 0);
       if (t.type === 'AD_SPEND') acc[d].spendUSD += (parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0));
       return acc;
     }, {});
-    return Object.values(grouped).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
   }, [transactions]);
 
   const handleAddTransaction = (newTx) => {
@@ -321,10 +311,10 @@ function AdLedgerApp() {
       timestamp: Date.now() 
     };
     setTransactions(prev => {
-      const updated = [tx, ...(Array.isArray(prev) ? prev : [])];
+      const updated = [tx, ...prev];
       return updated.sort((a, b) => {
-        const tA = a.timestamp || (a.date ? new Date(a.date).getTime() : 0);
-        const tB = b.timestamp || (b.date ? new Date(b.date).getTime() : 0);
+        const tA = a.timestamp || new Date(a.date).getTime();
+        const tB = b.timestamp || new Date(b.date).getTime();
         return tB - tA; // Newest first
       });
     });
@@ -333,9 +323,9 @@ function AdLedgerApp() {
 
   const handleSaveCard = (cardData) => {
     if (activeModal === 'edit-card') {
-      setCards(prev => (Array.isArray(prev) ? prev : []).map(c => c.id === cardData.id ? cardData : c));
+      setCards(prev => prev.map(c => c.id === cardData.id ? cardData : c));
     } else {
-      setCards(prev => [...(Array.isArray(prev) ? prev : []), { ...cardData, id: `card_${Date.now()}` }]);
+      setCards(prev => [...prev, { ...cardData, id: `card_${Date.now()}`, status: 'Active' }]);
     }
     setActiveModal(null);
   };
@@ -347,15 +337,15 @@ function AdLedgerApp() {
       msg = "This card has transaction history. Deleting it may affect historical records. Are you sure?";
     }
     if (window.confirm(msg)) {
-      setCards(prev => (Array.isArray(prev) ? prev : []).filter(c => c.id !== cardId));
+      setCards(prev => prev.filter(c => c.id !== cardId));
     }
   };
 
   const handleSaveClient = (clientData) => {
     if (activeModal === 'edit-client') {
-      setClients(prev => (Array.isArray(prev) ? prev : []).map(c => c.id === clientData.id ? clientData : c));
+      setClients(prev => prev.map(c => c.id === clientData.id ? clientData : c));
     } else {
-      setClients(prev => [...(Array.isArray(prev) ? prev : []), { ...clientData, id: `c_${Date.now()}` }]);
+      setClients(prev => [...prev, { ...clientData, id: `c_${Date.now()}` }]);
     }
     setActiveModal(null);
   };
@@ -367,7 +357,7 @@ function AdLedgerApp() {
       msg = "This client has financial transaction history. Deleting the client may affect historical records. Are you sure?";
     }
     if (window.confirm(msg)) {
-      setClients(prev => (Array.isArray(prev) ? prev : []).filter(c => c.id !== clientId));
+      setClients(prev => prev.filter(c => c.id !== clientId));
     }
   };
 
@@ -524,51 +514,6 @@ function AdLedgerApp() {
   );
 }
 
-// --- ERROR BOUNDARY TO PREVENT WHITE SCREENS ---
-export default class AppWrapper extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-  componentDidCatch(error, errorInfo) {
-    console.error("AdLedger Crashed:", error, errorInfo);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-sans">
-          <AlertCircle size={64} className="text-red-500 mb-4" />
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Something went wrong.</h1>
-          <p className="text-slate-600 mb-6 max-w-lg">
-            A corrupted data state caused the application to crash. This typically happens when older saved data formats conflict with new updates. 
-          </p>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 text-left w-full max-w-2xl overflow-auto mb-6">
-            <pre className="text-xs text-red-600 font-mono whitespace-pre-wrap">
-              {this.state.error && this.state.error.toString()}
-            </pre>
-          </div>
-          <button 
-            onClick={() => {
-              window.localStorage.removeItem('adledger_clients');
-              window.localStorage.removeItem('adledger_cards');
-              window.localStorage.removeItem('adledger_transactions');
-              window.localStorage.setItem('adledger_version', APP_DATA_VERSION);
-              window.location.reload();
-            }}
-            className="bg-red-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 shadow-sm"
-          >
-            Clear Corrupted Data & Reload
-          </button>
-        </div>
-      );
-    }
-    return <AdLedgerApp />;
-  }
-}
-
 // --- VIEWS ---
 
 function DashboardView({ metrics, chartData, transactions, clients }) {
@@ -656,7 +601,7 @@ function LedgerView({ transactions, clients, cards }) {
         }
         if (tax > 0) {
           list.push({
-            ...t, id: (t.id || '') + '_tax', displayType: 'TAX', inBDT: null, outUSD: tax,
+            ...t, id: t.id + '_tax', displayType: 'TAX', inBDT: null, outUSD: tax,
             desc: 'Meta Ads Tax' + (t.notes ? ' - ' + t.notes : ''),
             clientName, cardName, entityDesc: clientName,
             searchString: `meta ads tax ${t.notes||''} ${clientName} ${cardName}`.toLowerCase()
@@ -678,17 +623,17 @@ function LedgerView({ transactions, clients, cards }) {
         });
       } else {
         list.push({
-          ...t, displayType: t.type || 'UNKNOWN', inBDT: parseFloat(t.amountBDT || 0), outUSD: parseFloat(t.amountUSD || 0),
+          ...t, displayType: t.type, inBDT: parseFloat(t.amountBDT || 0), outUSD: parseFloat(t.amountUSD || 0),
           clientName, cardName, entityDesc: clientName || cardName,
-          desc: t.notes || t.type || '',
-          searchString: `${t.notes||''} ${clientName} ${cardName} ${t.type||''}`.toLowerCase()
+          desc: t.notes || t.type,
+          searchString: `${t.notes||''} ${clientName} ${cardName} ${t.type}`.toLowerCase()
         });
       }
     });
     
     return list.sort((a, b) => {
-      const tA = a.timestamp || (a.date ? new Date(a.date).getTime() : 0);
-      const tB = b.timestamp || (b.date ? new Date(b.date).getTime() : 0);
+      const tA = a.timestamp || new Date(a.date).getTime();
+      const tB = b.timestamp || new Date(b.date).getTime();
       return tB - tA; // Newest first
     });
   }, [transactions, clients, cards]);
@@ -696,11 +641,11 @@ function LedgerView({ transactions, clients, cards }) {
   const filteredTransactions = useMemo(() => {
     return flatTransactions.filter(t => {
       if (dateRange.start && dateRange.end) {
-        if (!t.date || t.date < dateRange.start || t.date > dateRange.end) return false;
+        if (t.date < dateRange.start || t.date > dateRange.end) return false;
       }
       if (typeFilter !== 'ALL' && t.displayType !== typeFilter) return false;
       if (searchQuery) {
-        if (!t.searchString?.includes(searchQuery.toLowerCase())) return false;
+        if (!t.searchString.includes(searchQuery.toLowerCase())) return false;
       }
       return true;
     });
@@ -717,7 +662,6 @@ function LedgerView({ transactions, clients, cards }) {
   }, [filteredTransactions]);
 
   const getTypeLabel = (type) => {
-    if (!type) return 'Unknown';
     const map = {
       'USD_PURCHASE': 'Buy USD',
       'AD_SPEND': 'Meta Ads',
@@ -725,7 +669,7 @@ function LedgerView({ transactions, clients, cards }) {
       'PAYMENT_RECEIVED': 'Receive BDT',
       'FEE': 'Card Fee'
     };
-    return map[type] || type.replace('_', ' ');
+    return map[type] || type;
   };
 
   return (
@@ -836,17 +780,15 @@ function LedgerView({ transactions, clients, cards }) {
 }
 
 function LedgerTransactionModal({ tx, onClose }) {
-  const displayTypeClean = (tx.displayType || 'UNKNOWN').replace('_', ' ');
-
   return (
     <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
       <div className="space-y-4 text-sm">
         <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
           <div>
             <span className="text-xs text-slate-400 uppercase font-medium block">Reference ID</span>
-            <span className="font-mono text-xs font-bold text-slate-800">{(tx.id || '').replace('_tax', '')}</span>
+            <span className="font-mono text-xs font-bold text-slate-800">{tx.id.replace('_tax', '')}</span>
           </div>
-          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">{displayTypeClean}</span>
+          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">{tx.displayType.replace('_', ' ')}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs">
@@ -926,7 +868,7 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
 
   const sortedAndFilteredClients = useMemo(() => {
     let result = clientStats.filter(c => {
-      const matchSearch = ((c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                            (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (c.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (c.email || '').toLowerCase().includes(searchTerm.toLowerCase()));
@@ -1122,8 +1064,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
           const sortedTxs = [...transactions]
             .filter(t => t.cardId === card.id)
             .sort((a,b) => {
-              const timeA = a.timestamp || (a.date ? new Date(a.date).getTime() : 0);
-              const timeB = b.timestamp || (b.date ? new Date(b.date).getTime() : 0);
+              const timeA = a.timestamp || new Date(a.date).getTime();
+              const timeB = b.timestamp || new Date(b.date).getTime();
               return timeB - timeA;
             });
           
@@ -1317,9 +1259,9 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
     const allCardTxsAsc = [...transactions]
       .filter(t => t.cardId === card.id)
       .sort((a, b) => {
-        const tA = a.timestamp || (a.date ? new Date(a.date).getTime() : 0);
-        const tB = b.timestamp || (b.date ? new Date(b.date).getTime() : 0);
-        if (tA === tB) return (a.id || '').localeCompare(b.id || '');
+        const tA = a.timestamp || new Date(a.date).getTime();
+        const tB = b.timestamp || new Date(b.date).getTime();
+        if (tA === tB) return a.id.localeCompare(b.id);
         return tA - tB;
       });
 
@@ -1510,18 +1452,18 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
             {historyWithBalance.map(tx => {
               const isAdSpend = tx.type === 'AD_SPEND';
               const faceUSDValue = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
+              const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
 
               return (
               <tr key={tx.id} className="hover:bg-slate-50">
                 <td className="px-4 py-2.5 text-slate-600 align-top pt-3">{formatDate(tx.date)}</td>
                 <td className="px-4 py-2.5 font-medium text-slate-800 align-top pt-3">
-                  <div className="mb-0.5">
-                    {tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? `Meta Ads${tx.taxUSD > 0 ? ` • Tax ${formatUSD(tx.taxUSD)}` : ''}` : (tx.type || 'UNKNOWN')}
-                  </div>
+                  <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
                   <div className="text-[10px] text-slate-500 font-normal">{tx.notes || (isAdSpend ? 'Campaign Spend' : 'N/A')}</div>
                 </td>
                 <td className={`px-4 py-2.5 text-right font-medium align-top pt-3 ${faceUSDValue > 0 ? 'text-green-600' : 'text-slate-800'}`}>
                   {faceUSDValue > 0 ? '+' : ''}{formatUSD(faceUSDValue)}
+                  {displayTax > 0 && <span className="block text-[10px] text-slate-500 font-normal mt-1">+ tax {formatUSD(displayTax)}</span>}
                 </td>
                 <td className={`px-4 py-2.5 text-right font-bold align-top pt-3 ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
                   {formatUSD(tx.runningBal)}
@@ -1549,7 +1491,7 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
         <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
           <div>
             <span className="text-xs text-slate-400 uppercase font-medium block">Reference ID</span>
-            <span className="font-mono text-xs font-bold text-slate-800">{tx.id || 'N/A'}</span>
+            <span className="font-mono text-xs font-bold text-slate-800">{tx.id}</span>
           </div>
           <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">USD Purchase</span>
         </div>
@@ -1740,7 +1682,7 @@ function ClientDropdownMenu({ onViewDetails, onEdit, onReceivePayment, onAddAdSp
 }
 
 function ClientDetailsModal({ client, metrics, transactions, onClose, onReceivePayment, onAdSpend }) {
-  const clientTx = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)), [transactions, client.id]);
+  const clientTx = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a,b) => new Date(b.date) - new Date(a.date)), [transactions, client.id]);
   
   const stats = useMemo(() => {
     const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + parseFloat(t.amountBDT||0), 0);
@@ -1770,7 +1712,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
 
   const chartData = useMemo(() => {
     const data = [...clientTx].reverse().reduce((acc, t) => {
-      const d = t.date ? t.date.substring(5) : 'Unknown';
+      const d = t.date.substring(5);
       if(!acc[d]) acc[d] = { date: d, revenue: 0, cost: 0 };
       if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += parseFloat(t.amountBDT||0);
       if (t.type === 'AD_SPEND') acc[d].cost += ((parseFloat(t.amountUSD||0) + parseFloat(t.taxUSD||0)) * metrics.avgUSDEffectiveRate);
@@ -1789,7 +1731,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
             <h2 className="text-2xl font-bold">{client.name}</h2>
             <span className={`px-2 py-0.5 rounded text-xs font-semibold ${displayStatus.includes('Active') || displayStatus.includes('Working') ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-300'}`}>{displayStatus}</span>
           </div>
-          <p className="text-slate-400 font-medium">{(client.company || '')} • {client.serviceType}</p>
+          <p className="text-slate-400 font-medium">{client.company} • {client.serviceType}</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-800 text-sm">
             <div className="text-slate-300"><span className="text-slate-500 block text-xs">Budget Setting</span> <span className="font-medium text-blue-300">{getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</span></div>
@@ -1889,7 +1831,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
                   <tr key={tx.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <div className="text-xs text-slate-500">{formatDate(tx.date)}</div>
-                      <div className="font-medium text-slate-800">{(tx.type || 'UNKNOWN').replace('_', ' ')}</div>
+                      <div className="font-medium text-slate-800">{tx.type.replace('_', ' ')}</div>
                       <div className="text-xs text-slate-500 truncate max-w-[150px]">{tx.notes || tx.campaign}</div>
                     </td>
                     <td className="px-4 py-3 text-right">
