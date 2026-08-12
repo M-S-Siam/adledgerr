@@ -1834,21 +1834,21 @@ function ClientDropdownMenu({ client, onViewDetails, onHistory, onEdit, onReceiv
           <button onClick={() => closeAndRun(onViewDetails)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
             View Details
           </button>
-          <button onClick={() => closeAndRun(onHistory)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-            Transaction History
-          </button>
-          <button onClick={() => closeAndRun(onEdit)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-            Edit Client
-          </button>
-
-          <div className="h-px w-full bg-slate-100 my-1"></div>
 
           <button onClick={() => closeAndRun(onReceivePayment)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 hover:bg-green-50">
             Receive Payment
           </button>
-          <button onClick={() => closeAndRun(onAddAdSpend)} className="w-full text-left px-4 py-2.5 text-sm text-purple-700 hover:bg-purple-50">
-            Add Ad Spend
+
+          <button onClick={() => closeAndRun(onEdit)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+            Edit Client
           </button>
+
+          <button onClick={() => closeAndRun(onHistory)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+            Transaction History
+          </button>
+
+          <div className="h-px w-full bg-slate-100 my-1"></div>
+
           <button
             onClick={() => closeAndRun(onToggleStatus)}
             className={`w-full text-left px-4 py-2.5 text-sm ${
