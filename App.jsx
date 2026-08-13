@@ -1117,52 +1117,7 @@ export default function AdLedgerApp() {
         </Modal>
       )}
 
-      <style>{`
-        .adlytic-app { --adlytic-sky:#38bdf8; --adlytic-blue:#2563eb; --adlytic-navy:#0b1730; --adlytic-ink:#0f2747; --adlytic-soft:#eef9ff; }
-        .adlytic-app * { scrollbar-width: thin; scrollbar-color: #bae6fd transparent; }
-        .adlytic-app main {
-          background:
-            radial-gradient(circle at 18% 8%, rgba(56,189,248,.10), transparent 28%),
-            radial-gradient(circle at 86% 16%, rgba(99,102,241,.08), transparent 30%),
-            linear-gradient(180deg,#0a0b12 0%,#0d0e16 48%,#10111a 100%) !important;
-        }
-        .adlytic-app .adlytic-content {
-          color:#dbe4f0;
-          background:
-            radial-gradient(circle at 12% 4%, rgba(56,189,248,.045), transparent 24%),
-            radial-gradient(circle at 92% 10%, rgba(168,85,247,.035), transparent 26%);
-        }
-        .adlytic-app .adlytic-page-title { color:#f1f5f9 !important; }
-        .adlytic-app .adlytic-content .text-slate-500 { color:#94a3b8 !important; }
-        .adlytic-app .adlytic-content .text-slate-400 { color:#7f8da3 !important; }
-        .adlytic-app aside { background: linear-gradient(180deg,#0b1730 0%,#0d1b35 100%) !important; border-right:1px solid rgba(125,211,252,.12); }
-        .adlytic-app aside .border-slate-800 { border-color:rgba(148,163,184,.13) !important; }
-        .adlytic-app aside button { border-radius:12px !important; }
-        .adlytic-app aside button:not(.bg-blue-600):hover { background:rgba(56,189,248,.09) !important; }
-        .adlytic-app aside button.bg-blue-600 { background:linear-gradient(135deg,#38bdf8 0%,#2563eb 100%) !important; box-shadow:0 8px 22px rgba(37,99,235,.26) !important; }
-        .adlytic-app header { background:rgba(255,255,255,.92) !important; backdrop-filter:blur(16px); border-bottom-color:#d9edf9 !important; box-shadow:0 1px 0 rgba(14,116,144,.04); }
-        .adlytic-app input:not([type=checkbox]):not([type=radio]), .adlytic-app select, .adlytic-app textarea { border-color:#cfe7f5 !important; background-color:#fff; border-radius:11px !important; }
-        .adlytic-app input:not([type=checkbox]):not([type=radio]):focus, .adlytic-app select:focus, .adlytic-app textarea:focus { border-color:#38bdf8 !important; box-shadow:0 0 0 3px rgba(56,189,248,.14) !important; }
-        .adlytic-app .bg-white.border, .adlytic-app .bg-white.rounded-xl, .adlytic-app .bg-white.rounded-2xl { border-color:#d7ebf7 !important; box-shadow:0 8px 28px rgba(14,116,144,.055) !important; }
-        .adlytic-app .bg-white.border:hover { box-shadow:0 12px 32px rgba(14,116,144,.075); }
-        .adlytic-app h1 { letter-spacing:-.035em; color:#092442 !important; }
-        .adlytic-app h2,.adlytic-app h3,.adlytic-app h4 { letter-spacing:-.02em; color:#0b2948; }
-        .adlytic-app table thead { background:linear-gradient(180deg,#f1faff,#f7fcff) !important; }
-        .adlytic-app table thead th { color:#315675 !important; font-weight:700 !important; }
-        .adlytic-app table tbody tr { transition:background .18s ease, transform .18s ease; }
-        .adlytic-app table tbody tr:hover { background:#f0faff !important; }
-        .adlytic-app button { transition:transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease; }
-        .adlytic-app button:not(:disabled):hover { transform:translateY(-1px); }
-        .adlytic-app .bg-blue-600 { background:linear-gradient(135deg,#38bdf8 0%,#2563eb 100%) !important; }
-        .adlytic-app .bg-blue-600:hover { background:linear-gradient(135deg,#0ea5e9 0%,#1d4ed8 100%) !important; }
-        .adlytic-app .text-blue-600 { color:#1976d2 !important; }
-        .adlytic-app .bg-sky-50 { background:#effaff !important; }
-        .adlytic-app .border-sky-100,.adlytic-app .border-blue-100 { border-color:#c9ebfb !important; }
-        .adlytic-app .animate-in { animation:adlyticEnter .34s ease both; }
-        @keyframes adlyticEnter { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
-        @media (max-width:768px){ .adlytic-app header { height:60px !important; } .adlytic-app main > div { padding:16px !important; } }
-        @media print { .adlytic-app main { background:#fff !important; } }
-      `}</style>
+
     </div>
   );
 }
