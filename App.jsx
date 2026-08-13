@@ -5,57 +5,22 @@ import {
   Activity, FileText, Settings, Plus, Search, 
   ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
-  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
-  BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
-  UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw
+  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  AreaChart, Area, PieChart as RechartsPieChart, Pie, Cell
+  AreaChart, Area
 } from 'recharts';
 
-// --- SAFE VERSIONED DATA MIGRATION ---
-const APP_DATA_VERSION = "2";
-
-if (typeof window !== "undefined") {
-  try {
-    const storedVersion = window.localStorage.getItem('adledger_version');
-    if (storedVersion !== APP_DATA_VERSION) {
-      window.localStorage.removeItem('adledger_clients');
-      window.localStorage.removeItem('adledger_cards');
-      window.localStorage.removeItem('adledger_transactions');
-      window.localStorage.setItem('adledger_version', APP_DATA_VERSION);
-      console.log("AdLedger: Safely migrated to data version", APP_DATA_VERSION);
-    }
-  } catch (error) {
-    console.error("AdLedger: Migration failed", error);
-  }
-}
-
-// --- CUSTOM HOOK FOR LOCAL STORAGE PERSISTENCE ---
+// --- IN-MEMORY STATE ---
+// Browser storage (localStorage/sessionStorage) is not available inside Claude
+// artifacts, so data lives in React state for the length of this session only.
+// Swap this hook for a real backend/API call when you wire up persistence.
 function useLocalStorage(key, initialValue) {
-  const [storedValue, setStoredValue] = useState(() => {
-    if (typeof window === "undefined") return initialValue;
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.log(error);
-      return initialValue;
-    }
-  });
-
+  const [storedValue, setStoredValue] = useState(initialValue);
   const setValue = (value) => {
-    try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    setStoredValue(prev => (value instanceof Function ? value(prev) : value));
   };
   return [storedValue, setValue];
 }
@@ -206,51 +171,11 @@ export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // State Data (Persisted)
+  // State Data (in-memory for this session)
   const [clients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
-
-  // Additive SaaS modules. Existing financial data remains untouched.
-  const [campaigns, setCampaigns] = useLocalStorage('adledger_campaigns', []);
-  const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', {
-    businessName: 'AdLytic',
-    timezone: 'Asia/Dhaka',
-    alerts: true,
-    defaultReportRange: 'This Month',
-    logoData: ''
-  });
-  const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', []);
-  const [globalSearch, setGlobalSearch] = useState('');
   
-  const globalSearchResults = useMemo(() => {
-    const q = globalSearch.trim().toLowerCase();
-    if (!q) return [];
-    const results = [];
-    clients.forEach(c => {
-      if ([c.name, c.company, c.email, c.phone].some(v => String(v || '').toLowerCase().includes(q))) {
-        results.push({ type:'Client', label:c.name || 'Unnamed Client', meta:c.company || 'Client', view:'clients', id:c.id });
-      }
-    });
-    cards.forEach(c => {
-      if ([c.name, c.provider, c.last4].some(v => String(v || '').toLowerCase().includes(q))) {
-        results.push({ type:'Card', label:c.name || 'Unnamed Card', meta:c.provider || 'Card', view:'cards', id:c.id });
-      }
-    });
-    campaigns.forEach(c => {
-      if ([c.name, c.platform, c.goal].some(v => String(v || '').toLowerCase().includes(q))) {
-        results.push({ type:'Campaign', label:c.name || 'Unnamed Campaign', meta:c.platform || 'Campaign', view:'campaigns', id:c.id });
-      }
-    });
-    transactions.slice(0, 80).forEach(t => {
-      const text = [t.type,t.notes,t.adAccount,t.campaign,t.clientName,t.client,t.sourceClient].join(' ').toLowerCase();
-      if (text.includes(q)) {
-        results.push({ type:'Transaction', label:t.notes || t.campaign || String(t.type || 'Transaction').replace(/_/g,' '), meta:t.date || 'Ledger entry', view:'ledger', id:t.id });
-      }
-    });
-    return results.slice(0, 8);
-  }, [globalSearch, clients, cards, campaigns, transactions]);
-
   // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
   useEffect(() => {
     const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0);
@@ -448,88 +373,6 @@ export default function AdLedgerApp() {
     setActiveModal('spend');
   };
 
-  // --- SaaS MODULE HANDLERS (isolated from existing financial modules) ---
-  const handleSaveCampaign = (campaignData) => {
-    if (campaignData.id) {
-      setCampaigns(prev => prev.map(c => c.id === campaignData.id ? campaignData : c));
-    } else {
-      setCampaigns(prev => [...prev, { ...campaignData, id: `camp_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
-    }
-  };
-
-  const handleDeleteCampaign = (campaignId) => {
-    if (window.confirm('Delete this campaign? Historical transactions will not be deleted.')) {
-      setCampaigns(prev => prev.filter(c => c.id !== campaignId));
-    }
-  };
-
-  const handleSaveWorkspaceSettings = (nextSettings) => {
-    setWorkspaceSettings(prev => ({ ...prev, ...nextSettings }));
-  };
-
-  const handleAddTeamMember = (member) => {
-    setTeamMembers(prev => [...prev, { ...member, id: `team_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
-  };
-
-  const handleRemoveTeamMember = (memberId) => {
-    if (window.confirm('Remove this team member?')) {
-      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
-    }
-  };
-
-  const exportBackup = () => {
-    const payload = {
-      app: 'AdLedger',
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      clients, cards, transactions, campaigns, workspaceSettings, teamMembers
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `adlytic-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importBackup = (file) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        if (!data || data.app !== 'AdLedger') throw new Error('Invalid backup');
-        if (Array.isArray(data.clients)) setClients(data.clients);
-        if (Array.isArray(data.cards)) setCards(data.cards);
-        if (Array.isArray(data.transactions)) setTransactions(data.transactions);
-        if (Array.isArray(data.campaigns)) setCampaigns(data.campaigns);
-        if (data.workspaceSettings) setWorkspaceSettings(data.workspaceSettings);
-        if (Array.isArray(data.teamMembers)) setTeamMembers(data.teamMembers);
-        window.alert('Backup restored successfully.');
-      } catch (error) {
-        window.alert('This file is not a valid AdLedger backup.');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const resetAllData = () => {
-    if (!window.confirm('This will permanently clear all AdLedger data stored in this browser. Continue?')) return;
-    setClients([]);
-    setCards([]);
-    setTransactions([]);
-    setCampaigns([]);
-    setTeamMembers([]);
-    setWorkspaceSettings({
-      businessName: 'AdLytic',
-      timezone: 'Asia/Dhaka',
-      alerts: true,
-      defaultReportRange: 'This Month',
-      logoData: ''
-    });
-  };
-
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
@@ -560,507 +403,71 @@ export default function AdLedgerApp() {
                 />;
       case 'reports':
         return <ReportsView clients={clients} cards={cards} transactions={transactions} />;
-      case 'campaigns':
-        return <CampaignsView campaigns={campaigns} clients={clients} transactions={transactions} metrics={metrics} onSave={handleSaveCampaign} onDelete={handleDeleteCampaign} />;
-      case 'integrations':
-        return <IntegrationsView />;
-      case 'team':
-        return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onRemove={handleRemoveTeamMember} />;
-      case 'settings':
-        return <SettingsView settings={workspaceSettings} onSave={handleSaveWorkspaceSettings} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
     }
   };
 
   return (
-    <div className="adlytic-app flex h-screen overflow-hidden">
-
-      <style>{`
-        /* =========================================================
-           AdLytic — Reference-inspired SaaS Design System
-           Old dark/light theme overrides are intentionally removed.
-           This is the single visual system for the whole app.
-           ========================================================= */
-        :root {
-          --adl-bg: #f1f3f6;
-          --adl-surface: #ffffff;
-          --adl-surface-2: #f8fafc;
-          --adl-text: #182338;
-          --adl-muted: #718096;
-          --adl-border: #e4e9f0;
-          --adl-primary: #38a8f5;
-          --adl-primary-2: #7c5cff;
-          --adl-primary-soft: #edf7ff;
-          --adl-green: #10b981;
-          --adl-red: #ef5b68;
-          --adl-orange: #f59e0b;
-          --adl-purple: #8b5cf6;
-          --adl-shadow: 0 12px 30px rgba(35, 47, 72, .07);
-          --adl-shadow-hover: 0 18px 38px rgba(35, 47, 72, .12);
-        }
-
-        .adlytic-app {
-          min-height: 100vh;
-          background:
-            radial-gradient(circle at 85% -10%, rgba(56,168,245,.10), transparent 28%),
-            radial-gradient(circle at 8% 10%, rgba(124,92,255,.06), transparent 22%),
-            var(--adl-bg) !important;
-          color: var(--adl-text) !important;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-          gap: 12px;
-          padding: 10px;
-        }
-
-        .adlytic-sidebar {
-          width: 204px;
-          flex: 0 0 204px;
-          height: calc(100vh - 20px);
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          background: rgba(255,255,255,.96);
-          border: 1px solid var(--adl-border);
-          border-radius: 16px;
-          box-shadow: var(--adl-shadow);
-          overflow: hidden;
-          z-index: 40;
-        }
-
-        .adlytic-brand {
-          padding: 16px 15px 14px;
-          border-bottom: 1px solid #edf0f4;
-        }
-        .adlytic-brand-mark {
-          width: 34px;
-          height: 34px;
-          border-radius: 10px;
-          display: grid;
-          place-items: center;
-          overflow: hidden;
-          color: #fff;
-          font-weight: 800;
-          background: linear-gradient(135deg, #38a8f5, #6c7cff);
-          box-shadow: 0 8px 18px rgba(56,168,245,.22);
-        }
-        .adlytic-brand-name {
-          font-size: 16px;
-          line-height: 1;
-          font-weight: 800;
-          color: #172238;
-          letter-spacing: -.03em;
-        }
-        .adlytic-brand-sub {
-          font-size: 9px;
-          margin-top: 5px;
-          color: #7788a2;
-          letter-spacing: .12em;
-          text-transform: uppercase;
-        }
-
-        .adlytic-sidebar nav {
-          padding: 10px 10px;
-        }
-        .adlytic-section-label {
-          padding: 12px 10px 6px;
-          color: #7b8aa2;
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: .12em;
-          text-transform: uppercase;
-        }
-        .adlytic-nav-item {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 7px 9px;
-          margin: 2px 0;
-          border: 0;
-          border-radius: 8px;
-          background: transparent;
-          color: #53647d;
-          font-size: 12px;
-          font-weight: 600;
-          text-align: left;
-          cursor: pointer;
-          transition: .18s ease;
-        }
-        .adlytic-nav-item:hover {
-          background: #f4f8fc;
-          color: #27364e;
-          transform: translateX(1px);
-        }
-        .adlytic-nav-item.active {
-          color: #fff;
-          background: linear-gradient(135deg, #43aef5, #6d7df7);
-          box-shadow: 0 7px 16px rgba(69,142,237,.22);
-        }
-        .adlytic-nav-item svg {
-          width: 16px;
-          height: 16px;
-          flex: 0 0 16px;
-        }
-        .adlytic-nav-item:not(.active) svg { color: #93a0b4; }
-        .adlytic-nav-item.active svg { color: #fff; }
-
-        .adlytic-sidebar-footer {
-          margin-top: auto;
-          padding: 12px;
-          border-top: 1px solid #edf0f4;
-        }
-
-        .adlytic-main {
-          min-width: 0;
-          height: calc(100vh - 32px);
-          background: transparent !important;
-        }
-
-        .adlytic-topbar {
-          height: 50px;
-          flex: 0 0 50px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          padding: 0 11px;
-          background: rgba(255,255,255,.94);
-          border: 1px solid var(--adl-border);
-          border-radius: 12px;
-          box-shadow: 0 5px 16px rgba(35,47,72,.045);
-          backdrop-filter: blur(14px);
-        }
-
-        .adlytic-search {
-          width: min(360px, 42vw);
-          height: 32px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 0 11px;
-          border: 1px solid #dfe6ef;
-          border-radius: 11px;
-          background: #f8fafc;
-          transition: .18s ease;
-        }
-        .adlytic-search:focus-within {
-          background: #fff;
-          border-color: #8acaf7;
-          box-shadow: 0 0 0 3px rgba(56,168,245,.10);
-        }
-        .adlytic-search input {
-          width: 100%;
-          border: 0 !important;
-          outline: 0 !important;
-          box-shadow: none !important;
-          background: transparent !important;
-          color: #26354d !important;
-          font-size: 12px;
-        }
-        .adlytic-search input::placeholder { color: #6d7d95 !important; }
-
-        .adlytic-toolbar-rate {
-          display: flex;
-          align-items: baseline;
-          gap: 6px;
-          white-space: nowrap;
-        }
-        .adlytic-toolbar-rate span:first-child {
-          color: #6f8099;
-          font-size: 10px;
-          text-transform: uppercase;
-          letter-spacing: .05em;
-          font-weight: 700;
-        }
-        .adlytic-toolbar-rate span:last-child {
-          color: #26354d;
-          font-size: 13px;
-          font-weight: 800;
-        }
-
-        .adlytic-toolbar-btn {
-          height: 32px;
-          padding: 0 10px !important;
-          border-radius: 10px !important;
-          border: 1px solid #dce4ee !important;
-          background: #fff !important;
-          color: #30435e !important;
-          font-size: 12px !important;
-          font-weight: 700 !important;
-          box-shadow: none !important;
-          transition: .18s ease;
-        }
-        .adlytic-toolbar-btn:hover {
-          transform: translateY(-1px);
-          border-color: #b8d9f4 !important;
-          background: #f7fbff !important;
-        }
-        .adlytic-toolbar-btn.primary {
-          color: #fff !important;
-          border-color: transparent !important;
-          background: linear-gradient(135deg,#36a8f4,#5c83f6) !important;
-          box-shadow: 0 7px 15px rgba(62,137,236,.20) !important;
-        }
-
-        .adlytic-content {
-          padding: 16px 2px 24px !important;
-          background: transparent !important;
-        }
-
-        /* Global surface language for existing screens. */
-        .adlytic-app .bg-white {
-          background: var(--adl-surface) !important;
-          color: var(--adl-text) !important;
-          border-color: var(--adl-border) !important;
-          box-shadow: var(--adl-shadow) !important;
-        }
-        .adlytic-app .bg-slate-50,
-        .adlytic-app .bg-slate-100 { background: var(--adl-surface-2) !important; }
-        .adlytic-app .bg-slate-200 { background: #edf1f5 !important; }
-        /* Remove legacy dark surfaces from older dialogs/sections. */
-        .adlytic-app .bg-slate-900:not(button) {
-          background: #fff !important;
-          color: var(--adl-text) !important;
-          border: 1px solid var(--adl-border);
-          box-shadow: var(--adl-shadow);
-        }
-        .adlytic-app button.bg-slate-900 {
-          background: linear-gradient(135deg,#3aaaf4,#637ff4) !important;
-          color: #fff !important;
-          border: 0 !important;
-        }
-        .adlytic-app .bg-slate-900\/70 {
-          background: #fff !important;
-          color: #41516a !important;
-          border-color: #dce4ee !important;
-        }
-        .adlytic-app .bg-slate-700 { background: #f0f4f8 !important; color: #64748b !important; }
-        .adlytic-app .bg-slate-800 { background: #f7f9fc !important; }
-        .adlytic-app .border-slate-700,
-        .adlytic-app .border-slate-800 { border-color: var(--adl-border) !important; }
-
-        .adlytic-app .text-slate-900,
-        .adlytic-app .text-slate-800 { color: #1a2740 !important; }
-        .adlytic-app .text-slate-700 { color: #3d4d67 !important; }
-        .adlytic-app .text-slate-600 { color: #53647d !important; }
-        .adlytic-app .text-slate-500 { color: #65758e !important; }
-        .adlytic-app .text-slate-400 { color: #6d7d95 !important; }
-        .adlytic-app .text-slate-300 { color: #53647d !important; }
-
-        .adlytic-app .border-slate-100,
-        .adlytic-app .border-slate-200,
-        .adlytic-app .border-slate-300 {
-          border-color: var(--adl-border) !important;
-        }
-
-        .adlytic-app input,
-        .adlytic-app select,
-        .adlytic-app textarea {
-          background: #fbfcfe !important;
-          color: #24334c !important;
-          border-color: #dce4ee !important;
-          border-radius: 10px;
-        }
-        .adlytic-app input::placeholder,
-        .adlytic-app textarea::placeholder { color: #6d7d95 !important; }
-        .adlytic-app input:focus,
-        .adlytic-app select:focus,
-        .adlytic-app textarea:focus {
-          border-color: #83c7f5 !important;
-          box-shadow: 0 0 0 3px rgba(56,168,245,.10) !important;
-        }
-
-        .adlytic-app table thead {
-          background: #f7f9fc !important;
-        }
-        .adlytic-app table th {
-          color: #4f617a !important;
-          font-weight: 700 !important;
-        }
-        .adlytic-app table tbody tr {
-          background: #fff;
-          transition: .16s ease;
-        }
-        .adlytic-app table tbody tr:hover {
-          background: #f7fbff !important;
-        }
-
-        .adlytic-app .shadow-sm {
-          box-shadow: var(--adl-shadow) !important;
-        }
-        .adlytic-app .shadow-md,
-        .adlytic-app .shadow-lg,
-        .adlytic-app .shadow-xl,
-        .adlytic-app .shadow-2xl {
-          box-shadow: var(--adl-shadow-hover) !important;
-        }
-
-        /* Semantic colors */
-        .adlytic-app .bg-emerald-50,
-        .adlytic-app .bg-green-50 { background: #ecfbf5 !important; }
-        .adlytic-app .bg-red-50 { background: #fff1f2 !important; }
-        .adlytic-app .bg-orange-50 { background: #fff8e8 !important; }
-        .adlytic-app .bg-blue-50,
-        .adlytic-app .bg-sky-50 { background: #eef8ff !important; }
-        .adlytic-app .bg-purple-50 { background: #f5f0ff !important; }
-
-        .adlytic-app .text-emerald-600,
-        .adlytic-app .text-emerald-700 { color: #0aaf78 !important; }
-        .adlytic-app .text-red-500,
-        .adlytic-app .text-red-600,
-        .adlytic-app .text-red-700 { color: #e84d5b !important; }
-        .adlytic-app .text-orange-500,
-        .adlytic-app .text-orange-600,
-        .adlytic-app .text-orange-700 { color: #e99208 !important; }
-        .adlytic-app .text-blue-600,
-        .adlytic-app .text-blue-700 { color: #3d8ee8 !important; }
-        .adlytic-app .text-sky-600,
-        .adlytic-app .text-sky-700 { color: #1c9fe8 !important; }
-        .adlytic-app .text-purple-600,
-        .adlytic-app .text-purple-700 { color: #8055df !important; }
-
-        /* Metric cards become compact reference-style analytics tiles. */
-        .adlytic-app .adlytic-metric {
-          border: 1px solid var(--adl-border);
-          border-radius: 12px;
-          background: #fff;
-          box-shadow: 0 5px 16px rgba(35,47,72,.05);
-        }
-
-        /* Recharts */
-        .adlytic-app .recharts-cartesian-grid line {
-          stroke: #e7ebf1 !important;
-        }
-        .adlytic-app .recharts-cartesian-axis-line,
-        .adlytic-app .recharts-cartesian-axis-tick-line {
-          stroke: #dbe2ea !important;
-        }
-        .adlytic-app .recharts-text { fill: #687a93 !important; }
-        .adlytic-app .recharts-legend-item-text { color: #53657e !important; }
-        .adlytic-app .recharts-default-tooltip {
-          background: rgba(255,255,255,.98) !important;
-          border: 1px solid #dce4ee !important;
-          color: #25344d !important;
-          border-radius: 12px !important;
-          box-shadow: 0 16px 35px rgba(35,47,72,.13) !important;
-        }
-
-        /* Generic modern panels already used by the app. */
-        .adlytic-app .rounded-2xl { border-radius: 16px !important; }
-        .adlytic-app .rounded-xl { border-radius: 13px !important; }
-        .adlytic-app .rounded-lg { border-radius: 10px !important; }
-
-        @media (max-width: 767px) {
-          .adlytic-app { padding: 0; gap: 0; }
-          .adlytic-sidebar {
-            position: fixed;
-            top: 12px;
-            bottom: 12px;
-            left: 12px;
-            height: auto;
-            transform: translateX(-120%);
-            transition: transform .2s ease;
-            z-index: 80;
-          }
-          .adlytic-sidebar.mobile-open { transform: translateX(0); }
-          .adlytic-main { height: 100vh; }
-          .adlytic-topbar {
-            border-radius: 0 0 14px 14px;
-            border-left: 0;
-            border-right: 0;
-            border-top: 0;
-          }
-          .adlytic-search { width: min(48vw, 260px); }
-          .adlytic-content { padding: 18px 14px 26px !important; }
-        }
-      `}</style>
-
+    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
       
       {/* SIDEBAR */}
-      <aside className={`adlytic-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} md:translate-x-0`}>
-        <div className="adlytic-brand">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="adlytic-brand-mark">
-                {workspaceSettings.logoData ? <img src={workspaceSettings.logoData} alt="Workspace logo" className="w-full h-full object-cover" /> : <span>A</span>}
-              </div>
-              <div>
-                <div className="adlytic-brand-name">{workspaceSettings.businessName || 'AdLytic'}</div>
-                <div className="adlytic-brand-sub">Marketing Finance</div>
-              </div>
-            </div>
-            <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
-              <X size={19} />
-            </button>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
+        <div className="p-6 flex items-center justify-between md:justify-center border-b border-slate-800">
+          <div className="flex items-center gap-2 text-white">
+            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-bold text-lg">A</div>
+            <span className="text-xl font-bold tracking-tight">AdLedger</span>
           </div>
+          <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
+            <X size={24} />
+          </button>
         </div>
         
-        <nav className="flex-1 overflow-visible">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => {setCurrentView('campaigns'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<Users />} label="Client Management" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<Activity />} label="Transaction Ledger" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => {setCurrentView('cards'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setIsMobileMenuOpen(false);}} />
-
-          <div className="pt-5 mt-4 border-t border-slate-800/80">
-            <p className="adlytic-section-label">Workspace</p>
-            <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => {setCurrentView('integrations'); setIsMobileMenuOpen(false);}} />
-            <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => {setCurrentView('team'); setIsMobileMenuOpen(false);}} />
-          </div>
         </nav>
-
-        <div className="adlytic-sidebar-footer">
-          <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => {setCurrentView('settings'); setIsMobileMenuOpen(false);}} />
+        
+        <div className="p-4 border-t border-slate-800">
+          <NavItem icon={<Settings />} label="Settings" onClick={() => {}} />
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="adlytic-main flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* HEADER */}
-        <header className="adlytic-topbar">
+        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
           <div className="flex items-center gap-4">
             <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu size={24} />
             </button>
-            <div className="hidden sm:block relative">
-              <div className="adlytic-search">
-                <Search size={17} className="text-sky-500 shrink-0" />
-                <input type="text" value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setGlobalSearch('')}} placeholder="Search clients, cards, campaigns..." className="bg-transparent border-none !shadow-none !ring-0 focus:outline-none text-sm ml-2 w-full" />
-                {globalSearch && <button type="button" onClick={()=>setGlobalSearch('')} className="text-slate-400 hover:text-slate-700 p-1"><X size={15}/></button>}
-              </div>
-              {globalSearch && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-sky-100 rounded-2xl shadow-2xl z-[60] overflow-hidden">
-                  {globalSearchResults.length ? globalSearchResults.map(item => (
-                    <button key={`${item.type}-${item.id}`} type="button" onClick={()=>{setCurrentView(item.view);setGlobalSearch('');setIsMobileMenuOpen(false);}} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-sky-50 transition-colors">
-                      <span className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center text-[10px] font-bold">{item.type.slice(0,2).toUpperCase()}</span>
-                      <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-800 truncate">{item.label}</span><span className="block text-[11px] text-slate-500">{item.type} · {item.meta}</span></span>
-                      <ArrowUpRight size={14} className="text-slate-300"/>
-                    </button>
-                  )) : <div className="px-4 py-6 text-center text-sm text-slate-400">No matching records found.</div>}
-                </div>
-              )}
+            <div className="hidden sm:flex items-center bg-slate-100 rounded-md px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500">
+              <Search size={18} className="text-slate-400" />
+              <input type="text" placeholder="Search transactions..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="adlytic-toolbar-rate hidden lg:flex">
+            <div className="hidden lg:flex items-center gap-2 mr-4">
               <span className="text-xs font-medium text-slate-500 uppercase">Avg USD Rate:</span>
               <span className="text-sm font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
             </div>
-            <button onClick={() => { setSelectedClient(null); setActiveModal('payment'); }} className="adlytic-toolbar-btn hidden sm:flex items-center gap-1">
+            <button onClick={() => { setSelectedClient(null); setActiveModal('payment'); }} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
               <ArrowDownRight size={16} className="text-green-600"/> Receive BDT
             </button>
-            <button onClick={() => setActiveModal('usd')} className="adlytic-toolbar-btn hidden sm:flex items-center gap-1">
+            <button onClick={() => setActiveModal('usd')} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
               <DollarSign size={16} className="text-blue-600"/> Buy USD
             </button>
-            <button onClick={() => { setSelectedClient(null); setActiveModal('spend'); }} className="adlytic-toolbar-btn primary flex items-center gap-1">
+            <button onClick={() => { setSelectedClient(null); setActiveModal('spend'); }} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm">
               <Plus size={16} /> Ad Spend
             </button>
           </div>
         </header>
 
         {/* SCROLLABLE CONTENT */}
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 adlytic-content">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           {renderContent()}
         </div>
       </main>
@@ -1117,7 +524,6 @@ export default function AdLedgerApp() {
           />
         </Modal>
       )}
-
 
     </div>
   );
@@ -1379,7 +785,7 @@ function ReportsView({ clients, cards, transactions }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `adlytic-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `adledger-report-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1405,7 +811,7 @@ function ReportsView({ clients, cards, transactions }) {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Financial performance from your existing AdLytic data.
+            Financial performance from your existing AdLedger data.
           </p>
         </div>
 
@@ -1554,13 +960,13 @@ function ReportsView({ clients, cards, transactions }) {
           <div className="h-72">
             {expenseChart.some(x => x.value > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
-                <RechartsPieChart>
-                  <Pie data={expenseChart} dataKey="value" nameKey="name" cx="50%" cy="46%" innerRadius={66} outerRadius={98} paddingAngle={5} cornerRadius={8} stroke="none">
-                    {expenseChart.map((entry,index)=><Cell key={`report-expense-${index}`} fill={['#38bdf8','#f59e0b','#8b5cf6'][index % 3]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius:14, border:'1px solid #d7ebf7', boxShadow:'0 12px 30px rgba(15,23,42,.10)', fontSize:12 }} formatter={(value)=>[formatUSD(value),'USD']} />
-                  <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{fontSize:11,color:'#315675'}} />
-                </RechartsPieChart>
+                <BarChart data={expenseChart}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" name="USD" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <ReportEmptyState />
@@ -1849,22 +1255,19 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
   };
 
   return (
-    <div className="space-y-4 max-w-[1440px] mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-md shadow-sky-200"><Activity size={17}/></div>
-            <div><h1 className="adlytic-page-title text-[21px] font-bold text-slate-900">Financial Overview</h1>
-            <p className="text-slate-500 text-xs">Your complete BDT, USD, client and card snapshot.</p></div>
-          </div>
+          <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
+          <p className="text-slate-500 text-sm">Your complete BDT, USD, client and card snapshot.</p>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-600 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
+        <div className="flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           Live from your ledger
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <MetricCard title="Total Revenue" value={formatBDT(metrics.totalRevenueBDT)} subtitle="BDT received from clients" icon={<ArrowDownRight size={20} className="text-emerald-600" />} bgColor="bg-emerald-50" textColorClass="text-slate-900" />
         <MetricCard title="Total BDT Cost" value={formatBDT(dashboardData.totalBDTCost)} subtitle="USD purchase + C.O charges" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass="text-slate-900" />
         <MetricCard title="Net BDT" value={formatBDT(dashboardData.netBDT)} subtitle="Revenue minus USD cost" icon={<TrendingUp size={20} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={dashboardData.netBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
@@ -1875,8 +1278,8 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
         <MetricCard title="Card Balance" value={formatUSD(metrics.totalCardBalance)} subtitle="Available across all cards" icon={<CreditCard size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass={metrics.totalCardBalance < 0 ? 'text-red-600' : 'text-slate-900'} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-4 overflow-hidden">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 overflow-hidden">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
               <h3 className="font-semibold text-slate-900">Money Flow</h3>
@@ -1887,7 +1290,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
               <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-500" />Ad Cost</span>
             </div>
           </div>
-          <div className="h-56 w-full">
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={dashboardData.flowData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
                 <defs>
@@ -1915,19 +1318,24 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="mb-4">
             <h3 className="font-semibold text-slate-900">USD Expense Breakdown</h3>
             <p className="text-xs text-slate-500 mt-1">Where your USD outflow is going.</p>
           </div>
-          <div className="h-52">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <RechartsPieChart>
-                <Pie data={dashboardData.expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={5} cornerRadius={8} stroke="none">
-                  {dashboardData.expenseData.map((entry,index)=><Cell key={`expense-${index}`} fill={['#38bdf8','#f59e0b','#8b5cf6'][index % 3]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius:14, border:'1px solid #d7ebf7', boxShadow:'0 12px 30px rgba(15,23,42,.10)', fontSize:12 }} formatter={(value)=>[formatUSD(value),'USD']} />
-              </RechartsPieChart>
+              <BarChart data={dashboardData.expenseData} margin={{ top: 8, right: 4, left: -18, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="4 6" vertical={false} stroke="#e8edf3" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(value) => `$${value}`} />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: 14, border: '1px solid #e2e8f0', boxShadow: '0 12px 30px rgba(15,23,42,0.10)', fontSize: 12 }}
+                  formatter={(value) => [formatUSD(value), 'USD']}
+                />
+                <Bar dataKey="value" radius={[8, 8, 3, 3]} fill="#3b82f6" barSize={42} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-2 text-center">
@@ -1938,7 +1346,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -1995,7 +1403,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -2007,9 +1415,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
           <div className="space-y-3">
             {Object.keys(metrics.cardBalances || {}).length > 0 ? Object.keys(metrics.cardBalances).map(cardId => {
               const card = (metrics.cardStats && metrics.cardStats[cardId]) || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
-              const foundCard = (dashboardData.allCards || []).find(c => c.id === cardId);
-              const openingBalance = parseFloat(foundCard?.initialBalance || 0);
-              const balance = openingBalance + card.purchased - card.adSpend - card.tax - card.fees;
+              const balance = metrics.cardBalances[cardId] || 0;
               const cardName = (() => {
                 const allCards = dashboardData.allCards || [];
                 const found = allCards.find(c => c.id === cardId);
@@ -3031,209 +2437,24 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
   );
 }
 
-
-/* ==========================================================================
-   SAAS MODULES
-   Additive modules. Existing financial view component bodies remain untouched.
-   ========================================================================== */
-
-function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDelete }) {
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-
-  const rows = useMemo(() => campaigns.map(c => {
-    const matching = transactions.filter(t =>
-      String(t.campaign || '').trim().toLowerCase() === String(c.name || '').trim().toLowerCase()
-    );
-    const spendUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.amountUSD || 0) : 0), 0);
-    const taxUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.taxUSD || 0) : 0), 0);
-    const spendBDT = (spendUSD + taxUSD) * (metrics.avgUSDEffectiveRate || 0);
-    const revenueBDT = parseFloat(c.revenueBDT || 0);
-    const roas = spendBDT > 0 ? revenueBDT / spendBDT : 0;
-    const client = clients.find(x => x.id === c.clientId);
-    return { ...c, clientName: client?.name || 'Unassigned', spendUSD, taxUSD, spendBDT, revenueBDT, roas };
-  }), [campaigns, clients, transactions, metrics.avgUSDEffectiveRate]);
-
-  const filtered = rows.filter(c => {
-    const q = search.trim().toLowerCase();
-    const matchesSearch = !q || [c.name, c.clientName, c.platform, c.goal].some(v => String(v || '').toLowerCase().includes(q));
-    const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div><h1 className="text-2xl font-bold text-slate-900">Campaigns</h1><p className="text-sm text-slate-500 mt-1">Track budgets, ad spend, results and profitability by campaign.</p></div>
-        <button onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"><Plus size={17}/> Add Campaign</button>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniKpi title="Campaigns" value={campaigns.length} icon={<Target size={16}/>} />
-        <MiniKpi title="Active" value={campaigns.filter(c => c.status === 'Active').length} icon={<Activity size={16}/>} />
-        <MiniKpi title="Tracked Spend" value={formatUSD(rows.reduce((s, c) => s + c.spendUSD, 0))} icon={<DollarSign size={16}/>} />
-        <MiniKpi title="Tracked Revenue" value={formatBDT(rows.reduce((s, c) => s + c.revenueBDT, 0))} icon={<TrendingUp size={16}/>} />
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row gap-3">
-        <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3"><Search size={17} className="text-slate-400"/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search campaigns, clients, platforms..." className="w-full bg-transparent border-none focus:outline-none px-2 py-2 text-sm"/></div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"><option>All</option><option>Active</option><option>Paused</option><option>Completed</option></select>
-      </div>
-
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between"><div><h3 className="font-semibold text-slate-900">Campaign Performance</h3><p className="text-xs text-slate-500 mt-1">Spend is matched automatically from existing transaction entries using the campaign name.</p></div><BarChart3 size={19} className="text-slate-400"/></div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="bg-slate-50 text-xs text-slate-500">
-              <th className="px-5 py-3 text-left font-medium">Campaign</th><th className="px-3 py-3 text-left font-medium">Client</th><th className="px-3 py-3 text-left font-medium">Platform</th><th className="px-3 py-3 text-right font-medium">Budget</th><th className="px-3 py-3 text-right font-medium">Spent</th><th className="px-3 py-3 text-right font-medium">Revenue</th><th className="px-3 py-3 text-right font-medium">ROAS</th><th className="px-5 py-3 text-right font-medium">Status</th><th className="px-5 py-3 text-right font-medium">Actions</th>
-            </tr></thead>
-            <tbody>
-              {filtered.length ? filtered.map(c => (
-                <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60">
-                  <td className="px-5 py-4"><div className="font-medium text-slate-800">{c.name}</div><div className="text-[11px] text-slate-400">{c.goal || '—'}</div></td>
-                  <td className="px-3 py-4 text-slate-600">{c.clientName}</td><td className="px-3 py-4"><span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs">{c.platform || 'Meta'}</span></td>
-                  <td className="px-3 py-4 text-right text-slate-700">{c.budget ? `${c.budgetType === 'USD' ? '$' : '৳'}${Number(c.budget).toLocaleString('en-US', {maximumFractionDigits:2})}` : '—'}</td>
-                  <td className="px-3 py-4 text-right text-red-600">{formatUSD(c.spendUSD)}</td><td className="px-3 py-4 text-right text-emerald-600">{formatBDT(c.revenueBDT)}</td><td className="px-3 py-4 text-right font-semibold">{c.roas ? `${c.roas.toFixed(2)}x` : '—'}</td>
-                  <td className="px-5 py-4 text-right"><span className={`px-2 py-1 rounded-full border text-[10px] font-medium ${c.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : c.status === 'Completed' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{c.status}</span></td>
-                  <td className="px-5 py-4 text-right whitespace-nowrap"><button onClick={() => { setEditing(c); setShowForm(true); }} className="text-xs font-medium text-blue-600 mr-3">Edit</button><button onClick={() => onDelete(c.id)} className="text-xs font-medium text-red-500">Delete</button></td>
-                </tr>
-              )) : <tr><td colSpan="9" className="py-14 text-center text-slate-400">No campaigns yet. Add your first campaign to start tracking performance.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {showForm && <CampaignForm initialData={editing} clients={clients} onCancel={() => setShowForm(false)} onSubmit={data => { onSave(data); setShowForm(false); }}/>}
-    </div>
-  );
-}
-
-function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
-  const [data, setData] = useState(initialData || { name:'', clientId:clients[0]?.id || '', platform:'Meta', budget:'', budgetType:'USD', status:'Active', startDate:new Date().toISOString().slice(0,10), endDate:'', goal:'', resultValue:'', resultLabel:'Leads', revenueBDT:'', notes:'' });
-  const set = (key, value) => setData(prev => ({...prev, [key]:value}));
-  const input = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-  return (
-    <div className="fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{initialData ? 'Edit Campaign' : 'Add Campaign'}</h2><p className="text-xs text-slate-500 mt-1">Create a campaign record; ad spend will be linked from matching ledger entries.</p></div><button onClick={onCancel} className="text-slate-400"><X size={20}/></button></div>
-        <form onSubmit={e => {e.preventDefault(); if(!data.name.trim()) return; onSubmit(data);}} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Campaign Name"><input required value={data.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Ramadan Lead Campaign" className={input}/></Field>
-            <Field label="Client"><select value={data.clientId} onChange={e=>set('clientId',e.target.value)} className={input}><option value="">Unassigned</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
-            <Field label="Platform"><select value={data.platform} onChange={e=>set('platform',e.target.value)} className={input}><option>Meta</option><option>Google</option><option>TikTok</option><option>Other</option></select></Field>
-            <Field label="Status"><select value={data.status} onChange={e=>set('status',e.target.value)} className={input}><option>Active</option><option>Paused</option><option>Completed</option></select></Field>
-            <Field label="Budget"><input type="number" min="0" step="0.01" value={data.budget} onChange={e=>set('budget',e.target.value)} placeholder="Enter budget" className={input}/></Field>
-            <Field label="Budget Currency"><select value={data.budgetType} onChange={e=>set('budgetType',e.target.value)} className={input}><option value="USD">USD</option><option value="BDT">BDT</option></select></Field>
-            <Field label="Start Date"><input type="date" value={data.startDate} onChange={e=>set('startDate',e.target.value)} className={input}/></Field>
-            <Field label="End Date"><input type="date" value={data.endDate} onChange={e=>set('endDate',e.target.value)} className={input}/></Field>
-            <Field label="Campaign Goal"><input value={data.goal} onChange={e=>set('goal',e.target.value)} placeholder="Leads, Sales, Traffic..." className={input}/></Field>
-            <Field label="Results"><div className="grid grid-cols-2 gap-2"><input type="number" min="0" step="1" value={data.resultValue} onChange={e=>set('resultValue',e.target.value)} placeholder="0" className={input}/><select value={data.resultLabel} onChange={e=>set('resultLabel',e.target.value)} className={input}><option>Leads</option><option>Sales</option><option>Messages</option><option>Clicks</option><option>Conversions</option></select></div></Field>
-            <Field label="Revenue Attributed (BDT)"><input type="number" min="0" step="0.01" value={data.revenueBDT} onChange={e=>set('revenueBDT',e.target.value)} placeholder="Optional" className={input}/></Field>
-          </div>
-          <Field label="Notes"><textarea value={data.notes} onChange={e=>set('notes',e.target.value)} rows="3" placeholder="Campaign notes..." className={input}/></Field>
-          <div className="flex gap-3 pt-4 border-t border-slate-100"><button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium">Cancel</button><button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold">Save Campaign</button></div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function IntegrationsView() {
-  const items = [
-    ['Meta Ads','Sync ad accounts, campaigns and spend automatically.',<Globe2 size={22}/>],
-    ['Google Ads','Bring Google campaign spend into the same ledger.',<BarChart3 size={22}/>],
-    ['TikTok Ads','Track TikTok spend alongside Meta and Google.',<Target size={22}/>],
-    ['Google Sheets','Export and sync operational reports.',<Database size={22}/>],
-    ['Payments','Connect payment providers when automated verification is available.',<Link2 size={22}/>]
-  ];
-  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <div><h1 className="text-2xl font-bold text-slate-900">Integrations</h1><p className="text-sm text-slate-500 mt-1">Connect your marketing stack when automated sync is enabled.</p></div>
-    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-800 text-sm flex gap-3"><ShieldCheck size={19}/><span>Integrations are marked <strong>Planned</strong> until a real API connection is available.</span></div>
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map(([name,desc,icon])=><div key={name} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><div className="flex items-start justify-between"><div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">{icon}</div><span className="text-[10px] font-semibold uppercase px-2 py-1 rounded-full bg-slate-100 text-slate-500">Planned</span></div><h3 className="mt-4 font-semibold">{name}</h3><p className="text-sm text-slate-500 mt-1 leading-6">{desc}</p><button disabled className="mt-4 w-full px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-sm">Connect later</button></div>)}</div>
-  </div>;
-}
-
-function TeamView({ teamMembers, onAdd, onRemove }) {
-  const [email,setEmail]=useState(''); const [role,setRole]=useState('Manager');
-  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLytic for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length+1} member{teamMembers.length+1===1?'':'s'}</span></div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Workspace Members</h3><div className="mt-4 space-y-2"><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"><div><p className="font-medium">Workspace Owner</p><p className="text-xs text-slate-500">Owner · full access</p></div><span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">Owner</span></div>{teamMembers.map(m=><div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{m.email}</p><p className="text-xs text-slate-500">{m.role}</p></div><button onClick={()=>onRemove(m.id)} className="text-xs text-red-500">Remove</button></div>)}</div></div>
-      <form onSubmit={e=>{e.preventDefault();if(!email.trim())return;onAdd({email:email.trim(),role});setEmail('')}} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Invite Member</h3><p className="text-xs text-slate-500 mt-1">Local workspace placeholder until real email invitations are connected.</p><Field label="Email"><input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@email.com" className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field><Field label="Role"><select value={role} onChange={e=>setRole(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Manager</option><option>Staff</option><option>Viewer</option></select></Field><button className="w-full mt-4 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold"><UserPlus size={16} className="inline mr-2"/>Add Member</button></form>
-    </div>
-  </div>;
-}
-
-function SettingsView({ settings, onSave, onExport, onImport, onReset }) {
-  const [data,setData]=useState(settings); const fileRef=useRef(null);
-  useEffect(()=>setData(settings),[settings]);
-  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <div><h1 className="text-2xl font-bold text-slate-900">Settings</h1><p className="text-sm text-slate-500 mt-1">Workspace preferences, data safety and operational controls.</p></div>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-blue-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Basic preferences.</p></div></div><div className="mt-5 space-y-4">
-        <Field label="Business / Workspace Name"><input value={data.businessName} onChange={e=>setData({...data,businessName:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field>
-        <Field label="Timezone"><select value={data.timezone} onChange={e=>setData({...data,timezone:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Asia/Dhaka</option><option>UTC</option><option>Asia/Kolkata</option></select></Field>
-        <Field label="Default Report Range"><select value={data.defaultReportRange} onChange={e=>setData({...data,defaultReportRange:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>This Month</option><option>Last 7 Days</option><option>Last 30 Days</option><option>Lifetime</option></select></Field>
-        <Field label="Workspace Logo">
-          <div className="mt-1 flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/70 p-3">
-            <div className="w-12 h-12 rounded-xl bg-white border border-sky-100 overflow-hidden flex items-center justify-center shrink-0">
-              {data.logoData ? <img src={data.logoData} alt="Workspace logo preview" className="w-full h-full object-cover" /> : <span className="font-bold text-sky-600">A</span>}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-800">Upload your brand logo</p>
-              <p className="text-xs text-slate-500 mt-0.5">PNG, JPG or WebP. It will appear in the sidebar.</p>
-              <div className="flex items-center gap-2 mt-2">
-                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-sky-200 text-xs font-semibold text-sky-700 hover:bg-sky-50">
-                  <Upload size={14}/> Choose logo
-                  <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>{const file=e.target.files?.[0]; if(!file)return; if(file.size>2*1024*1024){window.alert('Please choose an image smaller than 2MB.'); return;} const reader=new FileReader(); reader.onload=ev=>setData(prev=>({...prev,logoData:ev.target.result})); reader.readAsDataURL(file); e.target.value='';}} />
-                </label>
-                {data.logoData && <button type="button" onClick={()=>setData(prev=>({...prev,logoData:''}))} className="text-xs font-medium text-red-600 hover:text-red-700">Remove</button>}
-              </div>
-            </div>
-          </div>
-        </Field>
-        <label className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 p-3"><span><span className="block text-sm font-medium">Financial alerts</span><span className="block text-xs text-slate-500 mt-0.5">Show negative card balance warnings.</span></span><input type="checkbox" checked={!!data.alerts} onChange={e=>setData({...data,alerts:e.target.checked})} className="w-4 h-4"/></label>
-        <button onClick={()=>{onSave(data);window.alert('Settings saved.')}} className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold"><Save size={16}/>Save Settings</button>
-      </div></div>
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><Database size={20} className="text-emerald-600"/><div><h3 className="font-semibold">Data & Backup</h3><p className="text-xs text-slate-500">Protect your workspace before major changes.</p></div></div><div className="mt-5 space-y-3">
-        <button onClick={onExport} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Download size={18} className="text-blue-600"/><span className="text-left"><strong className="block text-sm">Export Full Backup</strong><small className="text-xs text-slate-500">Clients, cards, transactions, campaigns and settings.</small></span></span><ArrowUpRight size={16}/></button>
-        <button onClick={()=>fileRef.current?.click()} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Upload size={18} className="text-emerald-600"/><span className="text-left"><strong className="block text-sm">Restore Backup</strong><small className="text-xs text-slate-500">Import an AdLytic JSON backup.</small></span></span><ArrowUpRight size={16}/></button>
-        <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={e=>{onImport(e.target.files?.[0]);e.target.value=''}}/>
-        <button onClick={onReset} className="w-full flex items-center justify-between rounded-xl border border-red-100 bg-red-50/60 p-4 hover:bg-red-50"><span className="flex items-center gap-3"><RotateCcw size={18} className="text-red-600"/><span className="text-left"><strong className="block text-sm text-red-700">Reset Workspace Data</strong><small className="text-xs text-red-600/70">Permanently clear locally stored data.</small></span></span><AlertCircle size={16}/></button>
-      </div></div>
-    </div>
-  </div>;
-}
-
-function MiniKpi({ title, value, icon }) {
-  return <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs text-slate-500">{title}</span><span className="text-slate-400">{icon}</span></div><div className="mt-2 text-lg font-bold text-slate-900">{value}</div></div>;
-}
-
-function Field({ label, children }) {
-  return <div><label className="block text-xs font-medium text-slate-600">{label}</label>{children}</div>;
-}
-
-
 function NavItem({ icon, label, isActive, onClick }) {
   return (
-    <button onClick={onClick} className={`adlytic-nav-item ${isActive ? 'active' : ''}`}>
-      {React.cloneElement(icon, { size: 17 })}
-      <span>{label}</span>
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+      {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
+      {label}
     </button>
   );
 }
 
 function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
   return (
-    <div className="adlytic-metric px-3.5 py-3 flex flex-col relative overflow-hidden group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex justify-between items-center mb-2">
-        <p className="text-[11px] font-semibold text-slate-600">{title}</p>
-        <div className={`p-1.5 rounded-lg ${bgColor}`}>{icon}</div>
+    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
+      <div className="flex justify-between items-start mb-2">
+        <p className="text-sm font-medium text-slate-500">{title}</p>
+        <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
       </div>
-      <h3 className={`text-[21px] leading-none font-extrabold tracking-tight ${textColorClass}`}>{value}</h3>
-      <div className="mt-1.5 flex items-center text-[10px]">
+      <h3 className={`text-2xl font-bold tracking-tight ${textColorClass}`}>{value}</h3>
+      <div className="mt-2 flex items-center text-xs">
         {subtitle && <span className="text-slate-500">{subtitle}</span>}
       </div>
     </div>
