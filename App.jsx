@@ -12,7 +12,7 @@ import {
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  AreaChart, Area, PieChart as RePieChart, Pie, Cell
+  AreaChart, Area, PieChart as RechartsPieChart, Pie, Cell
 } from 'recharts';
 
 // --- SAFE VERSIONED DATA MIGRATION ---
@@ -217,11 +217,40 @@ export default function AdLedgerApp() {
     businessName: 'AdLytic',
     timezone: 'Asia/Dhaka',
     alerts: true,
-    defaultReportRange: 'This Month'
+    defaultReportRange: 'This Month',
+    logoData: ''
   });
   const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', []);
-  const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
+  const [globalSearch, setGlobalSearch] = useState('');
   
+  const globalSearchResults = useMemo(() => {
+    const q = globalSearch.trim().toLowerCase();
+    if (!q) return [];
+    const results = [];
+    clients.forEach(c => {
+      if ([c.name, c.company, c.email, c.phone].some(v => String(v || '').toLowerCase().includes(q))) {
+        results.push({ type:'Client', label:c.name || 'Unnamed Client', meta:c.company || 'Client', view:'clients', id:c.id });
+      }
+    });
+    cards.forEach(c => {
+      if ([c.name, c.provider, c.last4].some(v => String(v || '').toLowerCase().includes(q))) {
+        results.push({ type:'Card', label:c.name || 'Unnamed Card', meta:c.provider || 'Card', view:'cards', id:c.id });
+      }
+    });
+    campaigns.forEach(c => {
+      if ([c.name, c.platform, c.goal].some(v => String(v || '').toLowerCase().includes(q))) {
+        results.push({ type:'Campaign', label:c.name || 'Unnamed Campaign', meta:c.platform || 'Campaign', view:'campaigns', id:c.id });
+      }
+    });
+    transactions.slice(0, 80).forEach(t => {
+      const text = [t.type,t.notes,t.adAccount,t.campaign,t.clientName,t.client,t.sourceClient].join(' ').toLowerCase();
+      if (text.includes(q)) {
+        results.push({ type:'Transaction', label:t.notes || t.campaign || String(t.type || 'Transaction').replace(/_/g,' '), meta:t.date || 'Ledger entry', view:'ledger', id:t.id });
+      }
+    });
+    return results.slice(0, 8);
+  }, [globalSearch, clients, cards, campaigns, transactions]);
+
   // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
   useEffect(() => {
     const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0);
@@ -438,19 +467,6 @@ export default function AdLedgerApp() {
     setWorkspaceSettings(prev => ({ ...prev, ...nextSettings }));
   };
 
-  const handleLogoUpload = (file) => {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { window.alert('Please choose an image file.'); return; }
-    if (file.size > 2 * 1024 * 1024) { window.alert('Please choose a logo under 2 MB.'); return; }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result;
-      if (typeof result === 'string') setWorkspaceLogo(result);
-    };
-    reader.readAsDataURL(file);
-  };
-  const handleRemoveLogo = () => setWorkspaceLogo('');
-
   const handleAddTeamMember = (member) => {
     setTeamMembers(prev => [...prev, { ...member, id: `team_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
   };
@@ -463,16 +479,16 @@ export default function AdLedgerApp() {
 
   const exportBackup = () => {
     const payload = {
-      app: 'AdLytic',
+      app: 'AdLedger',
       version: 1,
       exportedAt: new Date().toISOString(),
-      clients, cards, transactions, campaigns, workspaceSettings, teamMembers, workspaceLogo
+      clients, cards, transactions, campaigns, workspaceSettings, teamMembers
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `adledger-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `adlytic-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -483,14 +499,13 @@ export default function AdLedgerApp() {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        if (!data || (data.app !== 'AdLytic' && data.app !== 'AdLedger')) throw new Error('Invalid backup');
+        if (!data || data.app !== 'AdLedger') throw new Error('Invalid backup');
         if (Array.isArray(data.clients)) setClients(data.clients);
         if (Array.isArray(data.cards)) setCards(data.cards);
         if (Array.isArray(data.transactions)) setTransactions(data.transactions);
         if (Array.isArray(data.campaigns)) setCampaigns(data.campaigns);
         if (data.workspaceSettings) setWorkspaceSettings(data.workspaceSettings);
         if (Array.isArray(data.teamMembers)) setTeamMembers(data.teamMembers);
-        if (typeof data.workspaceLogo === 'string') setWorkspaceLogo(data.workspaceLogo);
         window.alert('Backup restored successfully.');
       } catch (error) {
         window.alert('This file is not a valid AdLedger backup.');
@@ -506,12 +521,12 @@ export default function AdLedgerApp() {
     setTransactions([]);
     setCampaigns([]);
     setTeamMembers([]);
-    setWorkspaceLogo('');
     setWorkspaceSettings({
       businessName: 'AdLytic',
       timezone: 'Asia/Dhaka',
       alerts: true,
-      defaultReportRange: 'This Month'
+      defaultReportRange: 'This Month',
+      logoData: ''
     });
   };
 
@@ -552,22 +567,25 @@ export default function AdLedgerApp() {
       case 'team':
         return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onRemove={handleRemoveTeamMember} />;
       case 'settings':
-        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
+        return <SettingsView settings={workspaceSettings} onSave={handleSaveWorkspaceSettings} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
     }
   };
 
   return (
-    <>
-      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
-      <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <div className="adlytic-app flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
       
       {/* SIDEBAR */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
         <div className="p-6 flex items-center justify-between md:justify-center border-b border-slate-800">
-          <div className="flex items-center gap-2.5 text-white min-w-0">
-            {workspaceLogo ? <img src={workspaceLogo} alt="Workspace logo" className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm" /> : <div className="adl-brand-mark w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-lg">A</div>}
-            <span className="text-xl font-bold tracking-tight truncate">AdLytic</span>
+          <div className="flex items-center gap-3 text-white">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-900/30 overflow-hidden">
+              {workspaceSettings.logoData ? <img src={workspaceSettings.logoData} alt="Workspace logo" className="w-full h-full object-cover" /> : <span>A</span>}
+            </div>
+            <div>
+              <span className="text-xl font-bold tracking-tight">{workspaceSettings.businessName || 'AdLytic'}</span>
+              <span className="block text-[9px] uppercase tracking-[0.22em] text-sky-300/80">Marketing Finance</span>
+            </div>
           </div>
           <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
             <X size={24} />
@@ -602,9 +620,23 @@ export default function AdLedgerApp() {
             <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu size={24} />
             </button>
-            <div className="hidden sm:flex items-center bg-slate-100 rounded-md px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500">
-              <Search size={18} className="text-slate-400" />
-              <input type="text" placeholder="Search transactions..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
+            <div className="hidden sm:block relative w-72 lg:w-96">
+              <div className="flex items-center bg-sky-50/80 border border-sky-100 rounded-xl px-3 py-2 focus-within:bg-white focus-within:border-sky-300 transition-all">
+                <Search size={17} className="text-sky-500 shrink-0" />
+                <input type="text" value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setGlobalSearch('')}} placeholder="Search clients, cards, campaigns..." className="bg-transparent border-none !shadow-none !ring-0 focus:outline-none text-sm ml-2 w-full" />
+                {globalSearch && <button type="button" onClick={()=>setGlobalSearch('')} className="text-slate-400 hover:text-slate-700 p-1"><X size={15}/></button>}
+              </div>
+              {globalSearch && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-sky-100 rounded-2xl shadow-2xl z-[60] overflow-hidden">
+                  {globalSearchResults.length ? globalSearchResults.map(item => (
+                    <button key={`${item.type}-${item.id}`} type="button" onClick={()=>{setCurrentView(item.view);setGlobalSearch('');setIsMobileMenuOpen(false);}} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-sky-50 transition-colors">
+                      <span className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center text-[10px] font-bold">{item.type.slice(0,2).toUpperCase()}</span>
+                      <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-800 truncate">{item.label}</span><span className="block text-[11px] text-slate-500">{item.type} · {item.meta}</span></span>
+                      <ArrowUpRight size={14} className="text-slate-300"/>
+                    </button>
+                  )) : <div className="px-4 py-6 text-center text-sm text-slate-400">No matching records found.</div>}
+                </div>
+              )}
             </div>
           </div>
           
@@ -684,8 +716,39 @@ export default function AdLedgerApp() {
         </Modal>
       )}
 
-      </div>
-    </>
+      <style>{`
+        .adlytic-app { --adlytic-sky:#38bdf8; --adlytic-blue:#2563eb; --adlytic-navy:#0b1730; --adlytic-ink:#0f2747; --adlytic-soft:#eef9ff; }
+        .adlytic-app * { scrollbar-width: thin; scrollbar-color: #bae6fd transparent; }
+        .adlytic-app main { background: linear-gradient(180deg,#f7fcff 0%,#f5f9fd 52%,#f8fbff 100%); }
+        .adlytic-app aside { background: linear-gradient(180deg,#0b1730 0%,#0d1b35 100%) !important; border-right:1px solid rgba(125,211,252,.12); }
+        .adlytic-app aside .border-slate-800 { border-color:rgba(148,163,184,.13) !important; }
+        .adlytic-app aside button { border-radius:12px !important; }
+        .adlytic-app aside button:not(.bg-blue-600):hover { background:rgba(56,189,248,.09) !important; }
+        .adlytic-app aside button.bg-blue-600 { background:linear-gradient(135deg,#38bdf8 0%,#2563eb 100%) !important; box-shadow:0 8px 22px rgba(37,99,235,.26) !important; }
+        .adlytic-app header { background:rgba(255,255,255,.92) !important; backdrop-filter:blur(16px); border-bottom-color:#d9edf9 !important; box-shadow:0 1px 0 rgba(14,116,144,.04); }
+        .adlytic-app input:not([type=checkbox]):not([type=radio]), .adlytic-app select, .adlytic-app textarea { border-color:#cfe7f5 !important; background-color:#fff; border-radius:11px !important; }
+        .adlytic-app input:not([type=checkbox]):not([type=radio]):focus, .adlytic-app select:focus, .adlytic-app textarea:focus { border-color:#38bdf8 !important; box-shadow:0 0 0 3px rgba(56,189,248,.14) !important; }
+        .adlytic-app .bg-white.border, .adlytic-app .bg-white.rounded-xl, .adlytic-app .bg-white.rounded-2xl { border-color:#d7ebf7 !important; box-shadow:0 8px 28px rgba(14,116,144,.055) !important; }
+        .adlytic-app .bg-white.border:hover { box-shadow:0 12px 32px rgba(14,116,144,.075); }
+        .adlytic-app h1 { letter-spacing:-.035em; color:#092442 !important; }
+        .adlytic-app h2,.adlytic-app h3,.adlytic-app h4 { letter-spacing:-.02em; color:#0b2948; }
+        .adlytic-app table thead { background:linear-gradient(180deg,#f1faff,#f7fcff) !important; }
+        .adlytic-app table thead th { color:#315675 !important; font-weight:700 !important; }
+        .adlytic-app table tbody tr { transition:background .18s ease, transform .18s ease; }
+        .adlytic-app table tbody tr:hover { background:#f0faff !important; }
+        .adlytic-app button { transition:transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease; }
+        .adlytic-app button:not(:disabled):hover { transform:translateY(-1px); }
+        .adlytic-app .bg-blue-600 { background:linear-gradient(135deg,#38bdf8 0%,#2563eb 100%) !important; }
+        .adlytic-app .bg-blue-600:hover { background:linear-gradient(135deg,#0ea5e9 0%,#1d4ed8 100%) !important; }
+        .adlytic-app .text-blue-600 { color:#1976d2 !important; }
+        .adlytic-app .bg-sky-50 { background:#effaff !important; }
+        .adlytic-app .border-sky-100,.adlytic-app .border-blue-100 { border-color:#c9ebfb !important; }
+        .adlytic-app .animate-in { animation:adlyticEnter .34s ease both; }
+        @keyframes adlyticEnter { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
+        @media (max-width:768px){ .adlytic-app header { height:60px !important; } .adlytic-app main > div { padding:16px !important; } }
+        @media print { .adlytic-app main { background:#fff !important; } }
+      `}</style>
+    </div>
   );
 }
 
@@ -945,7 +1008,7 @@ function ReportsView({ clients, cards, transactions }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `adledger-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `adlytic-report-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1099,13 +1162,13 @@ function ReportsView({ clients, cards, transactions }) {
             {dailyChart.length ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dailyChart}>
-                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} dy={8} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
-                  <Tooltip cursor={{ stroke: '#9edcf5', strokeDasharray: '4 4' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
-                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#10b981" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT Equivalent)" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#16A34A" strokeWidth={2} />
+                  <Line type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT Equivalent)" stroke="#F59E0B" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -1120,13 +1183,13 @@ function ReportsView({ clients, cards, transactions }) {
           <div className="h-72">
             {expenseChart.some(x => x.value > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={expenseChart}>
-                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
-                  <Tooltip cursor={{ fill: '#eefaff' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
-                  <Bar dataKey="value" name="USD" fill="#38bdf8" radius={[10, 10, 4, 4]} barSize={42} />
-                </BarChart>
+                <RechartsPieChart>
+                  <Pie data={expenseChart} dataKey="value" nameKey="name" cx="50%" cy="46%" innerRadius={66} outerRadius={98} paddingAngle={5} cornerRadius={8} stroke="none">
+                    {expenseChart.map((entry,index)=><Cell key={`report-expense-${index}`} fill={['#38bdf8','#f59e0b','#8b5cf6'][index % 3]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ borderRadius:14, border:'1px solid #d7ebf7', boxShadow:'0 12px 30px rgba(15,23,42,.10)', fontSize:12 }} formatter={(value)=>[formatUSD(value),'USD']} />
+                  <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{fontSize:11,color:'#315675'}} />
+                </RechartsPieChart>
               </ResponsiveContainer>
             ) : (
               <ReportEmptyState />
@@ -1418,8 +1481,11 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
-          <p className="text-slate-500 text-sm">Your complete BDT, USD, client and card snapshot.</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-200"><Activity size={19}/></div>
+            <div><h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
+            <p className="text-slate-500 text-sm">Your complete BDT, USD, client and card snapshot.</p></div>
+          </div>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -1483,16 +1549,15 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
             <h3 className="font-semibold text-slate-900">USD Expense Breakdown</h3>
             <p className="text-xs text-slate-500 mt-1">Where your USD outflow is going.</p>
           </div>
-          <div className="h-64 relative">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <RePieChart>
-                <Pie data={dashboardData.expenseData.filter(item => item.value > 0)} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92} paddingAngle={4} cornerRadius={8} stroke="#fff" strokeWidth={4}>
-                  {dashboardData.expenseData.map((entry, index) => <Cell key={`expense-cell-${entry.name}`} fill={['#38bdf8','#f59e0b','#fb7185'][index % 3]} />)}
+              <RechartsPieChart>
+                <Pie data={dashboardData.expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={5} cornerRadius={8} stroke="none">
+                  {dashboardData.expenseData.map((entry,index)=><Cell key={`expense-${index}`} fill={['#38bdf8','#f59e0b','#8b5cf6'][index % 3]} />)}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} formatter={(value) => [formatUSD(value), 'USD']} />
-              </RePieChart>
+                <Tooltip contentStyle={{ borderRadius:14, border:'1px solid #d7ebf7', boxShadow:'0 12px 30px rgba(15,23,42,.10)', fontSize:12 }} formatter={(value)=>[formatUSD(value),'USD']} />
+              </RechartsPieChart>
             </ResponsiveContainer>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="text-center"><p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Out</p><p className="text-lg font-bold text-slate-900">{formatUSD(dashboardData.totalUSDOut)}</p></div></div>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-2 text-center">
             <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Ads</p><p className="text-xs font-semibold text-slate-800">{formatUSD(metrics.totalAdSpendUSD)}</p></div>
@@ -2722,7 +2787,7 @@ function IntegrationsView() {
 function TeamView({ teamMembers, onAdd, onRemove }) {
   const [email,setEmail]=useState(''); const [role,setRole]=useState('Manager');
   return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLedger for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length+1} member{teamMembers.length+1===1?'':'s'}</span></div>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLytic for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length+1} member{teamMembers.length+1===1?'':'s'}</span></div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Workspace Members</h3><div className="mt-4 space-y-2"><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"><div><p className="font-medium">Workspace Owner</p><p className="text-xs text-slate-500">Owner · full access</p></div><span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">Owner</span></div>{teamMembers.map(m=><div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{m.email}</p><p className="text-xs text-slate-500">{m.role}</p></div><button onClick={()=>onRemove(m.id)} className="text-xs text-red-500">Remove</button></div>)}</div></div>
       <form onSubmit={e=>{e.preventDefault();if(!email.trim())return;onAdd({email:email.trim(),role});setEmail('')}} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Invite Member</h3><p className="text-xs text-slate-500 mt-1">Local workspace placeholder until real email invitations are connected.</p><Field label="Email"><input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@email.com" className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field><Field label="Role"><select value={role} onChange={e=>setRole(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Manager</option><option>Staff</option><option>Viewer</option></select></Field><button className="w-full mt-4 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold"><UserPlus size={16} className="inline mr-2"/>Add Member</button></form>
@@ -2730,17 +2795,34 @@ function TeamView({ teamMembers, onAdd, onRemove }) {
   </div>;
 }
 
-function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
+function SettingsView({ settings, onSave, onExport, onImport, onReset }) {
   const [data,setData]=useState(settings); const fileRef=useRef(null);
   useEffect(()=>setData(settings),[settings]);
   return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
     <div><h1 className="text-2xl font-bold text-slate-900">Settings</h1><p className="text-sm text-slate-500 mt-1">Workspace preferences, data safety and operational controls.</p></div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-sky-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Branding and basic preferences.</p></div></div><div className="mt-5 space-y-4">
-        <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3 min-w-0">{logo ? <img src={logo} alt="Workspace logo preview" className="w-14 h-14 rounded-2xl object-cover bg-white border border-sky-100 shadow-sm" /> : <div className="adl-brand-mark w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold">A</div>}<div><p className="text-sm font-semibold text-slate-800">Workspace Logo</p><p className="text-xs text-slate-500 mt-0.5">Upload PNG, JPG or WebP. Max 2 MB.</p></div></div><div className="flex items-center gap-2"><label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600"><Upload size={14}/>{logo ? 'Change' : 'Upload'}<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={e=>{onLogoUpload(e.target.files?.[0]);e.target.value='';}}/></label>{logo && <button type="button" onClick={onRemoveLogo} className="px-3 py-2 rounded-lg border border-red-200 bg-white text-red-600 text-xs font-semibold">Remove</button>}</div></div></div>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-blue-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Basic preferences.</p></div></div><div className="mt-5 space-y-4">
         <Field label="Business / Workspace Name"><input value={data.businessName} onChange={e=>setData({...data,businessName:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field>
         <Field label="Timezone"><select value={data.timezone} onChange={e=>setData({...data,timezone:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Asia/Dhaka</option><option>UTC</option><option>Asia/Kolkata</option></select></Field>
         <Field label="Default Report Range"><select value={data.defaultReportRange} onChange={e=>setData({...data,defaultReportRange:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>This Month</option><option>Last 7 Days</option><option>Last 30 Days</option><option>Lifetime</option></select></Field>
+        <Field label="Workspace Logo">
+          <div className="mt-1 flex items-center gap-3 rounded-2xl border border-sky-100 bg-sky-50/70 p-3">
+            <div className="w-12 h-12 rounded-xl bg-white border border-sky-100 overflow-hidden flex items-center justify-center shrink-0">
+              {data.logoData ? <img src={data.logoData} alt="Workspace logo preview" className="w-full h-full object-cover" /> : <span className="font-bold text-sky-600">A</span>}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-slate-800">Upload your brand logo</p>
+              <p className="text-xs text-slate-500 mt-0.5">PNG, JPG or WebP. It will appear in the sidebar.</p>
+              <div className="flex items-center gap-2 mt-2">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-sky-200 text-xs font-semibold text-sky-700 hover:bg-sky-50">
+                  <Upload size={14}/> Choose logo
+                  <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e=>{const file=e.target.files?.[0]; if(!file)return; if(file.size>2*1024*1024){window.alert('Please choose an image smaller than 2MB.'); return;} const reader=new FileReader(); reader.onload=ev=>setData(prev=>({...prev,logoData:ev.target.result})); reader.readAsDataURL(file); e.target.value='';}} />
+                </label>
+                {data.logoData && <button type="button" onClick={()=>setData(prev=>({...prev,logoData:''}))} className="text-xs font-medium text-red-600 hover:text-red-700">Remove</button>}
+              </div>
+            </div>
+          </div>
+        </Field>
         <label className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 p-3"><span><span className="block text-sm font-medium">Financial alerts</span><span className="block text-xs text-slate-500 mt-0.5">Show negative card balance warnings.</span></span><input type="checkbox" checked={!!data.alerts} onChange={e=>setData({...data,alerts:e.target.checked})} className="w-4 h-4"/></label>
         <button onClick={()=>{onSave(data);window.alert('Settings saved.')}} className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold"><Save size={16}/>Save Settings</button>
       </div></div>
@@ -2765,7 +2847,7 @@ function Field({ label, children }) {
 
 function NavItem({ icon, label, isActive, onClick }) {
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'}`}>
       {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
       {label}
     </button>
@@ -2774,7 +2856,8 @@ function NavItem({ icon, label, isActive, onClick }) {
 
 function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
   return (
-    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
+    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-300 via-blue-500 to-indigo-500 opacity-70" />
       <div className="flex justify-between items-start mb-2">
         <p className="text-sm font-medium text-slate-500">{title}</p>
         <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
