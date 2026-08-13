@@ -573,144 +573,427 @@ export default function AdLedgerApp() {
   };
 
   return (
-    <div className="adlytic-app flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <div className="adlytic-app flex h-screen overflow-hidden">
 
       <style>{`
-        /* ===== AdLytic Premium Dark UI ===== */
+        /* =========================================================
+           AdLytic — Reference-inspired SaaS Design System
+           Old dark/light theme overrides are intentionally removed.
+           This is the single visual system for the whole app.
+           ========================================================= */
+        :root {
+          --adl-bg: #f1f3f6;
+          --adl-surface: #ffffff;
+          --adl-surface-2: #f8fafc;
+          --adl-text: #182338;
+          --adl-muted: #718096;
+          --adl-border: #e4e9f0;
+          --adl-primary: #38a8f5;
+          --adl-primary-2: #7c5cff;
+          --adl-primary-soft: #edf7ff;
+          --adl-green: #10b981;
+          --adl-red: #ef5b68;
+          --adl-orange: #f59e0b;
+          --adl-purple: #8b5cf6;
+          --adl-shadow: 0 12px 30px rgba(35, 47, 72, .07);
+          --adl-shadow-hover: 0 18px 38px rgba(35, 47, 72, .12);
+        }
+
         .adlytic-app {
+          min-height: 100vh;
           background:
-            radial-gradient(circle at 12% 8%, rgba(56,189,248,.08), transparent 28%),
-            radial-gradient(circle at 88% 12%, rgba(99,102,241,.08), transparent 30%),
-            #0b0f17 !important;
-          color: #e8f0fb !important;
+            radial-gradient(circle at 85% -10%, rgba(56,168,245,.10), transparent 28%),
+            radial-gradient(circle at 8% 10%, rgba(124,92,255,.06), transparent 22%),
+            var(--adl-bg) !important;
+          color: var(--adl-text) !important;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+          gap: 16px;
+          padding: 16px;
         }
-        .adlytic-app main,
-        .adlytic-app .bg-slate-50 {
-          background-color: #0b0f17 !important;
+
+        .adlytic-sidebar {
+          width: 232px;
+          flex: 0 0 232px;
+          height: calc(100vh - 32px);
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          background: rgba(255,255,255,.96);
+          border: 1px solid var(--adl-border);
+          border-radius: 22px;
+          box-shadow: var(--adl-shadow);
+          overflow: hidden;
+          z-index: 40;
         }
+
+        .adlytic-brand {
+          padding: 20px 18px 18px;
+          border-bottom: 1px solid #edf0f4;
+        }
+        .adlytic-brand-mark {
+          width: 38px;
+          height: 38px;
+          border-radius: 12px;
+          display: grid;
+          place-items: center;
+          overflow: hidden;
+          color: #fff;
+          font-weight: 800;
+          background: linear-gradient(135deg, #38a8f5, #6c7cff);
+          box-shadow: 0 8px 18px rgba(56,168,245,.22);
+        }
+        .adlytic-brand-name {
+          font-size: 18px;
+          line-height: 1;
+          font-weight: 800;
+          color: #172238;
+          letter-spacing: -.03em;
+        }
+        .adlytic-brand-sub {
+          font-size: 9px;
+          margin-top: 5px;
+          color: #94a0b4;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+        }
+
+        .adlytic-sidebar nav {
+          padding: 16px 12px;
+        }
+        .adlytic-section-label {
+          padding: 14px 11px 7px;
+          color: #a0aabd;
+          font-size: 9px;
+          font-weight: 700;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+        }
+        .adlytic-nav-item {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 11px;
+          margin: 3px 0;
+          border: 0;
+          border-radius: 10px;
+          background: transparent;
+          color: #718096;
+          font-size: 13px;
+          font-weight: 600;
+          text-align: left;
+          cursor: pointer;
+          transition: .18s ease;
+        }
+        .adlytic-nav-item:hover {
+          background: #f4f8fc;
+          color: #27364e;
+          transform: translateX(1px);
+        }
+        .adlytic-nav-item.active {
+          color: #fff;
+          background: linear-gradient(135deg, #43aef5, #6d7df7);
+          box-shadow: 0 7px 16px rgba(69,142,237,.22);
+        }
+        .adlytic-nav-item svg {
+          width: 16px;
+          height: 16px;
+          flex: 0 0 16px;
+        }
+        .adlytic-nav-item:not(.active) svg { color: #93a0b4; }
+        .adlytic-nav-item.active svg { color: #fff; }
+
+        .adlytic-sidebar-footer {
+          margin-top: auto;
+          padding: 12px;
+          border-top: 1px solid #edf0f4;
+        }
+
+        .adlytic-main {
+          min-width: 0;
+          height: calc(100vh - 32px);
+          background: transparent !important;
+        }
+
+        .adlytic-topbar {
+          height: 58px;
+          flex: 0 0 58px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 0 14px;
+          background: rgba(255,255,255,.94);
+          border: 1px solid var(--adl-border);
+          border-radius: 16px;
+          box-shadow: 0 6px 20px rgba(35,47,72,.045);
+          backdrop-filter: blur(14px);
+        }
+
+        .adlytic-search {
+          width: min(410px, 46vw);
+          height: 36px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 0 11px;
+          border: 1px solid #dfe6ef;
+          border-radius: 11px;
+          background: #f8fafc;
+          transition: .18s ease;
+        }
+        .adlytic-search:focus-within {
+          background: #fff;
+          border-color: #8acaf7;
+          box-shadow: 0 0 0 3px rgba(56,168,245,.10);
+        }
+        .adlytic-search input {
+          width: 100%;
+          border: 0 !important;
+          outline: 0 !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          color: #26354d !important;
+          font-size: 12px;
+        }
+        .adlytic-search input::placeholder { color: #9aa6b8 !important; }
+
+        .adlytic-toolbar-rate {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          white-space: nowrap;
+        }
+        .adlytic-toolbar-rate span:first-child {
+          color: #9aa5b6;
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: .05em;
+          font-weight: 700;
+        }
+        .adlytic-toolbar-rate span:last-child {
+          color: #26354d;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .adlytic-toolbar-btn {
+          height: 36px;
+          padding: 0 12px !important;
+          border-radius: 10px !important;
+          border: 1px solid #dce4ee !important;
+          background: #fff !important;
+          color: #40506a !important;
+          font-size: 12px !important;
+          font-weight: 700 !important;
+          box-shadow: none !important;
+          transition: .18s ease;
+        }
+        .adlytic-toolbar-btn:hover {
+          transform: translateY(-1px);
+          border-color: #b8d9f4 !important;
+          background: #f7fbff !important;
+        }
+        .adlytic-toolbar-btn.primary {
+          color: #fff !important;
+          border-color: transparent !important;
+          background: linear-gradient(135deg,#36a8f4,#5c83f6) !important;
+          box-shadow: 0 7px 15px rgba(62,137,236,.20) !important;
+        }
+
+        .adlytic-content {
+          padding: 24px 4px 30px !important;
+          background: transparent !important;
+        }
+
+        /* Global surface language for existing screens. */
         .adlytic-app .bg-white {
-          background: linear-gradient(145deg, rgba(22,29,42,.98), rgba(17,23,34,.98)) !important;
-          color: #e8f0fb !important;
+          background: var(--adl-surface) !important;
+          color: var(--adl-text) !important;
+          border-color: var(--adl-border) !important;
+          box-shadow: var(--adl-shadow) !important;
         }
-        .adlytic-app .bg-slate-100 {
-          background-color: #1a2331 !important;
+        .adlytic-app .bg-slate-50,
+        .adlytic-app .bg-slate-100 { background: var(--adl-surface-2) !important; }
+        .adlytic-app .bg-slate-200 { background: #edf1f5 !important; }
+        /* Remove legacy dark surfaces from older dialogs/sections. */
+        .adlytic-app .bg-slate-900:not(button) {
+          background: #fff !important;
+          color: var(--adl-text) !important;
+          border: 1px solid var(--adl-border);
+          box-shadow: var(--adl-shadow);
         }
-        .adlytic-app .bg-slate-200 {
-          background-color: #243044 !important;
+        .adlytic-app button.bg-slate-900 {
+          background: linear-gradient(135deg,#3aaaf4,#637ff4) !important;
+          color: #fff !important;
+          border: 0 !important;
         }
-        .adlytic-app .text-slate-900 { color: #f8fbff !important; }
-        .adlytic-app .text-slate-800 { color: #edf4fc !important; }
-        .adlytic-app .text-slate-700 { color: #d7e2ef !important; }
-        .adlytic-app .text-slate-600 { color: #b8c7d9 !important; }
-        .adlytic-app .text-slate-500 { color: #8fa2b8 !important; }
-        .adlytic-app .text-slate-400 { color: #7e93aa !important; }
-        .adlytic-app .border-slate-200,
+        .adlytic-app .bg-slate-900\/70 {
+          background: #fff !important;
+          color: #41516a !important;
+          border-color: #dce4ee !important;
+        }
+        .adlytic-app .bg-slate-700 { background: #f0f4f8 !important; color: #64748b !important; }
+        .adlytic-app .bg-slate-800 { background: #f7f9fc !important; }
+        .adlytic-app .border-slate-700,
+        .adlytic-app .border-slate-800 { border-color: var(--adl-border) !important; }
+
+        .adlytic-app .text-slate-900,
+        .adlytic-app .text-slate-800 { color: #1a2740 !important; }
+        .adlytic-app .text-slate-700 { color: #3d4d67 !important; }
+        .adlytic-app .text-slate-600 { color: #61718a !important; }
+        .adlytic-app .text-slate-500 { color: #8190a6 !important; }
+        .adlytic-app .text-slate-400 { color: #9aa6b8 !important; }
+
         .adlytic-app .border-slate-100,
+        .adlytic-app .border-slate-200,
         .adlytic-app .border-slate-300 {
-          border-color: #2a384d !important;
+          border-color: var(--adl-border) !important;
         }
-        .adlytic-app .border-slate-800 {
-          border-color: #202b3c !important;
-        }
+
         .adlytic-app input,
         .adlytic-app select,
         .adlytic-app textarea {
-          background-color: #121a27 !important;
-          color: #edf4fc !important;
-          border-color: #33445d !important;
+          background: #fbfcfe !important;
+          color: #24334c !important;
+          border-color: #dce4ee !important;
+          border-radius: 10px;
         }
         .adlytic-app input::placeholder,
-        .adlytic-app textarea::placeholder {
-          color: #71849b !important;
-        }
+        .adlytic-app textarea::placeholder { color: #9aa6b8 !important; }
         .adlytic-app input:focus,
         .adlytic-app select:focus,
         .adlytic-app textarea:focus {
-          border-color: #38bdf8 !important;
-          box-shadow: 0 0 0 3px rgba(56,189,248,.13) !important;
+          border-color: #83c7f5 !important;
+          box-shadow: 0 0 0 3px rgba(56,168,245,.10) !important;
         }
-        .adlytic-app table thead,
-        .adlytic-app .bg-slate-50\/60,
-        .adlytic-app .bg-slate-50\/80 {
-          background-color: #121a27 !important;
+
+        .adlytic-app table thead {
+          background: #f7f9fc !important;
         }
-        .adlytic-app tr:hover {
-          background-color: rgba(56,189,248,.055) !important;
+        .adlytic-app table th {
+          color: #6c7b91 !important;
+          font-weight: 700 !important;
         }
-        .adlytic-app .shadow-sm,
-        .adlytic-app .shadow-md {
-          box-shadow: 0 12px 34px rgba(0,0,0,.22), 0 0 0 1px rgba(96,165,250,.035) !important;
+        .adlytic-app table tbody tr {
+          background: #fff;
+          transition: .16s ease;
         }
-        .adlytic-app .rounded-2xl,
-        .adlytic-app .rounded-xl,
-        .adlytic-app .rounded-lg {
-          border-color: #2b3b52;
+        .adlytic-app table tbody tr:hover {
+          background: #f7fbff !important;
         }
-        /* Recharts: readable axes/grid/tooltips on dark surfaces */
+
+        .adlytic-app .shadow-sm {
+          box-shadow: var(--adl-shadow) !important;
+        }
+        .adlytic-app .shadow-md,
+        .adlytic-app .shadow-lg,
+        .adlytic-app .shadow-xl,
+        .adlytic-app .shadow-2xl {
+          box-shadow: var(--adl-shadow-hover) !important;
+        }
+
+        /* Semantic colors */
+        .adlytic-app .bg-emerald-50,
+        .adlytic-app .bg-green-50 { background: #ecfbf5 !important; }
+        .adlytic-app .bg-red-50 { background: #fff1f2 !important; }
+        .adlytic-app .bg-orange-50 { background: #fff8e8 !important; }
+        .adlytic-app .bg-blue-50,
+        .adlytic-app .bg-sky-50 { background: #eef8ff !important; }
+        .adlytic-app .bg-purple-50 { background: #f5f0ff !important; }
+
+        .adlytic-app .text-emerald-600,
+        .adlytic-app .text-emerald-700 { color: #0aaf78 !important; }
+        .adlytic-app .text-red-500,
+        .adlytic-app .text-red-600,
+        .adlytic-app .text-red-700 { color: #e84d5b !important; }
+        .adlytic-app .text-orange-500,
+        .adlytic-app .text-orange-600,
+        .adlytic-app .text-orange-700 { color: #e99208 !important; }
+        .adlytic-app .text-blue-600,
+        .adlytic-app .text-blue-700 { color: #3d8ee8 !important; }
+        .adlytic-app .text-sky-600,
+        .adlytic-app .text-sky-700 { color: #1c9fe8 !important; }
+        .adlytic-app .text-purple-600,
+        .adlytic-app .text-purple-700 { color: #8055df !important; }
+
+        /* Metric cards become compact reference-style analytics tiles. */
+        .adlytic-app .adlytic-metric {
+          border: 1px solid var(--adl-border);
+          border-radius: 15px;
+          background: #fff;
+          box-shadow: 0 8px 22px rgba(35,47,72,.055);
+        }
+
+        /* Recharts */
         .adlytic-app .recharts-cartesian-grid line {
-          stroke: rgba(148,163,184,.16) !important;
+          stroke: #e7ebf1 !important;
         }
         .adlytic-app .recharts-cartesian-axis-line,
         .adlytic-app .recharts-cartesian-axis-tick-line {
-          stroke: rgba(148,163,184,.25) !important;
+          stroke: #dbe2ea !important;
         }
-        .adlytic-app .recharts-text {
-          fill: #8fa2b8 !important;
-        }
+        .adlytic-app .recharts-text { fill: #8390a4 !important; }
+        .adlytic-app .recharts-legend-item-text { color: #697890 !important; }
         .adlytic-app .recharts-default-tooltip {
-          background: #111827 !important;
-          border: 1px solid #33445d !important;
-          color: #f8fbff !important;
-          box-shadow: 0 16px 40px rgba(0,0,0,.35) !important;
+          background: rgba(255,255,255,.98) !important;
+          border: 1px solid #dce4ee !important;
+          color: #25344d !important;
+          border-radius: 12px !important;
+          box-shadow: 0 16px 35px rgba(35,47,72,.13) !important;
         }
-        .adlytic-app .recharts-legend-item-text {
-          color: #b8c7d9 !important;
+
+        /* Generic modern panels already used by the app. */
+        .adlytic-app .rounded-2xl { border-radius: 16px !important; }
+        .adlytic-app .rounded-xl { border-radius: 13px !important; }
+        .adlytic-app .rounded-lg { border-radius: 10px !important; }
+
+        @media (max-width: 767px) {
+          .adlytic-app { padding: 0; gap: 0; }
+          .adlytic-sidebar {
+            position: fixed;
+            top: 12px;
+            bottom: 12px;
+            left: 12px;
+            height: auto;
+            transform: translateX(-120%);
+            transition: transform .2s ease;
+            z-index: 80;
+          }
+          .adlytic-sidebar.mobile-open { transform: translateX(0); }
+          .adlytic-main { height: 100vh; }
+          .adlytic-topbar {
+            border-radius: 0 0 14px 14px;
+            border-left: 0;
+            border-right: 0;
+            border-top: 0;
+          }
+          .adlytic-search { width: min(48vw, 260px); }
+          .adlytic-content { padding: 18px 14px 26px !important; }
         }
-        /* Make light semantic badges remain readable without losing their colors */
-        .adlytic-app .bg-emerald-50 { background-color: rgba(16,185,129,.12) !important; }
-        .adlytic-app .bg-red-50 { background-color: rgba(239,68,68,.12) !important; }
-        .adlytic-app .bg-orange-50 { background-color: rgba(249,115,22,.12) !important; }
-        .adlytic-app .bg-blue-50 { background-color: rgba(59,130,246,.12) !important; }
-        .adlytic-app .bg-purple-50 { background-color: rgba(168,85,247,.12) !important; }
-        .adlytic-app .bg-green-50 { background-color: rgba(34,197,94,.12) !important; }
-        /* Keep primary/semantic text vivid */
-        .adlytic-app .text-emerald-600,
-        .adlytic-app .text-emerald-700 { color: #34d399 !important; }
-        .adlytic-app .text-red-500,
-        .adlytic-app .text-red-600,
-        .adlytic-app .text-red-700 { color: #fb7185 !important; }
-        .adlytic-app .text-orange-500,
-        .adlytic-app .text-orange-600,
-        .adlytic-app .text-orange-700 { color: #fb923c !important; }
-        .adlytic-app .text-blue-600,
-        .adlytic-app .text-blue-700 { color: #60a5fa !important; }
-        .adlytic-app .text-sky-600,
-        .adlytic-app .text-sky-700 { color: #38bdf8 !important; }
-        .adlytic-app .text-purple-600,
-        .adlytic-app .text-purple-700 { color: #c084fc !important; }
-        /* Modal backdrop stays dark; modal itself uses the same premium surface */
-        .adlytic-app .bg-slate-950\/40 { background-color: rgba(2,6,23,.72) !important; }
       `}</style>
 
       
       {/* SIDEBAR */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
-        <div className="p-6 flex items-center justify-between md:justify-center border-b border-slate-800">
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-900/30 overflow-hidden">
-              {workspaceSettings.logoData ? <img src={workspaceSettings.logoData} alt="Workspace logo" className="w-full h-full object-cover" /> : <span>A</span>}
+      <aside className={`adlytic-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} md:translate-x-0`}>
+        <div className="adlytic-brand">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="adlytic-brand-mark">
+                {workspaceSettings.logoData ? <img src={workspaceSettings.logoData} alt="Workspace logo" className="w-full h-full object-cover" /> : <span>A</span>}
+              </div>
+              <div>
+                <div className="adlytic-brand-name">{workspaceSettings.businessName || 'AdLytic'}</div>
+                <div className="adlytic-brand-sub">Marketing Finance</div>
+              </div>
             </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight">{workspaceSettings.businessName || 'AdLytic'}</span>
-              <span className="block text-[9px] uppercase tracking-[0.22em] text-sky-300/80">Marketing Finance</span>
-            </div>
+            <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
+              <X size={19} />
+            </button>
           </div>
-          <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
-            <X size={24} />
-          </button>
         </div>
         
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto">
           <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => {setCurrentView('campaigns'); setIsMobileMenuOpen(false);}} />
@@ -719,27 +1002,27 @@ export default function AdLedgerApp() {
           <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setIsMobileMenuOpen(false);}} />
 
           <div className="pt-5 mt-4 border-t border-slate-800/80">
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Workspace</p>
+            <p className="adlytic-section-label">Workspace</p>
             <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => {setCurrentView('integrations'); setIsMobileMenuOpen(false);}} />
             <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => {setCurrentView('team'); setIsMobileMenuOpen(false);}} />
           </div>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="adlytic-sidebar-footer">
           <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => {setCurrentView('settings'); setIsMobileMenuOpen(false);}} />
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+      <main className="adlytic-main flex-1 flex flex-col overflow-hidden">
         {/* HEADER */}
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+        <header className="adlytic-topbar">
           <div className="flex items-center gap-4">
             <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
               <Menu size={24} />
             </button>
-            <div className="hidden sm:block relative w-72 lg:w-96">
-              <div className="flex items-center bg-sky-50/80 border border-sky-100 rounded-xl px-3 py-2 focus-within:bg-white focus-within:border-sky-300 transition-all">
+            <div className="hidden sm:block relative">
+              <div className="adlytic-search">
                 <Search size={17} className="text-sky-500 shrink-0" />
                 <input type="text" value={globalSearch} onChange={e=>setGlobalSearch(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setGlobalSearch('')}} placeholder="Search clients, cards, campaigns..." className="bg-transparent border-none !shadow-none !ring-0 focus:outline-none text-sm ml-2 w-full" />
                 {globalSearch && <button type="button" onClick={()=>setGlobalSearch('')} className="text-slate-400 hover:text-slate-700 p-1"><X size={15}/></button>}
@@ -759,17 +1042,17 @@ export default function AdLedgerApp() {
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="hidden lg:flex items-center gap-2 mr-4">
+            <div className="adlytic-toolbar-rate hidden lg:flex">
               <span className="text-xs font-medium text-slate-500 uppercase">Avg USD Rate:</span>
               <span className="text-sm font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
             </div>
-            <button onClick={() => { setSelectedClient(null); setActiveModal('payment'); }} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
+            <button onClick={() => { setSelectedClient(null); setActiveModal('payment'); }} className="adlytic-toolbar-btn hidden sm:flex items-center gap-1">
               <ArrowDownRight size={16} className="text-green-600"/> Receive BDT
             </button>
-            <button onClick={() => setActiveModal('usd')} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
+            <button onClick={() => setActiveModal('usd')} className="adlytic-toolbar-btn hidden sm:flex items-center gap-1">
               <DollarSign size={16} className="text-blue-600"/> Buy USD
             </button>
-            <button onClick={() => { setSelectedClient(null); setActiveModal('spend'); }} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm">
+            <button onClick={() => { setSelectedClient(null); setActiveModal('spend'); }} className="adlytic-toolbar-btn primary flex items-center gap-1">
               <Plus size={16} /> Ad Spend
             </button>
           </div>
@@ -2979,23 +3262,22 @@ function Field({ label, children }) {
 
 function NavItem({ icon, label, isActive, onClick }) {
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'}`}>
-      {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
-      {label}
+    <button onClick={onClick} className={`adlytic-nav-item ${isActive ? 'active' : ''}`}>
+      {React.cloneElement(icon, { size: 17 })}
+      <span>{label}</span>
     </button>
   );
 }
 
 function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-300 via-blue-500 to-indigo-500 opacity-70" />
-      <div className="flex justify-between items-start mb-2">
-        <p className="text-sm font-medium text-slate-500">{title}</p>
+    <div className="adlytic-metric p-4 sm:p-5 flex flex-col relative overflow-hidden group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex justify-between items-start mb-3">
+        <p className="text-[12px] font-semibold text-slate-500">{title}</p>
         <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
       </div>
-      <h3 className={`text-2xl font-bold tracking-tight ${textColorClass}`}>{value}</h3>
-      <div className="mt-2 flex items-center text-xs">
+      <h3 className={`text-[24px] leading-none font-extrabold tracking-tight ${textColorClass}`}>{value}</h3>
+      <div className="mt-2 flex items-center text-[11px]">
         {subtitle && <span className="text-slate-500">{subtitle}</span>}
       </div>
     </div>
