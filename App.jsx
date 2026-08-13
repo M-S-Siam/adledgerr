@@ -574,6 +574,124 @@ export default function AdLedgerApp() {
 
   return (
     <div className="adlytic-app flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+
+      <style>{`
+        /* ===== AdLytic Premium Dark UI ===== */
+        .adlytic-app {
+          background:
+            radial-gradient(circle at 12% 8%, rgba(56,189,248,.08), transparent 28%),
+            radial-gradient(circle at 88% 12%, rgba(99,102,241,.08), transparent 30%),
+            #0b0f17 !important;
+          color: #e8f0fb !important;
+        }
+        .adlytic-app main,
+        .adlytic-app .bg-slate-50 {
+          background-color: #0b0f17 !important;
+        }
+        .adlytic-app .bg-white {
+          background: linear-gradient(145deg, rgba(22,29,42,.98), rgba(17,23,34,.98)) !important;
+          color: #e8f0fb !important;
+        }
+        .adlytic-app .bg-slate-100 {
+          background-color: #1a2331 !important;
+        }
+        .adlytic-app .bg-slate-200 {
+          background-color: #243044 !important;
+        }
+        .adlytic-app .text-slate-900 { color: #f8fbff !important; }
+        .adlytic-app .text-slate-800 { color: #edf4fc !important; }
+        .adlytic-app .text-slate-700 { color: #d7e2ef !important; }
+        .adlytic-app .text-slate-600 { color: #b8c7d9 !important; }
+        .adlytic-app .text-slate-500 { color: #8fa2b8 !important; }
+        .adlytic-app .text-slate-400 { color: #7e93aa !important; }
+        .adlytic-app .border-slate-200,
+        .adlytic-app .border-slate-100,
+        .adlytic-app .border-slate-300 {
+          border-color: #2a384d !important;
+        }
+        .adlytic-app .border-slate-800 {
+          border-color: #202b3c !important;
+        }
+        .adlytic-app input,
+        .adlytic-app select,
+        .adlytic-app textarea {
+          background-color: #121a27 !important;
+          color: #edf4fc !important;
+          border-color: #33445d !important;
+        }
+        .adlytic-app input::placeholder,
+        .adlytic-app textarea::placeholder {
+          color: #71849b !important;
+        }
+        .adlytic-app input:focus,
+        .adlytic-app select:focus,
+        .adlytic-app textarea:focus {
+          border-color: #38bdf8 !important;
+          box-shadow: 0 0 0 3px rgba(56,189,248,.13) !important;
+        }
+        .adlytic-app table thead,
+        .adlytic-app .bg-slate-50\/60,
+        .adlytic-app .bg-slate-50\/80 {
+          background-color: #121a27 !important;
+        }
+        .adlytic-app tr:hover {
+          background-color: rgba(56,189,248,.055) !important;
+        }
+        .adlytic-app .shadow-sm,
+        .adlytic-app .shadow-md {
+          box-shadow: 0 12px 34px rgba(0,0,0,.22), 0 0 0 1px rgba(96,165,250,.035) !important;
+        }
+        .adlytic-app .rounded-2xl,
+        .adlytic-app .rounded-xl,
+        .adlytic-app .rounded-lg {
+          border-color: #2b3b52;
+        }
+        /* Recharts: readable axes/grid/tooltips on dark surfaces */
+        .adlytic-app .recharts-cartesian-grid line {
+          stroke: rgba(148,163,184,.16) !important;
+        }
+        .adlytic-app .recharts-cartesian-axis-line,
+        .adlytic-app .recharts-cartesian-axis-tick-line {
+          stroke: rgba(148,163,184,.25) !important;
+        }
+        .adlytic-app .recharts-text {
+          fill: #8fa2b8 !important;
+        }
+        .adlytic-app .recharts-default-tooltip {
+          background: #111827 !important;
+          border: 1px solid #33445d !important;
+          color: #f8fbff !important;
+          box-shadow: 0 16px 40px rgba(0,0,0,.35) !important;
+        }
+        .adlytic-app .recharts-legend-item-text {
+          color: #b8c7d9 !important;
+        }
+        /* Make light semantic badges remain readable without losing their colors */
+        .adlytic-app .bg-emerald-50 { background-color: rgba(16,185,129,.12) !important; }
+        .adlytic-app .bg-red-50 { background-color: rgba(239,68,68,.12) !important; }
+        .adlytic-app .bg-orange-50 { background-color: rgba(249,115,22,.12) !important; }
+        .adlytic-app .bg-blue-50 { background-color: rgba(59,130,246,.12) !important; }
+        .adlytic-app .bg-purple-50 { background-color: rgba(168,85,247,.12) !important; }
+        .adlytic-app .bg-green-50 { background-color: rgba(34,197,94,.12) !important; }
+        /* Keep primary/semantic text vivid */
+        .adlytic-app .text-emerald-600,
+        .adlytic-app .text-emerald-700 { color: #34d399 !important; }
+        .adlytic-app .text-red-500,
+        .adlytic-app .text-red-600,
+        .adlytic-app .text-red-700 { color: #fb7185 !important; }
+        .adlytic-app .text-orange-500,
+        .adlytic-app .text-orange-600,
+        .adlytic-app .text-orange-700 { color: #fb923c !important; }
+        .adlytic-app .text-blue-600,
+        .adlytic-app .text-blue-700 { color: #60a5fa !important; }
+        .adlytic-app .text-sky-600,
+        .adlytic-app .text-sky-700 { color: #38bdf8 !important; }
+        .adlytic-app .text-purple-600,
+        .adlytic-app .text-purple-700 { color: #c084fc !important; }
+        /* Modal backdrop stays dark; modal itself uses the same premium surface */
+        .adlytic-app .bg-slate-950\/40 { background-color: rgba(2,6,23,.72) !important; }
+      `}</style>
+
       
       {/* SIDEBAR */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
