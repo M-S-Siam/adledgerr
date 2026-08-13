@@ -658,7 +658,7 @@ export default function AdLedgerApp() {
         </header>
 
         {/* SCROLLABLE CONTENT */}
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 adlytic-content">
           {renderContent()}
         </div>
       </main>
@@ -719,7 +719,21 @@ export default function AdLedgerApp() {
       <style>{`
         .adlytic-app { --adlytic-sky:#38bdf8; --adlytic-blue:#2563eb; --adlytic-navy:#0b1730; --adlytic-ink:#0f2747; --adlytic-soft:#eef9ff; }
         .adlytic-app * { scrollbar-width: thin; scrollbar-color: #bae6fd transparent; }
-        .adlytic-app main { background: linear-gradient(180deg,#f7fcff 0%,#f5f9fd 52%,#f8fbff 100%); }
+        .adlytic-app main {
+          background:
+            radial-gradient(circle at 18% 8%, rgba(56,189,248,.10), transparent 28%),
+            radial-gradient(circle at 86% 16%, rgba(99,102,241,.08), transparent 30%),
+            linear-gradient(180deg,#0a0b12 0%,#0d0e16 48%,#10111a 100%) !important;
+        }
+        .adlytic-app .adlytic-content {
+          color:#dbe4f0;
+          background:
+            radial-gradient(circle at 12% 4%, rgba(56,189,248,.045), transparent 24%),
+            radial-gradient(circle at 92% 10%, rgba(168,85,247,.035), transparent 26%);
+        }
+        .adlytic-app .adlytic-page-title { color:#f1f5f9 !important; }
+        .adlytic-app .adlytic-content .text-slate-500 { color:#94a3b8 !important; }
+        .adlytic-app .adlytic-content .text-slate-400 { color:#7f8da3 !important; }
         .adlytic-app aside { background: linear-gradient(180deg,#0b1730 0%,#0d1b35 100%) !important; border-right:1px solid rgba(125,211,252,.12); }
         .adlytic-app aside .border-slate-800 { border-color:rgba(148,163,184,.13) !important; }
         .adlytic-app aside button { border-radius:12px !important; }
@@ -1483,11 +1497,11 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-200"><Activity size={19}/></div>
-            <div><h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
+            <div><h1 className="adlytic-page-title text-2xl font-bold text-slate-900">Financial Overview</h1>
             <p className="text-slate-500 text-sm">Your complete BDT, USD, client and card snapshot.</p></div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
+        <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-900/70 border border-slate-700 rounded-full px-3 py-1.5 shadow-sm backdrop-blur">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           Live from your ledger
         </div>
