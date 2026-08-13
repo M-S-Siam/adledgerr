@@ -607,33 +607,33 @@ export default function AdLedgerApp() {
             var(--adl-bg) !important;
           color: var(--adl-text) !important;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-          gap: 16px;
-          padding: 16px;
+          gap: 12px;
+          padding: 10px;
         }
 
         .adlytic-sidebar {
-          width: 232px;
-          flex: 0 0 232px;
-          height: calc(100vh - 32px);
+          width: 204px;
+          flex: 0 0 204px;
+          height: calc(100vh - 20px);
           position: relative;
           display: flex;
           flex-direction: column;
           background: rgba(255,255,255,.96);
           border: 1px solid var(--adl-border);
-          border-radius: 22px;
+          border-radius: 16px;
           box-shadow: var(--adl-shadow);
           overflow: hidden;
           z-index: 40;
         }
 
         .adlytic-brand {
-          padding: 20px 18px 18px;
+          padding: 16px 15px 14px;
           border-bottom: 1px solid #edf0f4;
         }
         .adlytic-brand-mark {
-          width: 38px;
-          height: 38px;
-          border-radius: 12px;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
           display: grid;
           place-items: center;
           overflow: hidden;
@@ -643,7 +643,7 @@ export default function AdLedgerApp() {
           box-shadow: 0 8px 18px rgba(56,168,245,.22);
         }
         .adlytic-brand-name {
-          font-size: 18px;
+          font-size: 16px;
           line-height: 1;
           font-weight: 800;
           color: #172238;
@@ -652,17 +652,17 @@ export default function AdLedgerApp() {
         .adlytic-brand-sub {
           font-size: 9px;
           margin-top: 5px;
-          color: #94a0b4;
+          color: #7788a2;
           letter-spacing: .12em;
           text-transform: uppercase;
         }
 
         .adlytic-sidebar nav {
-          padding: 16px 12px;
+          padding: 10px 10px;
         }
         .adlytic-section-label {
-          padding: 14px 11px 7px;
-          color: #a0aabd;
+          padding: 12px 10px 6px;
+          color: #7b8aa2;
           font-size: 9px;
           font-weight: 700;
           letter-spacing: .12em;
@@ -673,13 +673,13 @@ export default function AdLedgerApp() {
           display: flex;
           align-items: center;
           gap: 10px;
-          padding: 9px 11px;
-          margin: 3px 0;
+          padding: 7px 9px;
+          margin: 2px 0;
           border: 0;
-          border-radius: 10px;
+          border-radius: 8px;
           background: transparent;
-          color: #718096;
-          font-size: 13px;
+          color: #53647d;
+          font-size: 12px;
           font-weight: 600;
           text-align: left;
           cursor: pointer;
@@ -716,23 +716,23 @@ export default function AdLedgerApp() {
         }
 
         .adlytic-topbar {
-          height: 58px;
-          flex: 0 0 58px;
+          height: 50px;
+          flex: 0 0 50px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 16px;
-          padding: 0 14px;
+          padding: 0 11px;
           background: rgba(255,255,255,.94);
           border: 1px solid var(--adl-border);
-          border-radius: 16px;
-          box-shadow: 0 6px 20px rgba(35,47,72,.045);
+          border-radius: 12px;
+          box-shadow: 0 5px 16px rgba(35,47,72,.045);
           backdrop-filter: blur(14px);
         }
 
         .adlytic-search {
-          width: min(410px, 46vw);
-          height: 36px;
+          width: min(360px, 42vw);
+          height: 32px;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -756,7 +756,7 @@ export default function AdLedgerApp() {
           color: #26354d !important;
           font-size: 12px;
         }
-        .adlytic-search input::placeholder { color: #9aa6b8 !important; }
+        .adlytic-search input::placeholder { color: #6d7d95 !important; }
 
         .adlytic-toolbar-rate {
           display: flex;
@@ -765,7 +765,7 @@ export default function AdLedgerApp() {
           white-space: nowrap;
         }
         .adlytic-toolbar-rate span:first-child {
-          color: #9aa5b6;
+          color: #6f8099;
           font-size: 10px;
           text-transform: uppercase;
           letter-spacing: .05em;
@@ -778,12 +778,12 @@ export default function AdLedgerApp() {
         }
 
         .adlytic-toolbar-btn {
-          height: 36px;
-          padding: 0 12px !important;
+          height: 32px;
+          padding: 0 10px !important;
           border-radius: 10px !important;
           border: 1px solid #dce4ee !important;
           background: #fff !important;
-          color: #40506a !important;
+          color: #30435e !important;
           font-size: 12px !important;
           font-weight: 700 !important;
           box-shadow: none !important;
@@ -802,7 +802,7 @@ export default function AdLedgerApp() {
         }
 
         .adlytic-content {
-          padding: 24px 4px 30px !important;
+          padding: 16px 2px 24px !important;
           background: transparent !important;
         }
 
@@ -841,9 +841,10 @@ export default function AdLedgerApp() {
         .adlytic-app .text-slate-900,
         .adlytic-app .text-slate-800 { color: #1a2740 !important; }
         .adlytic-app .text-slate-700 { color: #3d4d67 !important; }
-        .adlytic-app .text-slate-600 { color: #61718a !important; }
-        .adlytic-app .text-slate-500 { color: #8190a6 !important; }
-        .adlytic-app .text-slate-400 { color: #9aa6b8 !important; }
+        .adlytic-app .text-slate-600 { color: #53647d !important; }
+        .adlytic-app .text-slate-500 { color: #65758e !important; }
+        .adlytic-app .text-slate-400 { color: #6d7d95 !important; }
+        .adlytic-app .text-slate-300 { color: #53647d !important; }
 
         .adlytic-app .border-slate-100,
         .adlytic-app .border-slate-200,
@@ -860,7 +861,7 @@ export default function AdLedgerApp() {
           border-radius: 10px;
         }
         .adlytic-app input::placeholder,
-        .adlytic-app textarea::placeholder { color: #9aa6b8 !important; }
+        .adlytic-app textarea::placeholder { color: #6d7d95 !important; }
         .adlytic-app input:focus,
         .adlytic-app select:focus,
         .adlytic-app textarea:focus {
@@ -872,7 +873,7 @@ export default function AdLedgerApp() {
           background: #f7f9fc !important;
         }
         .adlytic-app table th {
-          color: #6c7b91 !important;
+          color: #4f617a !important;
           font-weight: 700 !important;
         }
         .adlytic-app table tbody tr {
@@ -920,9 +921,9 @@ export default function AdLedgerApp() {
         /* Metric cards become compact reference-style analytics tiles. */
         .adlytic-app .adlytic-metric {
           border: 1px solid var(--adl-border);
-          border-radius: 15px;
+          border-radius: 12px;
           background: #fff;
-          box-shadow: 0 8px 22px rgba(35,47,72,.055);
+          box-shadow: 0 5px 16px rgba(35,47,72,.05);
         }
 
         /* Recharts */
@@ -933,8 +934,8 @@ export default function AdLedgerApp() {
         .adlytic-app .recharts-cartesian-axis-tick-line {
           stroke: #dbe2ea !important;
         }
-        .adlytic-app .recharts-text { fill: #8390a4 !important; }
-        .adlytic-app .recharts-legend-item-text { color: #697890 !important; }
+        .adlytic-app .recharts-text { fill: #687a93 !important; }
+        .adlytic-app .recharts-legend-item-text { color: #53657e !important; }
         .adlytic-app .recharts-default-tooltip {
           background: rgba(255,255,255,.98) !important;
           border: 1px solid #dce4ee !important;
@@ -993,7 +994,7 @@ export default function AdLedgerApp() {
           </div>
         </div>
         
-        <nav className="flex-1 overflow-y-auto">
+        <nav className="flex-1 overflow-visible">
           <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => {setCurrentView('campaigns'); setIsMobileMenuOpen(false);}} />
@@ -1848,22 +1849,22 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-4 max-w-[1440px] mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-200"><Activity size={19}/></div>
-            <div><h1 className="adlytic-page-title text-2xl font-bold text-slate-900">Financial Overview</h1>
-            <p className="text-slate-500 text-sm">Your complete BDT, USD, client and card snapshot.</p></div>
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-md shadow-sky-200"><Activity size={17}/></div>
+            <div><h1 className="adlytic-page-title text-[21px] font-bold text-slate-900">Financial Overview</h1>
+            <p className="text-slate-500 text-xs">Your complete BDT, USD, client and card snapshot.</p></div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-300 bg-slate-900/70 border border-slate-700 rounded-full px-3 py-1.5 shadow-sm backdrop-blur">
+        <div className="flex items-center gap-2 text-[11px] text-slate-600 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
           Live from your ledger
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MetricCard title="Total Revenue" value={formatBDT(metrics.totalRevenueBDT)} subtitle="BDT received from clients" icon={<ArrowDownRight size={20} className="text-emerald-600" />} bgColor="bg-emerald-50" textColorClass="text-slate-900" />
         <MetricCard title="Total BDT Cost" value={formatBDT(dashboardData.totalBDTCost)} subtitle="USD purchase + C.O charges" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass="text-slate-900" />
         <MetricCard title="Net BDT" value={formatBDT(dashboardData.netBDT)} subtitle="Revenue minus USD cost" icon={<TrendingUp size={20} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={dashboardData.netBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
@@ -1874,8 +1875,8 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
         <MetricCard title="Card Balance" value={formatUSD(metrics.totalCardBalance)} subtitle="Available across all cards" icon={<CreditCard size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass={metrics.totalCardBalance < 0 ? 'text-red-600' : 'text-slate-900'} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 overflow-hidden">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="xl:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-4 overflow-hidden">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
               <h3 className="font-semibold text-slate-900">Money Flow</h3>
@@ -1886,7 +1887,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
               <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-500" />Ad Cost</span>
             </div>
           </div>
-          <div className="h-72 w-full">
+          <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={dashboardData.flowData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
                 <defs>
@@ -1914,12 +1915,12 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <div className="mb-4">
             <h3 className="font-semibold text-slate-900">USD Expense Breakdown</h3>
             <p className="text-xs text-slate-500 mt-1">Where your USD outflow is going.</p>
           </div>
-          <div className="h-64">
+          <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPieChart>
                 <Pie data={dashboardData.expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={5} cornerRadius={8} stroke="none">
@@ -1937,7 +1938,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -1994,7 +1995,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -3226,13 +3227,13 @@ function NavItem({ icon, label, isActive, onClick }) {
 
 function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
   return (
-    <div className="adlytic-metric p-4 sm:p-5 flex flex-col relative overflow-hidden group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex justify-between items-start mb-3">
-        <p className="text-[12px] font-semibold text-slate-500">{title}</p>
-        <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
+    <div className="adlytic-metric px-3.5 py-3 flex flex-col relative overflow-hidden group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex justify-between items-center mb-2">
+        <p className="text-[11px] font-semibold text-slate-600">{title}</p>
+        <div className={`p-1.5 rounded-lg ${bgColor}`}>{icon}</div>
       </div>
-      <h3 className={`text-[24px] leading-none font-extrabold tracking-tight ${textColorClass}`}>{value}</h3>
-      <div className="mt-2 flex items-center text-[11px]">
+      <h3 className={`text-[21px] leading-none font-extrabold tracking-tight ${textColorClass}`}>{value}</h3>
+      <div className="mt-1.5 flex items-center text-[10px]">
         {subtitle && <span className="text-slate-500">{subtitle}</span>}
       </div>
     </div>
