@@ -1,0 +1,30 @@
+name: Test Supabase Cloud Sync
+
+on:
+  push:
+    branches: [supabase-cloud-sync]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+      - name: Upload test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: adlytic-supabase-test-build
+          path: dist
+          retention-days: 7
