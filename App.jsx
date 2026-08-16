@@ -1,16 +1,37 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, Users, CreditCard, DollarSign, 
   Activity, FileText, Settings, Plus, Search, 
   ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
-  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays
+  AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
+  BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
+  UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw
 } from 'lucide-react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  AreaChart, Area
+  AreaChart, Area, PieChart as RePieChart, Pie, Cell
 } from 'recharts';
+
+// --- SAFE VERSIONED DATA MIGRATION ---
+const APP_DATA_VERSION = "2";
+
+if (typeof window !== "undefined") {
+  try {
+    const storedVersion = window.localStorage.getItem('adledger_version');
+    if (storedVersion !== APP_DATA_VERSION) {
+      window.localStorage.removeItem('adledger_clients');
+      window.localStorage.removeItem('adledger_cards');
+      window.localStorage.removeItem('adledger_transactions');
+      window.localStorage.setItem('adledger_version', APP_DATA_VERSION);
+      console.log("AdLedger: Safely migrated to data version", APP_DATA_VERSION);
+    }
+  } catch (error) {
+    console.error("AdLedger: Migration failed", error);
+  }
+}
 
 // --- CUSTOM HOOK FOR LOCAL STORAGE PERSISTENCE ---
 function useLocalStorage(key, initialValue) {
@@ -39,178 +60,31 @@ function useLocalStorage(key, initialValue) {
   return [storedValue, setValue];
 }
 
-const INITIAL_CLIENTS = [
-  { 
-    id: 'c1', name: 'Mehedi Hasan', company: 'RITMO', status: 'Active', 
-    budgetType: 'Monthly', budgetAmount: 50000, 
-    startDate: '2026-07-15', endDate: '', currentlyWorking: true,
-    phone: '01700000000', email: 'hello@ritmo.com', fb: 'fb.com/ritmo', website: 'ritmo.com', serviceType: 'Meta Ads', notes: 'Premium client.'
-  },
-  { 
-    id: 'c2', name: 'John Doe', company: 'TechNova', status: 'Active', 
-    budgetType: 'Monthly', budgetAmount: 25000, 
-    startDate: '2026-08-01', endDate: '', currentlyWorking: true,
-    phone: '01800000000', email: 'john@technova.com', fb: 'fb.com/technova', website: 'technova.com', serviceType: 'Social Media Management', notes: 'Standard package.'
-  },
-];
-
-const INITIAL_CARDS = [
-  { id: 'card1', name: 'RedotPay Primary', provider: 'RedotPay', cardType: 'Virtual Card', currency: 'USD', initialBalance: 0, last4: '4567', expiry: '12/28', notes: 'Main Ads Card', status: 'Active' },
-  { id: 'card2', name: 'City Bank Dual Currency', provider: 'City Bank', cardType: 'Dual Currency', currency: 'USD', initialBalance: 0, last4: '8899', expiry: '05/27', notes: 'Backup Card', status: 'Active' },
-];
-
-const INITIAL_TRANSACTIONS = [
-  { id: 't1', date: '2026-08-01', type: 'PAYMENT_RECEIVED', clientId: 'c1', amountBDT: 25000, method: 'bKash', notes: 'August Retainer' },
-  { id: 't3', date: '2026-08-02', type: 'USD_PURCHASE', cardId: 'card1', amountBDT: 12500, cashOutCharge: 150, amountUSD: 100, method: 'Bank Transfer', notes: 'Binance P2P' },
-  { id: 't4', date: '2026-08-08', type: 'USD_PURCHASE', cardId: 'card2', amountBDT: 6300, cashOutCharge: 100, amountUSD: 50, method: 'bKash', notes: 'Local Seller' },
-  { id: 't7', date: '2026-08-04', type: 'AD_SPEND', clientId: 'c1', cardId: 'card1', amountUSD: 25, taxUSD: 3.75, adAccount: 'RITMO Ads 1', campaign: 'Awareness Q3', notes: 'RITMO Awareness' },
-];
+// --- CLEAN INITIAL STATE ---
+const INITIAL_CLIENTS = [];
+const INITIAL_CARDS = [];
+const INITIAL_TRANSACTIONS = [];
 
 // --- NORMALIZED FORMATTERS (PREVENTS -$0.00) ---
 const formatBDT = (amount) => {
-  if (!amount || isNaN(amount)) return '৳0.00';
-  const val = Math.abs(amount) < 0.005 ? 0 : amount;
-  const sign = val < 0 ? '-' : '';
-  return `${sign}৳${Math.abs(val).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+  let val = parseFloat(amount) || 0;
+  if (Math.abs(val) < 0.005) val = 0; // Normalize microscopic negative values
+  return `৳${val.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
 };
 
 const formatUSD = (amount) => {
-  if (!amount || isNaN(amount)) return '$0.00';
-  const val = Math.abs(amount) < 0.005 ? 0 : amount;
-  const sign = val < 0 ? '-' : '';
-  return `${sign}$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  let val = parseFloat(amount) || 0;
+  if (Math.abs(val) < 0.005) val = 0; // Normalize to true zero
+  const isNegative = val < 0;
+  const absVal = Math.abs(val);
+  return `${isNegative ? '-' : ''}$${absVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-// Produces: 12 Aug 2026
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A';
   return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const EPSILON = 0.005;
-
-// A transaction is financially meaningful only when it actually changes a balance.
-// This prevents phantom $0.00 / -$0.00 rows from entering any calculation.
-const isMeaningfulTransaction = (t) => {
-  if (!t || !t.type) return false;
-
-  if (t.type === 'PAYMENT_RECEIVED') {
-    const bdt = Number(t.amountBDT);
-    return Number.isFinite(bdt) && bdt >= EPSILON;
-  }
-
-  if (t.type === 'USD_PURCHASE') {
-    const usd = Number(t.amountUSD);
-    return Number.isFinite(usd) && usd >= EPSILON && !!t.cardId;
-  }
-
-  if (t.type === 'AD_SPEND') {
-    // A Meta Ads record represents real ad spend. Tax is attached to that
-    // spend; a tax-only or $0 spend row is invalid and must never be stored.
-    const spend = Number(t.amountUSD);
-    const tax = Number(t.taxUSD) || 0;
-    return Number.isFinite(spend) && spend >= EPSILON &&
-      Number.isFinite(tax) && tax >= 0 && !!t.cardId;
-  }
-
-  return true;
-};
-
-const getTransactionTimestamp = (t) => {
-  // New transactions store createdAt, which gives exact same-day ordering.
-  if (t?.createdAt) return new Date(t.createdAt).getTime();
-
-  // Legacy records did not store time. Keep USD purchases before ad spend
-  // on the same date so a purchase can fund the same-day ad spend.
-  const typeOrder = {
-    PAYMENT_RECEIVED: 10,
-    USD_PURCHASE: 20,
-    AD_SPEND: 30,
-  };
-  const base = new Date(`${t?.date || '1970-01-01'}T00:00:00`).getTime();
-  return base + (typeOrder[t?.type] || 50);
-};
-
-const compareTransactionsChronologically = (a, b) => {
-  const timeDiff = getTransactionTimestamp(a) - getTransactionTimestamp(b);
-  if (timeDiff !== 0) return timeDiff;
-  return String(a?.id || '').localeCompare(String(b?.id || ''));
-};
-
-// SINGLE SOURCE OF TRUTH for card-ledger movement.
-// USD Purchase adds USD. Meta Ads subtracts ad spend + tax exactly once.
-const getLedgerChangeUSD = (t) => {
-  if (!t) return 0;
-  if (t.type === 'USD_PURCHASE') return Number(t.amountUSD) || 0;
-  if (t.type === 'AD_SPEND') {
-    return -((Number(t.amountUSD) || 0) + (Number(t.taxUSD) || 0));
-  }
-  return 0;
-};
-
-const getDisplayedUSDChange = (t) => {
-  if (!t) return 0;
-  if (t.type === 'USD_PURCHASE') return Number(t.amountUSD) || 0;
-  if (t.type === 'AD_SPEND') return -(Number(t.amountUSD) || 0);
-  return 0;
-};
-
-
-// SINGLE CARD-LEDGER ENGINE.
-// Every card balance/stat/history calculation must use this same accounting rule:
-// USD purchase = +USD received
-// Meta Ads = -actual ad spend
-// Tax = an additional deduction attached to that Meta Ads transaction
-// Tax is NEVER included in the displayed Meta Ads USD amount and is NEVER deducted twice.
-const calculateCardLedger = (card, allTransactions) => {
-  const valid = (Array.isArray(allTransactions) ? allTransactions : [])
-    .filter(t => t && t.cardId === card?.id && isMeaningfulTransaction(t))
-    .sort(compareTransactionsChronologically);
-
-  let balance = Number(card?.initialBalance) || 0;
-  let purchased = 0;
-  let adSpend = 0;
-  let tax = 0;
-  let fees = 0;
-
-  const history = valid.map(t => {
-    const usd = Number(t.amountUSD) || 0;
-    const taxUSD = Number(t.taxUSD) || 0;
-    let change = 0;
-
-    if (t.type === 'USD_PURCHASE') {
-      purchased += usd;
-      change = usd;
-    } else if (t.type === 'AD_SPEND') {
-      adSpend += usd;
-      tax += taxUSD;
-      // The actual card deduction is spend + tax, exactly once.
-      change = -(usd + taxUSD);
-    }
-
-    balance += change;
-
-    return {
-      ...t,
-      displayedChangeUSD:
-        t.type === 'USD_PURCHASE' ? usd :
-        t.type === 'AD_SPEND' ? -usd : 0,
-      balanceChangeUSD: change,
-      balanceAfter: balance,
-    };
-  });
-
-  return {
-    balance,
-    purchased,
-    adSpend,
-    tax,
-    fees,
-    history,
-  };
-};
-
-// Client specific formatting helpers
 const getBudgetDisplay = (type, amount) => {
   const formatted = formatBDT(amount);
   if (type === 'Daily') return `${formatted} / day`;
@@ -230,7 +104,7 @@ const getClientDisplayStatus = (client) => {
   end.setHours(0,0,0,0);
 
   if (today > end) return 'Completed / Ended';
-  return 'Active';
+  return client.status || 'Active';
 };
 
 const getDurationDays = (client) => {
@@ -327,6 +201,7 @@ const getPresetDates = (preset) => {
   return { start: formatDateString(start), end: formatDateString(end) };
 };
 
+// --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -334,26 +209,26 @@ export default function AdLedgerApp() {
   // State Data (Persisted)
   const [clients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
-  const [storedTransactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
+  const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
 
-  // IMPORTANT: Always derive the live ledger from sanitized transactions.
-  // Invalid zero-value Meta Ads rows are excluded BEFORE rendering.
-  // This prevents stale localStorage rows (especially old $0.00 Meta Ads rows)
-  // from appearing for one render before the cleanup effect runs.
-  const transactions = useMemo(() => {
-    return (Array.isArray(storedTransactions) ? storedTransactions : [])
-      .filter(isMeaningfulTransaction);
-  }, [storedTransactions]);
-
-  // Persist the sanitized transaction list so invalid legacy rows are removed
-  // from localStorage as well as from the live UI.
+  // Additive SaaS modules. Existing financial data remains untouched.
+  const [campaigns, setCampaigns] = useLocalStorage('adledger_campaigns', []);
+  const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', {
+    businessName: 'AdLytic',
+    timezone: 'Asia/Dhaka',
+    alerts: true,
+    defaultReportRange: 'This Month'
+  });
+  const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', []);
+  const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
+  
+  // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
   useEffect(() => {
-    const source = Array.isArray(storedTransactions) ? storedTransactions : [];
-    const cleaned = source.filter(isMeaningfulTransaction);
-    if (cleaned.length !== source.length) {
-      setTransactions(cleaned);
+    const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0);
+    if (hasZeroAdSpend) {
+      setTransactions(prev => prev.filter(t => !(t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0)));
     }
-  }, [storedTransactions]);
+  }, [transactions, setTransactions]);
 
   // Modal State
   const [activeModal, setActiveModal] = useState(null); 
@@ -363,118 +238,100 @@ export default function AdLedgerApp() {
   // --- FINANCIAL CALCULATIONS (Auto-derived from transactions) ---
   const metrics = useMemo(() => {
     let totalRevenueBDT = 0;
+    
+    // USD Variables
     let totalUSDPurchased = 0;
-    let totalBDTSpentOnUSD = 0;
-    let totalCashOutCharges = 0;
+    let totalBDTSpentOnUSD = 0; 
+    let totalCashOutCharges = 0; 
+    
     let totalAdSpendUSD = 0;
     let totalTaxUSD = 0;
-
-    const cardBalances = {};
-    const cardStats = {};
-
-    cards.forEach(card => {
-      const ledger = calculateCardLedger(card, transactions);
-      cardBalances[card.id] = ledger.balance;
-      cardStats[card.id] = {
-        purchased: ledger.purchased,
-        adSpend: ledger.adSpend,
-        tax: ledger.tax,
-        fees: ledger.fees,
-      };
+    
+    let cardBalances = {};
+    let cardStats = {}; 
+    cards.forEach(c => {
+      cardBalances[c.id] = parseFloat(c.initialBalance || 0);
+      cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
     });
 
-    transactions.filter(isMeaningfulTransaction).forEach(t => {
-      if (t.type === 'PAYMENT_RECEIVED') {
-        totalRevenueBDT += Number(t.amountBDT) || 0;
-      }
-
+    transactions.forEach(t => {
+      if (t.type === 'PAYMENT_RECEIVED') totalRevenueBDT += parseFloat(t.amountBDT || 0);
+      
       if (t.type === 'USD_PURCHASE') {
-        totalUSDPurchased += Number(t.amountUSD) || 0;
-        totalBDTSpentOnUSD += Number(t.amountBDT) || 0;
-        totalCashOutCharges += Number(t.cashOutCharge) || 0;
+        const usdVal = parseFloat(t.amountUSD || 0);
+        totalUSDPurchased += usdVal;
+        totalBDTSpentOnUSD += parseFloat(t.amountBDT || 0);
+        totalCashOutCharges += parseFloat(t.cashOutCharge || 0);
+        
+        if (t.cardId && cardBalances[t.cardId] !== undefined) {
+          cardBalances[t.cardId] += usdVal;
+          cardStats[t.cardId].purchased += usdVal;
+        }
+      }
+      
+      if (t.type === 'AD_SPEND') {
+        const spend = parseFloat(t.amountUSD || 0);
+        const tax = parseFloat(t.taxUSD || 0);
+        const totalSpend = spend + tax;
+        totalAdSpendUSD += spend;
+        totalTaxUSD += tax;
+        if (t.cardId && cardBalances[t.cardId] !== undefined) {
+          cardBalances[t.cardId] -= totalSpend;
+          cardStats[t.cardId].adSpend += spend;
+          cardStats[t.cardId].tax += tax;
+        }
       }
 
-      if (t.type === 'AD_SPEND') {
-        totalAdSpendUSD += Number(t.amountUSD) || 0;
-        totalTaxUSD += Number(t.taxUSD) || 0;
+      if (t.type === 'FEE') {
+        const fee = parseFloat(t.amountUSD || 0);
+        if (t.cardId && cardBalances[t.cardId] !== undefined) {
+          cardBalances[t.cardId] -= fee;
+          cardStats[t.cardId].fees += fee;
+        }
       }
     });
 
     const totalBDTCostOfUSD = totalBDTSpentOnUSD + totalCashOutCharges;
-    const avgUSDEffectiveRate =
-      totalUSDPurchased > 0 ? totalBDTCostOfUSD / totalUSDPurchased : 125;
-
-    const totalAdCostBDT =
-      (totalAdSpendUSD + totalTaxUSD) * avgUSDEffectiveRate;
-
+    const avgUSDEffectiveRate = totalUSDPurchased > 0 ? (totalBDTCostOfUSD / totalUSDPurchased) : 0; 
+    
+    const totalAdCostBDT = (totalAdSpendUSD + totalTaxUSD) * avgUSDEffectiveRate;
     const netProfitBDT = totalRevenueBDT - totalAdCostBDT;
-    const profitMargin =
-      totalRevenueBDT > 0 ? (netProfitBDT / totalRevenueBDT) * 100 : 0;
-
-    const totalCardBalance = Object.values(cardBalances).reduce(
-      (sum, value) => sum + value,
-      0
-    );
+    const profitMargin = totalRevenueBDT > 0 ? (netProfitBDT / totalRevenueBDT) * 100 : 0;
+    
+    const totalCardBalance = Object.values(cardBalances).reduce((a, b) => a + b, 0);
 
     return {
-      totalRevenueBDT,
-      totalUSDPurchased,
-      avgUSDEffectiveRate,
-      totalAdSpendUSD,
-      totalTaxUSD,
-      netProfitBDT,
-      profitMargin,
-      cardBalances,
-      cardStats,
-      totalCardBalance,
+      totalRevenueBDT, totalUSDPurchased, avgUSDEffectiveRate,
+      totalAdSpendUSD, totalTaxUSD, netProfitBDT, profitMargin,
+      cardBalances, cardStats, totalCardBalance
     };
   }, [transactions, cards]);
 
   const revenueChartData = useMemo(() => {
-    const grouped = transactions.filter(t =>
-      isMeaningfulTransaction(t) &&
-      (t.type === 'PAYMENT_RECEIVED' || t.type === 'AD_SPEND')
-    ).reduce((acc, t) => {
+    const grouped = transactions.filter(t => t.type === 'PAYMENT_RECEIVED' || t.type === 'AD_SPEND').reduce((acc, t) => {
       const d = t.date.substring(5);
       if (!acc[d]) acc[d] = { date: d, revenue: 0, spendUSD: 0 };
-      if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += t.amountBDT;
-      if (t.type === 'AD_SPEND') acc[d].spendUSD += (Number(t.amountUSD) || 0);
+      if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += parseFloat(t.amountBDT || 0);
+      if (t.type === 'AD_SPEND') acc[d].spendUSD += (parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0));
       return acc;
     }, {});
     return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
   }, [transactions]);
 
   const handleAddTransaction = (newTx) => {
-    const now = new Date().toISOString();
-    const tx = {
-      ...newTx,
-      id: `t${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      createdAt: now,
+    const tx = { 
+      ...newTx, 
+      id: `t_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+      timestamp: Date.now() 
     };
-
-    // Never store malformed or zero-value financial transactions.
-    if (!isMeaningfulTransaction(tx)) return;
-
-    // Normalize numeric fields once at the point of entry so every consumer
-    // sees the same values.
-    if (tx.type === 'USD_PURCHASE') {
-      tx.amountUSD = Number(tx.amountUSD);
-      tx.amountBDT = Number(tx.amountBDT);
-      tx.cashOutCharge = Number(tx.cashOutCharge) || 0;
-    }
-
-    if (tx.type === 'AD_SPEND') {
-      tx.amountUSD = Number(tx.amountUSD);
-      tx.taxUSD = Number(tx.taxUSD) || 0;
-    }
-
-    if (tx.type === 'PAYMENT_RECEIVED') {
-      tx.amountBDT = Number(tx.amountBDT);
-    }
-
-    setTransactions(prev =>
-      [...prev, tx].filter(isMeaningfulTransaction).sort(compareTransactionsChronologically)
-    );
+    setTransactions(prev => {
+      const updated = [tx, ...prev];
+      return updated.sort((a, b) => {
+        const tA = a.timestamp || new Date(a.date).getTime();
+        const tB = b.timestamp || new Date(b.date).getTime();
+        return tB - tA; // Newest first
+      });
+    });
     setActiveModal(null);
   };
 
@@ -518,6 +375,40 @@ export default function AdLedgerApp() {
     }
   };
 
+  const handleToggleClientStatus = (client, nextStatus) => {
+    setClients(prev => prev.map(c => {
+      if (c.id !== client.id) return c;
+
+      if (nextStatus === 'active') {
+        return {
+          ...c,
+          currentlyWorking: true,
+          status: 'Active',
+          endDate: ''
+        };
+      }
+
+      if (nextStatus === 'inactive') {
+        return {
+          ...c,
+          currentlyWorking: false,
+          status: 'Inactive'
+        };
+      }
+
+      if (nextStatus === 'completed') {
+        return {
+          ...c,
+          currentlyWorking: false,
+          status: 'Completed',
+          endDate: new Date().toISOString().split('T')[0]
+        };
+      }
+
+      return c;
+    }));
+  };
+
   const openPaymentForClient = (client) => {
     setSelectedClient(client);
     setActiveModal('payment');
@@ -528,9 +419,105 @@ export default function AdLedgerApp() {
     setActiveModal('spend');
   };
 
+  // --- SaaS MODULE HANDLERS (isolated from existing financial modules) ---
+  const handleSaveCampaign = (campaignData) => {
+    if (campaignData.id) {
+      setCampaigns(prev => prev.map(c => c.id === campaignData.id ? campaignData : c));
+    } else {
+      setCampaigns(prev => [...prev, { ...campaignData, id: `camp_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
+    }
+  };
+
+  const handleDeleteCampaign = (campaignId) => {
+    if (window.confirm('Delete this campaign? Historical transactions will not be deleted.')) {
+      setCampaigns(prev => prev.filter(c => c.id !== campaignId));
+    }
+  };
+
+  const handleSaveWorkspaceSettings = (nextSettings) => {
+    setWorkspaceSettings(prev => ({ ...prev, ...nextSettings }));
+  };
+
+  const handleLogoUpload = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { window.alert('Please choose an image file.'); return; }
+    if (file.size > 2 * 1024 * 1024) { window.alert('Please choose a logo under 2 MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      if (typeof result === 'string') setWorkspaceLogo(result);
+    };
+    reader.readAsDataURL(file);
+  };
+  const handleRemoveLogo = () => setWorkspaceLogo('');
+
+  const handleAddTeamMember = (member) => {
+    setTeamMembers(prev => [...prev, { ...member, id: `team_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
+  };
+
+  const handleRemoveTeamMember = (memberId) => {
+    if (window.confirm('Remove this team member?')) {
+      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
+    }
+  };
+
+  const exportBackup = () => {
+    const payload = {
+      app: 'AdLytic',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      clients, cards, transactions, campaigns, workspaceSettings, teamMembers, workspaceLogo
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `adledger-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importBackup = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (!data || (data.app !== 'AdLytic' && data.app !== 'AdLedger')) throw new Error('Invalid backup');
+        if (Array.isArray(data.clients)) setClients(data.clients);
+        if (Array.isArray(data.cards)) setCards(data.cards);
+        if (Array.isArray(data.transactions)) setTransactions(data.transactions);
+        if (Array.isArray(data.campaigns)) setCampaigns(data.campaigns);
+        if (data.workspaceSettings) setWorkspaceSettings(data.workspaceSettings);
+        if (Array.isArray(data.teamMembers)) setTeamMembers(data.teamMembers);
+        if (typeof data.workspaceLogo === 'string') setWorkspaceLogo(data.workspaceLogo);
+        window.alert('Backup restored successfully.');
+      } catch (error) {
+        window.alert('This file is not a valid AdLedger backup.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const resetAllData = () => {
+    if (!window.confirm('This will permanently clear all AdLedger data stored in this browser. Continue?')) return;
+    setClients([]);
+    setCards([]);
+    setTransactions([]);
+    setCampaigns([]);
+    setTeamMembers([]);
+    setWorkspaceLogo('');
+    setWorkspaceSettings({
+      businessName: 'AdLytic',
+      timezone: 'Asia/Dhaka',
+      alerts: true,
+      defaultReportRange: 'This Month'
+    });
+  };
+
   const renderContent = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} />;
+      case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
       case 'clients': 
         return <ClientsView 
                   clients={clients} 
@@ -542,6 +529,8 @@ export default function AdLedgerApp() {
                   onDeleteClient={handleDeleteClient}
                   onReceivePayment={openPaymentForClient}
                   onAddAdSpend={openAdSpendForClient}
+                   onViewHistory={(c) => { setSelectedClient(c); setActiveModal('client-history'); }}
+                   onToggleStatus={handleToggleClientStatus}
                 />;
       case 'ledger': return <LedgerView transactions={transactions} clients={clients} cards={cards} />;
       case 'cards': 
@@ -554,19 +543,31 @@ export default function AdLedgerApp() {
                   onDeleteCard={handleDeleteCard}
                   onViewDetails={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
                 />;
-      default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} />;
+      case 'reports':
+        return <ReportsView clients={clients} cards={cards} transactions={transactions} />;
+      case 'campaigns':
+        return <CampaignsView campaigns={campaigns} clients={clients} transactions={transactions} metrics={metrics} onSave={handleSaveCampaign} onDelete={handleDeleteCampaign} />;
+      case 'integrations':
+        return <IntegrationsView />;
+      case 'team':
+        return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onRemove={handleRemoveTeamMember} />;
+      case 'settings':
+        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
+      default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <>
+      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
+      <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
       
       {/* SIDEBAR */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
         <div className="p-6 flex items-center justify-between md:justify-center border-b border-slate-800">
-          <div className="flex items-center gap-2 text-white">
-            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-bold text-lg">A</div>
-            <span className="text-xl font-bold tracking-tight">AdLytic</span>
+          <div className="flex items-center gap-2.5 text-white min-w-0">
+            {workspaceLogo ? <img src={workspaceLogo} alt="Workspace logo" className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm" /> : <div className="adl-brand-mark w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-lg">A</div>}
+            <span className="text-xl font-bold tracking-tight truncate">AdLytic</span>
           </div>
           <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
             <X size={24} />
@@ -575,14 +576,21 @@ export default function AdLedgerApp() {
         
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Users />} label="Client Management" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Activity />} label="Transaction Ledger" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => {setCurrentView('campaigns'); setIsMobileMenuOpen(false);}} />
+          <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
           <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => {setCurrentView('cards'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {}} />
+          <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setIsMobileMenuOpen(false);}} />
+
+          <div className="pt-5 mt-4 border-t border-slate-800/80">
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Workspace</p>
+            <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => {setCurrentView('integrations'); setIsMobileMenuOpen(false);}} />
+            <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => {setCurrentView('team'); setIsMobileMenuOpen(false);}} />
+          </div>
         </nav>
-        
+
         <div className="p-4 border-t border-slate-800">
-          <NavItem icon={<Settings />} label="Settings" onClick={() => {}} />
+          <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => {setCurrentView('settings'); setIsMobileMenuOpen(false);}} />
         </div>
       </aside>
 
@@ -666,7 +674,619 @@ export default function AdLedgerApp() {
             />
         </Modal>
       )}
+      {activeModal === 'client-history' && selectedClient && (
+        <Modal title={`Transaction History: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-5xl">
+          <ClientTransactionHistoryModal
+            client={selectedClient}
+            transactions={transactions}
+            metrics={metrics}
+          />
+        </Modal>
+      )}
 
+      </div>
+    </>
+  );
+}
+
+// --- VIEWS ---
+
+// --- REPORTS VIEW ---
+// This view is read-only: it derives its numbers from the existing clients/cards/transactions.
+// It does not mutate Card Ledger, Transaction Ledger, or Client Management data.
+function ReportsView({ clients, cards, transactions }) {
+  const [datePreset, setDatePreset] = useState('This Month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [clientFilter, setClientFilter] = useState('all');
+  const [cardFilter, setCardFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  const dateRange = useMemo(() => {
+    if (datePreset === 'Custom') {
+      return { start: customStart || null, end: customEnd || null };
+    }
+    return getPresetDates(datePreset);
+  }, [datePreset, customStart, customEnd]);
+
+  const inRange = (dateValue) => {
+    if (!dateValue) return false;
+    const date = String(dateValue).slice(0, 10);
+    if (dateRange.start && date < dateRange.start) return false;
+    if (dateRange.end && date > dateRange.end) return false;
+    return true;
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      if (!inRange(t.date)) return false;
+      if (clientFilter !== 'all' && t.clientId !== clientFilter) return false;
+      if (cardFilter !== 'all' && t.cardId !== cardFilter) return false;
+      if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+      return true;
+    });
+  }, [transactions, dateRange.start, dateRange.end, clientFilter, cardFilter, typeFilter]);
+
+  const report = useMemo(() => {
+    const result = {
+      revenueBDT: 0,
+      bdtOut: 0,
+      usdPurchased: 0,
+      usdSpent: 0,
+      taxUSD: 0,
+      feesUSD: 0,
+      cashOutBDT: 0,
+      usdPurchaseBDT: 0,
+      transactionCount: filteredTransactions.length
+    };
+
+    filteredTransactions.forEach(t => {
+      if (t.type === 'PAYMENT_RECEIVED') {
+        result.revenueBDT += parseFloat(t.amountBDT || 0);
+      }
+
+      if (t.type === 'USD_PURCHASE') {
+        const bdt = parseFloat(t.amountBDT || 0);
+        const charge = parseFloat(t.cashOutCharge || 0);
+        const usd = parseFloat(t.amountUSD || 0);
+        result.usdPurchaseBDT += bdt;
+        result.cashOutBDT += charge;
+        result.usdPurchased += usd;
+        result.bdtOut += bdt + charge;
+      }
+
+      if (t.type === 'AD_SPEND') {
+        result.usdSpent += parseFloat(t.amountUSD || 0);
+        result.taxUSD += parseFloat(t.taxUSD || 0);
+      }
+
+      if (t.type === 'FEE') {
+        result.feesUSD += parseFloat(t.amountUSD || 0);
+      }
+    });
+
+    const totalUSDOut = result.usdSpent + result.taxUSD + result.feesUSD;
+    const totalBDTCost = result.usdPurchaseBDT + result.cashOutBDT;
+    const effectiveRate = result.usdPurchased > 0 ? totalBDTCost / result.usdPurchased : 0;
+    const adCostBDT = (result.usdSpent + result.taxUSD) * effectiveRate;
+    const profitBDT = result.revenueBDT - adCostBDT;
+    const margin = result.revenueBDT > 0 ? (profitBDT / result.revenueBDT) * 100 : 0;
+
+    return {
+      ...result,
+      totalUSDOut,
+      totalBDTCost,
+      effectiveRate,
+      adCostBDT,
+      profitBDT,
+      margin,
+      netBDT: result.revenueBDT - result.bdtOut
+    };
+  }, [filteredTransactions]);
+
+  const clientRows = useMemo(() => {
+    const map = {};
+    clients.forEach(c => {
+      map[c.id] = {
+        id: c.id,
+        name: c.name || 'Unnamed Client',
+        revenue: 0,
+        adSpend: 0,
+        tax: 0,
+        profit: 0,
+        transactions: 0
+      };
+    });
+
+    filteredTransactions.forEach(t => {
+      const explicitClientName = String(
+        t.clientName || t.client || t.sourceClient || t.clientNameSnapshot || ''
+      ).trim().toLowerCase();
+
+      const namedClient = explicitClientName
+        ? clients.find(c => String(c.name || '').trim().toLowerCase() === explicitClientName)
+        : null;
+
+      const clientIdExists = t.clientId && clients.some(c => c.id === t.clientId);
+
+      const targetClientId = (
+        (clientIdExists ? t.clientId : null) ||
+        namedClient?.id ||
+        (clients.length === 1 ? clients[0].id : null)
+      );
+
+      if (!targetClientId) return;
+
+      if (!map[targetClientId]) {
+        const fallback = clients.find(c => c.id === targetClientId);
+        map[targetClientId] = {
+          id: targetClientId,
+          name: fallback?.name || 'Unknown Client',
+          revenue: 0,
+          adSpend: 0,
+          tax: 0,
+          profit: 0,
+          transactions: 0
+        };
+      }
+
+      const row = map[targetClientId];
+      row.transactions += 1;
+
+      if (t.type === 'PAYMENT_RECEIVED') row.revenue += parseFloat(t.amountBDT || 0);
+      if (t.type === 'AD_SPEND') {
+        row.adSpend += parseFloat(t.amountUSD || 0);
+        row.tax += parseFloat(t.taxUSD || 0);
+      }
+    });
+
+    const rate = report.effectiveRate || 0;
+    return Object.values(map)
+      .map(row => ({
+        ...row,
+        costBDT: (row.adSpend + row.tax) * rate,
+        profit: row.revenue - ((row.adSpend + row.tax) * rate)
+      }))
+      .filter(row => row.transactions > 0)
+      .sort((a, b) => b.profit - a.profit);
+  }, [clients, filteredTransactions, report.effectiveRate]);
+
+  const cardRows = useMemo(() => {
+    const map = {};
+    cards.forEach(c => {
+      map[c.id] = {
+        id: c.id,
+        name: c.name || 'Unnamed Card',
+        purchased: 0,
+        adSpend: 0,
+        tax: 0,
+        fees: 0,
+        current: parseFloat(c.initialBalance || 0)
+      };
+    });
+
+    filteredTransactions.forEach(t => {
+      if (!t.cardId || !map[t.cardId]) return;
+      const row = map[t.cardId];
+
+      if (t.type === 'USD_PURCHASE') row.purchased += parseFloat(t.amountUSD || 0);
+      if (t.type === 'AD_SPEND') {
+        row.adSpend += parseFloat(t.amountUSD || 0);
+        row.tax += parseFloat(t.taxUSD || 0);
+      }
+      if (t.type === 'FEE') row.fees += parseFloat(t.amountUSD || 0);
+    });
+
+    return Object.values(map).map(row => ({
+      ...row,
+      current: row.current + row.purchased - row.adSpend - row.tax - row.fees
+    }));
+  }, [cards, filteredTransactions]);
+
+  const dailyChart = useMemo(() => {
+    const map = {};
+    filteredTransactions.forEach(t => {
+      const key = String(t.date || '').slice(0, 10);
+      if (!key) return;
+      if (!map[key]) map[key] = { date: key, revenue: 0, adSpendUSD: 0, usdPurchased: 0 };
+
+      if (t.type === 'PAYMENT_RECEIVED') map[key].revenue += parseFloat(t.amountBDT || 0);
+      if (t.type === 'AD_SPEND') map[key].adSpendUSD += parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0);
+      if (t.type === 'USD_PURCHASE') map[key].usdPurchased += parseFloat(t.amountUSD || 0);
+    });
+
+    const rate = report.effectiveRate || 0;
+    return Object.values(map)
+      .map(row => ({
+        ...row,
+        adCostBDT: row.adSpendUSD * rate
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredTransactions, report.effectiveRate]);
+
+  const expenseChart = [
+    { name: 'Ad Spend', value: report.usdSpent },
+    { name: 'Tax', value: report.taxUSD },
+    { name: 'Fees', value: report.feesUSD }
+  ];
+
+  const exportCSV = () => {
+    const headers = ['Date', 'Type', 'Description', 'Client', 'Card', 'BDT In', 'BDT Out', 'USD In', 'USD Out'];
+    const rows = filteredTransactions.map(t => {
+      const client = clients.find(c => c.id === t.clientId)?.name || '';
+      const card = cards.find(c => c.id === t.cardId)?.name || '';
+      const bdtIn = t.type === 'PAYMENT_RECEIVED' ? parseFloat(t.amountBDT || 0) : 0;
+      const bdtOut = t.type === 'USD_PURCHASE'
+        ? parseFloat(t.amountBDT || 0) + parseFloat(t.cashOutCharge || 0)
+        : 0;
+      const usdIn = t.type === 'USD_PURCHASE' ? parseFloat(t.amountUSD || 0) : 0;
+      const usdOut = t.type === 'AD_SPEND'
+        ? parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0)
+        : t.type === 'FEE' ? parseFloat(t.amountUSD || 0) : 0;
+
+      return [
+        t.date || '',
+        t.type || '',
+        t.description || t.source || '',
+        client,
+        card,
+        bdtIn.toFixed(2),
+        bdtOut.toFixed(2),
+        usdIn.toFixed(2),
+        usdOut.toFixed(2)
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `adledger-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const resetFilters = () => {
+    setDatePreset('This Month');
+    setCustomStart('');
+    setCustomEnd('');
+    setClientFilter('all');
+    setCardFilter('all');
+    setTypeFilter('all');
+  };
+
+  const selectedRangeLabel = datePreset === 'Custom'
+    ? `${customStart || 'Start'} → ${customEnd || 'End'}`
+    : datePreset;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Financial performance from your existing AdLytic data.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={datePreset}
+            onChange={e => setDatePreset(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option>Today</option>
+            <option>Yesterday</option>
+            <option>This Week</option>
+            <option>Last Week</option>
+            <option>This Month</option>
+            <option>Last Month</option>
+            <option>This Year</option>
+            <option>Last Year</option>
+            <option>Lifetime</option>
+            <option>Custom</option>
+          </select>
+
+          <select
+            value={clientFilter}
+            onChange={e => setClientFilter(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Clients</option>
+            {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+
+          <select
+            value={cardFilter}
+            onChange={e => setCardFilter(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Cards</option>
+            {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+
+          <select
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="all">All Transactions</option>
+            <option value="PAYMENT_RECEIVED">Client Payment</option>
+            <option value="USD_PURCHASE">Buy USD</option>
+            <option value="AD_SPEND">Meta Ads</option>
+            <option value="FEE">Card Fee</option>
+          </select>
+
+          <button
+            onClick={resetFilters}
+            className="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+          >
+            Reset
+          </button>
+
+          <button
+            onClick={exportCSV}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            <Download size={15} /> Export CSV
+          </button>
+
+          <button
+            onClick={() => window.print()}
+            className="px-3 py-2 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+          >
+            Print / PDF
+          </button>
+        </div>
+      </div>
+
+      {datePreset === 'Custom' && (
+        <div className="flex flex-wrap items-center gap-3 bg-white border border-slate-200 rounded-xl p-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Start Date</label>
+            <input
+              type="date"
+              value={customStart}
+              onChange={e => setCustomStart(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">End Date</label>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={e => setCustomEnd(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          <span className="text-xs text-slate-500 mt-5">{selectedRangeLabel}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <ReportMetric title="Total BDT Received" value={formatBDT(report.revenueBDT)} />
+        <ReportMetric title="Total BDT Cost" value={formatBDT(report.totalBDTCost)} />
+        <ReportMetric title="Net BDT" value={formatBDT(report.netBDT)} />
+        <ReportMetric title="USD Purchased" value={formatUSD(report.usdPurchased)} />
+        <ReportMetric title="Meta Ads Spend" value={formatUSD(report.usdSpent)} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <ReportMetric title="C.O Charge" value={formatBDT(report.cashOutBDT)} />
+        <ReportMetric title="Tax" value={formatUSD(report.taxUSD)} />
+        <ReportMetric title="Fees" value={formatUSD(report.feesUSD)} />
+        <ReportMetric title="Total USD Out" value={formatUSD(report.totalUSDOut)} />
+        <ReportMetric title="Profit" value={formatBDT(report.profitBDT)} />
+        <ReportMetric title="Profit Margin" value={`${report.margin.toFixed(1)}%`} />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-slate-800">Revenue vs Ad Cost</h3>
+              <p className="text-xs text-slate-500">BDT revenue and USD ad cost over the selected period.</p>
+            </div>
+          </div>
+          <div className="h-72">
+            {dailyChart.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={dailyChart}>
+                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} dy={8} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
+                  <Tooltip cursor={{ stroke: '#9edcf5', strokeDasharray: '4 4' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#10b981" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT Equivalent)" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <ReportEmptyState />
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <h3 className="font-semibold text-slate-800 mb-1">USD Expense Breakdown</h3>
+          <p className="text-xs text-slate-500 mb-4">Meta Ads, tax and card fees.</p>
+          <div className="h-72">
+            {expenseChart.some(x => x.value > 0) ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={expenseChart}>
+                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
+                  <Tooltip cursor={{ fill: '#eefaff' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
+                  <Bar dataKey="value" name="USD" fill="#38bdf8" radius={[10, 10, 4, 4]} barSize={42} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <ReportEmptyState />
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h3 className="font-semibold text-slate-800">Client Performance</h3>
+            <p className="text-xs text-slate-500 mt-1">Revenue, ad cost and estimated profit.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="text-left px-5 py-3 font-medium">Client</th>
+                  <th className="text-right px-4 py-3 font-medium">Revenue</th>
+                  <th className="text-right px-4 py-3 font-medium">Ad Cost</th>
+                  <th className="text-right px-5 py-3 font-medium">Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clientRows.length ? clientRows.map(row => (
+                  <tr key={row.id} className="border-t border-slate-100">
+                    <td className="px-5 py-3 font-medium text-slate-700">{row.name}</td>
+                    <td className="px-4 py-3 text-right">{formatBDT(row.revenue)}</td>
+                    <td className="px-4 py-3 text-right">{formatBDT(row.costBDT)}</td>
+                    <td className={`px-5 py-3 text-right font-semibold ${row.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatBDT(row.profit)}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400">No client data for this period.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-200">
+            <h3 className="font-semibold text-slate-800">Card Performance</h3>
+            <p className="text-xs text-slate-500 mt-1">Purchased, spent and calculated period-end balance.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-500">
+                <tr>
+                  <th className="text-left px-5 py-3 font-medium">Card</th>
+                  <th className="text-right px-4 py-3 font-medium">Purchased</th>
+                  <th className="text-right px-4 py-3 font-medium">Spent</th>
+                  <th className="text-right px-5 py-3 font-medium">Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cardRows.length ? cardRows.map(row => (
+                  <tr key={row.id} className="border-t border-slate-100">
+                    <td className="px-5 py-3 font-medium text-slate-700">{row.name}</td>
+                    <td className="px-4 py-3 text-right">{formatUSD(row.purchased)}</td>
+                    <td className="px-4 py-3 text-right">{formatUSD(row.adSpend + row.tax + row.fees)}</td>
+                    <td className={`px-5 py-3 text-right font-semibold ${row.current >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+                      {formatUSD(row.current)}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400">No card data for this period.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-slate-800">Detailed Report</h3>
+              <p className="text-xs text-slate-500 mt-1">{report.transactionCount} transaction(s) in the selected range.</p>
+            </div>
+            <span className="text-xs text-slate-500">{selectedRangeLabel}</span>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm whitespace-nowrap">
+            <thead className="bg-slate-50 text-slate-500">
+              <tr>
+                <th className="text-left px-5 py-3 font-medium">Date</th>
+                <th className="text-left px-4 py-3 font-medium">Type</th>
+                <th className="text-left px-4 py-3 font-medium">Client / Card</th>
+                <th className="text-right px-4 py-3 font-medium">BDT In</th>
+                <th className="text-right px-4 py-3 font-medium">BDT Out</th>
+                <th className="text-right px-4 py-3 font-medium">USD In</th>
+                <th className="text-right px-5 py-3 font-medium">USD Out</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.length ? filteredTransactions.map(t => {
+                const client = clients.find(c => c.id === t.clientId)?.name;
+                const card = cards.find(c => c.id === t.cardId)?.name;
+                const bdtIn = t.type === 'PAYMENT_RECEIVED' ? parseFloat(t.amountBDT || 0) : 0;
+                const bdtOut = t.type === 'USD_PURCHASE'
+                  ? parseFloat(t.amountBDT || 0) + parseFloat(t.cashOutCharge || 0)
+                  : 0;
+                const usdIn = t.type === 'USD_PURCHASE' ? parseFloat(t.amountUSD || 0) : 0;
+                const usdOut = t.type === 'AD_SPEND'
+                  ? parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0)
+                  : t.type === 'FEE' ? parseFloat(t.amountUSD || 0) : 0;
+
+                return (
+                  <tr key={t.id} className="border-t border-slate-100">
+                    <td className="px-5 py-3">{formatDate(t.date)}</td>
+                    <td className="px-4 py-3">{t.type}</td>
+                    <td className="px-4 py-3">{client || card || t.source || t.description || '—'}</td>
+                    <td className="px-4 py-3 text-right text-green-600">{bdtIn ? formatBDT(bdtIn) : '—'}</td>
+                    <td className="px-4 py-3 text-right text-red-600">{bdtOut ? formatBDT(bdtOut) : '—'}</td>
+                    <td className="px-4 py-3 text-right text-green-600">{usdIn ? formatUSD(usdIn) : '—'}</td>
+                    <td className="px-5 py-3 text-right text-red-600">{usdOut ? formatUSD(usdOut) : '—'}</td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan="7" className="px-5 py-10 text-center text-slate-400">
+                    No transactions found for the selected filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          aside, header, button, select, input { display: none !important; }
+          main { overflow: visible !important; height: auto !important; }
+          main > div { overflow: visible !important; }
+          body { background: white !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function ReportMetric({ title, value }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-4">
+      <p className="text-xs font-medium text-slate-500">{title}</p>
+      <p className="text-xl font-bold text-slate-900 mt-2">{value}</p>
+    </div>
+  );
+}
+
+function ReportEmptyState() {
+  return (
+    <div className="h-full flex items-center justify-center text-sm text-slate-400">
+      No report data for the selected period.
     </div>
   );
 }
@@ -678,8 +1298,8 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
 
     transactions.forEach(t => {
       if (t.type === 'USD_PURCHASE') {
-        totalBDTSpentOnUSD += Number(t.amountBDT) || 0;
-        totalCashOutCharges += Number(t.cashOutCharge) || 0;
+        totalBDTSpentOnUSD += parseFloat(t.amountBDT || 0);
+        totalCashOutCharges += parseFloat(t.cashOutCharge || 0);
       }
     });
 
@@ -687,12 +1307,11 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
     const netBDT = metrics.totalRevenueBDT - totalBDTCost;
     const totalUSDOut = metrics.totalAdSpendUSD + metrics.totalTaxUSD;
 
-    const activeClients = clients.filter(
-      c => c.status === 'Active' || c.currentlyWorking
+    const activeClients = clients.filter(c =>
+      c.status === 'Active' || c.currentlyWorking
     );
 
     const clientMap = {};
-
     clients.forEach(client => {
       clientMap[client.id] = {
         id: client.id,
@@ -707,37 +1326,31 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
 
     transactions.forEach(t => {
       let targetId = t.clientId;
-
       if (!targetId || !clientMap[targetId]) {
         const explicitName = String(
           t.clientName || t.client || t.sourceClient || t.clientNameSnapshot || ''
         ).trim().toLowerCase();
-
         if (explicitName) {
-          const match = clients.find(
-            c => String(c.name || '').trim().toLowerCase() === explicitName
+          const match = clients.find(c =>
+            String(c.name || '').trim().toLowerCase() === explicitName
           );
           if (match) targetId = match.id;
         }
       }
-
       if ((!targetId || !clientMap[targetId]) && clients.length === 1) {
         targetId = clients[0].id;
       }
-
       if (!targetId || !clientMap[targetId]) return;
 
       const row = clientMap[targetId];
-
       if (t.type === 'PAYMENT_RECEIVED') {
-        row.revenue += Number(t.amountBDT) || 0;
+        row.revenue += parseFloat(t.amountBDT || 0);
       }
-
       if (t.type === 'AD_SPEND') {
-        const spend = Number(t.amountUSD) || 0;
-        const tax = Number(t.taxUSD) || 0;
-        row.adSpendUSD += spend;
-        row.adCostBDT += (spend + tax) * (metrics.avgUSDEffectiveRate || 0);
+        row.adSpendUSD += parseFloat(t.amountUSD || 0);
+        row.adCostBDT += (
+          parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0)
+        ) * (metrics.avgUSDEffectiveRate || 0);
       }
     });
 
@@ -750,24 +1363,22 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
       .sort((a, b) => b.revenue - a.revenue);
 
     const recentTransactions = [...transactions]
-      .sort((a, b) => getTransactionTimestamp(b) - getTransactionTimestamp(a))
-      .slice(0, 5);
+      .sort((a, b) => {
+        const aTime = a.timestamp || new Date(a.date || 0).getTime();
+        const bTime = b.timestamp || new Date(b.date || 0).getTime();
+        return bTime - aTime;
+      })
+      .slice(0, 6);
 
     const flowData = chartData.map(row => ({
       ...row,
-      adCostBDT: (Number(row.spendUSD) || 0) * (metrics.avgUSDEffectiveRate || 0)
+      adCostBDT: (parseFloat(row.spendUSD || 0) * (metrics.avgUSDEffectiveRate || 0))
     }));
 
     const expenseData = [
       { name: 'Meta Ads', value: metrics.totalAdSpendUSD },
       { name: 'Tax', value: metrics.totalTaxUSD },
-      {
-        name: 'Fees',
-        value: Object.values(metrics.cardStats || {}).reduce(
-          (sum, item) => sum + (Number(item.fees) || 0),
-          0
-        )
-      }
+      { name: 'Fees', value: Object.values(metrics.cardStats || {}).reduce((sum, item) => sum + (item.fees || 0), 0) }
     ];
 
     return {
@@ -775,151 +1386,151 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
       netBDT,
       totalUSDOut,
       activeClients,
+      allCards: cards,
       clientRows,
       recentTransactions,
       flowData,
-      expenseData,
-      allCards: cards
+      expenseData
     };
   }, [metrics, chartData, transactions, clients, cards]);
 
-  const getTransactionLabel = tx => {
+  const getTransactionLabel = (tx) => {
     if (tx.type === 'PAYMENT_RECEIVED') return 'Payment Received';
     if (tx.type === 'USD_PURCHASE') return 'Buy USD';
     if (tx.type === 'AD_SPEND') return 'Meta Ads';
-    if (tx.type === 'FEE') return 'Card Fee';
+    if (tx.type === 'FEE') return 'Fee';
     return String(tx.type || 'Transaction').replace(/_/g, ' ');
   };
 
-  const getTransactionEntity = tx => {
+  const getTransactionEntity = (tx) => {
     const client = clients.find(c => c.id === tx.clientId);
     return client?.name || tx.clientName || tx.client || tx.sourceClient || tx.adAccount || '—';
   };
 
+  const getStatusClasses = (status) => {
+    const normalized = String(status || '').toLowerCase();
+    if (normalized.includes('active')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    if (normalized.includes('complete')) return 'bg-blue-50 text-blue-700 border-blue-200';
+    return 'bg-orange-50 text-orange-700 border-orange-200';
+  };
+
   return (
-    <div className="max-w-[1450px] mx-auto space-y-5 animate-in fade-in duration-300">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-            <Activity size={19} />
-          </div>
-          <div>
-            <h1 className="text-[22px] font-bold tracking-tight text-slate-900">Financial Overview</h1>
-            <p className="text-[12px] text-slate-500 mt-0.5">Your complete BDT, USD, client and card snapshot.</p>
-          </div>
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
+          <p className="text-slate-500 text-sm">Your complete BDT, USD, client and card snapshot.</p>
         </div>
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[11px] text-slate-500">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <div className="flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
           Live from your ledger
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <DashboardKPI title="Monthly Revenue" value={formatBDT(metrics.totalRevenueBDT)} subtitle="BDT received" icon={<ArrowDownRight size={17} />} tone="green" />
-        <DashboardKPI title="Total BDT Cost" value={formatBDT(dashboardData.totalBDTCost)} subtitle="USD + C.O charges" icon={<Wallet size={17} />} tone="orange" />
-        <DashboardKPI title="Net BDT" value={formatBDT(dashboardData.netBDT)} subtitle="Revenue − cost" icon={<TrendingUp size={17} />} tone="blue" />
-        <DashboardKPI title="Net Profit" value={formatBDT(metrics.netProfitBDT)} subtitle={`${metrics.profitMargin.toFixed(1)}% margin`} icon={<TrendingUp size={17} />} tone="purple" negative={metrics.netProfitBDT < 0} />
-        <DashboardKPI title="Meta Ads Spend" value={formatUSD(metrics.totalAdSpendUSD)} subtitle={`Tax ${formatUSD(metrics.totalTaxUSD)}`} icon={<Activity size={17} />} tone="violet" />
-        <DashboardKPI title="Total USD Out" value={formatUSD(dashboardData.totalUSDOut)} subtitle="Ads + tax" icon={<ArrowUpRight size={17} />} tone="red" />
-        <DashboardKPI title="USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} subtitle={`Rate ৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} icon={<DollarSign size={17} />} tone="sky" />
-        <DashboardKPI title="Card Balance" value={formatUSD(metrics.totalCardBalance)} subtitle="Across all cards" icon={<CreditCard size={17} />} tone="amber" negative={metrics.totalCardBalance < 0} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <MetricCard title="Total Revenue" value={formatBDT(metrics.totalRevenueBDT)} subtitle="BDT received from clients" icon={<ArrowDownRight size={20} className="text-emerald-600" />} bgColor="bg-emerald-50" textColorClass="text-slate-900" />
+        <MetricCard title="Total BDT Cost" value={formatBDT(dashboardData.totalBDTCost)} subtitle="USD purchase + C.O charges" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass="text-slate-900" />
+        <MetricCard title="Net BDT" value={formatBDT(dashboardData.netBDT)} subtitle="Revenue minus USD cost" icon={<TrendingUp size={20} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={dashboardData.netBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
+        <MetricCard title="Net Profit" value={formatBDT(metrics.netProfitBDT)} subtitle={`Margin: ${metrics.profitMargin.toFixed(1)}%`} icon={<TrendingUp size={20} className="text-indigo-600" />} bgColor="bg-indigo-50" textColorClass={metrics.netProfitBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
+        <MetricCard title="Meta Ads Spend" value={formatUSD(metrics.totalAdSpendUSD)} subtitle={`Tax ${formatUSD(metrics.totalTaxUSD)}`} icon={<Activity size={20} className="text-purple-600" />} bgColor="bg-purple-50" />
+        <MetricCard title="Total USD Out" value={formatUSD(dashboardData.totalUSDOut)} subtitle="Ads + tax" icon={<ArrowUpRight size={20} className="text-red-600" />} bgColor="bg-red-50" />
+        <MetricCard title="USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} subtitle={`Rate ৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} icon={<DollarSign size={20} className="text-sky-600" />} bgColor="bg-sky-50" />
+        <MetricCard title="Card Balance" value={formatUSD(metrics.totalCardBalance)} subtitle="Available across all cards" icon={<CreditCard size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass={metrics.totalCardBalance < 0 ? 'text-red-600' : 'text-slate-900'} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.7fr)_minmax(300px,0.8fr)] gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl shadow-[0_2px_10px_rgba(15,23,42,0.035)] overflow-hidden">
-          <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 overflow-hidden">
+          <div className="flex items-start justify-between gap-4 mb-5">
             <div>
-              <h3 className="text-[14px] font-semibold text-slate-900">Money Flow</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Revenue vs advertising cost</p>
+              <h3 className="font-semibold text-slate-900">Money Flow</h3>
+              <p className="text-xs text-slate-500 mt-1">Revenue versus ad cost, shown on the same BDT scale.</p>
             </div>
-            <div className="flex items-center gap-3 text-[10px]">
-              <span className="flex items-center gap-1.5 text-slate-500"><span className="w-2 h-2 rounded-full bg-emerald-500" />Revenue</span>
-              <span className="flex items-center gap-1.5 text-slate-500"><span className="w-2 h-2 rounded-full bg-orange-400" />Ad Cost</span>
+            <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-500">
+              <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />Revenue</span>
+              <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-500" />Ad Cost</span>
             </div>
           </div>
-          <div className="h-[285px] px-2 pt-2 pb-3">
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dashboardData.flowData} margin={{ top: 12, right: 12, left: 4, bottom: 0 }}>
+              <AreaChart data={dashboardData.flowData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
                 <defs>
-                  <linearGradient id="adlyticRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.18} />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                  <linearGradient id="dashboardRevenueFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.22} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
                   </linearGradient>
-                  <linearGradient id="adlyticCost" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.15} />
-                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                  <linearGradient id="dashboardCostFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.16} />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.01} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="#eef2f7" strokeDasharray="3 5" vertical={false} />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={7} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={value => `৳${Math.round(value / 1000)}k`} width={38} />
+                <CartesianGrid strokeDasharray="4 6" vertical={false} stroke="#e8edf3" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} dy={8} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(value) => `৳${Math.round(value / 1000)}k`} width={42} />
                 <Tooltip
                   cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }}
-                  contentStyle={{ border: '1px solid #e2e8f0', borderRadius: '10px', background: '#ffffff', boxShadow: '0 10px 30px rgba(15,23,42,.10)', fontSize: 11 }}
+                  contentStyle={{ borderRadius: 14, border: '1px solid #e2e8f0', boxShadow: '0 12px 30px rgba(15,23,42,0.10)', fontSize: 12 }}
                   formatter={(value, name) => [formatBDT(value), name]}
                 />
-                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#10b981" strokeWidth={2.2} fill="url(#adlyticRevenue)" dot={false} activeDot={{ r: 4, strokeWidth: 2, fill: '#fff' }} />
-                <Area type="monotone" dataKey="adCostBDT" name="Ad Cost" stroke="#f59e0b" strokeWidth={2.2} fill="url(#adlyticCost)" dot={false} activeDot={{ r: 4, strokeWidth: 2, fill: '#fff' }} />
+                <Area type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#10b981" strokeWidth={2.5} fill="url(#dashboardRevenueFill)" dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 5 }} />
+                <Area type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT)" stroke="#f59e0b" strokeWidth={2.5} fill="url(#dashboardCostFill)" dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 5 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl shadow-[0_2px_10px_rgba(15,23,42,0.035)] overflow-hidden">
-          <div className="px-4 py-3.5 border-b border-slate-100">
-            <h3 className="text-[14px] font-semibold text-slate-900">USD Expense Breakdown</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">Where your USD outflow is going</p>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div className="mb-4">
+            <h3 className="font-semibold text-slate-900">USD Expense Breakdown</h3>
+            <p className="text-xs text-slate-500 mt-1">Where your USD outflow is going.</p>
           </div>
-          <div className="h-[210px] px-3 pt-3">
+          <div className="h-64 relative">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dashboardData.expenseData} margin={{ top: 10, right: 5, left: -18, bottom: 4 }}>
-                <CartesianGrid stroke="#eef2f7" strokeDasharray="3 5" vertical={false} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={value => `$${value}`} />
-                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ border: '1px solid #e2e8f0', borderRadius: '10px', background: '#fff', boxShadow: '0 10px 30px rgba(15,23,42,.10)', fontSize: 11 }} formatter={value => [formatUSD(value), 'USD']} />
-                <Bar dataKey="value" radius={[5, 5, 2, 2]} fill="#38bdf8" barSize={30} />
-              </BarChart>
+              <RePieChart>
+                <Pie data={dashboardData.expenseData.filter(item => item.value > 0)} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92} paddingAngle={4} cornerRadius={8} stroke="#fff" strokeWidth={4}>
+                  {dashboardData.expenseData.map((entry, index) => <Cell key={`expense-cell-${entry.name}`} fill={['#38bdf8','#f59e0b','#fb7185'][index % 3]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} formatter={(value) => [formatUSD(value), 'USD']} />
+              </RePieChart>
             </ResponsiveContainer>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="text-center"><p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Out</p><p className="text-lg font-bold text-slate-900">{formatUSD(dashboardData.totalUSDOut)}</p></div></div>
           </div>
-          <div className="grid grid-cols-3 gap-2 px-3 pb-3">
-            <MiniExpense label="Ads" value={formatUSD(metrics.totalAdSpendUSD)} />
-            <MiniExpense label="Tax" value={formatUSD(metrics.totalTaxUSD)} />
-            <MiniExpense label="Total" value={formatUSD(dashboardData.totalUSDOut)} highlight />
+          <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+            <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Ads</p><p className="text-xs font-semibold text-slate-800">{formatUSD(metrics.totalAdSpendUSD)}</p></div>
+            <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Tax</p><p className="text-xs font-semibold text-slate-800">{formatUSD(metrics.totalTaxUSD)}</p></div>
+            <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Total</p><p className="text-xs font-semibold text-slate-800">{formatUSD(dashboardData.totalUSDOut)}</p></div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.8fr)] gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl shadow-[0_2px_10px_rgba(15,23,42,0.035)] overflow-hidden">
-          <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-[14px] font-semibold text-slate-900">Client Performance</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Revenue, cost and estimated profit by client</p>
+              <h3 className="font-semibold text-slate-900">Client Performance</h3>
+              <p className="text-xs text-slate-500 mt-1">Revenue, ad cost and estimated profit by client.</p>
             </div>
-            <span className="text-[10px] text-slate-400">{clients.length} client{clients.length === 1 ? '' : 's'}</span>
+            <span className="text-xs font-medium text-slate-400">{clients.length} client{clients.length === 1 ? '' : 's'}</span>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px]">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100">
-                  <th className="text-left px-4 py-2.5 font-semibold text-slate-500">Client</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-slate-500">Revenue</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-slate-500">Ad Cost</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-slate-500">Profit</th>
-                  <th className="text-right px-4 py-2.5 font-semibold text-slate-500">Status</th>
+                <tr className="border-b border-slate-100 text-left text-xs text-slate-500">
+                  <th className="pb-3 font-medium">Client</th>
+                  <th className="pb-3 font-medium text-right">Revenue</th>
+                  <th className="pb-3 font-medium text-right">Ad Cost</th>
+                  <th className="pb-3 font-medium text-right">Profit</th>
+                  <th className="pb-3 font-medium text-right">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {dashboardData.clientRows.length > 0 ? dashboardData.clientRows.slice(0, 6).map(row => (
-                  <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-800">{row.name}</td>
-                    <td className="px-3 py-3 text-right text-emerald-600 font-medium">{formatBDT(row.revenue)}</td>
-                    <td className="px-3 py-3 text-right text-slate-600">{formatBDT(row.adCostBDT)}</td>
-                    <td className={`px-3 py-3 text-right font-semibold ${row.profit < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{formatBDT(row.profit)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-semibold ${String(row.status).toLowerCase().includes('active') ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current" />{row.status}
-                      </span>
+                  <tr key={row.id} className="border-b border-slate-50 last:border-0">
+                    <td className="py-3 font-medium text-slate-800">{row.name}</td>
+                    <td className="py-3 text-right text-emerald-600">{formatBDT(row.revenue)}</td>
+                    <td className="py-3 text-right text-slate-700">{formatBDT(row.adCostBDT)}</td>
+                    <td className={`py-3 text-right font-semibold ${row.profit < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatBDT(row.profit)}</td>
+                    <td className="py-3 text-right">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full border text-[10px] font-medium ${getStatusClasses(row.status)}`}>{row.status}</span>
                     </td>
                   </tr>
                 )) : (
@@ -930,114 +1541,312 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl shadow-[0_2px_10px_rgba(15,23,42,0.035)]">
-          <div className="px-4 py-3.5 border-b border-slate-100">
-            <h3 className="text-[14px] font-semibold text-slate-900">Quick Stats</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">A compact snapshot of your operation</p>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div className="mb-4">
+            <h3 className="font-semibold text-slate-900">Quick Stats</h3>
+            <p className="text-xs text-slate-500 mt-1">A compact snapshot of your operation.</p>
           </div>
-          <div className="p-4 space-y-2.5">
-            <DashboardStat label="Active Clients" value={dashboardData.activeClients.length} />
-            <DashboardStat label="Total Clients" value={clients.length} />
-            <DashboardStat label="Total Cards" value={cards.length} />
-            <div className="h-px bg-slate-100 my-3" />
-            <DashboardStat label="Avg USD Rate" value={`৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} />
-            <DashboardStat label="USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} />
-            <DashboardStat label="BDT Spent on USD" value={formatBDT(dashboardData.totalBDTCost)} />
-            <DashboardStat label="Meta Tax" value={formatUSD(metrics.totalTaxUSD)} valueClass="text-red-500" />
+          <div className="space-y-3">
+            <StatRow label="Active Clients" value={dashboardData.activeClients.length} />
+            <StatRow label="Total Clients" value={clients.length} />
+            <StatRow label="Total Cards" value={Object.keys(metrics.cardBalances || {}).length} />
+            <Divider />
+            <StatRow label="Avg USD Effective Rate" value={`৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} />
+            <StatRow label="USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} />
+            <StatRow label="Total BDT Spent on USD" value={formatBDT(dashboardData.totalBDTCost)} />
+            <StatRow label="Meta Tax" value={formatUSD(metrics.totalTaxUSD)} className="text-red-600" />
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl shadow-[0_2px_10px_rgba(15,23,42,0.035)]">
-          <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-[14px] font-semibold text-slate-900">Card Overview</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Purchased, spent and current balance</p>
+              <h3 className="font-semibold text-slate-900">Card Overview</h3>
+              <p className="text-xs text-slate-500 mt-1">Purchased, spent and current balance.</p>
             </div>
-            <CreditCard size={16} className="text-slate-400" />
+            <CreditCard size={18} className="text-slate-400" />
           </div>
-          <div className="p-3">
-            {cards.length > 0 ? cards.filter(c => c.status !== 'Archived').slice(0, 5).map(card => {
-              const stats = metrics.cardStats?.[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
-              const balance = metrics.cardBalances?.[card.id] || 0;
+          <div className="space-y-3">
+            {Object.keys(metrics.cardBalances || {}).length > 0 ? Object.keys(metrics.cardBalances).map(cardId => {
+              const card = (metrics.cardStats && metrics.cardStats[cardId]) || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+              const foundCard = (dashboardData.allCards || []).find(c => c.id === cardId);
+              const openingBalance = parseFloat(foundCard?.initialBalance || 0);
+              const balance = openingBalance + card.purchased - card.adSpend - card.tax - card.fees;
+              const cardName = (() => {
+                const allCards = dashboardData.allCards || [];
+                const found = allCards.find(c => c.id === cardId);
+                return found?.name || `Card • ${String(cardId).slice(-4)}`;
+              })();
               return (
-                <div key={card.id} className="flex items-center justify-between gap-3 px-3 py-3 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0"><CreditCard size={15} /></div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-semibold text-slate-800 truncate">{card.name}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Purchased {formatUSD(stats.purchased)} · Spent {formatUSD(stats.adSpend + stats.tax + stats.fees)}</p>
+                <div key={cardId} className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-slate-800">{cardName}</p>
+                      <p className="text-[11px] text-slate-500">Purchased {formatUSD(card.purchased)} · Spent {formatUSD(card.adSpend + card.tax + card.fees)}</p>
                     </div>
+                    <p className={`font-bold ${balance < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatUSD(balance)}</p>
                   </div>
-                  <p className={`text-[13px] font-bold shrink-0 ${balance < 0 ? 'text-red-500' : 'text-slate-800'}`}>{formatUSD(balance)}</p>
                 </div>
               );
-            }) : <div className="py-8 text-center text-slate-400 text-xs">No cards added yet.</div>}
+            }) : <div className="py-10 text-center text-slate-400 text-sm">No cards added yet.</div>}
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl shadow-[0_2px_10px_rgba(15,23,42,0.035)]">
-          <div className="px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-[14px] font-semibold text-slate-900">Recent Transactions</h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">Latest movement across your ledger</p>
+              <h3 className="font-semibold text-slate-900">Recent Transactions</h3>
+              <p className="text-xs text-slate-500 mt-1">Latest movement across your ledger.</p>
             </div>
-            <Activity size={16} className="text-slate-400" />
+            <Activity size={18} className="text-slate-400" />
           </div>
-          <div className="divide-y divide-slate-50">
+          <div className="space-y-2">
             {dashboardData.recentTransactions.length > 0 ? dashboardData.recentTransactions.map(tx => {
               const isIn = tx.type === 'PAYMENT_RECEIVED' || tx.type === 'USD_PURCHASE';
-              const rawAmount = tx.type === 'PAYMENT_RECEIVED'
-                ? Number(tx.amountBDT) || 0
+              const amount = tx.type === 'PAYMENT_RECEIVED'
+                ? formatBDT(tx.amountBDT)
                 : tx.type === 'USD_PURCHASE'
-                  ? Number(tx.amountUSD) || 0
-                  : Number(tx.amountUSD) || 0;
-              const amount = tx.type === 'PAYMENT_RECEIVED' ? formatBDT(rawAmount) : formatUSD(rawAmount);
+                  ? formatUSD(tx.amountUSD)
+                  : formatUSD((parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)));
               return (
-                <div key={tx.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50/70 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isIn ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
-                      {isIn ? <ArrowDownRight size={15} /> : <ArrowUpRight size={15} />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-semibold text-slate-800 truncate">{getTransactionLabel(tx)}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{getTransactionEntity(tx)} · {tx.date || '—'}</p>
-                    </div>
+                <div key={tx.id} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 hover:bg-slate-50 transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{getTransactionLabel(tx)}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{getTransactionEntity(tx)} · {tx.date || '—'}</p>
                   </div>
-                  <p className={`text-[12px] font-bold shrink-0 ${isIn ? 'text-emerald-600' : 'text-red-500'}`}>{isIn ? '+' : '-'}{amount.replace(/^-/, '')}</p>
+                  <div className="text-right shrink-0">
+                    <p className={`text-sm font-semibold ${isIn ? 'text-emerald-600' : 'text-red-600'}`}>{isIn ? '+' : '-'}{amount.replace(/^-/, '')}</p>
+                  </div>
                 </div>
               );
-            }) : <div className="py-8 text-center text-slate-400 text-xs">No transactions yet.</div>}
+            }) : <div className="py-10 text-center text-slate-400 text-sm">No transactions yet.</div>}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <DashboardAlert type="success" title="Healthy Revenue" text={`${formatBDT(metrics.totalRevenueBDT)} received from clients.`} />
-        <DashboardAlert type={metrics.totalCardBalance < 0 ? 'danger' : 'neutral'} title="Card Balance" text={metrics.totalCardBalance < 0 ? `Total card balance is ${formatUSD(metrics.totalCardBalance)}.` : 'All card balances are currently healthy.'} />
-        <DashboardAlert type="info" title="Profit Snapshot" text={`${formatBDT(metrics.netProfitBDT)} net profit · ${metrics.profitMargin.toFixed(1)}% margin.`} />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+          <div className="flex items-center gap-2 text-emerald-700"><CheckCircle2 size={17} /><span className="text-sm font-semibold">Healthy Revenue</span></div>
+          <p className="text-xs text-emerald-700/80 mt-2">{formatBDT(metrics.totalRevenueBDT)} received from clients.</p>
+        </div>
+        <div className={`rounded-2xl border p-4 ${metrics.totalCardBalance < 0 ? 'border-red-100 bg-red-50/70' : 'border-slate-200 bg-slate-50'}`}>
+          <div className={`flex items-center gap-2 ${metrics.totalCardBalance < 0 ? 'text-red-700' : 'text-slate-700'}`}><AlertCircle size={17} /><span className="text-sm font-semibold">Card Balance</span></div>
+          <p className={`text-xs mt-2 ${metrics.totalCardBalance < 0 ? 'text-red-700/80' : 'text-slate-600'}`}>{metrics.totalCardBalance < 0 ? `Total card balance is ${formatUSD(metrics.totalCardBalance)}.` : 'All card balances are currently non-negative.'}</p>
+        </div>
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+          <div className="flex items-center gap-2 text-blue-700"><TrendingUp size={17} /><span className="text-sm font-semibold">Profit Snapshot</span></div>
+          <p className="text-xs text-blue-700/80 mt-2">{formatBDT(metrics.netProfitBDT)} net profit · {metrics.profitMargin.toFixed(1)}% margin.</p>
+        </div>
       </div>
     </div>
   );
 }
 
+
 function LedgerView({ transactions, clients, cards }) {
-  const [filter, setFilter] = useState('ALL');
-  const filtered = transactions.filter(t => filter === 'ALL' || t.type === filter);
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('ALL');
+
+  const filtered = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return [...transactions]
+      .filter(tx => {
+        const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
+
+        const search = searchTerm.trim().toLowerCase();
+        const client = clients.find(c => c.id === tx.clientId);
+        const card = cards.find(c => c.id === tx.cardId);
+
+        const searchableText = [
+          tx.notes,
+          tx.adAccount,
+          tx.campaign,
+          tx.type,
+          client?.name,
+          client?.company,
+          card?.name
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        const matchesSearch = !search || searchableText.includes(search);
+
+        const txDate = new Date(tx.date);
+        txDate.setHours(0, 0, 0, 0);
+
+        let matchesDate = true;
+        if (dateFilter === 'TODAY') {
+          matchesDate = txDate.getTime() === today.getTime();
+        } else if (dateFilter === 'THIS_WEEK') {
+          const weekStart = new Date(today);
+          const day = weekStart.getDay();
+          const diff = day === 0 ? 6 : day - 1;
+          weekStart.setDate(weekStart.getDate() - diff);
+          matchesDate = txDate >= weekStart && txDate <= today;
+        } else if (dateFilter === 'THIS_MONTH') {
+          const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+          matchesDate = txDate >= monthStart && txDate <= today;
+        }
+
+        return matchesType && matchesSearch && matchesDate;
+      })
+      .sort((a, b) => {
+        const timeA = a.timestamp || new Date(a.date).getTime();
+        const timeB = b.timestamp || new Date(b.date).getTime();
+        return timeB - timeA;
+      });
+  }, [transactions, clients, cards, typeFilter, searchTerm, dateFilter]);
+
+  const ledgerSummary = useMemo(() => {
+    let bdtIn = 0;
+    let bdtOut = 0;
+    let usdIn = 0;
+    let usdOut = 0;
+
+    filtered.forEach(tx => {
+      if (tx.type === 'PAYMENT_RECEIVED') {
+        bdtIn += parseFloat(tx.amountBDT || 0);
+      }
+
+      if (tx.type === 'USD_PURCHASE') {
+        bdtOut += parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0);
+        usdIn += parseFloat(tx.amountUSD || 0);
+      }
+
+      if (tx.type === 'AD_SPEND') {
+        usdOut += parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0);
+      }
+
+      if (tx.type === 'FEE') {
+        usdOut += parseFloat(tx.amountUSD || 0);
+      }
+    });
+
+    return {
+      bdtIn,
+      bdtOut,
+      netBDT: bdtIn - bdtOut,
+      usdIn,
+      usdOut,
+      netUSD: usdIn - usdOut,
+      count: filtered.length
+    };
+  }, [filtered]);
+
+  const clearFilters = () => {
+    setTypeFilter('ALL');
+    setDateFilter('ALL');
+    setSearchTerm('');
+  };
+
+  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || searchTerm.trim() !== '';
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
-        <select className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="ALL">All Transactions</option>
-          <option value="PAYMENT_RECEIVED">Payments Received</option>
-          <option value="USD_PURCHASE">USD Purchases</option>
-          <option value="AD_SPEND">Meta Ad Spend</option>
-        </select>
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
+          <p className="text-sm text-slate-500 mt-1">A clear view of every BDT and USD movement.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="ALL">All Transactions</option>
+            <option value="PAYMENT_RECEIVED">Payments Received</option>
+            <option value="USD_PURCHASE">USD Purchases</option>
+            <option value="AD_SPEND">Meta Ad Spend</option>
+            <option value="FEE">Fees</option>
+          </select>
+
+          <select
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+          >
+            <option value="ALL">All Dates</option>
+            <option value="TODAY">Today</option>
+            <option value="THIS_WEEK">This Week</option>
+            <option value="THIS_MONTH">This Month</option>
+          </select>
+        </div>
       </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search client, card, campaign, source..."
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">BDT In</p>
+          <p className="text-lg font-bold text-green-600 mt-1">{formatBDT(ledgerSummary.bdtIn)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">BDT Out</p>
+          <p className="text-lg font-bold text-red-600 mt-1">{formatBDT(ledgerSummary.bdtOut)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">Net BDT</p>
+          <p className={`text-lg font-bold mt-1 ${ledgerSummary.netBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+            {formatBDT(ledgerSummary.netBDT)}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">USD In</p>
+          <p className="text-lg font-bold text-green-600 mt-1">{formatUSD(ledgerSummary.usdIn)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">USD Out</p>
+          <p className="text-lg font-bold text-red-600 mt-1">{formatUSD(ledgerSummary.usdOut)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p className="text-xs text-slate-500">Transactions</p>
+          <p className="text-lg font-bold text-slate-900 mt-1">{ledgerSummary.count}</p>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-slate-800">All Transactions</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Buy USD = BDT out + USD in • Meta Ads = USD out
+            </p>
+          </div>
+          <span className="text-xs font-medium text-slate-500">
+            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
+          </span>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
@@ -1045,36 +1854,109 @@ function LedgerView({ transactions, clients, cards }) {
                 <th className="px-5 py-3">Date</th>
                 <th className="px-5 py-3">Type</th>
                 <th className="px-5 py-3">Entity / Details</th>
-                <th className="px-5 py-3 text-right">In (BDT)</th>
-                <th className="px-5 py-3 text-right">Out (USD)</th>
+                <th className="px-5 py-3 text-right">BDT In</th>
+                <th className="px-5 py-3 text-right">BDT Out</th>
+                <th className="px-5 py-3 text-right">USD In</th>
+                <th className="px-5 py-3 text-right">USD Out</th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-100">
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center py-10 text-slate-500">
+                    No transactions found.
+                  </td>
+                </tr>
+              )}
+
               {filtered.map(tx => {
                 const client = clients.find(c => c.id === tx.clientId);
                 const card = cards.find(c => c.id === tx.cardId);
+
+                const isPayment = tx.type === 'PAYMENT_RECEIVED';
+                const isPurchase = tx.type === 'USD_PURCHASE';
+                const isAdSpend = tx.type === 'AD_SPEND';
+                const isFee = tx.type === 'FEE';
+
+                const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
+                const bdtOut = isPurchase
+                  ? parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)
+                  : 0;
+                const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
+                const usdOut = isAdSpend
+                  ? parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)
+                  : isFee
+                    ? parseFloat(tx.amountUSD || 0)
+                    : 0;
+
                 return (
-                <tr key={tx.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3 text-slate-600">{formatDate(tx.date)}</td>
-                  <td className="px-5 py-3"><TransactionTypeBadge type={tx.type} /></td>
-                  <td className="px-5 py-3">
-                    {client && <div className="font-medium text-slate-800">{client.name}</div>}
-                    {card && <div className="text-xs text-slate-500">Card: {card.name}</div>}
-                    {tx.type === 'USD_PURCHASE' && <div className="font-medium text-slate-800">Eff. Rate: ৳{((tx.amountBDT + (tx.cashOutCharge||0)) / tx.amountUSD).toFixed(2)}</div>}
-                    {tx.type === 'AD_SPEND' && <div className="text-xs text-slate-500">{tx.adAccount} • {tx.campaign}</div>}
-                  </td>
-                  <td className="px-5 py-3 text-right font-medium text-green-600">
-                    {tx.type === 'PAYMENT_RECEIVED' ? `+${formatBDT(tx.amountBDT)}` : '-'}
-                  </td>
-                  <td className="px-5 py-3 text-right font-medium text-slate-800">
-                    {tx.type === 'AD_SPEND'
-                      ? `-${formatUSD(Math.abs(Number(tx.amountUSD) || 0))}`
-                      : tx.type === 'USD_PURCHASE'
-                        ? formatUSD(Number(tx.amountUSD) || 0)
-                        : '-'}
-                  </td>
-                </tr>
-              )})}
+                  <tr key={tx.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
+
+                    <td className="px-5 py-4">
+                      <TransactionTypeBadge type={tx.type} />
+                    </td>
+
+                    <td className="px-5 py-4 min-w-[260px]">
+                      {client && (
+                        <div className="font-semibold text-slate-800">{client.name}</div>
+                      )}
+
+                      {card && (
+                        <div className="text-xs text-slate-500">Card: {card.name}</div>
+                      )}
+
+                      {tx.type === 'USD_PURCHASE' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.notes || 'USD Purchase'} • Effective Rate: ৳
+                          {usdIn > 0
+                            ? ((parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) / usdIn).toFixed(2)
+                            : '0.00'}
+                        </div>
+                      )}
+
+                      {tx.type === 'AD_SPEND' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.adAccount || 'Ad Account'}{tx.campaign ? ` • ${tx.campaign}` : ''}
+                        </div>
+                      )}
+
+                      {tx.type === 'PAYMENT_RECEIVED' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.notes || 'Client payment received'}
+                        </div>
+                      )}
+
+                      {tx.type === 'FEE' && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.notes || 'Card fee'}
+                        </div>
+                      )}
+
+                      {!client && !card && !isPurchase && !isAdSpend && !isPayment && !isFee && (
+                        <div className="text-xs text-slate-500">{tx.notes || '—'}</div>
+                      )}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-green-600">
+                      {bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-red-600">
+                      {bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-green-600">
+                      {usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}
+                    </td>
+
+                    <td className="px-5 py-4 text-right font-semibold text-red-600">
+                      {usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -1083,18 +1965,17 @@ function LedgerView({ transactions, clients, cards }) {
   );
 }
 
-function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onReceivePayment, onAddAdSpend }) {
+function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient, onDeleteClient, onViewDetails, onViewHistory, onReceivePayment, onAddAdSpend, onToggleStatus }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  // Compute stats dynamically per client
   const clientStats = useMemo(() => {
     return clients.map(client => {
       const clientTx = transactions.filter(t => t.clientId === client.id);
       
-      const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + t.amountBDT, 0);
-      const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + t.amountUSD, 0);
-      const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + (t.taxUSD||0), 0);
+      const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + parseFloat(t.amountBDT||0), 0);
+      const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.amountUSD||0), 0);
+      const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.taxUSD||0), 0);
       
       const totalCostBDT = (adSpendUSD + taxUSD) * metrics.avgUSDEffectiveRate;
       const profitBDT = revenue - totalCostBDT;
@@ -1104,7 +1985,6 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
     });
   }, [clients, transactions, metrics.avgUSDEffectiveRate]);
 
-  // Filter 
   const filteredClients = useMemo(() => {
     return clientStats.filter(c => {
       const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()));
@@ -1162,7 +2042,7 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredClients.length === 0 && <tr><td colSpan="7" className="text-center py-8 text-slate-500">No clients found.</td></tr>}
+              {filteredClients.length === 0 && <tr><td colSpan="7" className="text-center py-8 text-slate-500">No clients yet.</td></tr>}
               {filteredClients.map(c => {
                 const displayStatus = getClientDisplayStatus(c);
                 const isWorking = displayStatus.includes('Active') || displayStatus.includes('Currently Working');
@@ -1176,6 +2056,7 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
                       ${isWorking ? 'bg-green-100 text-green-700' : 
                         displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' : 
+                        displayStatus === 'Inactive' ? 'bg-orange-100 text-orange-700' :
                         'bg-slate-100 text-slate-600'}`}>
                       {displayStatus}
                     </span>
@@ -1192,11 +2073,13 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                     </div>
                   </td>
                   <td className="px-5 py-4 text-center">
-                    <ClientDropdownMenu 
+                    <ClientActionsMenu
+                      client={c}
                       onViewDetails={() => onViewDetails(c)}
+                      onHistory={() => onViewHistory(c)}
                       onEdit={() => onEditClient(c)}
                       onReceivePayment={() => onReceivePayment(c)}
-                      onAddAdSpend={() => onAddAdSpend(c)}
+                                            onToggleStatus={(status) => onToggleStatus(c, status)}
                       onDelete={() => onDeleteClient(c.id)}
                     />
                   </td>
@@ -1211,35 +2094,30 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
 }
 
 function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDeleteCard, onViewDetails }) {
-  // Global filter state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [globalDateRange, setGlobalDateRange] = useState({ label: 'Lifetime', start: null, end: null });
   const [selectedCardFilter, setSelectedCardFilter] = useState('ALL');
   const [selectedTxForModal, setSelectedTxForModal] = useState(null);
 
-  const activeCards = cards.filter(c => c.status !== 'Archived');
+  const activeCards = cards; 
 
-  // Filtered USD purchases for the global view table
   const filteredUSDPurchases = useMemo(() => {
     let list = transactions.filter(t => t.type === 'USD_PURCHASE');
-    
-    if (selectedCardFilter !== 'ALL') {
-      list = list.filter(t => t.cardId === selectedCardFilter);
-    }
-
+    if (selectedCardFilter !== 'ALL') list = list.filter(t => t.cardId === selectedCardFilter);
     if (globalDateRange.start && globalDateRange.end) {
       list = list.filter(t => t.date >= globalDateRange.start && t.date <= globalDateRange.end);
     }
     return list;
   }, [transactions, globalDateRange, selectedCardFilter]);
 
-  // USD Purchase Period Summary
   const periodSummary = useMemo(() => {
     const count = filteredUSDPurchases.length;
-    const totalUSD = filteredUSDPurchases.reduce((sum, t) => sum + (t.amountUSD || 0), 0);
-    const totalBDT = filteredUSDPurchases.reduce((sum, t) => sum + (t.amountBDT || 0) + (t.cashOutCharge || 0), 0);
-    const avgEffectiveRate = totalUSD > 0 ? (totalBDT / totalUSD) : 0;
-    return { count, totalUSD, totalBDT, avgEffectiveRate };
+    const totalUSD = filteredUSDPurchases.reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
+    const totalBDTPaid = filteredUSDPurchases.reduce((sum, t) => sum + parseFloat(t.amountBDT || 0), 0);
+    const totalCOCharge = filteredUSDPurchases.reduce((sum, t) => sum + parseFloat(t.cashOutCharge || 0), 0);
+    const totalCost = totalBDTPaid + totalCOCharge;
+    const avgEffectiveRate = totalUSD > 0 ? (totalCost / totalUSD) : 0;
+    return { count, totalUSD, totalBDTPaid, totalCOCharge, totalCost, avgEffectiveRate };
   }, [filteredUSDPurchases]);
 
   return (
@@ -1253,7 +2131,6 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         </button>
       </div>
       
-      {/* Date Range Picker Modal */}
       {isFilterOpen && (
         <DateRangePickerModal 
           onClose={() => setIsFilterOpen(false)} 
@@ -1262,7 +2139,6 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         />
       )}
 
-      {/* Transaction Details Modal */}
       {selectedTxForModal && (
         <TransactionDetailsModal 
           tx={selectedTxForModal} 
@@ -1271,14 +2147,22 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         />
       )}
       
-      {/* CARDS GRID */}
+      {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {activeCards.length === 0 && (
+          <div className="col-span-full text-center py-12 text-slate-500 bg-white border border-slate-200 rounded-xl">No cards added yet.</div>
+        )}
+        
         {activeCards.map(card => {
-          // Calculate Last Transaction for this card
-          const lastTx = transactions
-            .filter(t => t.cardId === card.id && isMeaningfulTransaction(t))
-            .sort(compareTransactionsChronologically)
-            .at(-1);
+          const sortedTxs = [...transactions]
+            .filter(t => t.cardId === card.id)
+            .sort((a,b) => {
+              const timeA = a.timestamp || new Date(a.date).getTime();
+              const timeB = b.timestamp || new Date(b.date).getTime();
+              return timeB - timeA;
+            });
+          const lastTx = sortedTxs[0];
+          const bal = metrics.cardBalances[card.id] || 0;
 
           return (
             <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
@@ -1302,9 +2186,15 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 </div>
 
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Current Balance</p>
-                <h2 className="text-3xl font-bold text-slate-800">{formatUSD(metrics.cardBalances[card.id])}</h2>
+                <div className="flex flex-col items-start gap-1">
+                  <h2 className={`text-3xl font-bold ${bal < 0 ? 'text-red-600' : 'text-slate-800'}`}>{formatUSD(bal)}</h2>
+                  {bal < 0 && (
+                    <span className="inline-flex items-center text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                      <AlertCircle size={12} className="mr-1" /> Negative Balance
+                    </span>
+                  )}
+                </div>
 
-                {/* Last Transaction Section */}
                 <div className="mt-4 pt-3 border-t border-slate-100 text-xs">
                   <span className="text-slate-400 block font-medium mb-1">Last Transaction</span>
                   {lastTx ? (
@@ -1313,11 +2203,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                         {formatDate(lastTx.date)} • {lastTx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}
                       </span>
                       <span className={`font-bold ${lastTx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
-                        {lastTx.type === 'USD_PURCHASE' 
-                          ? `+${formatUSD(lastTx.amountUSD)}` 
-                          : ((lastTx.amountUSD || 0) >= EPSILON
-                              ? `-${formatUSD(lastTx.amountUSD || 0)}`
-                              : formatUSD(0))}
+                        {lastTx.type === 'USD_PURCHASE' ? '+' : '-'}{formatUSD(lastTx.amountUSD)}
                       </span>
                     </div>
                   ) : (
@@ -1334,7 +2220,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         })}
       </div>
 
-      {/* USD PURCHASE HISTORY SECTION */}
+      {/* History Header & Filters Row */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-8 mb-4 gap-3">
         <h3 className="text-lg font-bold text-slate-800">USD Purchase History</h3>
         
@@ -1363,33 +2249,40 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
         </div>
       </div>
 
-      {/* USD Purchase Period Summary Box */}
-      <div className="bg-slate-100 p-3.5 rounded-xl border border-slate-200 mb-4 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-4 shadow-2xs">
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Selected Period</span>
-          <span className="font-bold text-slate-800">
-            {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label} 
-            {selectedCardFilter !== 'ALL' && ` (${activeCards.find(c => c.id === selectedCardFilter)?.name || 'Filtered Card'})`}
-          </span>
+      {/* NEW PERIOD SUMMARY */}
+      <div className="bg-slate-100 p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
+        <div className="text-sm font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
+          Selected Period: {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label}
         </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">USD Purchased</span>
-          <span className="font-bold text-green-600">{formatUSD(periodSummary.totalUSD)}</span>
-        </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Total BDT Cost</span>
-          <span className="font-bold text-slate-800">{formatBDT(periodSummary.totalBDT)}</span>
-        </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Avg Effective Rate</span>
-          <span className="font-bold text-blue-600">৳{periodSummary.avgEffectiveRate.toFixed(2)}</span>
-        </div>
-        <div>
-          <span className="text-slate-500 block text-[11px] font-medium uppercase tracking-wider">Purchases</span>
-          <span className="font-bold text-slate-800">{periodSummary.count}</span>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-6">
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total BDT Paid</span>
+            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalBDTPaid)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total C.O Charge</span>
+            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalCOCharge)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total Cost</span>
+            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalCost)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">USD Purchased</span>
+            <span className="font-bold text-green-600 text-base">{formatUSD(periodSummary.totalUSD)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Avg Effective Rate</span>
+            <span className="font-bold text-blue-600 text-base">৳{periodSummary.avgEffectiveRate.toFixed(2)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Purchases</span>
+            <span className="font-bold text-slate-800 text-base">{periodSummary.count}</span>
+          </div>
         </div>
       </div>
 
+      {/* USD Purchase History Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -1407,11 +2300,14 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases found.</td></tr>}
+              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases yet.</td></tr>}
               {filteredUSDPurchases.map(tx => {
-                const baseRate = (tx.amountBDT / tx.amountUSD).toFixed(2);
-                const totalCost = tx.amountBDT + (tx.cashOutCharge || 0);
-                const effectiveRate = (totalCost / tx.amountUSD).toFixed(2);
+                const bdtPaid = parseFloat(tx.amountBDT||0);
+                const coRate = parseFloat(tx.cashOutCharge||0);
+                const usdRcv = parseFloat(tx.amountUSD||1);
+                const totalCost = bdtPaid + coRate;
+                const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
+                const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
                 const targetCard = cards.find(c => c.id === tx.cardId);
                 const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
 
@@ -1423,8 +2319,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 >
                   <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
                   <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">{tx.notes}</td>
-                  <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(tx.amountBDT)}</td>
-                  <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{tx.cashOutCharge ? formatBDT(tx.cashOutCharge) : formatBDT(0)}</td>
+                  <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(bdtPaid)}</td>
+                  <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{coRate ? formatBDT(coRate) : formatBDT(0)}</td>
                   <td className="px-5 py-3 text-right font-bold text-slate-800 whitespace-nowrap">{formatBDT(totalCost)}</td>
                   <td className="px-5 py-3 text-right font-bold text-green-600 whitespace-nowrap">{formatUSD(tx.amountUSD)}</td>
                   <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
@@ -1446,84 +2342,96 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   const [filterRange, setFilterRange] = useState({ label: 'Lifetime', start: null, end: null });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Use the centralized card-ledger engine so the card summary,
-  // current balance, Balance After, and transaction history cannot disagree.
-  const ledger = useMemo(
-    () => calculateCardLedger(card, transactions),
-    [card, transactions]
-  );
+  const { historyWithBalance, openingBalance, expectedBalance, isMatch, diff } = useMemo(() => {
+    // 1. Get ALL txs for card, sorted Oldest to Newest for true chronological running balance
+    const allCardTxsAsc = [...transactions]
+      .filter(t => t.cardId === card.id)
+      .sort((a, b) => {
+        const tA = a.timestamp || new Date(a.date).getTime();
+        const tB = b.timestamp || new Date(b.date).getTime();
+        if (tA === tB) return a.id.localeCompare(b.id);
+        return tA - tB;
+      });
 
-  const cardTxs = ledger.history;
+    // 2. Compute exact historical running balances (Balance After)
+    const initialBal = parseFloat(card.initialBalance || 0);
+    let currentRunningBal = initialBal;
+    const fullHistory = allCardTxsAsc.map(t => {
+      let changeUSD = 0;
+      if (t.type === 'USD_PURCHASE') {
+        changeUSD = parseFloat(t.amountUSD || 0);
+      }
+      if (t.type === 'AD_SPEND') {
+        const spend = parseFloat(t.amountUSD || 0);
+        const tax = parseFloat(t.taxUSD || 0);
+        changeUSD = -(spend + tax); // Deducts both from balance
+      }
+      if (t.type === 'FEE') {
+        changeUSD = -parseFloat(t.amountUSD || 0);
+      }
+      currentRunningBal += changeUSD;
+      return { ...t, changeUSD, runningBal: currentRunningBal };
+    });
 
-  const { historyWithBalance, periodSummary } = useMemo(() => {
-    const start = filterRange.start;
-    const end = filterRange.end;
+    // 3. Reverse for UI (Newest first)
+    fullHistory.reverse();
 
-    const filtered = (start && end)
-      ? cardTxs.filter(t => t.date >= start && t.date <= end)
-      : cardTxs;
+    // 4. Apply history date filter solely for visual isolation
+    let displayedHistory = fullHistory;
+    if (filterRange.start && filterRange.end) {
+      displayedHistory = fullHistory.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
+    }
 
-    const summary = filtered.reduce(
-      (acc, t) => {
-        if (t.type === 'USD_PURCHASE') {
-          acc.purchased += Number(t.amountUSD) || 0;
-        } else if (t.type === 'AD_SPEND') {
-          acc.ads += Number(t.amountUSD) || 0;
-          acc.tax += Number(t.taxUSD) || 0;
-        }
-        acc.net += Number(t.balanceChangeUSD) || 0;
-        return acc;
-      },
-      { purchased: 0, ads: 0, tax: 0, net: 0 }
-    );
-
-    // cardTxs is already chronological and Balance After was calculated
-    // from the complete ledger BEFORE filtering. Therefore filtering history
-    // can never corrupt historical balances.
-    return {
-      historyWithBalance: [...filtered].reverse(),
-      periodSummary: summary,
+    // Diagnostics / Breakdown Verification
+    const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+    const expBal = initialBal + stats.purchased - stats.adSpend - stats.tax - stats.fees;
+    const curBal = metrics.cardBalances[card.id] || 0;
+    const difference = Math.abs(expBal - curBal);
+    
+    return { 
+      historyWithBalance: displayedHistory,
+      openingBalance: initialBal,
+      expectedBalance: expBal,
+      isMatch: difference < 0.005,
+      diff: difference
     };
-  }, [cardTxs, filterRange]);
+  }, [transactions, card.id, card.initialBalance, filterRange, metrics]);
 
-  const stats = {
-    purchased: ledger.purchased,
-    adSpend: ledger.adSpend,
-    tax: ledger.tax,
-    fees: ledger.fees,
-  };
-  const currentBal = ledger.balance;
+  const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+  const currentBal = metrics.cardBalances[card.id] || 0;
 
   return (
     <div className="flex flex-col h-full max-h-[80vh]">
       
-      {/* Financial Summary Cards */}
+      {/* Global Card Stats summary - Unchanged by date filters */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6 shrink-0">
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total USD Purchased</p>
           <p className="text-base font-bold text-green-600">
-            {stats.purchased >= 0.005 ? '+' : ''}{formatUSD(stats.purchased)}
+            {stats.purchased > 0 ? '+' : ''}{formatUSD(stats.purchased)}
           </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Meta Ad Spend</p>
           <p className="text-base font-bold text-red-600">
-            {stats.adSpend >= 0.005 ? '-' : ''}{formatUSD(stats.adSpend)}
+            {stats.adSpend > 0 ? '-' : ''}{formatUSD(stats.adSpend)}
           </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Tax</p>
           <p className="text-base font-bold text-slate-700">
-            {stats.tax >= 0.005 ? '-' : ''}{formatUSD(stats.tax)}
+            {stats.tax > 0 ? '-' : ''}{formatUSD(stats.tax)}
           </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Fees</p>
-          <p className="text-base font-bold text-slate-700">$0.00</p>
+          <p className="text-base font-bold text-slate-700">
+             {stats.fees > 0 ? '-' : ''}{formatUSD(stats.fees)}
+          </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Current Balance</p>
-          <p className="text-base font-bold text-blue-600">{formatUSD(currentBal)}</p>
+          <p className={`text-base font-bold ${currentBal < 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatUSD(currentBal)}</p>
         </div>
       </div>
       
@@ -1531,6 +2439,54 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <span><strong>Provider:</strong> {card.provider}</span>
         <span><strong>Type:</strong> {card.cardType}</span>
         {card.last4 && <span><strong>Last 4 Digits:</strong> {card.last4}</span>}
+      </div>
+
+      {/* BALANCE BREAKDOWN & INTEGRITY CHECK */}
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 shrink-0">
+        <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">Balance Breakdown</h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-slate-600">Opening Balance</span>
+            <span className="font-medium text-slate-800">+{formatUSD(openingBalance)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">USD Purchased</span>
+            <span className="font-medium text-green-600">+{formatUSD(stats.purchased)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Meta Ad Spend</span>
+            <span className="font-medium text-red-600">-{formatUSD(stats.adSpend)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Tax</span>
+            <span className="font-medium text-red-600">-{formatUSD(stats.tax)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-600">Fees</span>
+            <span className="font-medium text-red-600">-{formatUSD(stats.fees)}</span>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold">
+            <span className="text-slate-800">Current Balance</span>
+            <span className={currentBal < 0 ? 'text-red-600' : 'text-slate-900'}>{formatUSD(currentBal)}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-200">
+          {isMatch ? (
+            <span className="inline-flex items-center text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded">
+              <CheckCircle2 size={14} className="mr-1" /> Balance Verified
+            </span>
+          ) : (
+            <div className="text-xs text-red-700 bg-red-50 p-2 rounded border border-red-100">
+              <div className="font-bold flex items-center mb-1">
+                <AlertCircle size={14} className="mr-1" /> Balance Mismatch
+              </div>
+              <div className="flex justify-between"><span>Expected Balance:</span> <span>{formatUSD(expectedBalance)}</span></div>
+              <div className="flex justify-between"><span>Current Balance:</span> <span>{formatUSD(currentBal)}</span></div>
+              <div className="flex justify-between font-medium border-t border-red-200 mt-1 pt-1"><span>Difference:</span> <span>{formatUSD(diff)}</span></div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-between items-end mb-3 border-b pb-2 shrink-0">
@@ -1556,38 +2512,34 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <table className="w-full text-sm text-left whitespace-nowrap">
           <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
             <tr>
-              <th className="px-4 py-2.5">Date</th>
               <th className="px-4 py-2.5">Type</th>
-              <th className="px-4 py-2.5">Description</th>
-              <th className="px-4 py-2.5 text-right">USD</th>
-              <th className="px-4 py-2.5 text-right">BDT</th>
-              <th className="px-4 py-2.5 text-right font-bold">Balance After</th>
+              <th className="px-4 py-2.5">USD</th>
+              <th className="px-4 py-2.5">Balance After</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
             {historyWithBalance.length === 0 && (
-              <tr><td colSpan="6" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
+              <tr><td colSpan="3" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
             )}
             {historyWithBalance.map(tx => {
-              const bdtCost = tx.type === 'USD_PURCHASE' ? (tx.amountBDT + (tx.cashOutCharge || 0)) : null;
+              // Ensure we strictly format to negative/positive correctly
+              const isAdSpend = tx.type === 'AD_SPEND';
+              const displayAmount = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
+              const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
+
               return (
               <tr key={tx.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2.5 text-slate-600">{formatDate(tx.date)}</td>
-                <td className="px-4 py-2.5 font-medium text-slate-800">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}</td>
-                <td className="px-4 py-2.5 text-slate-600">
-                  {tx.type === 'USD_PURCHASE'
-                    ? (tx.notes || 'USD Purchase')
-                    : (Number(tx.taxUSD || 0) >= EPSILON
-                        ? `${tx.notes || tx.campaign || 'Meta Ads'} • Tax: ${formatUSD(Number(tx.taxUSD))}`
-                        : (tx.notes || tx.campaign || 'Meta Ads'))}
+                <td className="px-4 py-2.5 font-medium text-slate-800">
+                  <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
+                  <div className="text-[10px] text-slate-400 font-normal">{formatDate(tx.date)} {tx.notes && `• ${tx.notes}`}</div>
                 </td>
-                <td className={`px-4 py-2.5 text-right font-medium ${tx.changeUSD >= EPSILON ? 'text-green-600' : tx.changeUSD <= -EPSILON ? 'text-red-600' : 'text-slate-800'}`}>
-                  {tx.displayedChangeUSD >= EPSILON ? '+' : ''}{tx.displayedChangeUSD <= -EPSILON ? '-' : ''}{formatUSD(Math.abs(tx.displayedChangeUSD))}
+                <td className={`px-4 py-2.5 font-medium ${displayAmount > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                  {displayAmount > 0 ? '+' : ''}{formatUSD(displayAmount)}
+                  {displayTax > 0 && <span className="block text-[10px] text-red-500 font-normal mt-0.5">+ tax {formatUSD(displayTax)}</span>}
                 </td>
-                <td className="px-4 py-2.5 text-right text-slate-600">
-                  {bdtCost ? formatBDT(bdtCost) : '—'}
+                <td className={`px-4 py-2.5 font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                  {formatUSD(tx.runningBal)}
                 </td>
-                <td className="px-4 py-2.5 text-right font-bold text-slate-900">{formatUSD(tx.runningBal)}</td>
               </tr>
             )})}
           </tbody>
@@ -1598,9 +2550,13 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
 }
 
 function TransactionDetailsModal({ tx, cardName, onClose }) {
-  const baseRate = (tx.amountBDT / tx.amountUSD).toFixed(2);
-  const totalCost = tx.amountBDT + (tx.cashOutCharge || 0);
-  const effectiveRate = (totalCost / tx.amountUSD).toFixed(2);
+  const bdtPaid = parseFloat(tx.amountBDT||0);
+  const coRate = parseFloat(tx.cashOutCharge||0);
+  const usdRcv = parseFloat(tx.amountUSD||1);
+  
+  const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
+  const totalCost = bdtPaid + coRate;
+  const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
 
   return (
     <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
@@ -1621,8 +2577,8 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
         </div>
 
         <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
-          <div className="flex justify-between"><span>Base BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(tx.amountBDT)}</span></div>
-          <div className="flex justify-between"><span>C.O Rate (Cash-out Fee):</span><span className="font-medium text-red-600">{formatBDT(tx.cashOutCharge || 0)}</span></div>
+          <div className="flex justify-between"><span>Base BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(bdtPaid)}</span></div>
+          <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-red-600">{formatBDT(coRate)}</span></div>
           <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total BDT Cost:</span><span className="text-slate-900">{formatBDT(totalCost)}</span></div>
         </div>
 
@@ -1639,101 +2595,180 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
   );
 }
 
+
+/* ==========================================================================
+   SAAS MODULES
+   Additive modules. Existing financial view component bodies remain untouched.
+   ========================================================================== */
+
+function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDelete }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+
+  const rows = useMemo(() => campaigns.map(c => {
+    const matching = transactions.filter(t =>
+      String(t.campaign || '').trim().toLowerCase() === String(c.name || '').trim().toLowerCase()
+    );
+    const spendUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.amountUSD || 0) : 0), 0);
+    const taxUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.taxUSD || 0) : 0), 0);
+    const spendBDT = (spendUSD + taxUSD) * (metrics.avgUSDEffectiveRate || 0);
+    const revenueBDT = parseFloat(c.revenueBDT || 0);
+    const roas = spendBDT > 0 ? revenueBDT / spendBDT : 0;
+    const client = clients.find(x => x.id === c.clientId);
+    return { ...c, clientName: client?.name || 'Unassigned', spendUSD, taxUSD, spendBDT, revenueBDT, roas };
+  }), [campaigns, clients, transactions, metrics.avgUSDEffectiveRate]);
+
+  const filtered = rows.filter(c => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || [c.name, c.clientName, c.platform, c.goal].some(v => String(v || '').toLowerCase().includes(q));
+    const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div><h1 className="text-2xl font-bold text-slate-900">Campaigns</h1><p className="text-sm text-slate-500 mt-1">Track budgets, ad spend, results and profitability by campaign.</p></div>
+        <button onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"><Plus size={17}/> Add Campaign</button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MiniKpi title="Campaigns" value={campaigns.length} icon={<Target size={16}/>} />
+        <MiniKpi title="Active" value={campaigns.filter(c => c.status === 'Active').length} icon={<Activity size={16}/>} />
+        <MiniKpi title="Tracked Spend" value={formatUSD(rows.reduce((s, c) => s + c.spendUSD, 0))} icon={<DollarSign size={16}/>} />
+        <MiniKpi title="Tracked Revenue" value={formatBDT(rows.reduce((s, c) => s + c.revenueBDT, 0))} icon={<TrendingUp size={16}/>} />
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row gap-3">
+        <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3"><Search size={17} className="text-slate-400"/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search campaigns, clients, platforms..." className="w-full bg-transparent border-none focus:outline-none px-2 py-2 text-sm"/></div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"><option>All</option><option>Active</option><option>Paused</option><option>Completed</option></select>
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between"><div><h3 className="font-semibold text-slate-900">Campaign Performance</h3><p className="text-xs text-slate-500 mt-1">Spend is matched automatically from existing transaction entries using the campaign name.</p></div><BarChart3 size={19} className="text-slate-400"/></div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-slate-50 text-xs text-slate-500">
+              <th className="px-5 py-3 text-left font-medium">Campaign</th><th className="px-3 py-3 text-left font-medium">Client</th><th className="px-3 py-3 text-left font-medium">Platform</th><th className="px-3 py-3 text-right font-medium">Budget</th><th className="px-3 py-3 text-right font-medium">Spent</th><th className="px-3 py-3 text-right font-medium">Revenue</th><th className="px-3 py-3 text-right font-medium">ROAS</th><th className="px-5 py-3 text-right font-medium">Status</th><th className="px-5 py-3 text-right font-medium">Actions</th>
+            </tr></thead>
+            <tbody>
+              {filtered.length ? filtered.map(c => (
+                <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                  <td className="px-5 py-4"><div className="font-medium text-slate-800">{c.name}</div><div className="text-[11px] text-slate-400">{c.goal || '—'}</div></td>
+                  <td className="px-3 py-4 text-slate-600">{c.clientName}</td><td className="px-3 py-4"><span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs">{c.platform || 'Meta'}</span></td>
+                  <td className="px-3 py-4 text-right text-slate-700">{c.budget ? `${c.budgetType === 'USD' ? '$' : '৳'}${Number(c.budget).toLocaleString('en-US', {maximumFractionDigits:2})}` : '—'}</td>
+                  <td className="px-3 py-4 text-right text-red-600">{formatUSD(c.spendUSD)}</td><td className="px-3 py-4 text-right text-emerald-600">{formatBDT(c.revenueBDT)}</td><td className="px-3 py-4 text-right font-semibold">{c.roas ? `${c.roas.toFixed(2)}x` : '—'}</td>
+                  <td className="px-5 py-4 text-right"><span className={`px-2 py-1 rounded-full border text-[10px] font-medium ${c.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : c.status === 'Completed' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{c.status}</span></td>
+                  <td className="px-5 py-4 text-right whitespace-nowrap"><button onClick={() => { setEditing(c); setShowForm(true); }} className="text-xs font-medium text-blue-600 mr-3">Edit</button><button onClick={() => onDelete(c.id)} className="text-xs font-medium text-red-500">Delete</button></td>
+                </tr>
+              )) : <tr><td colSpan="9" className="py-14 text-center text-slate-400">No campaigns yet. Add your first campaign to start tracking performance.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showForm && <CampaignForm initialData={editing} clients={clients} onCancel={() => setShowForm(false)} onSubmit={data => { onSave(data); setShowForm(false); }}/>}
+    </div>
+  );
+}
+
+function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
+  const [data, setData] = useState(initialData || { name:'', clientId:clients[0]?.id || '', platform:'Meta', budget:'', budgetType:'USD', status:'Active', startDate:new Date().toISOString().slice(0,10), endDate:'', goal:'', resultValue:'', resultLabel:'Leads', revenueBDT:'', notes:'' });
+  const set = (key, value) => setData(prev => ({...prev, [key]:value}));
+  const input = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  return (
+    <div className="fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{initialData ? 'Edit Campaign' : 'Add Campaign'}</h2><p className="text-xs text-slate-500 mt-1">Create a campaign record; ad spend will be linked from matching ledger entries.</p></div><button onClick={onCancel} className="text-slate-400"><X size={20}/></button></div>
+        <form onSubmit={e => {e.preventDefault(); if(!data.name.trim()) return; onSubmit(data);}} className="p-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Campaign Name"><input required value={data.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Ramadan Lead Campaign" className={input}/></Field>
+            <Field label="Client"><select value={data.clientId} onChange={e=>set('clientId',e.target.value)} className={input}><option value="">Unassigned</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
+            <Field label="Platform"><select value={data.platform} onChange={e=>set('platform',e.target.value)} className={input}><option>Meta</option><option>Google</option><option>TikTok</option><option>Other</option></select></Field>
+            <Field label="Status"><select value={data.status} onChange={e=>set('status',e.target.value)} className={input}><option>Active</option><option>Paused</option><option>Completed</option></select></Field>
+            <Field label="Budget"><input type="number" min="0" step="0.01" value={data.budget} onChange={e=>set('budget',e.target.value)} placeholder="Enter budget" className={input}/></Field>
+            <Field label="Budget Currency"><select value={data.budgetType} onChange={e=>set('budgetType',e.target.value)} className={input}><option value="USD">USD</option><option value="BDT">BDT</option></select></Field>
+            <Field label="Start Date"><input type="date" value={data.startDate} onChange={e=>set('startDate',e.target.value)} className={input}/></Field>
+            <Field label="End Date"><input type="date" value={data.endDate} onChange={e=>set('endDate',e.target.value)} className={input}/></Field>
+            <Field label="Campaign Goal"><input value={data.goal} onChange={e=>set('goal',e.target.value)} placeholder="Leads, Sales, Traffic..." className={input}/></Field>
+            <Field label="Results"><div className="grid grid-cols-2 gap-2"><input type="number" min="0" step="1" value={data.resultValue} onChange={e=>set('resultValue',e.target.value)} placeholder="0" className={input}/><select value={data.resultLabel} onChange={e=>set('resultLabel',e.target.value)} className={input}><option>Leads</option><option>Sales</option><option>Messages</option><option>Clicks</option><option>Conversions</option></select></div></Field>
+            <Field label="Revenue Attributed (BDT)"><input type="number" min="0" step="0.01" value={data.revenueBDT} onChange={e=>set('revenueBDT',e.target.value)} placeholder="Optional" className={input}/></Field>
+          </div>
+          <Field label="Notes"><textarea value={data.notes} onChange={e=>set('notes',e.target.value)} rows="3" placeholder="Campaign notes..." className={input}/></Field>
+          <div className="flex gap-3 pt-4 border-t border-slate-100"><button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium">Cancel</button><button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold">Save Campaign</button></div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function IntegrationsView() {
+  const items = [
+    ['Meta Ads','Sync ad accounts, campaigns and spend automatically.',<Globe2 size={22}/>],
+    ['Google Ads','Bring Google campaign spend into the same ledger.',<BarChart3 size={22}/>],
+    ['TikTok Ads','Track TikTok spend alongside Meta and Google.',<Target size={22}/>],
+    ['Google Sheets','Export and sync operational reports.',<Database size={22}/>],
+    ['Payments','Connect payment providers when automated verification is available.',<Link2 size={22}/>]
+  ];
+  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div><h1 className="text-2xl font-bold text-slate-900">Integrations</h1><p className="text-sm text-slate-500 mt-1">Connect your marketing stack when automated sync is enabled.</p></div>
+    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-800 text-sm flex gap-3"><ShieldCheck size={19}/><span>Integrations are marked <strong>Planned</strong> until a real API connection is available.</span></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map(([name,desc,icon])=><div key={name} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><div className="flex items-start justify-between"><div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">{icon}</div><span className="text-[10px] font-semibold uppercase px-2 py-1 rounded-full bg-slate-100 text-slate-500">Planned</span></div><h3 className="mt-4 font-semibold">{name}</h3><p className="text-sm text-slate-500 mt-1 leading-6">{desc}</p><button disabled className="mt-4 w-full px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-sm">Connect later</button></div>)}</div>
+  </div>;
+}
+
+function TeamView({ teamMembers, onAdd, onRemove }) {
+  const [email,setEmail]=useState(''); const [role,setRole]=useState('Manager');
+  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLedger for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length+1} member{teamMembers.length+1===1?'':'s'}</span></div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Workspace Members</h3><div className="mt-4 space-y-2"><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"><div><p className="font-medium">Workspace Owner</p><p className="text-xs text-slate-500">Owner · full access</p></div><span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">Owner</span></div>{teamMembers.map(m=><div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{m.email}</p><p className="text-xs text-slate-500">{m.role}</p></div><button onClick={()=>onRemove(m.id)} className="text-xs text-red-500">Remove</button></div>)}</div></div>
+      <form onSubmit={e=>{e.preventDefault();if(!email.trim())return;onAdd({email:email.trim(),role});setEmail('')}} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Invite Member</h3><p className="text-xs text-slate-500 mt-1">Local workspace placeholder until real email invitations are connected.</p><Field label="Email"><input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@email.com" className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field><Field label="Role"><select value={role} onChange={e=>setRole(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Manager</option><option>Staff</option><option>Viewer</option></select></Field><button className="w-full mt-4 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold"><UserPlus size={16} className="inline mr-2"/>Add Member</button></form>
+    </div>
+  </div>;
+}
+
+function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
+  const [data,setData]=useState(settings); const fileRef=useRef(null);
+  useEffect(()=>setData(settings),[settings]);
+  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <div><h1 className="text-2xl font-bold text-slate-900">Settings</h1><p className="text-sm text-slate-500 mt-1">Workspace preferences, data safety and operational controls.</p></div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-sky-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Branding and basic preferences.</p></div></div><div className="mt-5 space-y-4">
+        <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3 min-w-0">{logo ? <img src={logo} alt="Workspace logo preview" className="w-14 h-14 rounded-2xl object-cover bg-white border border-sky-100 shadow-sm" /> : <div className="adl-brand-mark w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold">A</div>}<div><p className="text-sm font-semibold text-slate-800">Workspace Logo</p><p className="text-xs text-slate-500 mt-0.5">Upload PNG, JPG or WebP. Max 2 MB.</p></div></div><div className="flex items-center gap-2"><label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600"><Upload size={14}/>{logo ? 'Change' : 'Upload'}<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={e=>{onLogoUpload(e.target.files?.[0]);e.target.value='';}}/></label>{logo && <button type="button" onClick={onRemoveLogo} className="px-3 py-2 rounded-lg border border-red-200 bg-white text-red-600 text-xs font-semibold">Remove</button>}</div></div></div>
+        <Field label="Business / Workspace Name"><input value={data.businessName} onChange={e=>setData({...data,businessName:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field>
+        <Field label="Timezone"><select value={data.timezone} onChange={e=>setData({...data,timezone:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Asia/Dhaka</option><option>UTC</option><option>Asia/Kolkata</option></select></Field>
+        <Field label="Default Report Range"><select value={data.defaultReportRange} onChange={e=>setData({...data,defaultReportRange:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>This Month</option><option>Last 7 Days</option><option>Last 30 Days</option><option>Lifetime</option></select></Field>
+        <label className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 p-3"><span><span className="block text-sm font-medium">Financial alerts</span><span className="block text-xs text-slate-500 mt-0.5">Show negative card balance warnings.</span></span><input type="checkbox" checked={!!data.alerts} onChange={e=>setData({...data,alerts:e.target.checked})} className="w-4 h-4"/></label>
+        <button onClick={()=>{onSave(data);window.alert('Settings saved.')}} className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold"><Save size={16}/>Save Settings</button>
+      </div></div>
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><Database size={20} className="text-emerald-600"/><div><h3 className="font-semibold">Data & Backup</h3><p className="text-xs text-slate-500">Protect your workspace before major changes.</p></div></div><div className="mt-5 space-y-3">
+        <button onClick={onExport} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Download size={18} className="text-blue-600"/><span className="text-left"><strong className="block text-sm">Export Full Backup</strong><small className="text-xs text-slate-500">Clients, cards, transactions, campaigns and settings.</small></span></span><ArrowUpRight size={16}/></button>
+        <button onClick={()=>fileRef.current?.click()} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Upload size={18} className="text-emerald-600"/><span className="text-left"><strong className="block text-sm">Restore Backup</strong><small className="text-xs text-slate-500">Import an AdLytic JSON backup.</small></span></span><ArrowUpRight size={16}/></button>
+        <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={e=>{onImport(e.target.files?.[0]);e.target.value=''}}/>
+        <button onClick={onReset} className="w-full flex items-center justify-between rounded-xl border border-red-100 bg-red-50/60 p-4 hover:bg-red-50"><span className="flex items-center gap-3"><RotateCcw size={18} className="text-red-600"/><span className="text-left"><strong className="block text-sm text-red-700">Reset Workspace Data</strong><small className="text-xs text-red-600/70">Permanently clear locally stored data.</small></span></span><AlertCircle size={16}/></button>
+      </div></div>
+    </div>
+  </div>;
+}
+
+function MiniKpi({ title, value, icon }) {
+  return <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs text-slate-500">{title}</span><span className="text-slate-400">{icon}</span></div><div className="mt-2 text-lg font-bold text-slate-900">{value}</div></div>;
+}
+
+function Field({ label, children }) {
+  return <div><label className="block text-xs font-medium text-slate-600">{label}</label>{children}</div>;
+}
+
+
 function NavItem({ icon, label, isActive, onClick }) {
   return (
     <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
       {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
       {label}
     </button>
-  );
-}
-
-function DashboardKPI({ title, value, subtitle, icon, tone = 'blue', negative = false }) {
-  const tones = {
-    green: 'bg-emerald-50 text-emerald-600',
-    orange: 'bg-orange-50 text-orange-500',
-    blue: 'bg-sky-50 text-sky-600',
-    purple: 'bg-indigo-50 text-indigo-600',
-    violet: 'bg-purple-50 text-purple-600',
-    red: 'bg-red-50 text-red-500',
-    sky: 'bg-cyan-50 text-cyan-600',
-    amber: 'bg-amber-50 text-amber-500'
-  };
-
-  return (
-    <div className="relative bg-white border border-slate-200 rounded-xl px-4 py-3.5 min-h-[108px] hover:border-sky-200 hover:shadow-[0_5px_18px_rgba(14,165,233,0.07)] transition-all duration-200">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium text-slate-500 truncate">{title}</p>
-          <p className={`mt-2 text-[21px] font-bold tracking-tight truncate ${negative ? 'text-red-500' : 'text-slate-900'}`}>{value}</p>
-          <p className="text-[10px] text-slate-400 mt-1 truncate">{subtitle}</p>
-        </div>
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tones[tone]}`}>{icon}</div>
-      </div>
-    </div>
-  );
-}
-
-function DashboardStat({ label, value, valueClass = 'text-slate-800' }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-[11px] text-slate-500">{label}</span>
-      <span className={`text-[11px] font-semibold ${valueClass}`}>{value}</span>
-    </div>
-  );
-}
-
-function MiniExpense({ label, value, highlight = false }) {
-  return (
-    <div className={`rounded-lg px-2.5 py-2 text-center ${highlight ? 'bg-sky-50' : 'bg-slate-50'}`}>
-      <p className="text-[9px] text-slate-400">{label}</p>
-      <p className={`text-[11px] font-semibold mt-0.5 ${highlight ? 'text-sky-700' : 'text-slate-700'}`}>{value}</p>
-    </div>
-  );
-}
-
-function DashboardAlert({ type, title, text }) {
-  const styles = {
-    success: {
-      box: 'border-emerald-100 bg-emerald-50/60',
-      icon: 'text-emerald-600',
-      title: 'text-emerald-700',
-      text: 'text-emerald-600/80',
-      iconEl: <CheckCircle2 size={15} />
-    },
-    danger: {
-      box: 'border-red-100 bg-red-50/60',
-      icon: 'text-red-500',
-      title: 'text-red-600',
-      text: 'text-red-500/80',
-      iconEl: <AlertCircle size={15} />
-    },
-    info: {
-      box: 'border-sky-100 bg-sky-50/60',
-      icon: 'text-sky-600',
-      title: 'text-sky-700',
-      text: 'text-sky-600/80',
-      iconEl: <TrendingUp size={15} />
-    },
-    neutral: {
-      box: 'border-slate-200 bg-slate-50',
-      icon: 'text-slate-500',
-      title: 'text-slate-700',
-      text: 'text-slate-500',
-      iconEl: <AlertCircle size={15} />
-    }
-  };
-
-  const s = styles[type] || styles.neutral;
-
-  return (
-    <div className={`border rounded-xl px-3.5 py-3 ${s.box}`}>
-      <div className="flex items-center gap-2">
-        <span className={s.icon}>{s.iconEl}</span>
-        <span className={`text-[11px] font-semibold ${s.title}`}>{title}</span>
-      </div>
-      <p className={`text-[10px] mt-1.5 ${s.text}`}>{text}</p>
-    </div>
   );
 }
 
@@ -1764,8 +2799,18 @@ function StatRow({ label, value, className = 'text-slate-900' }) {
 function Divider() { return <div className="h-px w-full bg-slate-100 my-2"></div>; }
 
 function TransactionTypeBadge({ type }) {
-  const styles = { PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200', USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200', AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200' };
-  const labels = { PAYMENT_RECEIVED: 'Payment In', USD_PURCHASE: 'Buy USD', AD_SPEND: 'Meta Ads' };
+  const styles = {
+    PAYMENT_RECEIVED: 'bg-green-100 text-green-700 border-green-200',
+    USD_PURCHASE: 'bg-blue-100 text-blue-700 border-blue-200',
+    AD_SPEND: 'bg-purple-100 text-purple-700 border-purple-200',
+    FEE: 'bg-orange-100 text-orange-700 border-orange-200'
+  };
+  const labels = {
+    PAYMENT_RECEIVED: 'Payment In',
+    USD_PURCHASE: 'Buy USD',
+    AD_SPEND: 'Meta Ads',
+    FEE: 'Card Fee'
+  };
   return <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>{labels[type] || type}</span>;
 }
 
@@ -1802,7 +2847,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
   const handleApply = () => {
     let label = selectedPreset;
     if (selectedPreset === 'Custom Range' || (customStart && customEnd && !DATE_PRESETS.includes(selectedPreset))) {
-       label = `${formatDate(customStart)} - ${formatDate(customEnd)}`;
+       label = `${formatDate(customStart)} – ${formatDate(customEnd)}`;
     }
     if (!customStart && !customEnd) label = 'Lifetime';
 
@@ -1818,7 +2863,6 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
         </div>
         
         <div className="flex flex-col md:flex-row h-[400px]">
-          {/* Presets Sidebar */}
           <div className="w-full md:w-1/3 border-r border-slate-100 bg-slate-50 overflow-y-auto p-2 space-y-1">
             {DATE_PRESETS.map(preset => (
               <button 
@@ -1837,7 +2881,6 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
             </button>
           </div>
           
-          {/* Custom Date Inputs */}
           <div className="w-full md:w-2/3 p-6 flex flex-col justify-center bg-white">
             <h4 className="text-sm font-bold text-slate-800 mb-4">Custom Date Range</h4>
             <div className="space-y-4">
@@ -1914,34 +2957,320 @@ function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
   );
 }
 
-function ClientDropdownMenu({ onViewDetails, onEdit, onReceivePayment, onAddAdSpend, onDelete }) {
+function ClientActionsMenu({
+  client,
+  onViewDetails,
+  onHistory,
+  onEdit,
+  onReceivePayment,
+  onToggleStatus,
+  onDelete
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setIsOpen(false);
+  const updateMenuPosition = () => {
+    if (!buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const menuWidth = 240;
+    const menuHeight = showStatusMenu ? 350 : 300;
+    const gap = 8;
+    const viewportPadding = 8;
+
+    let left = rect.right - menuWidth;
+    left = Math.max(
+      viewportPadding,
+      Math.min(left, window.innerWidth - menuWidth - viewportPadding)
+    );
+
+    let top = rect.bottom + gap;
+
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
+      top = rect.top - menuHeight - gap;
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuRef]);
+
+    top = Math.max(
+      viewportPadding,
+      Math.min(top, window.innerHeight - menuHeight - viewportPadding)
+    );
+
+    setMenuPosition({ top, left });
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updateMenuPosition();
+
+    const handleOutside = (event) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+        setShowStatusMenu(false);
+      }
+    };
+
+    const handleViewportChange = () => updateMenuPosition();
+
+    document.addEventListener('mousedown', handleOutside);
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleViewportChange, true);
+    };
+  }, [isOpen, showStatusMenu]);
+
+  const closeAndRun = (callback) => {
+    setIsOpen(false);
+    setShowStatusMenu(false);
+    if (typeof callback === 'function') callback();
+  };
+
+  const openMenu = () => {
+    setIsOpen(prev => {
+      const next = !prev;
+      if (!next) setShowStatusMenu(false);
+      return next;
+    });
+  };
+
+  const menu = isOpen && typeof document !== 'undefined'
+    ? createPortal(
+        <div
+          ref={menuRef}
+          className="fixed bg-white border border-slate-200 rounded-xl shadow-2xl z-[99999] p-1.5"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+            width: 240
+          }}
+          role="menu"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => closeAndRun(onViewDetails)}
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+          >
+            View Details
+          </button>
+
+          <button
+            type="button"
+            onClick={() => closeAndRun(onHistory)}
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+          >
+            Transaction History
+          </button>
+
+          <button
+            type="button"
+            onClick={() => closeAndRun(onEdit)}
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+          >
+            Edit Client
+          </button>
+
+          <button
+            type="button"
+            onClick={() => closeAndRun(onReceivePayment)}
+            className="w-full text-left px-4 py-3 text-sm text-green-700 rounded-lg hover:bg-green-50"
+          >
+            Receive Payment
+          </button>
+
+          <div className="h-px bg-slate-100 my-1.5" />
+
+          <button
+            type="button"
+            onClick={() => setShowStatusMenu(prev => !prev)}
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 flex items-center justify-between"
+            aria-expanded={showStatusMenu}
+          >
+            <span>Change Status</span>
+            <ChevronDown
+              size={15}
+              className={`transition-transform ${showStatusMenu ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {showStatusMenu && (
+            <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 border border-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
+                className="w-full text-left px-3 py-2.5 text-sm text-green-700 rounded-md hover:bg-green-100"
+              >
+                Mark Active
+              </button>
+
+              <button
+                type="button"
+                onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
+                className="w-full text-left px-3 py-2.5 text-sm text-orange-700 rounded-md hover:bg-orange-100"
+              >
+                Mark Inactive
+              </button>
+
+              <button
+                type="button"
+                onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
+                className="w-full text-left px-3 py-2.5 text-sm text-blue-700 rounded-md hover:bg-blue-100"
+              >
+                Mark Completed
+              </button>
+            </div>
+          )}
+
+          <div className="h-px bg-slate-100 my-1.5" />
+
+          <button
+            type="button"
+            onClick={() => closeAndRun(onDelete)}
+            className="w-full text-left px-4 py-3 text-sm text-red-600 rounded-lg hover:bg-red-50 flex items-center justify-between"
+          >
+            <span>Delete Client</span>
+            <Trash2 size={15} />
+          </button>
+        </div>,
+        document.body
+      )
+    : null;
 
   return (
-    <div className="relative inline-block text-left" ref={menuRef}>
-      <button onClick={() => setIsOpen(!isOpen)} className="p-1 rounded hover:bg-slate-100 text-slate-400 transition-colors">
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={openMenu}
+        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
+        aria-label={`Actions for ${client?.name || 'client'}`}
+        aria-expanded={isOpen}
+      >
         <MoreVertical size={20} />
       </button>
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 overflow-hidden">
-          <button onClick={() => {onViewDetails(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">View Details</button>
-          <button onClick={() => {onEdit(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Edit Client</button>
-          <div className="h-px w-full bg-slate-100 my-1"></div>
-          <button onClick={() => {onReceivePayment(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50">Receive Payment</button>
-          <button onClick={() => {onAddAdSpend(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">Add Ad Spend</button>
-          <div className="h-px w-full bg-slate-100 my-1"></div>
-          <button onClick={() => {onDelete(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Delete Client <Trash2 size={14}/></button>
+      {menu}
+    </>
+  );
+}
+
+function ClientTransactionHistoryModal({ client, transactions, metrics }) {
+  const clientTx = useMemo(() => {
+    return transactions
+      .filter(t => t.clientId === client.id)
+      .sort((a, b) => {
+        const timeA = a.timestamp || new Date(a.date).getTime();
+        const timeB = b.timestamp || new Date(b.date).getTime();
+        return timeB - timeA;
+      });
+  }, [transactions, client.id]);
+
+  const totalReceived = clientTx
+    .filter(t => t.type === 'PAYMENT_RECEIVED')
+    .reduce((sum, t) => sum + parseFloat(t.amountBDT || 0), 0);
+
+  const totalAdSpend = clientTx
+    .filter(t => t.type === 'AD_SPEND')
+    .reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
+
+  const totalTax = clientTx
+    .filter(t => t.type === 'AD_SPEND')
+    .reduce((sum, t) => sum + parseFloat(t.taxUSD || 0), 0);
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+          <p className="text-xs text-green-700">Payments Received</p>
+          <p className="text-lg font-bold text-green-700 mt-1">{formatBDT(totalReceived)}</p>
         </div>
-      )}
+        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
+          <p className="text-xs text-purple-700">Ad Spend</p>
+          <p className="text-lg font-bold text-purple-700 mt-1">{formatUSD(totalAdSpend)}</p>
+        </div>
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+          <p className="text-xs text-red-700">Tax</p>
+          <p className="text-lg font-bold text-red-700 mt-1">{formatUSD(totalTax)}</p>
+        </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <p className="text-xs text-slate-500">Transactions</p>
+          <p className="text-lg font-bold text-slate-900 mt-1">{clientTx.length}</p>
+        </div>
+      </div>
+
+      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+          <h3 className="font-semibold text-slate-800">Client Transaction History</h3>
+          <p className="text-xs text-slate-500 mt-1">All transactions linked to {client.name}</p>
+        </div>
+
+        <div className="overflow-x-auto max-h-[55vh]">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="bg-white text-slate-500 font-medium border-b border-slate-200 sticky top-0">
+              <tr>
+                <th className="px-5 py-3">Date</th>
+                <th className="px-5 py-3">Type</th>
+                <th className="px-5 py-3">Details</th>
+                <th className="px-5 py-3 text-right">BDT</th>
+                <th className="px-5 py-3 text-right">USD</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {clientTx.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center py-10 text-slate-500">No transactions for this client yet.</td>
+                </tr>
+              )}
+
+              {clientTx.map(tx => {
+                const isPayment = tx.type === 'PAYMENT_RECEIVED';
+                const isAdSpend = tx.type === 'AD_SPEND';
+                const usdAmount = isAdSpend
+                  ? parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)
+                  : 0;
+
+                return (
+                  <tr key={tx.id} className="hover:bg-slate-50">
+                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
+                    <td className="px-5 py-4"><TransactionTypeBadge type={tx.type} /></td>
+                    <td className="px-5 py-4 min-w-[260px]">
+                      <div className="font-medium text-slate-800">
+                        {tx.notes || tx.campaign || tx.adAccount || tx.type.replaceAll('_', ' ')}
+                      </div>
+                      {tx.adAccount && (
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          {tx.adAccount}{tx.campaign ? ` • ${tx.campaign}` : ''}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-5 py-4 text-right font-semibold">
+                      {isPayment ? <span className="text-green-600">+{formatBDT(tx.amountBDT)}</span> : '—'}
+                    </td>
+                    <td className="px-5 py-4 text-right font-semibold">
+                      {isAdSpend ? <span className="text-red-600">-{formatUSD(usdAmount)}</span> : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="text-xs text-slate-400">
+        BDT conversion uses the app's current average USD effective rate of ৳{metrics.avgUSDEffectiveRate.toFixed(2)}.
+      </div>
     </div>
   );
 }
@@ -1951,7 +3280,7 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     if (initialData) {
       return {
         ...initialData,
-        budgetAmount: initialData.budgetAmount || initialData.budget || '',
+        budgetAmount: initialData.budgetAmount || '',
         budgetType: initialData.budgetType || 'Monthly',
         currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : true,
       };
@@ -1969,7 +3298,7 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     e.preventDefault(); 
     onSubmit({
       ...formData, 
-      budgetAmount: parseFloat(formData.budgetAmount || 0),
+      budgetAmount: parseFloat(formData.budgetAmount) || 0,
       endDate: formData.currentlyWorking ? '' : formData.endDate
     }); 
   };
@@ -1980,11 +3309,11 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required className={inputClass} /></div>
-        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required className={inputClass} /></div>
+        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter client name" className={inputClass} /></div>
+        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="Enter company name" className={inputClass} /></div>
         
-        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} className={inputClass} /></div>
-        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} className={inputClass} /></div>
+        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
+        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
         
         <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
         <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
@@ -2003,12 +3332,12 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
         </div>
         
         <div>
-          <label className={labelClass}>Budget Type</label>
+          <label className={labelClass}>Budget Period</label>
           <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
             <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
           </select>
         </div>
-        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="0.00" className={inputClass} /></div>
+        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="Enter BDT amount" className={inputClass} /></div>
         
         <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
         <div>
@@ -2024,7 +3353,7 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
           </div>
         </div>
       </div>
-      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass}></textarea></div>
+      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea></div>
       <div className="flex gap-3 pt-4 border-t border-slate-100">
         <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
         <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
@@ -2036,21 +3365,27 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
 function CardForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(initialData || {
     name: '', provider: '', cardType: 'Virtual Card', currency: 'USD',
-    initialBalance: 0, last4: '', expiry: '', notes: '', status: 'Active'
+    initialBalance: '', last4: '', expiry: '', notes: '', status: 'Active'
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleSubmit = (e) => { e.preventDefault(); onSubmit(formData); };
+  const handleSubmit = (e) => { 
+    e.preventDefault(); 
+    onSubmit({
+      ...formData,
+      initialBalance: parseFloat(formData.initialBalance) || 0
+    }); 
+  };
   const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div><label className="block text-sm font-medium text-slate-700">Card Name</label>
-        <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. RedotPay Primary" className={inputClass} />
+        <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter card name" className={inputClass} />
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Provider</label>
-          <input type="text" name="provider" value={formData.provider} onChange={handleChange} required placeholder="e.g. RedotPay, City Bank" className={inputClass} />
+        <div><label className="block text-sm font-medium text-slate-700">Provider / Bank</label>
+          <input type="text" name="provider" value={formData.provider} onChange={handleChange} required placeholder="Enter provider name" className={inputClass} />
         </div>
         <div><label className="block text-sm font-medium text-slate-700">Card Type</label>
           <select name="cardType" value={formData.cardType} onChange={handleChange} className={inputClass}>
@@ -2059,8 +3394,8 @@ function CardForm({ initialData, onSubmit, onCancel }) {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Initial Balance</label>
-          <input type="number" step="0.01" name="initialBalance" value={formData.initialBalance} onChange={handleChange} disabled={!!initialData} className={`${inputClass} ${initialData ? 'bg-slate-100' : ''}`} />
+        <div><label className="block text-sm font-medium text-slate-700">Initial Balance (USD)</label>
+          <input type="number" min="0" step="0.01" name="initialBalance" value={formData.initialBalance} onChange={handleChange} disabled={!!initialData} placeholder="Enter USD amount" className={`${inputClass} ${initialData ? 'bg-slate-100' : ''}`} />
           {initialData && <p className="text-xs text-slate-500 mt-1">Cannot edit initial balance after creation.</p>}
         </div>
         <div><label className="block text-sm font-medium text-slate-700">Currency</label>
@@ -2068,15 +3403,15 @@ function CardForm({ initialData, onSubmit, onCancel }) {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium text-slate-700">Last 4 Digits (Opt)</label>
-          <input type="text" maxLength="4" name="last4" value={formData.last4} onChange={handleChange} placeholder="1234" className={inputClass} />
+        <div><label className="block text-sm font-medium text-slate-700">Last 4 Digits</label>
+          <input type="text" maxLength="4" name="last4" value={formData.last4} onChange={handleChange} placeholder="Optional 4 digits" className={inputClass} />
         </div>
-        <div><label className="block text-sm font-medium text-slate-700">Expiry Date (Opt)</label>
-          <input type="text" name="expiry" value={formData.expiry} onChange={handleChange} placeholder="MM/YY" className={inputClass} />
+        <div><label className="block text-sm font-medium text-slate-700">Expiry Date</label>
+          <input type="text" name="expiry" value={formData.expiry} onChange={handleChange} placeholder="MM/YY (Optional)" className={inputClass} />
         </div>
       </div>
       <div><label className="block text-sm font-medium text-slate-700">Notes</label>
-        <textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass}></textarea>
+        <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea>
       </div>
       <div className="flex gap-3 pt-4 border-t border-slate-100">
         <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
@@ -2089,11 +3424,10 @@ function CardForm({ initialData, onSubmit, onCancel }) {
 function ClientDetailsModal({ client, metrics, transactions, onClose, onReceivePayment, onAdSpend }) {
   const clientTx = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a,b) => new Date(b.date) - new Date(a.date)), [transactions, client.id]);
   
-  // Stats Calculation
   const stats = useMemo(() => {
-    const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + t.amountBDT, 0);
-    const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + t.amountUSD, 0);
-    const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + (t.taxUSD||0), 0);
+    const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + parseFloat(t.amountBDT||0), 0);
+    const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.amountUSD||0), 0);
+    const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.taxUSD||0), 0);
     const totalCostBDT = (adSpendUSD + taxUSD) * metrics.avgUSDEffectiveRate;
     const profitBDT = revenue - totalCostBDT;
     const margin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
@@ -2105,25 +3439,23 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
     return { revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, margin, outstanding, targetBudgetBDT };
   }, [clientTx, metrics.avgUSDEffectiveRate, client]);
 
-  // Campaign Extraction
   const campaigns = useMemo(() => {
     const map = {};
     clientTx.filter(t => t.type === 'AD_SPEND').forEach(t => {
       const key = `${t.adAccount || 'Unknown'} - ${t.campaign || 'Unknown'}`;
       if(!map[key]) map[key] = { account: t.adAccount||'Unknown', campaign: t.campaign||'Unknown', spend: 0, tax: 0 };
-      map[key].spend += t.amountUSD;
-      map[key].tax += (t.taxUSD||0);
+      map[key].spend += parseFloat(t.amountUSD||0);
+      map[key].tax += parseFloat(t.taxUSD||0);
     });
     return Object.values(map);
   }, [clientTx]);
 
-  // Chart Data Preparation
   const chartData = useMemo(() => {
     const data = [...clientTx].reverse().reduce((acc, t) => {
       const d = t.date.substring(5);
       if(!acc[d]) acc[d] = { date: d, revenue: 0, cost: 0 };
-      if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += t.amountBDT;
-      if (t.type === 'AD_SPEND') acc[d].cost += ((t.amountUSD + (t.taxUSD||0)) * metrics.avgUSDEffectiveRate);
+      if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += parseFloat(t.amountBDT||0);
+      if (t.type === 'AD_SPEND') acc[d].cost += ((parseFloat(t.amountUSD||0) + parseFloat(t.taxUSD||0)) * metrics.avgUSDEffectiveRate);
       return acc;
     }, {});
     return Object.values(data);
@@ -2133,8 +3465,6 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
 
   return (
     <div className="flex flex-col h-full space-y-6">
-      
-      {/* Client Overview Header */}
       <div className="bg-slate-900 rounded-xl p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="w-full">
           <div className="flex items-center gap-3 mb-1">
@@ -2158,7 +3488,6 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
         </div>
       </div>
 
-      {/* Financial Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard title="Total Revenue" value={formatBDT(stats.revenue)} icon={<ArrowDownRight size={18} className="text-green-600" />} bgColor="bg-green-50" />
         <MetricCard title="Total Ad Spend" value={formatUSD(stats.adSpendUSD)} subtitle={`Tax: ${formatUSD(stats.taxUSD)}`} icon={<Activity size={18} className="text-purple-600" />} bgColor="bg-purple-50" />
@@ -2166,7 +3495,6 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
         <MetricCard title="Net Profit" value={formatBDT(stats.profitBDT)} subtitle={`Margin: ${stats.margin.toFixed(1)}%`} icon={<TrendingUp size={18} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={stats.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
       </div>
 
-      {/* Budget & Outstanding */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <h4 className="font-semibold text-slate-800 mb-4">Contract / Budget Tracking</h4>
@@ -2201,10 +3529,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
         </div>
       </div>
 
-      {/* Campaigns & Transactions Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Campaign Summary */}
         <div className="bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50">
             <h4 className="font-bold text-slate-800">Campaign Summary</h4>
@@ -2215,7 +3540,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
                 <tr><th className="px-4 py-2">Campaign & Account</th><th className="px-4 py-2 text-right">Spend</th><th className="px-4 py-2 text-right">Tax</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {campaigns.length === 0 && <tr><td colSpan="3" className="text-center py-6 text-slate-500">No campaigns recorded.</td></tr>}
+                {campaigns.length === 0 && <tr><td colSpan="3" className="text-center py-6 text-slate-500">No campaigns recorded yet.</td></tr>}
                 {campaigns.map((camp, idx) => (
                   <tr key={idx} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
@@ -2231,7 +3556,6 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
           </div>
         </div>
 
-        {/* Client Ledger */}
         <div className="bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
             <h4 className="font-bold text-slate-800">Client Ledger</h4>
@@ -2255,10 +3579,8 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
                         <span className="font-bold text-green-600">+{formatBDT(tx.amountBDT)}</span>
                       ) : (
                         <div>
-                          <span className="font-bold text-slate-800">-{formatUSD(Number(tx.amountUSD) || 0)}</span>
-                          {Number(tx.taxUSD || 0) >= EPSILON && (
-                            <span className="block text-[10px] text-slate-400">Tax: {formatUSD(Number(tx.taxUSD))}</span>
-                          )}
+                          <span className="font-bold text-slate-800">{formatUSD(parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0))}</span>
+                          <span className="block text-[10px] text-slate-400">({formatBDT((parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0)) * metrics.avgUSDEffectiveRate)})</span>
                         </div>
                       )}
                     </td>
@@ -2268,18 +3590,17 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
             </table>
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
-function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCancel }) {
+function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     amountBDT: '', cashOutCharge: '', amountUSD: '',
-    clientId: initialClientId || (clients?.[0]?.id || ''),
-    cardId: cards?.filter(c => c.status !== 'Archived')?.[0]?.id || '',
+    clientId: clients?.[0]?.id || '',
+    cardId: cards?.[0]?.id || '',
     taxUSD: '', notes: '',
     adAccount: '', campaign: '' 
   });
@@ -2291,47 +3612,30 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
     const payload = { type, date: formData.date, notes: formData.notes };
 
     if (type === 'PAYMENT_RECEIVED') {
-      payload.amountBDT = parseFloat(formData.amountBDT);
+      payload.amountBDT = parseFloat(formData.amountBDT) || 0;
+      if (payload.amountBDT <= 0 || !formData.clientId) return;
       payload.clientId = formData.clientId;
-
-      if (!Number.isFinite(payload.amountBDT) || payload.amountBDT < EPSILON) {
-        window.alert('Enter a valid BDT amount greater than 0.');
-        return;
-      }
     } else if (type === 'USD_PURCHASE') {
-      payload.amountBDT = parseFloat(formData.amountBDT);
-      payload.cashOutCharge = parseFloat(formData.cashOutCharge || 0);
-      payload.amountUSD = parseFloat(formData.amountUSD);
+      payload.amountBDT = parseFloat(formData.amountBDT) || 0;
+      payload.cashOutCharge = parseFloat(formData.cashOutCharge) || 0;
+      payload.amountUSD = parseFloat(formData.amountUSD) || 0;
+      if (payload.amountBDT <= 0 || payload.amountUSD <= 0 || !formData.cardId) return;
       payload.cardId = formData.cardId;
-
-      if (!Number.isFinite(payload.amountBDT) || payload.amountBDT < EPSILON ||
-          !Number.isFinite(payload.amountUSD) || payload.amountUSD < EPSILON) {
-        window.alert('Enter valid BDT Paid and USD Received amounts greater than 0.');
-        return;
-      }
-      if (payload.cashOutCharge < 0) {
-        window.alert('C.O Rate cannot be negative.');
-        return;
-      }
     } else if (type === 'AD_SPEND') {
-      payload.amountUSD = parseFloat(formData.amountUSD || 0);
-      payload.taxUSD = parseFloat(formData.taxUSD || 0);
-
-      if (!Number.isFinite(payload.amountUSD) || payload.amountUSD < EPSILON) {
-        window.alert('Ad Spend must be greater than 0.');
-        return;
+      payload.amountUSD = parseFloat(formData.amountUSD) || 0;
+      payload.taxUSD = parseFloat(formData.taxUSD) || 0;
+      
+      // Strict block for empty / zero meta ads spend
+      if (payload.amountUSD <= 0 || !formData.cardId || !formData.clientId) {
+        return; 
       }
-      if (!Number.isFinite(payload.taxUSD) || payload.taxUSD < 0) {
-        window.alert('Tax/VAT cannot be negative.');
-        return;
-      }
-
+      
       payload.clientId = formData.clientId;
       payload.cardId = formData.cardId;
       payload.adAccount = formData.adAccount;
       payload.campaign = formData.campaign;
     }
-
+    
     onSubmit(payload);
   };
 
@@ -2347,12 +3651,13 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
       {type === 'PAYMENT_RECEIVED' && (
         <>
           <div><label className={labelClass}>Client</label>
-            <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.company})</option>)}
+            <select name="clientId" value={formData.clientId} onChange={handleChange} required className={inputClass}>
+              {clients?.length === 0 && <option value="" disabled>No clients found</option>}
+              {clients?.map(c => <option key={c.id} value={c.id}>{c.name} ({c.company})</option>)}
             </select>
           </div>
           <div><label className={labelClass}>Amount Received (BDT)</label>
-            <input type="number" step="0.01" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="0.00" className={inputClass} />
+            <input type="number" min="0" step="0.01" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="Enter BDT amount" className={inputClass} />
           </div>
         </>
       )}
@@ -2364,28 +3669,31 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelClass}>BDT Paid</label>
-              <input type="number" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="0" className={inputClass} />
+              <input type="number" min="0" step="0.01" name="amountBDT" value={formData.amountBDT} onChange={handleChange} required placeholder="Enter BDT amount" className={inputClass} />
             </div>
-            <div><label className={labelClass}>C.O Rate (Cash-out Fee)</label>
-              <input type="number" name="cashOutCharge" value={formData.cashOutCharge} onChange={handleChange} placeholder="0" className={inputClass} />
+            <div><label className={labelClass}>Cash-out Charge (C.O Rate)</label>
+              <input type="number" min="0" step="0.01" name="cashOutCharge" value={formData.cashOutCharge} onChange={handleChange} placeholder="Enter cash-out charge" className={inputClass} />
             </div>
           </div>
           <div><label className={labelClass}>USD Received</label>
-            <input type="number" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={inputClass} />
+            <input type="number" min="0" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="Enter USD amount" className={inputClass} />
           </div>
           <div><label className={labelClass}>Add USD To Card / Destination</label>
             <select name="cardId" value={formData.cardId} onChange={handleChange} required className={inputClass}>
-              <option value="" disabled>Select a card</option>
-              {cards?.filter(c => c.status !== 'Archived').map(c => (
-                <option key={c.id} value={c.id}>{c.name} ({c.provider})</option>
-              ))}
+              {cards?.length === 0 ? (
+                <option value="" disabled>No active cards available</option>
+              ) : (
+                cards?.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.provider})</option>
+                ))
+              )}
             </select>
           </div>
           {(formData.amountBDT && formData.amountUSD) ? (
             <div className="p-3 bg-slate-50 border border-slate-200 rounded text-sm space-y-1">
-              <div className="flex justify-between"><span>Total BDT Cost:</span> <strong>৳{parseFloat(formData.amountBDT || 0) + parseFloat(formData.cashOutCharge || 0)}</strong></div>
-              <div className="flex justify-between text-slate-500"><span>Base Rate:</span> <span>৳{(parseFloat(formData.amountBDT) / parseFloat(formData.amountUSD)).toFixed(2)}</span></div>
-              <div className="flex justify-between text-blue-600 font-medium"><span>Effective Rate:</span> <span>৳{((parseFloat(formData.amountBDT) + parseFloat(formData.cashOutCharge || 0)) / parseFloat(formData.amountUSD)).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>Total BDT Cost:</span> <strong>৳{(parseFloat(formData.amountBDT || 0) + parseFloat(formData.cashOutCharge || 0)).toLocaleString('en-IN')}</strong></div>
+              <p className="text-xs text-slate-500 mb-1">Effective Rate = (BDT Paid + C.O Charge) ÷ USD Received</p>
+              <div className="flex justify-between text-blue-600 font-medium"><span>Effective Rate:</span> <span>৳{((parseFloat(formData.amountBDT) + parseFloat(formData.cashOutCharge || 0)) / parseFloat(formData.amountUSD)).toFixed(2)} / USD</span></div>
             </div>
           ) : null}
         </>
@@ -2395,34 +3703,46 @@ function TransactionForm({ type, clients, cards, initialClientId, onSubmit, onCa
         <>
           <div className="grid grid-cols-2 gap-4">
              <div><label className={labelClass}>Client</label>
-              <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>{clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}</select>
+              <select name="clientId" value={formData.clientId} onChange={handleChange} required className={inputClass}>
+                {clients?.length === 0 && <option value="" disabled>No clients found</option>}
+                {clients?.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
+              </select>
             </div>
             <div><label className={labelClass}>Card Used</label>
-              <select name="cardId" value={formData.cardId} onChange={handleChange} className={inputClass}>{cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+              <select name="cardId" value={formData.cardId} onChange={handleChange} required className={inputClass}>
+                {cards?.length === 0 && <option value="" disabled>No cards found</option>}
+                {cards?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelClass}>Ad Account Name</label>
-              <input type="text" name="adAccount" value={formData.adAccount} onChange={handleChange} placeholder="e.g. Client Ads 1" className={inputClass} />
+              <input type="text" name="adAccount" value={formData.adAccount} onChange={handleChange} placeholder="Optional account name" className={inputClass} />
             </div>
             <div><label className={labelClass}>Campaign Name</label>
-              <input type="text" name="campaign" value={formData.campaign} onChange={handleChange} placeholder="e.g. Lead Gen" className={inputClass} />
+              <input type="text" name="campaign" value={formData.campaign} onChange={handleChange} placeholder="Optional campaign name" className={inputClass} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className={labelClass}>Ad Spend (USD)</label>
-              <input type="number" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="0.00" className={inputClass} />
+              <input type="number" min="0" step="0.01" name="amountUSD" value={formData.amountUSD} onChange={handleChange} required placeholder="Enter ad spend" className={inputClass} />
             </div>
-            <div><label className={labelClass}>Tax/VAT (USD)</label>
-              <input type="number" step="0.01" name="taxUSD" value={formData.taxUSD} onChange={handleChange} placeholder="0.00" className={inputClass} />
+            <div><label className={labelClass}>Tax (USD)</label>
+              <input type="number" min="0" step="0.01" name="taxUSD" value={formData.taxUSD} onChange={handleChange} placeholder="Enter tax amount" className={inputClass} />
             </div>
           </div>
+          {formData.amountUSD ? (
+            <div className="p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800">
+              Total Card Deduction = Ad Spend + Tax
+              <div className="mt-1 font-bold">Total Card Deduction: ${(parseFloat(formData.amountUSD || 0) + parseFloat(formData.taxUSD || 0)).toFixed(2)}</div>
+            </div>
+          ) : null}
         </>
       )}
 
       {type !== 'USD_PURCHASE' && (
         <div><label className={labelClass}>Notes / Details</label>
-          <textarea name="notes" value={formData.notes} onChange={handleChange} rows="2" className={inputClass}></textarea>
+          <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea>
         </div>
       )}
       
