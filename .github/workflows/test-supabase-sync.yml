@@ -22,3 +22,9 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Upload test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: adlytic-supabase-test-build
+          path: dist
+          retention-days: 7
