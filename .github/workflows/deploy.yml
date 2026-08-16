@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout main site
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -27,11 +27,31 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install main dependencies
         run: npm install
 
-      - name: Build
+      - name: Build main site
         run: npm run build
+
+      # Build the Supabase branch separately and publish it under /preview/.
+      # This leaves the existing main site at /adledgerr/ untouched.
+      - name: Checkout Supabase test branch
+        uses: actions/checkout@v4
+        with:
+          ref: supabase-cloud-sync
+          path: preview-src
+
+      - name: Build Supabase preview
+        working-directory: preview-src
+        run: |
+          npm install
+          npx vite build --base=/adledgerr/preview/
+
+      - name: Copy Supabase preview into Pages site
+        run: |
+          rm -rf ./dist/preview
+          mkdir -p ./dist/preview
+          cp -R ./preview-src/dist/. ./dist/preview/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
