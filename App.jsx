@@ -2811,6 +2811,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
   const [data,setData]=useState(settings); const fileRef=useRef(null);
   useEffect(()=>setData(settings),[settings]);
   return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+    <AccountSecuritySettings />
     <div><h1 className="text-2xl font-bold text-slate-900">Settings</h1><p className="text-sm text-slate-500 mt-1">Workspace preferences, data safety and operational controls.</p></div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-sky-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Branding and basic preferences.</p></div></div><div className="mt-5 space-y-4">
@@ -2852,7 +2853,6 @@ function NavItem({ icon, label, isActive, onClick }) {
 function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
   return (
     <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
-      <AccountSecuritySettings />
       <div className="flex justify-between items-start mb-2">
         <p className="text-sm font-medium text-slate-500">{title}</p>
         <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
