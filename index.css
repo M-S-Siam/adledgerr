@@ -9,4 +9,165 @@ html, body, #root {
 
 body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Mobile-first polish for AdLytic. Desktop layout is intentionally unchanged. */
+@media (max-width: 767px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-width: 0;
+  }
+
+  /* Prevent the desktop sidebar/content offset from creating a horizontal page. */
+  main,
+  [role="main"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Responsive dashboard grids. */
+  [class*="grid-cols-4"],
+  [class*="grid-cols-3"],
+  [class*="grid-cols-2"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Two-column flex layouts become stacked on small screens. */
+  [class*="md\\:grid-cols-2"],
+  [class*="lg\\:grid-cols-2"],
+  [class*="xl\\:grid-cols-2"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Keep dashboard cards and panels inside the viewport. */
+  [class*="rounded"],
+  section,
+  article {
+    max-width: 100%;
+  }
+
+  /* Header / action bar: allow actions to wrap instead of overlapping. */
+  header {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  header > div {
+    max-width: 100%;
+  }
+
+  header button {
+    flex-shrink: 0;
+  }
+
+  /* Search fields should use the available width on phones. */
+  input[type="search"],
+  input[placeholder*="Search"],
+  header input {
+    max-width: 100%;
+  }
+
+  /* Long tables become horizontally scrollable rather than breaking the page. */
+  table {
+    min-width: 620px;
+  }
+
+  .overflow-x-auto {
+    max-width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Forms and modal content use the full phone width. */
+  form {
+    max-width: 100%;
+  }
+
+  [role="dialog"] {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100vh - 24px) !important;
+    overflow-y: auto;
+  }
+
+  /* Avoid charts forcing the document wider than the viewport. */
+  .recharts-responsive-container,
+  .recharts-wrapper {
+    max-width: 100% !important;
+  }
+
+  /* Comfortable mobile spacing without changing the desktop design. */
+  .p-8 {
+    padding: 1rem !important;
+  }
+
+  .px-8 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .py-8 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .gap-8 {
+    gap: 1rem !important;
+  }
+
+  /* Keep large headings readable on narrow screens. */
+  h1 {
+    font-size: clamp(1.35rem, 6vw, 1.8rem);
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: clamp(1.1rem, 5vw, 1.4rem);
+    line-height: 1.25;
+  }
+
+  /* Buttons can wrap their labels instead of overflowing. */
+  button {
+    max-width: 100%;
+  }
+
+  /* Hide decorative desktop-only overflow while preserving all functionality. */
+  .whitespace-nowrap {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra-tight spacing for smaller phones. */
+  .p-6 {
+    padding: 0.875rem !important;
+  }
+
+  .px-6 {
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+  }
+
+  .gap-6 {
+    gap: 0.875rem !important;
+  }
+
+  /* Stack common horizontal action groups on very narrow screens. */
+  .flex-wrap {
+    row-gap: 0.5rem;
+  }
 }
