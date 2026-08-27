@@ -121,10 +121,9 @@ button_replacement = '''
 '''
 if not button_re.search(auth):
     raise SystemExit('AuthGate settings button block not found')
-auth = button_re.sub(button_replacement, auth, count=1)
+auth = button_re.sub(lambda _match: button_replacement, auth, count=1)
 auth_path.write_text(auth, encoding='utf-8')
 
-# Remove the temporary updater files; keep only the real application changes and deploy workflow.
 for p in ['.github/workflows/ui-settings-fix.yml', '.github/workflows/ui-settings-fix2.yml', 'scripts/update_settings.py']:
     path = Path(p)
     if path.exists():
