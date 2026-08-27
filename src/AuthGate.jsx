@@ -19,13 +19,13 @@ function PasswordStrength({ password }) {
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
-        <span style={{ fontSize:10.5, color:'#64748b' }}>Password strength</span>
+        <span style={{ fontSize:10.5, color:'#e6f0f8' }}>Password strength</span>
         <span style={{ fontSize:10.5, fontWeight:700, color:tone }}>{label}</span>
       </div>
-      <div style={{ height:4, borderRadius:99, background:'rgba(148,163,184,.20)', overflow:'hidden' }}>
+      <div style={{ height:4, borderRadius:99, background:'rgba(255,255,255,.18)', overflow:'hidden' }}>
         <div style={{ height:'100%', width, background:tone, borderRadius:99, transition:'width .2s, background .2s' }} />
       </div>
-      <div style={{ marginTop:6, fontSize:10.5, lineHeight:1.45, color:'#64748b' }}>Use 8+ characters with uppercase, lowercase, number and symbol for a stronger password.</div>
+      <div style={{ marginTop:6, fontSize:10.5, lineHeight:1.45, color:'rgba(230,240,248,.78)' }}>Use 8+ characters with uppercase, lowercase, number and symbol for a stronger password.</div>
     </div>
   );
 }
@@ -146,7 +146,7 @@ export default function AuthGate({ children }) {
   const inputWithIcon = () => ({ position:'relative' });
   const iconStyle = { position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', color:'#64748b', pointerEvents:'none' };
   const eyeButtonStyle = { position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', border:0, background:'transparent', color:'#64748b', padding:6, cursor:'pointer', display:'flex', alignItems:'center', borderRadius:7 };
-  const labelStyle = { display:'block', fontSize:11.5, fontWeight:650, color:'#475569', marginBottom:6 };
+  const labelStyle = { display:'block', fontSize:11.5, fontWeight:650, color:'#ffffff', marginBottom:6 };
   const placeholderStyle = { ...fieldStyle, background:'rgba(248,250,252,.94)', color:'#0f172a', WebkitTextFillColor:'#0f172a' };
 
   return (
@@ -157,7 +157,7 @@ export default function AuthGate({ children }) {
         <div style={{ textAlign:'center', marginBottom:18 }}>
           <div style={{ margin:'0 auto', width:52, height:52, borderRadius:15, background:'linear-gradient(135deg,#38bdf8,#2563eb 70%,#4f46e5)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:23, fontWeight:850, color:'#fff', WebkitTextFillColor:'#fff', boxShadow:'0 12px 30px rgba(37,99,235,.28)', border:'1px solid rgba(255,255,255,.65)' }}>A</div>
           <div style={{ marginTop:11, fontSize:22, lineHeight:1.15, fontWeight:500, color:'#0f172a' }}>Welcome to <strong style={{ fontWeight:850, color:'#2563eb' }}>AdLytic</strong></div>
-          <div style={{ marginTop:6, fontSize:11.5, color:'#64748b' }}>{subtitle}</div>
+          <div style={{ marginTop:6, fontSize:11.5, color:'#ffffff' }}>{subtitle}</div>
         </div>
 
         <div style={{ padding:'16px 15px 15px', borderRadius:16, background:'rgba(255,255,255,.58)', border:'1px solid rgba(148,163,184,.25)' }}>
@@ -170,22 +170,22 @@ export default function AuthGate({ children }) {
           {!isReset && (
             <>
               <label style={labelStyle}>Email</label>
-              <div style={inputWithIcon()}><Mail size={16} style={iconStyle} /><input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required autoComplete="email" placeholder="Enter your email address" style={placeholderStyle} /></div>
+              <div style={inputWithIcon()}><Mail size={16} style={iconStyle} /><input className="adl-auth-input" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required autoComplete="email" placeholder="Enter your email address" style={placeholderStyle} /></div>
             </>
           )}
 
           {isSignup && (
             <>
-              <label style={{ ...labelStyle, marginTop:13 }}>Workspace name <span style={{ color:'#94a3b8', fontWeight:400 }}>(optional)</span></label>
-              <input type="text" value={businessName} onChange={(e)=>setBusinessName(e.target.value)} autoComplete="organization" placeholder="Your business or workspace" style={{ ...fieldStyle, paddingLeft:12 }} />
+              <label style={{ ...labelStyle, marginTop:13 }}>Workspace name <span style={{ color:'rgba(255,255,255,.62)', fontWeight:400 }}>(optional)</span></label>
+              <input className="adl-auth-input" type="text" value={businessName} onChange={(e)=>setBusinessName(e.target.value)} autoComplete="organization" placeholder="Your business or workspace" style={{ ...fieldStyle, paddingLeft:12 }} />
             </>
           )}
 
           {!isForgot && (
             <>
               <label style={{ ...labelStyle, marginTop:13 }}>{isReset ? 'New password' : 'Password'}</label>
-              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input type={showPassword ? 'text':'password'} value={password} onChange={(e)=>setPassword(e.target.value)} required minLength={(isSignup || isReset) ? 8 : undefined} autoComplete={(isSignup || isReset) ? 'new-password':'current-password'} placeholder={passwordPlaceholder} style={placeholderStyle} /><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
-              {isLogin && <button type="button" onClick={()=>{clearFeedback();setMode('forgot')}} style={{ display:'block', marginTop:8, marginLeft:'auto', border:0, background:'transparent', color:'#0284c7', fontSize:11.5, fontWeight:700, cursor:'pointer', padding:0 }}>Forgot password?</button>}
+              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input className="adl-auth-input" type={showPassword ? 'text':'password'} value={password} onChange={(e)=>setPassword(e.target.value)} required minLength={(isSignup || isReset) ? 8 : undefined} autoComplete={(isSignup || isReset) ? 'new-password':'current-password'} placeholder={passwordPlaceholder} style={placeholderStyle} /><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
+              {isLogin && <button type="button" onClick={()=>{clearFeedback();setMode('forgot')}} style={{ display:'block', marginTop:8, marginLeft:'auto', border:0, background:'transparent', color:'#0ea5e9', fontSize:11.5, fontWeight:700, cursor:'pointer', padding:0 }}>Forgot password?</button>}
               {isSignup && <PasswordStrength password={password} />}
             </>
           )}
@@ -193,7 +193,7 @@ export default function AuthGate({ children }) {
           {(isSignup || isReset) && (
             <>
               <label style={{ ...labelStyle, marginTop:13 }}>{isReset ? 'Confirm new password':'Confirm password'}</label>
-              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input type={showConfirmPassword ? 'text':'password'} value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Re-enter your password" style={placeholderStyle} /><button type="button" onClick={()=>setShowConfirmPassword(v=>!v)} aria-label={showConfirmPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showConfirmPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
+              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input className="adl-auth-input" type={showConfirmPassword ? 'text':'password'} value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Re-enter your password" style={placeholderStyle} /><button type="button" onClick={()=>setShowConfirmPassword(v=>!v)} aria-label={showConfirmPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showConfirmPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
             </>
           )}
 
@@ -202,12 +202,12 @@ export default function AuthGate({ children }) {
 
           <button type="submit" disabled={busy} style={{ width:'100%', marginTop:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, border:0, borderRadius:10, background:busy ? '#7dd3fc':'linear-gradient(135deg,#0ea5e9,#2563eb)', color:'#fff', WebkitTextFillColor:'#fff', padding:'12px 16px', fontSize:13.5, fontWeight:800, cursor:busy?'not-allowed':'pointer', boxShadow:'0 9px 22px rgba(37,99,235,.22)' }}>{busy ? <Loader2 size={16} className="animate-spin"/> : isSignup ? <UserRound size={16} color="#fff"/> : <LogIn size={16} color="#fff"/>}{submitText}</button>
 
-          {(isForgot || isReset) && <button type="button" onClick={()=>{clearFeedback();setPassword('');setConfirmPassword('');setMode('login')}} style={{ width:'100%', marginTop:11, border:0, background:'transparent', color:'#64748b', fontSize:11.5, fontWeight:650, cursor:'pointer' }}>Back to Login</button>}
+          {(isForgot || isReset) && <button type="button" onClick={()=>{clearFeedback();setPassword('');setConfirmPassword('');setMode('login')}} style={{ width:'100%', marginTop:11, border:0, background:'transparent', color:'rgba(255,255,255,.80)', fontSize:11.5, fontWeight:650, cursor:'pointer' }}>Back to Login</button>}
 
-          {isLogin && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(148,163,184,.22)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'#64748b' }}>New to AdLytic?</span><button type="button" onClick={()=>{clearFeedback();setMode('signup')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#2563eb', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Create account</button></div>}
-          {isSignup && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(148,163,184,.22)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'#64748b' }}>Already have an account?</span><button type="button" onClick={()=>{clearFeedback();setPassword('');setConfirmPassword('');setMode('login')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#2563eb', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Sign in</button></div>}
+          {isLogin && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(255,255,255,.20)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'rgba(255,255,255,.86)' }}>New to AdLytic?</span><button type="button" onClick={()=>{clearFeedback();setMode('signup')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#38bdf8', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Create account</button></div>}
+          {isSignup && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(255,255,255,.20)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'rgba(255,255,255,.86)' }}>Already have an account?</span><button type="button" onClick={()=>{clearFeedback();setPassword('');setConfirmPassword('');setMode('login')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#38bdf8', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Sign in</button></div>}
 
-          <div style={{ marginTop:12, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:10, color:'#94a3b8' }}><ShieldCheck size={12} /> Secure account authentication</div>
+          <div style={{ marginTop:12, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:10, color:'rgba(255,255,255,.72)' }}><ShieldCheck size={12} /> Secure account authentication</div>
         </div>
       </form>
     </div>
