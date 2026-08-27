@@ -76,15 +76,35 @@ body {
 }
 
 /* ---------- AUTH: ONE PASSWORD REVEAL CONTROL ---------- */
-/* Edge may render its own reveal button. AdLytic already has a custom eye,
-   so keep only the AdLytic control. */
 .adl-auth-page input[type="password"]::-ms-reveal,
 .adl-auth-page input[type="password"]::-ms-clear { display: none !important; }
 .adl-auth-page input[type="password"] { -webkit-appearance: none; appearance: none; }
 
+/* ---------- AUTH: INPUT ICONS + PLACEHOLDERS ---------- */
+.adl-auth-page div:has(> input[type="email"]) > svg,
+.adl-auth-page div:has(> input[autocomplete="current-password"]) > svg,
+.adl-auth-page div:has(> input[autocomplete="new-password"]) > svg {
+  position: absolute !important;
+  left: 13px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 3 !important;
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  color: #64748b !important;
+  stroke: #64748b !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: none !important;
+}
+.adl-auth-page input::placeholder {
+  color: #c4cbd5 !important;
+  -webkit-text-fill-color: #c4cbd5 !important;
+  opacity: 1 !important;
+}
+
 /* ---------- AUTH: FIT THE CARD AT NORMAL 100% BROWSER ZOOM ---------- */
-/* Only the auth screen is affected here. The dashboard and all app pages
-   remain unchanged on desktop. */
 @media (min-width: 768px) and (min-height: 650px) {
   .adl-auth-page { padding: 10px 14px !important; }
   .adl-auth-page > form { max-height: calc(100dvh - 20px) !important; overflow-y: visible !important; padding: 15px 18px 13px !important; }
