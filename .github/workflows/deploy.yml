@@ -1,3 +1,4 @@
+# Deploys the AdLedger production build, including cloud-backed workspace persistence.
 name: Deploy AdLedger to GitHub Pages
 
 on:
