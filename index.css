@@ -80,7 +80,7 @@ body {
 .adl-auth-page input[type="password"]::-ms-clear { display: none !important; }
 .adl-auth-page input[type="password"] { -webkit-appearance: none; appearance: none; }
 
-/* ---------- AUTH: INPUT ICONS + PLACEHOLDERS ---------- */
+/* ---------- AUTH: INPUT ICONS ---------- */
 .adl-auth-page div:has(> input[type="email"]) > svg,
 .adl-auth-page div:has(> input[autocomplete="current-password"]) > svg,
 .adl-auth-page div:has(> input[autocomplete="new-password"]) > svg {
@@ -98,10 +98,16 @@ body {
   visibility: visible !important;
   pointer-events: none !important;
 }
-.adl-auth-page input::placeholder {
-  color: #c4cbd5 !important;
-  -webkit-text-fill-color: #c4cbd5 !important;
+
+/* AUTH PLACEHOLDERS — deliberately darker than the frosted input so the hint is unmistakably visible. */
+.adl-auth-page input.adl-auth-input::placeholder,
+.adl-auth-page input.adl-auth-input::-webkit-input-placeholder,
+.adl-auth-page input.adl-auth-input::-moz-placeholder,
+.adl-auth-page input.adl-auth-input:-ms-input-placeholder {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
   opacity: 1 !important;
+  text-shadow: none !important;
 }
 
 /* ---------- AUTH: FIT THE CARD AT NORMAL 100% BROWSER ZOOM ---------- */
