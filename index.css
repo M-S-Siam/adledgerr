@@ -18,242 +18,97 @@ body {
 
 /* Desktop is intentionally untouched. All responsive changes are phone-only. */
 @media (max-width: 767px) {
-  html, body, #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
+  html, body, #root { width: 100%; max-width: 100%; overflow-x: hidden; }
   body { min-width: 0; }
-
-  .adl-shell,
-  .adl-shell main {
-    min-width: 0 !important;
-    width: 100% !important;
-  }
-
-  /* ---------- MOBILE APP BAR ---------- */
-  .adl-shell header {
-    height: 66px !important;
-    min-height: 66px !important;
-    padding: 0 10px !important;
-    gap: 8px !important;
-  }
-
+  .adl-shell, .adl-shell main { min-width: 0 !important; width: 100% !important; }
+  .adl-shell header { height: 66px !important; min-height: 66px !important; padding: 0 10px !important; gap: 8px !important; }
   .adl-shell header > div { min-width: 0; }
-
-  .adl-shell header > div:last-child {
-    margin-left: auto;
-    gap: 8px !important;
-  }
-
-  .adl-shell header > div:last-child > button {
-    flex-shrink: 0;
-  }
-
-  .adl-shell header input,
-  .adl-shell header [placeholder*="Search"],
-  .adl-shell header [class*="search"] {
-    display: none !important;
-  }
-
-  /* ---------- CONTENT FRAME ---------- */
-  .adl-shell main > div.flex-1.overflow-auto {
-    padding: 12px 9px 24px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-
-  .adl-shell h1 {
-    font-size: 1.45rem !important;
-    line-height: 1.18 !important;
-    margin-bottom: 4px !important;
-  }
-
+  .adl-shell header > div:last-child { margin-left: auto; gap: 8px !important; }
+  .adl-shell header > div:last-child > button { flex-shrink: 0; }
+  .adl-shell header input, .adl-shell header [placeholder*="Search"], .adl-shell header [class*="search"] { display: none !important; }
+  .adl-shell main > div.flex-1.overflow-auto { padding: 12px 9px 24px !important; width: 100% !important; min-width: 0 !important; }
+  .adl-shell h1 { font-size: 1.45rem !important; line-height: 1.18 !important; margin-bottom: 4px !important; }
   .adl-shell h2 { line-height: 1.2 !important; }
-
-  /* ---------- DASHBOARD: COMPACT COMMAND CENTER ---------- */
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) {
-    gap: 10px !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child {
-    padding: 14px 13px !important;
-    border-radius: 16px !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child h1 {
-    font-size: 1.42rem !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child p {
-    font-size: .82rem !important;
-    line-height: 1.35 !important;
-  }
-
-  /* The 8 financial KPIs: 2 x 2, compact and easy to scan. */
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 9px !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div {
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: 112px !important;
-    padding: 11px 11px 10px !important;
-    border-radius: 15px !important;
-  }
-
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) { gap: 10px !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child { padding: 14px 13px !important; border-radius: 16px !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child h1 { font-size: 1.42rem !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child p { font-size: .82rem !important; line-height: 1.35 !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div { min-width: 0 !important; min-height: 0 !important; height: 112px !important; padding: 11px 11px 10px !important; border-radius: 15px !important; }
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h2,
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h3 {
-    font-size: 1.02rem !important;
-    line-height: 1.1 !important;
-    margin: 0 !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div p {
-    font-size: .70rem !important;
-    line-height: 1.25 !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div p:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div svg {
-    width: 17px !important;
-    height: 17px !important;
-  }
-
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h3 { font-size: 1.02rem !important; line-height: 1.1 !important; margin: 0 !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div p { font-size: .70rem !important; line-height: 1.25 !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div p:last-child { margin-bottom: 0 !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div svg { width: 17px !important; height: 17px !important; }
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="w-10"],
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="h-10"] {
-    width: 32px !important;
-    height: 32px !important;
-  }
-
-  /* Analytics sections: still rich, but much shorter on a phone. */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="h-10"] { width: 32px !important; height: 32px !important; }
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(3),
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(4),
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(5) {
-    gap: 10px !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) .h-72 {
-    height: 165px !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) .h-64 {
-    height: 155px !important;
-  }
-
-  /* ---------- ALL OTHER PHONE GRIDS ---------- */
-  .adl-shell .grid[class*="grid-cols-4"],
-  .adl-shell .grid[class*="grid-cols-5"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 9px !important;
-  }
-
-  .adl-shell .grid[class*="grid-cols-4"] > *,
-  .adl-shell .grid[class*="grid-cols-5"] > * {
-    min-width: 0 !important;
-  }
-
-  .adl-shell .grid[class*="grid-cols-4"] > .bg-white,
-  .adl-shell .grid[class*="grid-cols-5"] > .bg-white {
-    padding: 11px !important;
-    min-height: 124px !important;
-  }
-
-  .adl-shell .grid[class*="grid-cols-4"] h2,
-  .adl-shell .grid[class*="grid-cols-5"] h2 {
-    font-size: 1.18rem !important;
-    line-height: 1.1 !important;
-  }
-
-  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 9px !important;
-  }
-
-  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > * {
-    min-width: 0 !important;
-  }
-
-  .adl-shell .grid[class*="xl:grid-cols-3"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 10px !important;
-  }
-
-  .adl-shell [class*="xl:col-span-2"] {
-    grid-column: auto !important;
-  }
-
-  /* ---------- CHARTS ---------- */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(5) { gap: 10px !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) .h-72 { height: 165px !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) .h-64 { height: 155px !important; }
+  .adl-shell .grid[class*="grid-cols-4"], .adl-shell .grid[class*="grid-cols-5"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
+  .adl-shell .grid[class*="grid-cols-4"] > *, .adl-shell .grid[class*="grid-cols-5"] > * { min-width: 0 !important; }
+  .adl-shell .grid[class*="grid-cols-4"] > .bg-white, .adl-shell .grid[class*="grid-cols-5"] > .bg-white { padding: 11px !important; min-height: 124px !important; }
+  .adl-shell .grid[class*="grid-cols-4"] h2, .adl-shell .grid[class*="grid-cols-5"] h2 { font-size: 1.18rem !important; line-height: 1.1 !important; }
+  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
+  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > * { min-width: 0 !important; }
+  .adl-shell .grid[class*="xl:grid-cols-3"] { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
+  .adl-shell [class*="xl:col-span-2"] { grid-column: auto !important; }
   .adl-shell .h-72 { height: 180px !important; }
   .adl-shell .h-64 { height: 170px !important; }
-
-  .adl-shell .recharts-responsive-container,
-  .adl-shell .recharts-wrapper {
-    max-width: 100% !important;
-  }
-
-  /* ---------- TABLES ---------- */
-  .adl-shell .overflow-x-auto {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-  }
-
+  .adl-shell .recharts-responsive-container, .adl-shell .recharts-wrapper { max-width: 100% !important; }
+  .adl-shell .overflow-x-auto { width: 100% !important; max-width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
   .adl-shell table { min-width: 640px; }
-
-  /* ---------- FORMS / MODALS ---------- */
-  .adl-shell select,
-  .adl-shell input,
-  .adl-shell textarea,
-  .adl-shell form {
-    max-width: 100%;
-  }
-
-  .adl-shell [role="dialog"] {
-    width: calc(100vw - 18px) !important;
-    max-width: calc(100vw - 18px) !important;
-    max-height: calc(100vh - 18px) !important;
-    margin: 9px !important;
-    overflow-y: auto !important;
-  }
-
-  /* ---------- MOBILE NAVIGATION ---------- */
-  .adl-shell aside {
-    width: min(84vw, 310px) !important;
-  }
-
+  .adl-shell select, .adl-shell input, .adl-shell textarea, .adl-shell form { max-width: 100%; }
+  .adl-shell [role="dialog"] { width: calc(100vw - 18px) !important; max-width: calc(100vw - 18px) !important; max-height: calc(100vh - 18px) !important; margin: 9px !important; overflow-y: auto !important; }
+  .adl-shell aside { width: min(84vw, 310px) !important; }
   .adl-shell .border-b:last-child { border-bottom-width: 0; }
-
   .adl-shell button { max-width: 100%; }
 }
 
 @media (max-width: 380px) {
-  .adl-shell main > div.flex-1.overflow-auto {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) {
-    gap: 7px !important;
-  }
-
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div {
-    height: 106px !important;
-    padding: 9px !important;
-    border-radius: 14px !important;
-  }
-
+  .adl-shell main > div.flex-1.overflow-auto { padding-left: 8px !important; padding-right: 8px !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) { gap: 7px !important; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div { height: 106px !important; padding: 9px !important; border-radius: 14px !important; }
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h2,
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h3 {
-    font-size: .96rem !important;
-  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h3 { font-size: .96rem !important; }
+}
+
+/* ---------- AUTH: ONE PASSWORD REVEAL CONTROL ---------- */
+/* Edge may render its own reveal button. AdLytic already has a custom eye,
+   so keep only the AdLytic control. */
+.adl-auth-page input[type="password"]::-ms-reveal,
+.adl-auth-page input[type="password"]::-ms-clear { display: none !important; }
+.adl-auth-page input[type="password"] { -webkit-appearance: none; appearance: none; }
+
+/* ---------- AUTH: FIT THE CARD AT NORMAL 100% BROWSER ZOOM ---------- */
+/* Only the auth screen is affected here. The dashboard and all app pages
+   remain unchanged on desktop. */
+@media (min-width: 768px) and (min-height: 650px) {
+  .adl-auth-page { padding: 10px 14px !important; }
+  .adl-auth-page > form { max-height: calc(100dvh - 20px) !important; overflow-y: visible !important; padding: 15px 18px 13px !important; }
+  .adl-auth-page > form > div:first-child { margin-bottom: 11px !important; }
+  .adl-auth-page > form > div:first-child > div:first-child { width: 46px !important; height: 46px !important; border-radius: 13px !important; font-size: 21px !important; }
+  .adl-auth-page > form > div:first-child > div:nth-child(2) { margin-top: 8px !important; font-size: 20px !important; }
+  .adl-auth-page > form > div:first-child > div:nth-child(3) { margin-top: 4px !important; font-size: 10.5px !important; }
+  .adl-auth-page > form > div:nth-child(2) { padding: 12px 13px 12px !important; }
+  .adl-auth-page > form > div:nth-child(2) > div:first-child { margin-bottom: 10px !important; font-size: 15px !important; }
+  .adl-auth-page > form > div:nth-child(2) > div:nth-child(2) { margin-bottom: 11px !important; }
+  .adl-auth-page > form input { padding-top: 10px !important; padding-bottom: 10px !important; font-size: 13px !important; }
+  .adl-auth-page > form label { margin-bottom: 4px !important; font-size: 10.5px !important; }
+  .adl-auth-page > form label[style*="marginTop"] { margin-top: 9px !important; }
+  .adl-auth-page > form button[type="submit"] { min-height: 38px !important; }
+}
+
+@media (min-width: 768px) and (max-height: 720px) {
+  .adl-auth-page > form { padding-top: 10px !important; padding-bottom: 9px !important; }
+  .adl-auth-page > form > div:first-child { margin-bottom: 7px !important; }
+  .adl-auth-page > form > div:first-child > div:first-child { width: 40px !important; height: 40px !important; font-size: 18px !important; }
+  .adl-auth-page > form > div:first-child > div:nth-child(2) { margin-top: 6px !important; font-size: 18px !important; }
+  .adl-auth-page > form > div:first-child > div:nth-child(3) { margin-top: 2px !important; font-size: 10px !important; }
+  .adl-auth-page > form > div:nth-child(2) { padding: 10px 12px !important; }
+  .adl-auth-page > form > div:nth-child(2) > div:first-child { margin-bottom: 7px !important; }
+  .adl-auth-page > form > div:nth-child(2) > div:nth-child(2) { margin-bottom: 8px !important; }
+  .adl-auth-page > form input { padding-top: 8px !important; padding-bottom: 8px !important; }
 }
