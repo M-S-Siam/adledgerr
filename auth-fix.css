@@ -72,22 +72,24 @@
   transform: scale(1.04);
 }
 
+/* Main auth container: keep ONE frosted-glass layer only. */
 .adl-auth-page > form {
   position: relative !important;
   z-index: 1 !important;
-  background: linear-gradient(145deg, rgba(239, 247, 255, .31), rgba(205, 225, 243, .16)) !important;
+  background: linear-gradient(145deg, rgba(239, 247, 255, .24), rgba(205, 225, 243, .10)) !important;
   border: 1px solid rgba(255, 255, 255, .58) !important;
   box-shadow: 0 24px 70px rgba(0, 8, 25, .34), inset 0 1px 0 rgba(255,255,255,.42) !important;
   -webkit-backdrop-filter: blur(24px) saturate(125%) !important;
   backdrop-filter: blur(24px) saturate(125%) !important;
 }
 
+/* Remove the extra white/frosted panel inside the main glass box. */
 .adl-auth-page > form > div:nth-child(2) {
-  background: rgba(248, 252, 255, .60) !important;
-  border: 1px solid rgba(255, 255, 255, .58) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.50), 0 10px 30px rgba(8, 30, 55, .10) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(120%) !important;
-  backdrop-filter: blur(18px) saturate(120%) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 .adl-auth-page > form input {
@@ -97,6 +99,6 @@
 }
 
 @media (max-width: 767px) {
-  .adl-auth-page > form { background: linear-gradient(145deg, rgba(239, 247, 255, .34), rgba(205, 225, 243, .18)) !important; -webkit-backdrop-filter: blur(20px) saturate(120%) !important; backdrop-filter: blur(20px) saturate(120%) !important; }
+  .adl-auth-page > form { background: linear-gradient(145deg, rgba(239, 247, 255, .26), rgba(205, 225, 243, .11)) !important; -webkit-backdrop-filter: blur(20px) saturate(120%) !important; backdrop-filter: blur(20px) saturate(120%) !important; }
   .adl-auth-page::before { filter: blur(8px) saturate(.88); }
 }
