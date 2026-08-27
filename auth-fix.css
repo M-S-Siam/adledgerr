@@ -102,3 +102,17 @@
   .adl-auth-page > form { background: linear-gradient(145deg, rgba(239, 247, 255, .26), rgba(205, 225, 243, .11)) !important; -webkit-backdrop-filter: blur(20px) saturate(120%) !important; backdrop-filter: blur(20px) saturate(120%) !important; }
   .adl-auth-page::before { filter: blur(8px) saturate(.88); }
 }
+
+/* Auth text contrast — only the requested labels/helper text. */
+.adl-auth-page > form > div:first-child > div:nth-child(3) {
+  color: #ffffff !important;
+}
+
+.adl-auth-page > form label {
+  color: #ffffff !important;
+}
+
+/* Keep the footer text white while allowing its existing Sign in/Create account link color to remain. */
+.adl-auth-page > form > div:last-child {
+  color: #ffffff !important;
+}
