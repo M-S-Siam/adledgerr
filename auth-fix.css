@@ -134,3 +134,13 @@
 .adl-auth-page > form [style*="Secure account authentication"] {
   color: rgba(255, 255, 255, .78) !important;
 }
+
+/* Final placeholder contrast fix: readable dark-gray hint text on the frosted input. */
+.adl-auth-page > form input.adl-auth-input::placeholder,
+.adl-auth-page > form input.adl-auth-input::-webkit-input-placeholder,
+.adl-auth-page > form input.adl-auth-input::-moz-placeholder,
+.adl-auth-page > form input.adl-auth-input:-ms-input-placeholder {
+  color: #334155 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
