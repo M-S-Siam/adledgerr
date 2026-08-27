@@ -97,27 +97,7 @@ export default function AuthGate({ children }) {
     };
   }, []);
 
-  // The main application already has a Settings item in its sidebar.
-  // Opening our security panel here keeps authentication controls in one place
-  // without changing any of the application's financial/dashboard logic.
-  useEffect(() => {
-    if (!session || typeof document === 'undefined') return undefined;
-
-    const handleSettingsClick = (event) => {
-      const target = event.target instanceof Element ? event.target.closest('button,a,[role="button"]') : null;
-      if (!target) return;
-      const label = target.textContent?.replace(/\s+/g, ' ').trim();
-      if (label === 'Settings') {
-        setSettingsSection('account');
-        setSettingsError('');
-        setSettingsMessage('');
-        setSettingsOpen(true);
-      }
-    };
-
-    document.addEventListener('click', handleSettingsClick, true);
-    return () => document.removeEventListener('click', handleSettingsClick, true);
-  }, [session]);
+  // Account & security is integrated into the main Settings page.
 
   const clearFeedback = () => {
     setError('');
@@ -320,131 +300,11 @@ export default function AuthGate({ children }) {
       <>
         {children}
 
-        <button
-          type="button"
-          onClick={() => {
-            clearSettingsFeedback();
-            setSettingsSection('account');
-            setSettingsOpen(true);
-          }}
-          aria-label="Open account settings"
-          title="Account & security"
-          style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, width: 38, height: 38, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #cbd5e1', borderRadius: 8, background: '#ffffff', color: '#334155', boxShadow: '0 6px 18px rgba(15,23,42,.10)', cursor: 'pointer' }}
-        >
+        <style>{` .adl-shell header button:last-of-type{margin-right:56px!important;} .adl-shell header{padding-right:4px!important;} `}</style>
+        <button type="button" onClick={() => { const el = Array.from(document.querySelectorAll('.adl-shell aside button, .adl-shell aside a')).find((node) => node.textContent?.replace(/\s+/g, ' ').trim() === 'Settings'); if (el) el.click(); }} aria-label="Open Settings" title="Settings" style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, width: 38, height: 38, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #cbd5e1', borderRadius: 8, background: '#ffffff', color: '#334155', boxShadow: '0 6px 18px rgba(15,23,42,.10)', cursor: 'pointer' }}>
           <Settings2 size={17} />
         </button>
 
-        {settingsOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Account settings"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) setSettingsOpen(false);
-            }}
-            style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15,23,42,.38)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end' }}
-          >
-            <div style={{ width: 'min(520px, 100vw)', height: '100%', background: '#f8fafc', boxShadow: '-12px 0 35px rgba(15,23,42,.18)', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '18px 20px', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 800, color: '#0f172a', fontSize: 17 }}><Settings2 size={18} color="#0284c7" /> Account & Security</div>
-                  <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Manage your AdLytic account, password and sessions.</div>
-                </div>
-                <button type="button" onClick={() => setSettingsOpen(false)} aria-label="Close settings" style={{ border: 0, background: 'transparent', color: '#64748b', cursor: 'pointer', padding: 6 }}><X size={19} /></button>
-              </div>
-
-              <div style={{ padding: '12px 16px', display: 'flex', gap: 8, borderBottom: '1px solid #e2e8f0', background: '#fff' }}>
-                <button type="button" onClick={() => { clearSettingsFeedback(); setSettingsSection('account'); }} style={{ ...buttonStyle, background: settingsSection === 'account' ? '#e0f2fe' : 'transparent', color: settingsSection === 'account' ? '#0369a1' : '#64748b' }}><UserRound size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Account</button>
-                <button type="button" onClick={() => { clearSettingsFeedback(); setSettingsSection('security'); }} style={{ ...buttonStyle, background: settingsSection === 'security' ? '#e0f2fe' : 'transparent', color: settingsSection === 'security' ? '#0369a1' : '#64748b' }}><ShieldCheck size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Security</button>
-                <button type="button" onClick={() => { clearSettingsFeedback(); setSettingsSection('sessions'); }} style={{ ...buttonStyle, background: settingsSection === 'sessions' ? '#e0f2fe' : 'transparent', color: settingsSection === 'sessions' ? '#0369a1' : '#64748b' }}><Monitor size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Sessions</button>
-              </div>
-
-              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-                {settingsError && <div style={{ marginBottom: 14, border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#b91c1c', display: 'flex', gap: 8, alignItems: 'flex-start' }}><AlertCircle size={15} /> <span>{settingsError}</span></div>}
-                {settingsMessage && <div style={{ marginBottom: 14, border: '1px solid #bae6fd', background: '#f0f9ff', borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#0369a1', display: 'flex', gap: 8, alignItems: 'flex-start' }}><CheckCircle2 size={15} /> <span>{settingsMessage}</span></div>}
-
-                {settingsSection === 'account' && (
-                  <div style={{ display: 'grid', gap: 14 }}>
-                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Account information</div>
-                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Your authenticated AdLytic identity.</div>
-                      <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
-                        <div><div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 5 }}>EMAIL</div><div style={{ padding: '10px 11px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a' }}>{accountEmail}</div></div>
-                        <div><div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 5 }}>AUTHENTICATION</div><div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#166534' }}><CheckCircle2 size={15} /> Email + password</div></div>
-                        <div><div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 5 }}>USER ID</div><div style={{ padding: '10px 11px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, color: '#475569', wordBreak: 'break-all' }}>{userId || 'Unavailable'}</div></div>
-                      </div>
-                    </section>
-
-                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Password</div>
-                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Change or recover your account password.</div>
-                      <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        <button type="button" disabled={settingsBusy} onClick={() => { clearSettingsFeedback(); setSettingsSection('security'); }} style={{ ...buttonStyle, background: '#0ea5e9', color: '#fff', opacity: settingsBusy ? .65 : 1 }}><KeyRound size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Change password</button>
-                        <button type="button" disabled={settingsBusy} onClick={handleSendSettingsReset} style={{ ...buttonStyle, background: '#f1f5f9', color: '#334155', opacity: settingsBusy ? .65 : 1 }}>Send reset email</button>
-                      </div>
-                    </section>
-                  </div>
-                )}
-
-                {settingsSection === 'security' && (
-                  <div style={{ display: 'grid', gap: 14 }}>
-                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Change password</div>
-                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Confirm your current password before setting a new one.</div>
-                      <form onSubmit={handleChangePassword} style={{ marginTop: 16, display: 'grid', gap: 12 }}>
-                        {[
-                          ['Current password', currentPassword, setCurrentPassword, showCurrentPassword, setShowCurrentPassword, 'current-password'],
-                          ['New password', newPassword, setNewPassword, showNewPassword, setShowNewPassword, 'new-password'],
-                          ['Confirm new password', confirmNewPassword, setConfirmNewPassword, showConfirmNewPassword, setShowConfirmNewPassword, 'new-password'],
-                        ].map(([label, value, setter, shown, toggle, autocomplete]) => (
-                          <div key={label}>
-                            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>{label}</label>
-                            <div style={{ position: 'relative' }}>
-                              <input type={shown ? 'text' : 'password'} value={value} onChange={(e) => setter(e.target.value)} autoComplete={autocomplete} style={{ ...fieldStyle, paddingRight: 42 }} />
-                              <button type="button" onClick={() => toggle((v) => !v)} aria-label={shown ? 'Hide password' : 'Show password'} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', border: 0, background: 'transparent', color: '#64748b', padding: 5, cursor: 'pointer' }}>{shown ? <EyeOff size={16} /> : <Eye size={16} />}</button>
-                            </div>
-                          </div>
-                        ))}
-                        <div style={{ fontSize: 11, color: '#64748b' }}>Use at least 8 characters. A longer, unique password is recommended.</div>
-                        <button type="submit" disabled={settingsBusy} style={{ ...buttonStyle, background: '#0ea5e9', color: '#fff', opacity: settingsBusy ? .65 : 1 }}>{settingsBusy ? <Loader2 size={14} className="animate-spin" style={{ verticalAlign: 'middle', marginRight: 6 }} /> : <KeyRound size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />}Update password</button>
-                      </form>
-                    </section>
-
-                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Password recovery</div>
-                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Send a fresh password-reset email to {accountEmail}.</div>
-                      <button type="button" disabled={settingsBusy} onClick={handleSendSettingsReset} style={{ ...buttonStyle, marginTop: 14, background: '#f1f5f9', color: '#334155', opacity: settingsBusy ? .65 : 1 }}>Send password reset email</button>
-                    </section>
-                  </div>
-                )}
-
-                {settingsSection === 'sessions' && (
-                  <div style={{ display: 'grid', gap: 14 }}>
-                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><Monitor size={18} color="#0284c7" /><div><div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Current session</div><div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>This browser is currently authenticated.</div></div></div>
-                      <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}><CheckCircle2 size={15} /> Active and authenticated</div>
-                    </section>
-
-                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Session controls</div>
-                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Use these if you suspect your account is open somewhere else.</div>
-                      <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
-                        <button type="button" disabled={settingsBusy} onClick={handleSignOutOthers} style={{ ...buttonStyle, background: '#f1f5f9', color: '#334155', textAlign: 'left', opacity: settingsBusy ? .65 : 1 }}>Sign out other devices</button>
-                        <button type="button" disabled={settingsBusy} onClick={handleSignOutAll} style={{ ...buttonStyle, background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', textAlign: 'left', opacity: settingsBusy ? .65 : 1 }}>Sign out everywhere</button>
-                      </div>
-                    </section>
-
-                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Log out</div>
-                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Log out from this browser only.</div>
-                      <button type="button" disabled={settingsBusy} onClick={handleLogout} style={{ ...buttonStyle, marginTop: 14, background: '#334155', color: '#fff', opacity: settingsBusy ? .65 : 1 }}><LogOut size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Log out</button>
-                    </section>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </>
     );
   }

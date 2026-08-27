@@ -9,6 +9,7 @@ import {
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
   UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw
 } from 'lucide-react';
+import { supabase } from './src/lib/supabase.js';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, 
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -2730,6 +2731,82 @@ function TeamView({ teamMembers, onAdd, onRemove }) {
   </div>;
 }
 
+
+// --- ACCOUNT & SECURITY (INTEGRATED INTO SETTINGS) ---
+function AccountSecuritySettings() {
+  const [session, setSession] = useState(null);
+  const [tab, setTab] = useState('account');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => mounted && setSession(data?.session || null));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => mounted && setSession(nextSession || null));
+    return () => { mounted = false; listener?.subscription?.unsubscribe(); };
+  }, []);
+  const clearFeedback = () => { setError(''); setMessage(''); };
+  const primary = { border: 0, borderRadius: 9, padding: '10px 14px', background: '#0ea5e9', color: '#fff', fontSize: 12, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .65 : 1 };
+  const secondary = { border: '1px solid #cfe0ea', borderRadius: 9, padding: '9px 12px', background: '#fff', color: '#24536d', fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' };
+  const input = { width: '100%', boxSizing: 'border-box', border: '1px solid #cfe0ea', borderRadius: 10, padding: '11px 12px', fontSize: 13, color: '#0f2940', background: '#fff', outline: 'none' };
+  const tabs = (active) => ({ border: 0, borderRadius: 9, padding: '9px 12px', background: active ? '#e0f5fd' : 'transparent', color: active ? '#0369a1' : '#587188', fontSize: 12, fontWeight: 800, cursor: 'pointer' });
+  const changePassword = async (event) => {
+    event.preventDefault(); clearFeedback();
+    const email = session?.user?.email || '';
+    if (!email) return setError('Your authenticated email could not be found.');
+    if (!currentPassword) return setError('Enter your current password.');
+    if (newPassword.length < 8) return setError('New password must be at least 8 characters.');
+    if (newPassword !== confirmPassword) return setError('New passwords do not match.');
+    if (currentPassword === newPassword) return setError('Your new password must be different from the current password.');
+    setBusy(true);
+    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+    if (verifyError) { setError('Current password is incorrect.'); setBusy(false); return; }
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) { setError(updateError.message || 'Unable to change your password.'); setBusy(false); return; }
+    setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setMessage('Password changed successfully.'); setBusy(false);
+  };
+  const sendReset = async () => {
+    clearFeedback(); const email = session?.user?.email || '';
+    if (!email) return setError('Your authenticated email could not be found.');
+    setBusy(true);
+    const redirectTo = typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined;
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
+    if (resetError) setError(resetError.message || 'Unable to send the reset email.'); else setMessage('Password reset email sent to your account email.');
+    setBusy(false);
+  };
+  const signOutOthers = async () => {
+    clearFeedback(); setBusy(true);
+    const { error: e } = await supabase.auth.signOut({ scope: 'others' });
+    if (e) setError(e.message || 'Unable to sign out other sessions.'); else setMessage('All other active sessions have been signed out.');
+    setBusy(false);
+  };
+  const signOutAll = async () => {
+    clearFeedback(); setBusy(true);
+    const { error: e } = await supabase.auth.signOut();
+    if (e) setError(e.message || 'Unable to sign out.');
+    setBusy(false);
+  };
+  return (
+    <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" style={{ marginTop: 18 }}>
+      <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4"><div><h2 className="text-base font-bold text-slate-900">Account &amp; Security</h2><p className="text-xs text-slate-500 mt-1">Manage your AdLytic account, password and active sessions.</p></div><ShieldCheck size={20} className="text-sky-600" /></div>
+      <div className="px-4 pt-3 flex flex-wrap gap-2 border-b border-slate-200"><button type="button" onClick={() => { clearFeedback(); setTab('account'); }} style={tabs(tab === 'account')}>Account</button><button type="button" onClick={() => { clearFeedback(); setTab('security'); }} style={tabs(tab === 'security')}>Security</button><button type="button" onClick={() => { clearFeedback(); setTab('sessions'); }} style={tabs(tab === 'sessions')}>Sessions</button></div>
+      <div className="p-5">
+        {error && <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c', fontSize: 12 }}>{error}</div>}
+        {message && <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid #bae6fd', background: '#f0f9ff', color: '#0369a1', fontSize: 12 }}>{message}</div>}
+        {tab === 'account' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Account information</div><div className="text-xs text-slate-500 mt-1">Your authenticated AdLytic identity.</div><div className="mt-4 space-y-3"><div><div className="text-[10px] font-bold text-slate-500 mb-1">EMAIL</div><div style={{ ...input, background: '#f8fafc' }}>{session?.user?.email || 'Loading...'}</div></div><div><div className="text-[10px] font-bold text-slate-500 mb-1">USER ID</div><div style={{ ...input, background: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session?.user?.id || 'Loading...'}</div></div><div><div className="text-[10px] font-bold text-slate-500 mb-1">AUTHENTICATION</div><div className="text-sm font-semibold text-emerald-700">Email + password</div></div></div></div><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Password recovery</div><div className="text-xs text-slate-500 mt-1">Send a secure password reset link to your account email.</div><button type="button" onClick={sendReset} disabled={busy} style={{ ...primary, marginTop: 18 }}>Send reset email</button></div></div>}
+        {tab === 'security' && <form onSubmit={changePassword} className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Change password</div><div className="text-xs text-slate-500 mt-1">Verify your current password before setting a new one.</div><div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-4"><label className="text-xs font-semibold text-slate-600">Current password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" /><button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showCurrent ? 'Hide' : 'Show'}</button></div></label><label className="text-xs font-semibold text-slate-600">New password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showNew ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showNew ? 'Hide' : 'Show'}</button></div></label><label className="text-xs font-semibold text-slate-600">Confirm password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowConfirm(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showConfirm ? 'Hide' : 'Show'}</button></div></label></div><div className="mt-4 flex items-center justify-between gap-3 flex-wrap"><span className="text-[11px] text-slate-500">Use at least 8 characters for your new password.</span><button type="submit" disabled={busy} style={primary}>{busy ? 'Updating...' : 'Update password'}</button></div></form>}
+        {tab === 'sessions' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Current session</div><div className="text-xs text-slate-500 mt-1">This browser is currently authenticated.</div><div className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-700"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Active</div><button type="button" onClick={signOutAll} disabled={busy} style={{ ...secondary, marginTop: 14 }}>Log out everywhere</button></div><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Other sessions</div><div className="text-xs text-slate-500 mt-1">Invalidate all other active sessions while keeping this one signed in.</div><button type="button" onClick={signOutOthers} disabled={busy} style={{ ...secondary, marginTop: 18 }}>Sign out other devices</button></div></div>}
+      </div>
+    </section>
+  );
+}
+
 function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
   const [data,setData]=useState(settings); const fileRef=useRef(null);
   useEffect(()=>setData(settings),[settings]);
@@ -2775,6 +2852,7 @@ function NavItem({ icon, label, isActive, onClick }) {
 function MetricCard({ title, value, subtitle, icon, bgColor, textColorClass = 'text-slate-900' }) {
   return (
     <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group">
+      <AccountSecuritySettings />
       <div className="flex justify-between items-start mb-2">
         <p className="text-sm font-medium text-slate-500">{title}</p>
         <div className={`p-2 rounded-lg ${bgColor}`}>{icon}</div>
