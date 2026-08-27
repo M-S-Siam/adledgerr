@@ -1,192 +1,23 @@
-const ADLYTIC_PROFILE_KEY = 'adlytic_workspace_profile';
-let adlyticProfileSaveTimer;
-
-const profileDefaults = {
-  workspaceType: 'Agency',
-  industry: 'Digital Marketing',
-  country: 'BD',
-  currency: 'BDT',
-  website: '',
-  contactEmail: '',
-  phone: '',
-  address: '',
-  description: '',
-  dateFormat: 'DD/MM/YYYY',
-  weekStartsOn: 'Monday',
-  timeFormat: '12h',
-  fiscalYearStart: 'January',
-  timezone: 'Asia/Dhaka',
-  reportRange: 'This Month',
-  language: 'English',
-  financialAlertsEnabled: true,
-  financialAlertThreshold: '80',
-  financialEmailAlerts: false
-};
-
-function profileRead() {
-  try { return { ...profileDefaults, ...(JSON.parse(localStorage.getItem(ADLYTIC_PROFILE_KEY) || '{}')) }; }
-  catch { return { ...profileDefaults }; }
-}
-
-function profileWrite(patch) {
-  const merged = { ...profileRead(), ...patch };
-  localStorage.setItem(ADLYTIC_PROFILE_KEY, JSON.stringify(merged));
-  clearTimeout(adlyticProfileSaveTimer);
-  adlyticProfileSaveTimer = setTimeout(() => profileCloudSave(merged), 700);
-  return merged;
-}
-
-async function profileCloudSave(data) {
-  try {
-    const { supabase } = await import('./src/lib/supabase.js');
-    const { data: authData } = await supabase.auth.getUser();
-    const user = authData?.user;
-    if (!user) return;
-    let workspaceId = null;
-    const owned = await supabase.from('workspaces').select('id').eq('owner_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
-    if (!owned.error && owned.data?.id) workspaceId = owned.data.id;
-    if (!workspaceId) {
-      const membership = await supabase.from('workspace_members').select('workspace_id').eq('user_id', user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
-      if (!membership.error && membership.data?.workspace_id) workspaceId = membership.data.workspace_id;
-    }
-    if (!workspaceId) return;
-    const current = await supabase.from('workspace_app_data').select('data').eq('workspace_id', workspaceId).eq('data_key', 'adledger_settings').maybeSingle();
-    const merged = { ...(current.data?.data || {}), ...data };
-    await supabase.from('workspace_app_data').upsert({ workspace_id: workspaceId, data_key: 'adledger_settings', data: merged, updated_at: new Date().toISOString() }, { onConflict: 'workspace_id,data_key' });
-  } catch (error) { console.warn('AdLytic workspace profile sync skipped:', error); }
-}
-
-function profileField(label, key, value, placeholder = '', type = 'text', hint = '') {
-  const wrap = document.createElement('div'); wrap.className = 'adlytic-wp-field';
-  const labelEl = document.createElement('label'); labelEl.textContent = label; wrap.appendChild(labelEl);
-  if (hint) { const hintEl = document.createElement('span'); hintEl.textContent = hint; wrap.appendChild(hintEl); }
-  const input = document.createElement('input');
-  input.type = type; input.value = value || ''; input.placeholder = placeholder; input.className = 'adlytic-wp-input'; input.dataset.profileKey = key;
-  input.addEventListener('input', () => profileWrite({ [key]: input.value }));
-  wrap.appendChild(input); return wrap;
-}
-
-function profileSelect(label, key, value, options, hint = '') {
-  const wrap = document.createElement('div'); wrap.className = 'adlytic-wp-field';
-  const labelEl = document.createElement('label'); labelEl.textContent = label; wrap.appendChild(labelEl);
-  if (hint) { const hintEl = document.createElement('span'); hintEl.textContent = hint; wrap.appendChild(hintEl); }
-  const select = document.createElement('select'); select.className = 'adlytic-wp-input'; select.dataset.profileKey = key;
-  options.forEach(([val, text]) => { const option = document.createElement('option'); option.value = val; option.textContent = text; select.appendChild(option); });
-  select.value = options.some(([val]) => val === value) ? value : options[0][0];
-  select.addEventListener('change', () => profileWrite({ [key]: select.value }));
-  wrap.appendChild(select); return wrap;
-}
-
-function profileToggle(label, key, value, hint = '') {
-  const wrap = document.createElement('div'); wrap.className = 'adlytic-wp-field adlytic-toggle-field';
-  const row = document.createElement('div'); row.className = 'adlytic-toggle-row';
-  const copy = document.createElement('div');
-  const labelEl = document.createElement('label'); labelEl.textContent = label; copy.appendChild(labelEl);
-  if (hint) { const hintEl = document.createElement('span'); hintEl.textContent = hint; copy.appendChild(hintEl); }
-  const button = document.createElement('button'); button.type = 'button'; button.className = 'adlytic-switch'; button.setAttribute('aria-label', label);
-  const update = (on) => { button.classList.toggle('is-on', !!on); button.setAttribute('aria-pressed', String(!!on)); };
-  update(value);
-  button.addEventListener('click', () => { const next = button.getAttribute('aria-pressed') !== 'true'; update(next); profileWrite({ [key]: next }); });
-  row.append(copy, button); wrap.appendChild(row); return wrap;
-}
-
-function findWorkspaceCard() {
-  const heading = [...document.querySelectorAll('h3')].find(el => el.textContent.trim() === 'Workspace');
-  if (!heading) return null;
-  let node = heading;
-  for (let i = 0; node && i < 10; i += 1, node = node.parentElement) {
-    const hasName = [...node.querySelectorAll('label')].some(el => el.textContent.trim() === 'Business / Workspace Name');
-    const hasSave = [...node.querySelectorAll('button')].some(el => el.textContent.includes('Save Settings'));
-    if (hasName && hasSave) return node;
-  }
-  return null;
-}
-
-function addWorkspaceProfile(card) {
-  if (!card || card.querySelector('[data-adlytic-workspace-profile]')) return card?.querySelector('[data-adlytic-workspace-profile]') || null;
-  const data = profileRead();
-  const profile = document.createElement('div'); profile.dataset.adlyticWorkspaceProfile = '1'; profile.className = 'adlytic-wp-card';
-  profile.innerHTML = `<div class="adlytic-wp-head"><div><div class="adlytic-wp-title">Workspace Profile</div><div class="adlytic-wp-subtitle">Professional business details for reports, organization and workspace identity.</div></div><div class="adlytic-wp-badge">WORKSPACE</div></div><div class="adlytic-wp-grid"></div>`;
-  const grid = profile.querySelector('.adlytic-wp-grid');
-  const countries = [['BD','Bangladesh'],['US','United States'],['GB','United Kingdom'],['CA','Canada'],['AU','Australia'],['IN','India'],['PK','Pakistan'],['AE','United Arab Emirates'],['SA','Saudi Arabia'],['SG','Singapore'],['MY','Malaysia'],['ID','Indonesia'],['DE','Germany'],['FR','France'],['IT','Italy'],['ES','Spain'],['NL','Netherlands'],['BR','Brazil'],['MX','Mexico'],['JP','Japan'],['KR','South Korea'],['CN','China'],['NZ','New Zealand'],['ZA','South Africa'],['NG','Nigeria'],['OTHER','Other']];
-  const currencies = [['BDT','BDT — Bangladeshi Taka'],['USD','USD — US Dollar'],['EUR','EUR — Euro'],['GBP','GBP — British Pound'],['INR','INR — Indian Rupee'],['AED','AED — UAE Dirham'],['SAR','SAR — Saudi Riyal'],['SGD','SGD — Singapore Dollar'],['AUD','AUD — Australian Dollar'],['CAD','CAD — Canadian Dollar'],['JPY','JPY — Japanese Yen'],['CNY','CNY — Chinese Yuan'],['MYR','MYR — Malaysian Ringgit'],['PKR','PKR — Pakistani Rupee']];
-  [
-    profileSelect('Workspace Type','workspaceType',data.workspaceType,[['Agency','Agency'],['Freelancer','Freelancer'],['In-house','In-house Marketing'],['E-commerce','E-commerce'],['Startup','Startup'],['Other','Other']],'How this workspace is used.'),
-    profileSelect('Industry','industry',data.industry,[['Digital Marketing','Digital Marketing'],['Advertising','Advertising'],['E-commerce','E-commerce'],['Technology','Technology'],['Retail','Retail'],['Education','Education'],['Real Estate','Real Estate'],['Healthcare','Healthcare'],['Other','Other']],'Used to personalize workspace context.'),
-    profileSelect('Country / Region','country',data.country,countries),
-    profileSelect('Default Currency','currency',data.currency,currencies,'Primary reporting currency.'),
-    profileField('Business Website','website',data.website,'https://yourbusiness.com','url'),
-    profileField('Business Email','contactEmail',data.contactEmail,'contact@yourbusiness.com','email'),
-    profileField('Business Phone','phone',data.phone,'+880 1XXXXXXXXX','tel'),
-    profileField('Business Address','address',data.address,'City, Country'),
-    profileField('Workspace Description','description',data.description,'Short description of this workspace')
-  ].forEach(field => grid.appendChild(field));
-  const nameLabel = [...card.querySelectorAll('label')].find(el => el.textContent.trim() === 'Business / Workspace Name');
-  const nameBlock = nameLabel?.parentElement;
-  if (nameBlock) nameBlock.parentElement.insertBefore(profile,nameBlock); else card.appendChild(profile);
-  return profile;
-}
-
-function addGeneralWorkspaceSettings(card, profile) {
-  if (!card || card.querySelector('[data-adlytic-general-settings]')) return;
-  const data = profileRead();
-  const section = document.createElement('div'); section.dataset.adlyticGeneralSettings='1'; section.className='adlytic-wp-card adlytic-general-card';
-  section.innerHTML=`<div class="adlytic-wp-head"><div><div class="adlytic-wp-title">General Workspace Settings</div><div class="adlytic-wp-subtitle">Core workspace behavior and reporting preferences.</div></div><div class="adlytic-wp-badge">GENERAL</div></div><div class="adlytic-wp-grid"></div>`;
-  const grid=section.querySelector('.adlytic-wp-grid');
-  [
-    profileField('Business / Workspace Name','workspaceName',data.workspaceName || '', 'Your workspace name'),
-    profileSelect('Timezone','timezone',data.timezone,[['Asia/Dhaka','Asia/Dhaka — GMT+6'],['Asia/Kolkata','Asia/Kolkata — GMT+5:30'],['Asia/Dubai','Asia/Dubai — GMT+4'],['Europe/London','Europe/London'],['Europe/Berlin','Europe/Berlin'],['America/New_York','America/New_York'],['America/Chicago','America/Chicago'],['America/Los_Angeles','America/Los_Angeles'],['Asia/Singapore','Asia/Singapore'],['Asia/Tokyo','Asia/Tokyo'],['UTC','UTC — GMT+0']]),
-    profileSelect('Default Report Range','reportRange',data.reportRange,[['This Month','This Month'],['Last Month','Last Month'],['This Quarter','This Quarter'],['This Year','This Year'],['Last 30 Days','Last 30 Days']]),
-    profileSelect('Language','language',data.language,[['English','English'],['Bangla','বাংলা']])
-  ].forEach(field=>grid.appendChild(field));
-  if (profile?.parentElement===card) profile.insertAdjacentElement('beforebegin',section); else card.appendChild(section);
-}
-
-function addRegionalReportingSettings(card, profile) {
-  if (!card || card.querySelector('[data-adlytic-regional-reporting]')) return;
-  const data=profileRead();
-  const regional=document.createElement('div'); regional.dataset.adlyticRegionalReporting='1'; regional.className='adlytic-wp-card adlytic-regional-card';
-  regional.innerHTML=`<div class="adlytic-wp-head"><div><div class="adlytic-wp-title">Regional &amp; Reporting Settings</div><div class="adlytic-wp-subtitle">Regional preferences for dates, weeks, time and financial reporting.</div></div><div class="adlytic-wp-badge">REGIONAL</div></div><div class="adlytic-wp-grid"></div>`;
-  const grid=regional.querySelector('.adlytic-wp-grid');
-  [
-    profileSelect('Date Format','dateFormat',data.dateFormat,[['DD/MM/YYYY','DD / MM / YYYY'],['MM/DD/YYYY','MM / DD / YYYY'],['YYYY-MM-DD','YYYY - MM - DD']]),
-    profileSelect('Week Starts','weekStartsOn',data.weekStartsOn,[['Monday','Monday'],['Sunday','Sunday']]),
-    profileSelect('Time Format','timeFormat',data.timeFormat,[['12h','12-hour (AM/PM)'],['24h','24-hour']]),
-    profileSelect('Fiscal Year Starts','fiscalYearStart',data.fiscalYearStart,[['January','January'],['April','April'],['July','July'],['October','October']])
-  ].forEach(field=>grid.appendChild(field));
-  if (profile?.parentElement===card) profile.insertAdjacentElement('afterend',regional); else card.appendChild(regional);
-  return regional;
-}
-
-function addFinancialAlerts(card, regional) {
-  if (!card || card.querySelector('[data-adlytic-financial-alerts]')) return;
-  const data=profileRead();
-  const alerts=document.createElement('div'); alerts.dataset.adlyticFinancialAlerts='1'; alerts.className='adlytic-wp-card adlytic-financial-card';
-  alerts.innerHTML=`<div class="adlytic-wp-head"><div><div class="adlytic-wp-title">Financial Alerts</div><div class="adlytic-wp-subtitle">Get notified when workspace spending needs attention.</div></div><div class="adlytic-wp-badge">FINANCE</div></div><div class="adlytic-wp-grid"></div>`;
-  const grid=alerts.querySelector('.adlytic-wp-grid');
-  grid.appendChild(profileToggle('Enable financial alerts','financialAlertsEnabled',data.financialAlertsEnabled,'Monitor important spending changes.'));
-  grid.appendChild(profileSelect('Alert Threshold','financialAlertThreshold',String(data.financialAlertThreshold),[['70','70% of budget'],['80','80% of budget'],['90','90% of budget'],['100','100% of budget']],'Send an alert when spending reaches this level.'));
-  grid.appendChild(profileToggle('Email notifications','financialEmailAlerts',data.financialEmailAlerts,'Send financial alerts to the workspace email.'));
-  if (regional?.parentElement===card) regional.insertAdjacentElement('afterend',alerts); else card.appendChild(alerts);
-}
-
-const profileStyle=document.createElement('style');
-profileStyle.textContent=`
-.adlytic-wp-card{margin:16px 0 18px;padding:18px;border:1px solid #cfe4ef;border-radius:14px;background:linear-gradient(135deg,rgba(246,252,255,.98),rgba(255,255,255,.98));box-shadow:0 8px 22px rgba(10,70,105,.05)}
-.adlytic-wp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}.adlytic-wp-title{font-size:14px;font-weight:800;color:#123b59}.adlytic-wp-subtitle{margin-top:4px;font-size:11px;line-height:1.5;color:#678096}.adlytic-wp-badge{padding:5px 9px;border:1px solid #cfe7f2;border-radius:999px;background:#eaf8fe;color:#087cab;font-size:9px;font-weight:800;letter-spacing:.08em;white-space:nowrap}.adlytic-wp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.adlytic-wp-field{min-width:0}.adlytic-wp-field label{display:block!important;margin:0 0 5px!important;color:#36546b!important;font-size:11px!important;font-weight:700!important}.adlytic-wp-field span{display:block;margin:-2px 0 5px;color:#8296a6;font-size:9px;line-height:1.3}.adlytic-wp-input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbdde7;border-radius:9px;background:#fff;color:#173b53;font-size:12px;outline:none}.adlytic-wp-input:focus{border-color:#67c5ee;box-shadow:0 0 0 3px rgba(14,165,233,.10)}.adlytic-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px}.adlytic-toggle-row label{margin:0!important}.adlytic-switch{width:38px;height:22px;border:0;border-radius:999px;background:#cbd5df;position:relative;cursor:pointer;flex:0 0 auto}.adlytic-switch:after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .18s ease}.adlytic-switch.is-on{background:#0ea5e9}.adlytic-switch.is-on:after{transform:translateX(16px)}.adlytic-general-card{margin-top:0}.adlytic-regional-card{margin-top:0}.adlytic-financial-card{margin-top:0}
-@media(max-width:700px){.adlytic-wp-card{padding:14px;margin:12px 0 14px}.adlytic-wp-grid{grid-template-columns:1fr;gap:11px}.adlytic-wp-head{gap:10px}.adlytic-wp-badge{font-size:8px}}
-`;
-document.head.appendChild(profileStyle);
-
-function enhanceWorkspaceProfile(){
-  const card=findWorkspaceCard(); if(!card) return;
-  const profile=addWorkspaceProfile(card);
-  addGeneralWorkspaceSettings(card,profile);
-  const regional=addRegionalReportingSettings(card,profile);
-  addFinancialAlerts(card,regional);
-}
-
-new MutationObserver(enhanceWorkspaceProfile).observe(document.documentElement,{childList:true,subtree:true});
-window.addEventListener('load',enhanceWorkspaceProfile);
-setTimeout(enhanceWorkspaceProfile,500);
-setTimeout(enhanceWorkspaceProfile,1500);
+const ADLYTIC_PROFILE_KEY='adlytic_workspace_profile';
+let profileTimer;
+const defaults={workspaceType:'Agency',industry:'Digital Marketing',country:'BD',currency:'BDT',website:'',contactEmail:'',phone:'',address:'',description:'',dateFormat:'DD/MM/YYYY',weekStartsOn:'Monday',timeFormat:'12h',fiscalYearStart:'January',financialAlertsEnabled:true,financialAlertThreshold:'80',financialEmailAlerts:false};
+const read=()=>{try{return {...defaults,...JSON.parse(localStorage.getItem(ADLYTIC_PROFILE_KEY)||'{}')}}catch{return {...defaults}}};
+function save(patch){const data={...read(),...patch};localStorage.setItem(ADLYTIC_PROFILE_KEY,JSON.stringify(data));clearTimeout(profileTimer);profileTimer=setTimeout(()=>cloudSave(data),700);return data}
+async function cloudSave(data){try{const {supabase}=await import('./src/lib/supabase.js');const {data:a}=await supabase.auth.getUser();if(!a?.user)return;let wid=null;const o=await supabase.from('workspaces').select('id').eq('owner_id',a.user.id).order('created_at',{ascending:true}).limit(1).maybeSingle();if(!o.error&&o.data?.id)wid=o.data.id;if(!wid){const m=await supabase.from('workspace_members').select('workspace_id').eq('user_id',a.user.id).order('created_at',{ascending:true}).limit(1).maybeSingle();if(!m.error&&m.data?.workspace_id)wid=m.data.workspace_id}if(!wid)return;const c=await supabase.from('workspace_app_data').select('data').eq('workspace_id',wid).eq('data_key','adledger_settings').maybeSingle();await supabase.from('workspace_app_data').upsert({workspace_id:wid,data_key:'adledger_settings',data:{...(c.data?.data||{}),...data},updated_at:new Date().toISOString()},{onConflict:'workspace_id,data_key'})}catch(e){console.warn('AdLytic workspace settings sync skipped:',e)}}
+function field(label,key,value,placeholder='',type='text',hint=''){const w=document.createElement('div');w.className='adlytic-wp-field';const l=document.createElement('label');l.textContent=label;w.appendChild(l);if(hint){const h=document.createElement('span');h.textContent=hint;w.appendChild(h)}const i=document.createElement('input');i.type=type;i.value=value||'';i.placeholder=placeholder;i.className='adlytic-wp-input';i.addEventListener('input',()=>save({[key]:i.value}));w.appendChild(i);return w}
+function select(label,key,value,options,hint=''){const w=document.createElement('div');w.className='adlytic-wp-field';const l=document.createElement('label');l.textContent=label;w.appendChild(l);if(hint){const h=document.createElement('span');h.textContent=hint;w.appendChild(h)}const s=document.createElement('select');s.className='adlytic-wp-input';options.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s.appendChild(o)});s.value=options.some(x=>x[0]===value)?value:options[0][0];s.addEventListener('change',()=>save({[key]:s.value}));w.appendChild(s);return w}
+function toggle(label,key,value,hint=''){const w=document.createElement('div');w.className='adlytic-wp-field';const r=document.createElement('div');r.className='adlytic-toggle-row';const c=document.createElement('div');const l=document.createElement('label');l.textContent=label;c.appendChild(l);if(hint){const h=document.createElement('span');h.textContent=hint;c.appendChild(h)}const b=document.createElement('button');b.type='button';b.className='adlytic-switch';const set=v=>{b.classList.toggle('is-on',!!v);b.setAttribute('aria-pressed',String(!!v))};set(value);b.addEventListener('click',()=>{const v=b.getAttribute('aria-pressed')!=='true';set(v);save({[key]:v})});r.append(c,b);w.appendChild(r);return w}
+function workspaceCard(){const h=[...document.querySelectorAll('h3')].find(x=>x.textContent.trim()==='Workspace');if(!h)return null;let n=h;for(let i=0;i<10&&n;i++,n=n.parentElement){if([...n.querySelectorAll('label')].some(x=>x.textContent.trim()==='Business / Workspace Name')&&[...n.querySelectorAll('button')].some(x=>x.textContent.includes('Save Settings')))return n}return null}
+function makeCard(title,subtitle,badge){const c=document.createElement('div');c.className='adlytic-wp-card';c.innerHTML=`<div class="adlytic-wp-head"><div><div class="adlytic-wp-title">${title}</div><div class="adlytic-wp-subtitle">${subtitle}</div></div><div class="adlytic-wp-badge">${badge}</div></div><div class="adlytic-wp-grid"></div>`;return c}
+function moveNativeField(card,labelText,targetGrid){const label=[...card.querySelectorAll('label')].find(x=>x.textContent.trim()===labelText);if(!label)return null;let block=label.parentElement;while(block.parentElement&&block.parentElement!==card&&block.parentElement.querySelectorAll('label').length<=1)block=block.parentElement;if(block.parentElement===targetGrid)return block;targetGrid.appendChild(block);block.classList.add('adlytic-native-moved');return block}
+function addProfile(card){if(card.querySelector('[data-adlytic-workspace-profile]'))return card.querySelector('[data-adlytic-workspace-profile]');const d=read(),p=makeCard('Workspace Profile','Professional business details for workspace identity and organization.','WORKSPACE');p.dataset.adlyticWorkspaceProfile='1';const g=p.querySelector('.adlytic-wp-grid');const countries=[['BD','Bangladesh'],['US','United States'],['GB','United Kingdom'],['CA','Canada'],['AU','Australia'],['IN','India'],['PK','Pakistan'],['AE','United Arab Emirates'],['SA','Saudi Arabia'],['SG','Singapore'],['MY','Malaysia'],['DE','Germany'],['FR','France'],['DE','Germany'],['JP','Japan'],['KR','South Korea'],['CN','China'],['OTHER','Other']];const currencies=[['BDT','BDT — Bangladeshi Taka'],['USD','USD — US Dollar'],['EUR','EUR — Euro'],['GBP','GBP — British Pound'],['INR','INR — Indian Rupee'],['AED','AED — UAE Dirham'],['SAR','SAR — Saudi Riyal'],['SGD','SGD — Singapore Dollar'],['AUD','AUD — Australian Dollar'],['CAD','CAD — Canadian Dollar'],['JPY','JPY — Japanese Yen'],['CNY','CNY — Chinese Yuan'],['MYR','MYR — Malaysian Ringgit'],['PKR','PKR — Pakistani Rupee']];[
+select('Workspace Type','workspaceType',d.workspaceType,[['Agency','Agency'],['Freelancer','Freelancer'],['In-house','In-house Marketing'],['E-commerce','E-commerce'],['Startup','Startup'],['Other','Other']],'How this workspace is used.'),
+select('Industry','industry',d.industry,[['Digital Marketing','Digital Marketing'],['Advertising','Advertising'],['E-commerce','E-commerce'],['Technology','Technology'],['Retail','Retail'],['Education','Education'],['Real Estate','Real Estate'],['Healthcare','Healthcare'],['Other','Other']],'Used to personalize workspace context.'),
+select('Country / Region','country',d.country,countries),select('Default Currency','currency',d.currency,currencies,'Primary reporting currency.'),field('Business Website','website',d.website,'https://yourbusiness.com','url'),field('Business Email','contactEmail',d.contactEmail,'contact@yourbusiness.com','email'),field('Business Phone','phone',d.phone,'+880 1XXXXXXXXX','tel'),field('Business Address','address',d.address,'City, Country'),field('Workspace Description','description',d.description,'Short description of this workspace')].forEach(x=>g.appendChild(x));const nameLabel=[...card.querySelectorAll('label')].find(x=>x.textContent.trim()==='Business / Workspace Name');const anchor=nameLabel?.parentElement;if(anchor)anchor.parentElement.insertBefore(p,anchor);else card.appendChild(p);return p}
+function addGeneral(card,profile){if(card.querySelector('[data-adlytic-general-settings]'))return;const gcard=makeCard('General Workspace Settings','Core workspace identity and reporting behavior.','GENERAL');gcard.dataset.adlyticGeneralSettings='1';const g=gcard.querySelector('.adlytic-wp-grid');moveNativeField(card,'Business / Workspace Name',g);moveNativeField(card,'Timezone',g);moveNativeField(card,'Default Report Range',g);g.appendChild(select('Language','language',read().language||'English',[['English','English'],['Bangla','বাংলা']]));if(profile?.parentElement===card)profile.insertAdjacentElement('beforebegin',gcard);else card.appendChild(gcard)}
+function addRegional(card,profile){if(card.querySelector('[data-adlytic-regional-reporting]'))return;const d=read(),r=makeCard('Regional & Reporting Settings','Regional preferences for dates, weeks, time and financial reporting.','REGIONAL');r.dataset.adlyticRegionalReporting='1';const g=r.querySelector('.adlytic-wp-grid');[select('Date Format','dateFormat',d.dateFormat,[['DD/MM/YYYY','DD / MM / YYYY'],['MM/DD/YYYY','MM / DD / YYYY'],['YYYY-MM-DD','YYYY - MM - DD']]),select('Week Starts','weekStartsOn',d.weekStartsOn,[['Monday','Monday'],['Sunday','Sunday']]),select('Time Format','timeFormat',d.timeFormat,[['12h','12-hour (AM/PM)'],['24h','24-hour']]),select('Fiscal Year Starts','fiscalYearStart',d.fiscalYearStart,[['January','January'],['April','April'],['July','July'],['October','October'])]].forEach(x=>g.appendChild(x));if(profile?.parentElement===card)profile.insertAdjacentElement('afterend',r);else card.appendChild(r);return r}
+function addFinancial(card,regional){if(card.querySelector('[data-adlytic-financial-alerts]'))return;const d=read(),f=makeCard('Financial Alerts','Control when AdLytic should flag important workspace spending activity.','FINANCE');f.dataset.adlyticFinancialAlerts='1';const g=f.querySelector('.adlytic-wp-grid');g.appendChild(toggle('Enable financial alerts','financialAlertsEnabled',d.financialAlertsEnabled,'Monitor important spending changes.'));g.appendChild(select('Alert Threshold','financialAlertThreshold',String(d.financialAlertThreshold),[['70','70% of budget'],['80','80% of budget'],['90','90% of budget'],['100','100% of budget']],'Alert when spending reaches this level.'));g.appendChild(toggle('Email notifications','financialEmailAlerts',d.financialEmailAlerts,'Send alerts to the workspace email.'));if(regional?.parentElement===card)regional.insertAdjacentElement('afterend',f);else card.appendChild(f)}
+const css=document.createElement('style');css.textContent=`.adlytic-wp-card{margin:16px 0 18px;padding:18px;border:1px solid #cfe4ef;border-radius:14px;background:linear-gradient(135deg,rgba(246,252,255,.98),rgba(255,255,255,.98));box-shadow:0 8px 22px rgba(10,70,105,.05)}.adlytic-wp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}.adlytic-wp-title{font-size:14px;font-weight:800;color:#123b59}.adlytic-wp-subtitle{margin-top:4px;font-size:11px;line-height:1.5;color:#678096}.adlytic-wp-badge{padding:5px 9px;border:1px solid #cfe7f2;border-radius:999px;background:#eaf8fe;color:#087cab;font-size:9px;font-weight:800;letter-spacing:.08em;white-space:nowrap}.adlytic-wp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.adlytic-wp-field{min-width:0}.adlytic-wp-field label{display:block!important;margin:0 0 5px!important;color:#36546b!important;font-size:11px!important;font-weight:700!important}.adlytic-wp-field span{display:block;margin:-2px 0 5px;color:#8296a6;font-size:9px;line-height:1.3}.adlytic-wp-input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbdde7;border-radius:9px;background:#fff;color:#173b53;font-size:12px;outline:none}.adlytic-native-moved{min-width:0}.adlytic-native-moved>input,.adlytic-native-moved>select{width:100%;box-sizing:border-box}.adlytic-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px}.adlytic-toggle-row label{margin:0!important}.adlytic-switch{width:38px;height:22px;border:0;border-radius:999px;background:#cbd5df;position:relative;cursor:pointer;flex:0 0 auto}.adlytic-switch:after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .18s ease}.adlytic-switch.is-on{background:#0ea5e9}.adlytic-switch.is-on:after{transform:translateX(16px)}@media(max-width:700px){.adlytic-wp-grid{grid-template-columns:1fr}.adlytic-wp-head{flex-direction:column}}`;
+document.head.appendChild(css);
+function enhance(){const c=workspaceCard();if(!c)return;const p=addProfile(c);addGeneral(c,p);const r=addRegional(c,p);addFinancial(c,r)}
+new MutationObserver(enhance).observe(document.documentElement,{childList:true,subtree:true});window.addEventListener('load',enhance);setTimeout(enhance,500);setTimeout(enhance,1500);
