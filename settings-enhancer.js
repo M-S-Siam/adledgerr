@@ -175,7 +175,7 @@ function enhanceTimezone(workspaceCard) {
 }
 
 function addProfileCard(workspaceCard) {
-  if (workspaceCard.querySelector('[data-adlytic-profile]')) return;
+  if (workspaceCard.querySelector('[data-adlytic-profile]')) return workspaceCard.querySelector('[data-adlytic-profile]');
   const extra = readExtra();
   const card = document.createElement('div');
   card.dataset.adlyticProfile = '1';
@@ -205,11 +205,29 @@ function addProfileCard(workspaceCard) {
   addInput(websiteField, 'website', extra.website || '', 'https://yourbusiness.com', 'url');
   grid.appendChild(websiteField);
 
+  card.appendChild(grid);
+  const firstField = [...workspaceCard.querySelectorAll('label')].find(el => el.textContent.trim() === 'Business / Workspace Name')?.parentElement;
+  if (firstField) workspaceCard.insertBefore(card, firstField);
+  else workspaceCard.appendChild(card);
+  return card;
+}
+
+function addRegionalReportingCard(workspaceCard, profileCard) {
+  if (workspaceCard.querySelector('[data-adlytic-regional-reporting]')) return;
+  const extra = readExtra();
+  const card = document.createElement('div');
+  card.dataset.adlyticRegionalReporting = '1';
+  card.className = 'adlytic-profile-card adlytic-regional-card';
+  card.innerHTML = `<div class="adlytic-profile-head"><div><h4>Regional &amp; Reporting Settings</h4><p>Regional preferences used for dates, weeks, time and financial reporting.</p></div><span>Regional</span></div>`;
+
+  const grid = document.createElement('div');
+  grid.className = 'adlytic-profile-grid';
+
   const dateFormatField = fieldShell('Date Format');
   addSelect(dateFormatField, 'dateFormat', extra.dateFormat || 'DD/MM/YYYY', [['DD/MM/YYYY','DD / MM / YYYY'],['MM/DD/YYYY','MM / DD / YYYY'],['YYYY-MM-DD','YYYY - MM - DD']]);
   grid.appendChild(dateFormatField);
 
-  const weekField = fieldShell('Week Starts On');
+  const weekField = fieldShell('Week Starts');
   addSelect(weekField, 'weekStartsOn', extra.weekStartsOn || 'Monday', [['Monday','Monday'],['Sunday','Sunday']]);
   grid.appendChild(weekField);
 
@@ -222,9 +240,11 @@ function addProfileCard(workspaceCard) {
   grid.appendChild(fiscalField);
 
   card.appendChild(grid);
-  const firstField = [...workspaceCard.querySelectorAll('label')].find(el => el.textContent.trim() === 'Business / Workspace Name')?.parentElement;
-  if (firstField) workspaceCard.insertBefore(card, firstField);
-  else workspaceCard.appendChild(card);
+  if (profileCard?.parentElement === workspaceCard) {
+    profileCard.insertAdjacentElement('afterend', card);
+  } else {
+    workspaceCard.appendChild(card);
+  }
 }
 
 function fixPlatformBranding() {
@@ -247,7 +267,8 @@ function enhanceSettings() {
   const workspaceHeading = [...document.querySelectorAll('h3')].find(el => el.textContent.trim() === 'Workspace');
   const workspaceCard = workspaceHeading?.closest('.bg-white');
   if (!workspaceCard) return;
-  addProfileCard(workspaceCard);
+  const profileCard = addProfileCard(workspaceCard);
+  addRegionalReportingCard(workspaceCard, profileCard);
   enhanceTimezone(workspaceCard);
   fixPlatformBranding();
 
