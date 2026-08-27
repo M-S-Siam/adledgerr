@@ -4,8 +4,8 @@ import { supabase } from './lib/supabase.js';
 
 const fieldStyle = {
   width: '100%', boxSizing: 'border-box', borderRadius: 11,
-  border: '1px solid rgba(148,163,184,.38)', background: 'rgba(241,245,249,.88)', color: '#0f172a',
-  WebkitTextFillColor: '#0f172a', padding: '12px 12px 12px 40px', fontSize: 14, outline: 'none',
+  border: '1px solid rgba(148,163,184,.38)', background: 'rgba(241,245,249,.88)', color: '#334155',
+  WebkitTextFillColor: '#334155', padding: '12px 12px 12px 40px', fontSize: 14, outline: 'none',
   backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', transition: 'border-color .2s, box-shadow .2s',
 };
 
@@ -147,11 +147,12 @@ export default function AuthGate({ children }) {
   const iconStyle = { position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', color:'#64748b', pointerEvents:'none' };
   const eyeButtonStyle = { position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', border:0, background:'transparent', color:'#64748b', padding:6, cursor:'pointer', display:'flex', alignItems:'center', borderRadius:7 };
   const labelStyle = { display:'block', fontSize:11.5, fontWeight:650, color:'#ffffff', marginBottom:6 };
-  const placeholderStyle = { ...fieldStyle, background:'rgba(248,250,252,.94)', color:'#0f172a', WebkitTextFillColor:'#0f172a' };
+  const placeholderStyle = { ...fieldStyle, background:'rgba(248,250,252,.94)', color:'#334155', WebkitTextFillColor:'#334155' };
 
   return (
     <div className="adl-auth-page" style={{ minHeight:'100dvh', width:'100%', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', padding:'18px 14px', position:'relative', fontFamily:'Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', color:'#0f172a', background:'radial-gradient(circle at 15% 20%, rgba(14,165,233,.30), transparent 32%), radial-gradient(circle at 85% 15%, rgba(99,102,241,.28), transparent 30%), radial-gradient(circle at 70% 90%, rgba(56,189,248,.18), transparent 34%), linear-gradient(135deg,#07111f 0%,#0b1830 48%,#10172b 100%)' }}>
       <div aria-hidden="true" style={{ position:'absolute', inset:0, background:'linear-gradient(120deg,rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(30deg,rgba(255,255,255,.025) 1px,transparent 1px)', backgroundSize:'44px 44px', opacity:.55 }} />
+      <style>{`.adl-auth-input::placeholder{color:#334155!important;opacity:1!important;-webkit-text-fill-color:#334155!important}.adl-auth-input::-webkit-input-placeholder{color:#334155!important;opacity:1!important;-webkit-text-fill-color:#334155!important}.adl-auth-input:focus{border-color:rgba(14,165,233,.65)!important;box-shadow:0 0 0 3px rgba(14,165,233,.12)!important}`}</style>
 
       <form onSubmit={formSubmit} style={{ position:'relative', zIndex:1, width:'100%', maxWidth:430, maxHeight:'calc(100dvh - 28px)', overflowY:'auto', background:'rgba(255,255,255,.88)', border:'1px solid rgba(255,255,255,.68)', borderRadius:22, padding:'22px 22px 18px', boxShadow:'0 28px 80px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.8)', backdropFilter:'blur(22px)', WebkitBackdropFilter:'blur(22px)' }}>
         <div style={{ textAlign:'center', marginBottom:18 }}>
