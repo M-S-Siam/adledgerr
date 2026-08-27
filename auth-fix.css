@@ -103,16 +103,34 @@
   .adl-auth-page::before { filter: blur(8px) saturate(.88); }
 }
 
-/* Auth text contrast — only the requested labels/helper text. */
-.adl-auth-page > form > div:first-child > div:nth-child(3) {
-  color: #ffffff !important;
-}
-
+/* Auth text contrast — optimized for the new frosted-glass backdrop. */
+.adl-auth-page > form > div:first-child > div:nth-child(3),
 .adl-auth-page > form label {
   color: #ffffff !important;
 }
 
-/* Keep the footer text white while allowing its existing Sign in/Create account link color to remain. */
+/* Input hints stay visible without competing with typed text. */
+.adl-auth-page > form input::placeholder {
+  color: #66798d !important;
+  opacity: .78 !important;
+}
+
+.adl-auth-page > form input::-webkit-input-placeholder {
+  color: #66798d !important;
+  opacity: .78 !important;
+}
+
+/* Password/recovery action: clear accent against the glass. */
+.adl-auth-page > form a {
+  text-shadow: 0 1px 8px rgba(0, 15, 35, .12);
+}
+
+/* Footer/support copy is white; existing action links retain the brand accent. */
 .adl-auth-page > form > div:last-child {
-  color: #ffffff !important;
+  color: rgba(255, 255, 255, .92) !important;
+}
+
+/* Small authentication reassurance line. */
+.adl-auth-page > form [style*="Secure account authentication"] {
+  color: rgba(255, 255, 255, .78) !important;
 }
