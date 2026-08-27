@@ -1,6 +1,42 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, Loader2, LogIn, LogOut, ShieldCheck } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  LogIn,
+  LogOut,
+  Monitor,
+  ShieldCheck,
+  Settings2,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { supabase } from './lib/supabase.js';
+
+const fieldStyle = {
+  width: '100%',
+  boxSizing: 'border-box',
+  borderRadius: 8,
+  border: '1px solid #cbd5e1',
+  background: '#fff',
+  color: '#0f172a',
+  WebkitTextFillColor: '#0f172a',
+  padding: '11px 12px',
+  fontSize: 14,
+  outline: 'none',
+};
+
+const buttonStyle = {
+  border: 0,
+  borderRadius: 8,
+  padding: '10px 14px',
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: 'pointer',
+};
 
 export default function AuthGate({ children }) {
   const [session, setSession] = useState(null);
@@ -14,6 +50,18 @@ export default function AuthGate({ children }) {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [mode, setMode] = useState('login');
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState('account');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [settingsBusy, setSettingsBusy] = useState(false);
+  const [settingsError, setSettingsError] = useState('');
+  const [settingsMessage, setSettingsMessage] = useState('');
 
   const redirectUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -49,9 +97,36 @@ export default function AuthGate({ children }) {
     };
   }, []);
 
+  // The main application already has a Settings item in its sidebar.
+  // Opening our security panel here keeps authentication controls in one place
+  // without changing any of the application's financial/dashboard logic.
+  useEffect(() => {
+    if (!session || typeof document === 'undefined') return undefined;
+
+    const handleSettingsClick = (event) => {
+      const target = event.target instanceof Element ? event.target.closest('button,a,[role="button"]') : null;
+      if (!target) return;
+      const label = target.textContent?.replace(/\s+/g, ' ').trim();
+      if (label === 'Settings') {
+        setSettingsSection('account');
+        setSettingsError('');
+        setSettingsMessage('');
+        setSettingsOpen(true);
+      }
+    };
+
+    document.addEventListener('click', handleSettingsClick, true);
+    return () => document.removeEventListener('click', handleSettingsClick, true);
+  }, [session]);
+
   const clearFeedback = () => {
     setError('');
     setMessage('');
+  };
+
+  const clearSettingsFeedback = () => {
+    setSettingsError('');
+    setSettingsMessage('');
   };
 
   const handleLogin = async (event) => {
@@ -115,7 +190,7 @@ export default function AuthGate({ children }) {
       return;
     }
 
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     if (typeof window !== 'undefined') {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -128,11 +203,103 @@ export default function AuthGate({ children }) {
   };
 
   const handleLogout = async () => {
-    clearFeedback();
-    setBusy(true);
+    clearSettingsFeedback();
+    setSettingsBusy(true);
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
+    if (signOutError) setSettingsError(signOutError.message || 'Unable to sign out.');
+    setSettingsBusy(false);
+  };
+
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    clearSettingsFeedback();
+
+    if (currentPassword.length === 0) {
+      setSettingsError('Enter your current password.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setSettingsError('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setSettingsError('New passwords do not match.');
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setSettingsError('Your new password must be different from the current password.');
+      return;
+    }
+
+    setSettingsBusy(true);
+
+    // Re-authenticate first, then update the password. This is compatible with
+    // the Supabase JS version currently used by this project.
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: session?.user?.email || '',
+      password: currentPassword,
+    });
+
+    if (verifyError) {
+      setSettingsError('Current password is incorrect.');
+      setSettingsBusy(false);
+      return;
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (updateError) {
+      setSettingsError(updateError.message || 'Unable to change your password.');
+      setSettingsBusy(false);
+      return;
+    }
+
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setSettingsMessage('Password changed successfully. Your current session remains signed in.');
+    setSettingsBusy(false);
+  };
+
+  const handleSendSettingsReset = async () => {
+    clearSettingsFeedback();
+    const accountEmail = session?.user?.email || '';
+    if (!accountEmail) {
+      setSettingsError('No account email is available for this session.');
+      return;
+    }
+
+    setSettingsBusy(true);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(accountEmail, {
+      redirectTo: redirectUrl,
+    });
+
+    if (resetError) {
+      setSettingsError(resetError.message || 'Unable to send the password reset email.');
+    } else {
+      setSettingsMessage('A password reset email has been sent to your account email.');
+    }
+    setSettingsBusy(false);
+  };
+
+  const handleSignOutOthers = async () => {
+    clearSettingsFeedback();
+    setSettingsBusy(true);
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'others' });
+    if (signOutError) {
+      setSettingsError(signOutError.message || 'Unable to sign out other sessions.');
+    } else {
+      setSettingsMessage('All other active sessions have been signed out. This session remains active.');
+    }
+    setSettingsBusy(false);
+  };
+
+  const handleSignOutAll = async () => {
+    clearSettingsFeedback();
+    setSettingsBusy(true);
     const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) setError(signOutError.message || 'Unable to sign out.');
-    setBusy(false);
+    if (signOutError) setSettingsError(signOutError.message || 'Unable to sign out.');
+    setSettingsBusy(false);
   };
 
   if (checking) {
@@ -146,18 +313,144 @@ export default function AuthGate({ children }) {
   }
 
   if (session && mode !== 'reset') {
+    const accountEmail = session.user?.email || 'Unknown account';
+    const userId = session.user?.id || '';
+
     return (
       <>
         {children}
-        <button type="button" onClick={handleLogout} disabled={busy} aria-label="Log out" style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #cbd5e1', borderRadius: 8, background: '#ffffff', color: '#334155', padding: '8px 11px', fontSize: 12, fontWeight: 700, boxShadow: '0 6px 18px rgba(15,23,42,.10)', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .65 : 1 }}>
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />} Log out
+
+        <button
+          type="button"
+          onClick={() => {
+            clearSettingsFeedback();
+            setSettingsSection('account');
+            setSettingsOpen(true);
+          }}
+          aria-label="Open account settings"
+          title="Account & security"
+          style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, width: 38, height: 38, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #cbd5e1', borderRadius: 8, background: '#ffffff', color: '#334155', boxShadow: '0 6px 18px rgba(15,23,42,.10)', cursor: 'pointer' }}
+        >
+          <Settings2 size={17} />
         </button>
+
+        {settingsOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Account settings"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setSettingsOpen(false);
+            }}
+            style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15,23,42,.38)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'stretch', justifyContent: 'flex-end' }}
+          >
+            <div style={{ width: 'min(520px, 100vw)', height: '100%', background: '#f8fafc', boxShadow: '-12px 0 35px rgba(15,23,42,.18)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '18px 20px', background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 800, color: '#0f172a', fontSize: 17 }}><Settings2 size={18} color="#0284c7" /> Account & Security</div>
+                  <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Manage your AdLytic account, password and sessions.</div>
+                </div>
+                <button type="button" onClick={() => setSettingsOpen(false)} aria-label="Close settings" style={{ border: 0, background: 'transparent', color: '#64748b', cursor: 'pointer', padding: 6 }}><X size={19} /></button>
+              </div>
+
+              <div style={{ padding: '12px 16px', display: 'flex', gap: 8, borderBottom: '1px solid #e2e8f0', background: '#fff' }}>
+                <button type="button" onClick={() => { clearSettingsFeedback(); setSettingsSection('account'); }} style={{ ...buttonStyle, background: settingsSection === 'account' ? '#e0f2fe' : 'transparent', color: settingsSection === 'account' ? '#0369a1' : '#64748b' }}><UserRound size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Account</button>
+                <button type="button" onClick={() => { clearSettingsFeedback(); setSettingsSection('security'); }} style={{ ...buttonStyle, background: settingsSection === 'security' ? '#e0f2fe' : 'transparent', color: settingsSection === 'security' ? '#0369a1' : '#64748b' }}><ShieldCheck size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Security</button>
+                <button type="button" onClick={() => { clearSettingsFeedback(); setSettingsSection('sessions'); }} style={{ ...buttonStyle, background: settingsSection === 'sessions' ? '#e0f2fe' : 'transparent', color: settingsSection === 'sessions' ? '#0369a1' : '#64748b' }}><Monitor size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Sessions</button>
+              </div>
+
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {settingsError && <div style={{ marginBottom: 14, border: '1px solid #fecaca', background: '#fef2f2', borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#b91c1c', display: 'flex', gap: 8, alignItems: 'flex-start' }}><AlertCircle size={15} /> <span>{settingsError}</span></div>}
+                {settingsMessage && <div style={{ marginBottom: 14, border: '1px solid #bae6fd', background: '#f0f9ff', borderRadius: 10, padding: '10px 12px', fontSize: 12, color: '#0369a1', display: 'flex', gap: 8, alignItems: 'flex-start' }}><CheckCircle2 size={15} /> <span>{settingsMessage}</span></div>}
+
+                {settingsSection === 'account' && (
+                  <div style={{ display: 'grid', gap: 14 }}>
+                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Account information</div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Your authenticated AdLytic identity.</div>
+                      <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
+                        <div><div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 5 }}>EMAIL</div><div style={{ padding: '10px 11px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a' }}>{accountEmail}</div></div>
+                        <div><div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 5 }}>AUTHENTICATION</div><div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#166534' }}><CheckCircle2 size={15} /> Email + password</div></div>
+                        <div><div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 5 }}>USER ID</div><div style={{ padding: '10px 11px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, color: '#475569', wordBreak: 'break-all' }}>{userId || 'Unavailable'}</div></div>
+                      </div>
+                    </section>
+
+                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Password</div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Change or recover your account password.</div>
+                      <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        <button type="button" disabled={settingsBusy} onClick={() => { clearSettingsFeedback(); setSettingsSection('security'); }} style={{ ...buttonStyle, background: '#0ea5e9', color: '#fff', opacity: settingsBusy ? .65 : 1 }}><KeyRound size={14} style={{ verticalAlign: 'middle', marginRight: 5 }} />Change password</button>
+                        <button type="button" disabled={settingsBusy} onClick={handleSendSettingsReset} style={{ ...buttonStyle, background: '#f1f5f9', color: '#334155', opacity: settingsBusy ? .65 : 1 }}>Send reset email</button>
+                      </div>
+                    </section>
+                  </div>
+                )}
+
+                {settingsSection === 'security' && (
+                  <div style={{ display: 'grid', gap: 14 }}>
+                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Change password</div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Confirm your current password before setting a new one.</div>
+                      <form onSubmit={handleChangePassword} style={{ marginTop: 16, display: 'grid', gap: 12 }}>
+                        {[
+                          ['Current password', currentPassword, setCurrentPassword, showCurrentPassword, setShowCurrentPassword, 'current-password'],
+                          ['New password', newPassword, setNewPassword, showNewPassword, setShowNewPassword, 'new-password'],
+                          ['Confirm new password', confirmNewPassword, setConfirmNewPassword, showConfirmNewPassword, setShowConfirmNewPassword, 'new-password'],
+                        ].map(([label, value, setter, shown, toggle, autocomplete]) => (
+                          <div key={label}>
+                            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>{label}</label>
+                            <div style={{ position: 'relative' }}>
+                              <input type={shown ? 'text' : 'password'} value={value} onChange={(e) => setter(e.target.value)} autoComplete={autocomplete} style={{ ...fieldStyle, paddingRight: 42 }} />
+                              <button type="button" onClick={() => toggle((v) => !v)} aria-label={shown ? 'Hide password' : 'Show password'} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', border: 0, background: 'transparent', color: '#64748b', padding: 5, cursor: 'pointer' }}>{shown ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+                            </div>
+                          </div>
+                        ))}
+                        <div style={{ fontSize: 11, color: '#64748b' }}>Use at least 8 characters. A longer, unique password is recommended.</div>
+                        <button type="submit" disabled={settingsBusy} style={{ ...buttonStyle, background: '#0ea5e9', color: '#fff', opacity: settingsBusy ? .65 : 1 }}>{settingsBusy ? <Loader2 size={14} className="animate-spin" style={{ verticalAlign: 'middle', marginRight: 6 }} /> : <KeyRound size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />}Update password</button>
+                      </form>
+                    </section>
+
+                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Password recovery</div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Send a fresh password-reset email to {accountEmail}.</div>
+                      <button type="button" disabled={settingsBusy} onClick={handleSendSettingsReset} style={{ ...buttonStyle, marginTop: 14, background: '#f1f5f9', color: '#334155', opacity: settingsBusy ? .65 : 1 }}>Send password reset email</button>
+                    </section>
+                  </div>
+                )}
+
+                {settingsSection === 'sessions' && (
+                  <div style={{ display: 'grid', gap: 14 }}>
+                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><Monitor size={18} color="#0284c7" /><div><div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Current session</div><div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>This browser is currently authenticated.</div></div></div>
+                      <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center' }}><CheckCircle2 size={15} /> Active and authenticated</div>
+                    </section>
+
+                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Session controls</div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Use these if you suspect your account is open somewhere else.</div>
+                      <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
+                        <button type="button" disabled={settingsBusy} onClick={handleSignOutOthers} style={{ ...buttonStyle, background: '#f1f5f9', color: '#334155', textAlign: 'left', opacity: settingsBusy ? .65 : 1 }}>Sign out other devices</button>
+                        <button type="button" disabled={settingsBusy} onClick={handleSignOutAll} style={{ ...buttonStyle, background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', textAlign: 'left', opacity: settingsBusy ? .65 : 1 }}>Sign out everywhere</button>
+                      </div>
+                    </section>
+
+                    <section style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Log out</div>
+                      <div style={{ marginTop: 4, fontSize: 12, color: '#64748b' }}>Log out from this browser only.</div>
+                      <button type="button" disabled={settingsBusy} onClick={handleLogout} style={{ ...buttonStyle, marginTop: 14, background: '#334155', color: '#fff', opacity: settingsBusy ? .65 : 1 }}><LogOut size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Log out</button>
+                    </section>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }
 
   const inputWrap = { position: 'relative' };
-  const inputStyle = { width: '100%', boxSizing: 'border-box', borderRadius: 8, border: '1px solid #cbd5e1', background: '#fff', color: '#0f172a', WebkitTextFillColor: '#0f172a', padding: '11px 12px', fontSize: 14, outline: 'none', opacity: 1 };
+  const inputStyle = fieldStyle;
   const passwordInputStyle = { ...inputStyle, paddingRight: 42 };
   const eyeButtonStyle = { position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', border: 0, background: 'transparent', color: '#64748b', padding: 5, cursor: 'pointer', display: 'flex', alignItems: 'center' };
 
