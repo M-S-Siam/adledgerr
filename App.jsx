@@ -34,7 +34,40 @@ if (typeof window !== "undefined") {
   }
 }
 
-// --- CUSTOM HOOK FOR LOCAL STORAGE PERSISTENCE ---
+// --- CLOUD-BACKED PERSISTENCE (WITH LOCAL MIGRATION/FALLBACK) ---
+let adLedgerWorkspacePromise = null;
+
+async function getAdLedgerWorkspaceId() {
+  if (adLedgerWorkspacePromise) return adLedgerWorkspacePromise;
+  adLedgerWorkspacePromise = (async () => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('No authenticated user.');
+
+    const { data: owned, error: ownedError } = await supabase
+      .from('workspaces')
+      .select('id')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (ownedError) throw ownedError;
+    if (owned?.id) return owned.id;
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (membershipError) throw membershipError;
+    if (!membership?.workspace_id) throw new Error('No AdLytic workspace found for this account.');
+    return membership.workspace_id;
+  })();
+  return adLedgerWorkspacePromise;
+}
+
 function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(() => {
     if (typeof window === "undefined") return initialValue;
@@ -42,22 +75,78 @@ function useLocalStorage(key, initialValue) {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.log(error);
+      console.error('AdLytic local data read failed', error);
       return initialValue;
     }
   });
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const workspaceId = await getAdLedgerWorkspaceId();
+        const { data: row, error } = await supabase
+          .from('workspace_app_data')
+          .select('data')
+          .eq('workspace_id', workspaceId)
+          .eq('data_key', key)
+          .maybeSingle();
+        if (error) throw error;
+        if (cancelled) return;
+
+        const localRaw = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+        const localValue = localRaw ? JSON.parse(localRaw) : initialValue;
+        const localHasData = Array.isArray(localValue) ? localValue.length > 0 : !!localRaw;
+        const cloudHasData = row?.data != null && (Array.isArray(row.data) ? row.data.length > 0 : true);
+
+        if (cloudHasData) {
+          setStoredValue(row.data);
+          if (typeof window !== 'undefined') window.localStorage.setItem(key, JSON.stringify(row.data));
+        } else if (localHasData) {
+          const { error: migrateError } = await supabase.from('workspace_app_data').upsert({
+            workspace_id: workspaceId,
+            data_key: key,
+            data: localValue,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'workspace_id,data_key' });
+          if (migrateError) throw migrateError;
+        }
+      } catch (error) {
+        console.error('AdLytic cloud data load failed for', key, error);
+      } finally {
+        if (!cancelled) setHydrated(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [key]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const workspaceId = await getAdLedgerWorkspaceId();
+        if (cancelled) return;
+        const { error } = await supabase.from('workspace_app_data').upsert({
+          workspace_id: workspaceId,
+          data_key: key,
+          data: storedValue,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'workspace_id,data_key' });
+        if (error) throw error;
+        if (typeof window !== 'undefined') window.localStorage.setItem(key, JSON.stringify(storedValue));
+      } catch (error) {
+        console.error('AdLytic cloud data save failed for', key, error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [storedValue, hydrated, key]);
 
   const setValue = (value) => {
-    try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    setStoredValue(prev => value instanceof Function ? value(prev) : value);
   };
+
   return [storedValue, setValue];
 }
 
