@@ -4,7 +4,7 @@ import { supabase } from './lib/supabase.js';
 
 const fieldStyle = {
   width: '100%', boxSizing: 'border-box', borderRadius: 11,
-  border: '1px solid rgba(148,163,184,.38)', background: 'rgba(255,255,255,.72)', color: '#0f172a',
+  border: '1px solid rgba(148,163,184,.38)', background: 'rgba(241,245,249,.88)', color: '#0f172a',
   WebkitTextFillColor: '#0f172a', padding: '12px 12px 12px 40px', fontSize: 14, outline: 'none',
   backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', transition: 'border-color .2s, box-shadow .2s',
 };
@@ -143,8 +143,8 @@ export default function AuthGate({ children }) {
   const submitText = busy ? 'Please wait…' : isReset ? 'Update password' : isForgot ? 'Send reset email' : isSignup ? 'Create account' : 'Login';
   const passwordPlaceholder = (isSignup || isReset) ? 'Create a strong password' : 'Enter your password';
 
-  const inputWithIcon = (icon) => ({ position:'relative' });
-  const iconStyle = { position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', color:'#94a3b8', pointerEvents:'none' };
+  const inputWithIcon = () => ({ position:'relative' });
+  const iconStyle = { position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', color:'#64748b', pointerEvents:'none' };
   const eyeButtonStyle = { position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', border:0, background:'transparent', color:'#64748b', padding:6, cursor:'pointer', display:'flex', alignItems:'center', borderRadius:7 };
   const labelStyle = { display:'block', fontSize:11.5, fontWeight:650, color:'#475569', marginBottom:6 };
 
@@ -209,6 +209,7 @@ export default function AuthGate({ children }) {
           <div style={{ marginTop:12, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:10, color:'#94a3b8' }}><ShieldCheck size={12} /> Secure account authentication</div>
         </div>
       </form>
+      <style>{`.adl-auth-page input::placeholder{color:#94a3b8!important;opacity:1}.adl-auth-page input:focus{border-color:#38bdf8!important;box-shadow:0 0 0 3px rgba(56,189,248,.12)!important;background:rgba(248,250,252,.98)!important}`}</style>
     </div>
   );
 }
