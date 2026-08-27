@@ -127,7 +127,7 @@ function findWorkspaceCard() {
 }
 
 function addWorkspaceProfile(card) {
-  if (!card || card.querySelector('[data-adlytic-workspace-profile]')) return;
+  if (!card || card.querySelector('[data-adlytic-workspace-profile]')) return card?.querySelector('[data-adlytic-workspace-profile]') || null;
 
   const data = profileRead();
   const profile = document.createElement('div');
@@ -161,24 +161,51 @@ function addWorkspaceProfile(card) {
     profileField('Business Email', 'contactEmail', data.contactEmail, 'contact@yourbusiness.com', 'email'),
     profileField('Business Phone', 'phone', data.phone, '+880 1XXXXXXXXX', 'tel'),
     profileField('Business Address', 'address', data.address, 'City, Country'),
-    profileField('Workspace Description', 'description', data.description, 'Short description of this workspace'),
+    profileField('Workspace Description', 'description', data.description, 'Short description of this workspace')
+  ].forEach(field => grid.appendChild(field));
+
+  const nameLabel = [...card.querySelectorAll('label')].find(el => el.textContent.trim() === 'Business / Workspace Name');
+  const nameBlock = nameLabel?.parentElement;
+  if (nameBlock) {
+    nameBlock.parentElement.insertBefore(profile, nameBlock);
+  } else {
+    card.appendChild(profile);
+  }
+
+  return profile;
+}
+
+function addRegionalReportingSettings(card, profile) {
+  if (!card || card.querySelector('[data-adlytic-regional-reporting]')) return;
+
+  const data = profileRead();
+  const regional = document.createElement('div');
+  regional.dataset.adlyticRegionalReporting = '1';
+  regional.className = 'adlytic-wp-card adlytic-regional-card';
+  regional.innerHTML = `
+    <div class="adlytic-wp-head">
+      <div>
+        <div class="adlytic-wp-title">Regional &amp; Reporting Settings</div>
+        <div class="adlytic-wp-subtitle">Regional preferences for dates, weeks, time and financial reporting.</div>
+      </div>
+      <div class="adlytic-wp-badge">REGIONAL</div>
+    </div>
+    <div class="adlytic-wp-grid"></div>
+  `;
+
+  const grid = regional.querySelector('.adlytic-wp-grid');
+  [
     profileSelect('Date Format', 'dateFormat', data.dateFormat, [['DD/MM/YYYY','DD / MM / YYYY'],['MM/DD/YYYY','MM / DD / YYYY'],['YYYY-MM-DD','YYYY - MM - DD']]),
-    profileSelect('Week Starts On', 'weekStartsOn', data.weekStartsOn, [['Monday','Monday'],['Sunday','Sunday']]),
+    profileSelect('Week Starts', 'weekStartsOn', data.weekStartsOn, [['Monday','Monday'],['Sunday','Sunday']]),
     profileSelect('Time Format', 'timeFormat', data.timeFormat, [['12h','12-hour (AM/PM)'],['24h','24-hour']]),
     profileSelect('Fiscal Year Starts', 'fiscalYearStart', data.fiscalYearStart, [['January','January'],['April','April'],['July','July'],['October','October']])
   ].forEach(field => grid.appendChild(field));
 
-  const heading = [...card.querySelectorAll('h3')].find(el => el.textContent.trim() === 'Workspace');
-  const nameLabel = [...card.querySelectorAll('label')].find(el => el.textContent.trim() === 'Business / Workspace Name');
-  const nameBlock = nameLabel?.parentElement;
-  const logoBlock = heading?.parentElement?.parentElement;
-
-  if (nameBlock) {
-    nameBlock.parentElement.insertBefore(profile, nameBlock);
-  } else if (logoBlock?.parentElement) {
-    logoBlock.parentElement.appendChild(profile);
+  // Place the regional card immediately below Workspace Profile.
+  if (profile?.parentElement === card) {
+    profile.insertAdjacentElement('afterend', regional);
   } else {
-    card.appendChild(profile);
+    card.appendChild(regional);
   }
 }
 
@@ -195,13 +222,16 @@ profileStyle.textContent = `
   .adlytic-wp-field span{display:block;margin:-2px 0 5px;color:#8296a6;font-size:9px;line-height:1.3}
   .adlytic-wp-input{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbdde7;border-radius:9px;background:#fff;color:#173b53;font-size:12px;outline:none}
   .adlytic-wp-input:focus{border-color:#67c5ee;box-shadow:0 0 0 3px rgba(14,165,233,.10)}
+  .adlytic-regional-card{margin-top:0}
   @media(max-width:700px){.adlytic-wp-card{padding:14px;margin:12px 0 14px}.adlytic-wp-grid{grid-template-columns:1fr;gap:11px}.adlytic-wp-head{gap:10px}.adlytic-wp-badge{font-size:8px}}
 `;
 document.head.appendChild(profileStyle);
 
 function enhanceWorkspaceProfile() {
   const card = findWorkspaceCard();
-  if (card) addWorkspaceProfile(card);
+  if (!card) return;
+  const profile = addWorkspaceProfile(card);
+  addRegionalReportingSettings(card, profile);
 }
 
 new MutationObserver(enhanceWorkspaceProfile).observe(document.documentElement, { childList: true, subtree: true });
