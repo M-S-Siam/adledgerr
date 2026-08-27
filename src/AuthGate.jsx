@@ -147,6 +147,7 @@ export default function AuthGate({ children }) {
   const iconStyle = { position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', color:'#64748b', pointerEvents:'none' };
   const eyeButtonStyle = { position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', border:0, background:'transparent', color:'#64748b', padding:6, cursor:'pointer', display:'flex', alignItems:'center', borderRadius:7 };
   const labelStyle = { display:'block', fontSize:11.5, fontWeight:650, color:'#475569', marginBottom:6 };
+  const placeholderStyle = { ...fieldStyle, background:'rgba(248,250,252,.94)', color:'#0f172a', WebkitTextFillColor:'#0f172a' };
 
   return (
     <div className="adl-auth-page" style={{ minHeight:'100dvh', width:'100%', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', padding:'18px 14px', position:'relative', fontFamily:'Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', color:'#0f172a', background:'radial-gradient(circle at 15% 20%, rgba(14,165,233,.30), transparent 32%), radial-gradient(circle at 85% 15%, rgba(99,102,241,.28), transparent 30%), radial-gradient(circle at 70% 90%, rgba(56,189,248,.18), transparent 34%), linear-gradient(135deg,#07111f 0%,#0b1830 48%,#10172b 100%)' }}>
@@ -169,7 +170,7 @@ export default function AuthGate({ children }) {
           {!isReset && (
             <>
               <label style={labelStyle}>Email</label>
-              <div style={inputWithIcon()}><Mail size={16} style={iconStyle} /><input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required autoComplete="email" placeholder="Enter your email address" style={fieldStyle} /></div>
+              <div style={inputWithIcon()}><Mail size={16} style={iconStyle} /><input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required autoComplete="email" placeholder="Enter your email address" style={placeholderStyle} /></div>
             </>
           )}
 
@@ -183,7 +184,8 @@ export default function AuthGate({ children }) {
           {!isForgot && (
             <>
               <label style={{ ...labelStyle, marginTop:13 }}>{isReset ? 'New password' : 'Password'}</label>
-              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input type={showPassword ? 'text':'password'} value={password} onChange={(e)=>setPassword(e.target.value)} required minLength={(isSignup || isReset) ? 8 : undefined} autoComplete={(isSignup || isReset) ? 'new-password':'current-password'} placeholder={passwordPlaceholder} style={fieldStyle} /><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
+              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input type={showPassword ? 'text':'password'} value={password} onChange={(e)=>setPassword(e.target.value)} required minLength={(isSignup || isReset) ? 8 : undefined} autoComplete={(isSignup || isReset) ? 'new-password':'current-password'} placeholder={passwordPlaceholder} style={placeholderStyle} /><button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
+              {isLogin && <button type="button" onClick={()=>{clearFeedback();setMode('forgot')}} style={{ display:'block', marginTop:8, marginLeft:'auto', border:0, background:'transparent', color:'#0284c7', fontSize:11.5, fontWeight:700, cursor:'pointer', padding:0 }}>Forgot password?</button>}
               {isSignup && <PasswordStrength password={password} />}
             </>
           )}
@@ -191,7 +193,7 @@ export default function AuthGate({ children }) {
           {(isSignup || isReset) && (
             <>
               <label style={{ ...labelStyle, marginTop:13 }}>{isReset ? 'Confirm new password':'Confirm password'}</label>
-              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input type={showConfirmPassword ? 'text':'password'} value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Re-enter your password" style={fieldStyle} /><button type="button" onClick={()=>setShowConfirmPassword(v=>!v)} aria-label={showConfirmPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showConfirmPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
+              <div style={inputWithIcon()}><LockKeyhole size={16} style={iconStyle} /><input type={showConfirmPassword ? 'text':'password'} value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Re-enter your password" style={placeholderStyle} /><button type="button" onClick={()=>setShowConfirmPassword(v=>!v)} aria-label={showConfirmPassword ? 'Hide password':'Show password'} style={eyeButtonStyle}>{showConfirmPassword ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div>
             </>
           )}
 
@@ -200,7 +202,6 @@ export default function AuthGate({ children }) {
 
           <button type="submit" disabled={busy} style={{ width:'100%', marginTop:16, display:'flex', alignItems:'center', justifyContent:'center', gap:8, border:0, borderRadius:10, background:busy ? '#7dd3fc':'linear-gradient(135deg,#0ea5e9,#2563eb)', color:'#fff', WebkitTextFillColor:'#fff', padding:'12px 16px', fontSize:13.5, fontWeight:800, cursor:busy?'not-allowed':'pointer', boxShadow:'0 9px 22px rgba(37,99,235,.22)' }}>{busy ? <Loader2 size={16} className="animate-spin"/> : isSignup ? <UserRound size={16} color="#fff"/> : <LogIn size={16} color="#fff"/>}{submitText}</button>
 
-          {isLogin && <button type="button" onClick={()=>{clearFeedback();setMode('forgot')}} style={{ width:'100%', marginTop:11, border:0, background:'transparent', color:'#0284c7', fontSize:11.5, fontWeight:700, cursor:'pointer' }}>Forgot password?</button>}
           {(isForgot || isReset) && <button type="button" onClick={()=>{clearFeedback();setPassword('');setConfirmPassword('');setMode('login')}} style={{ width:'100%', marginTop:11, border:0, background:'transparent', color:'#64748b', fontSize:11.5, fontWeight:650, cursor:'pointer' }}>Back to Login</button>}
 
           {isLogin && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(148,163,184,.22)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'#64748b' }}>New to AdLytic?</span><button type="button" onClick={()=>{clearFeedback();setMode('signup')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#2563eb', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Create account</button></div>}
@@ -209,7 +210,6 @@ export default function AuthGate({ children }) {
           <div style={{ marginTop:12, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:10, color:'#94a3b8' }}><ShieldCheck size={12} /> Secure account authentication</div>
         </div>
       </form>
-      <style>{`.adl-auth-page input::placeholder{color:#94a3b8!important;opacity:1}.adl-auth-page input:focus{border-color:#38bdf8!important;box-shadow:0 0 0 3px rgba(56,189,248,.12)!important;background:rgba(248,250,252,.98)!important}`}</style>
     </div>
   );
 }
