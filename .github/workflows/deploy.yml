@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -20,9 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Place account security inside Settings
-        run: python3 scripts/fix_settings_placement.py
 
       - name: Setup Node
         uses: actions/setup-node@v4
