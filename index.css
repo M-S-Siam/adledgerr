@@ -16,11 +16,9 @@ body {
   box-sizing: border-box;
 }
 
-/* Mobile-first polish for AdLytic. Desktop layout is intentionally unchanged. */
+/* Desktop is intentionally left alone. These rules are phone-specific. */
 @media (max-width: 767px) {
-  html,
-  body,
-  #root {
+  html, body, #root {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
@@ -30,144 +28,162 @@ body {
     min-width: 0;
   }
 
-  /* Prevent the desktop sidebar/content offset from creating a horizontal page. */
-  main,
-  [role="main"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-
-  /* Responsive dashboard grids. */
-  [class*="grid-cols-4"],
-  [class*="grid-cols-3"],
-  [class*="grid-cols-2"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  /* Two-column flex layouts become stacked on small screens. */
-  [class*="md\\:grid-cols-2"],
-  [class*="lg\\:grid-cols-2"],
-  [class*="xl\\:grid-cols-2"] {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  /* Keep dashboard cards and panels inside the viewport. */
-  [class*="rounded"],
-  section,
-  article {
-    max-width: 100%;
-  }
-
-  /* Header / action bar: allow actions to wrap instead of overlapping. */
-  header {
+  .adl-shell {
     min-width: 0 !important;
+  }
+
+  .adl-shell main {
     width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
   }
 
-  header > div {
-    max-width: 100%;
+  /* Compact phone header: menu + primary action + settings stay visible. */
+  .adl-shell header {
+    height: 76px !important;
+    min-height: 76px !important;
+    padding: 0 12px !important;
+    gap: 8px;
   }
 
-  header button {
+  .adl-shell header > div {
+    min-width: 0;
+  }
+
+  .adl-shell header > div:last-child {
+    margin-left: auto;
+    gap: 8px !important;
+  }
+
+  .adl-shell header > div:last-child > button {
     flex-shrink: 0;
   }
 
-  /* Search fields should use the available width on phones. */
-  input[type="search"],
-  input[placeholder*="Search"],
-  header input {
-    max-width: 100%;
+  /* Comfortable phone content without wasting vertical space. */
+  .adl-shell main > div.flex-1.overflow-auto {
+    padding: 16px 12px 28px !important;
   }
 
-  /* Long tables become horizontally scrollable rather than breaking the page. */
-  table {
-    min-width: 620px;
+  /* Dashboard/report financial metrics become a compact 2-column grid. */
+  .adl-shell [class*="grid-cols-4"],
+  .adl-shell [class*="grid-cols-5"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
   }
 
-  .overflow-x-auto {
-    max-width: 100%;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
+  /* Cards & USD cards: two compact cards per row on phones. */
+  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
   }
 
-  /* Forms and modal content use the full phone width. */
-  form {
-    max-width: 100%;
+  .adl-shell [class*="grid-cols-4"] > *,
+  .adl-shell [class*="grid-cols-5"] > *,
+  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > * {
+    min-width: 0 !important;
   }
 
-  [role="dialog"] {
-    width: calc(100vw - 24px) !important;
-    max-width: calc(100vw - 24px) !important;
-    max-height: calc(100vh - 24px) !important;
-    overflow-y: auto;
+  .adl-shell [class*="grid-cols-4"] > .bg-white,
+  .adl-shell [class*="grid-cols-5"] > .bg-white,
+  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > .bg-white {
+    padding: 14px !important;
   }
 
-  /* Avoid charts forcing the document wider than the viewport. */
-  .recharts-responsive-container,
-  .recharts-wrapper {
-    max-width: 100% !important;
+  .adl-shell [class*="grid-cols-4"] h2,
+  .adl-shell [class*="grid-cols-5"] h2 {
+    font-size: 1.35rem !important;
+    line-height: 1.15 !important;
   }
 
-  /* Comfortable mobile spacing without changing the desktop design. */
-  .p-8 {
-    padding: 1rem !important;
+  .adl-shell h1 {
+    font-size: 1.55rem !important;
+    line-height: 1.2 !important;
   }
 
-  .px-8 {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-
-  .py-8 {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-  }
-
-  .gap-8 {
-    gap: 1rem !important;
-  }
-
-  /* Keep large headings readable on narrow screens. */
-  h1 {
-    font-size: clamp(1.35rem, 6vw, 1.8rem);
+  .adl-shell h2 {
     line-height: 1.2;
   }
 
-  h2 {
-    font-size: clamp(1.1rem, 5vw, 1.4rem);
-    line-height: 1.25;
-  }
-
-  /* Buttons can wrap their labels instead of overflowing. */
-  button {
+  .adl-shell button {
     max-width: 100%;
   }
 
-  /* Hide decorative desktop-only overflow while preserving all functionality. */
-  .whitespace-nowrap {
-    white-space: nowrap;
+  /* Large dashboard/report charts stay full width and become shorter on phones. */
+  .adl-shell [class*="xl:grid-cols-3"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .adl-shell [class*="xl:col-span-2"] {
+    grid-column: auto !important;
+  }
+
+  .adl-shell .h-72 {
+    height: 220px !important;
+  }
+
+  .adl-shell .h-64 {
+    height: 210px !important;
+  }
+
+  .adl-shell .recharts-responsive-container,
+  .adl-shell .recharts-wrapper {
+    max-width: 100% !important;
+  }
+
+  /* Data tables scroll inside their own panel instead of widening the whole page. */
+  .adl-shell .overflow-x-auto {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .adl-shell table {
+    min-width: 640px;
+  }
+
+  .adl-shell select,
+  .adl-shell input,
+  .adl-shell textarea,
+  .adl-shell form {
+    max-width: 100%;
+  }
+
+  /* Phone-friendly modal size. */
+  .adl-shell [role="dialog"] {
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - 20px) !important;
+    margin: 10px !important;
+    overflow-y: auto;
+  }
+
+  /* Mobile navigation drawer. */
+  .adl-shell aside {
+    width: min(86vw, 320px) !important;
   }
 }
 
 @media (max-width: 480px) {
-  /* Extra-tight spacing for smaller phones. */
-  .p-6 {
-    padding: 0.875rem !important;
+  .adl-shell main > div.flex-1.overflow-auto {
+    padding: 14px 10px 24px !important;
   }
 
-  .px-6 {
-    padding-left: 0.875rem !important;
-    padding-right: 0.875rem !important;
+  .adl-shell header {
+    height: 70px !important;
+    min-height: 70px !important;
+    padding: 0 10px !important;
   }
 
-  .gap-6 {
-    gap: 0.875rem !important;
+  .adl-shell [class*="grid-cols-4"],
+  .adl-shell [class*="grid-cols-5"],
+  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
+    gap: 10px !important;
   }
 
-  /* Stack common horizontal action groups on very narrow screens. */
-  .flex-wrap {
-    row-gap: 0.5rem;
+  .adl-shell [class*="grid-cols-4"] > .bg-white,
+  .adl-shell [class*="grid-cols-5"] > .bg-white,
+  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > .bg-white {
+    padding: 12px !important;
   }
 }
