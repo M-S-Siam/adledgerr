@@ -18,8 +18,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply focused UI changes
-        shell: python
+        shell: bash
         run: |
+          python3 - <<'PY'
           from pathlib import Path
           import re
 
@@ -28,7 +29,7 @@ jobs:
           app = app_path.read_text(encoding='utf-8')
           auth = auth_path.read_text(encoding='utf-8')
 
-          # App: add the existing Supabase client to the main settings page.
+          # Add Supabase client to the main Settings page.
           if "import { supabase } from './src/lib/supabase.js';" not in app:
               marker = "} from 'lucide-react';\n"
               if marker not in app:
@@ -53,56 +54,35 @@ function AccountSecuritySettings() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setSession(data?.session || null);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (mounted) setSession(nextSession || null);
-    });
-    return () => {
-      mounted = false;
-      listener?.subscription?.unsubscribe();
-    };
+    supabase.auth.getSession().then(({ data }) => mounted && setSession(data?.session || null));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => mounted && setSession(nextSession || null));
+    return () => { mounted = false; listener?.subscription?.unsubscribe(); };
   }, []);
 
-  const clearFeedback = () => {
-    setError('');
-    setMessage('');
-  };
+  const clearFeedback = () => { setError(''); setMessage(''); };
+  const primary = { border: 0, borderRadius: 9, padding: '10px 14px', background: '#0ea5e9', color: '#fff', fontSize: 12, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .65 : 1 };
+  const secondary = { border: '1px solid #cfe0ea', borderRadius: 9, padding: '9px 12px', background: '#fff', color: '#24536d', fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' };
+  const input = { width: '100%', boxSizing: 'border-box', border: '1px solid #cfe0ea', borderRadius: 10, padding: '11px 12px', fontSize: 13, color: '#0f2940', background: '#fff', outline: 'none' };
+  const tabButton = (active) => ({ border: 0, borderRadius: 9, padding: '9px 12px', background: active ? '#e0f5fd' : 'transparent', color: active ? '#0369a1' : '#587188', fontSize: 12, fontWeight: 800, cursor: 'pointer' });
 
-  const handleChangePassword = async (event) => {
-    event.preventDefault();
-    clearFeedback();
+  const changePassword = async (event) => {
+    event.preventDefault(); clearFeedback();
     const email = session?.user?.email || '';
     if (!email) return setError('Your authenticated email could not be found.');
     if (!currentPassword) return setError('Enter your current password.');
     if (newPassword.length < 8) return setError('New password must be at least 8 characters.');
     if (newPassword !== confirmPassword) return setError('New passwords do not match.');
-    if (newPassword === currentPassword) return setError('Your new password must be different from the current password.');
-
+    if (currentPassword === newPassword) return setError('Your new password must be different from the current password.');
     setBusy(true);
     const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
-    if (verifyError) {
-      setError('Current password is incorrect.');
-      setBusy(false);
-      return;
-    }
+    if (verifyError) { setError('Current password is incorrect.'); setBusy(false); return; }
     const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-    if (updateError) {
-      setError(updateError.message || 'Unable to change your password.');
-      setBusy(false);
-      return;
-    }
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setMessage('Password changed successfully.');
-    setBusy(false);
+    if (updateError) { setError(updateError.message || 'Unable to change your password.'); setBusy(false); return; }
+    setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setMessage('Password changed successfully.'); setBusy(false);
   };
 
-  const handleResetEmail = async () => {
-    clearFeedback();
-    const email = session?.user?.email || '';
+  const sendReset = async () => {
+    clearFeedback(); const email = session?.user?.email || '';
     if (!email) return setError('Your authenticated email could not be found.');
     setBusy(true);
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : undefined;
@@ -112,112 +92,55 @@ function AccountSecuritySettings() {
     setBusy(false);
   };
 
-  const handleSignOutOthers = async () => {
-    clearFeedback();
-    setBusy(true);
-    const { error: signOutError } = await supabase.auth.signOut({ scope: 'others' });
-    if (signOutError) setError(signOutError.message || 'Unable to sign out other sessions.');
-    else setMessage('All other active sessions have been signed out.');
+  const signOutOthers = async () => {
+    clearFeedback(); setBusy(true);
+    const { error: e } = await supabase.auth.signOut({ scope: 'others' });
+    if (e) setError(e.message || 'Unable to sign out other sessions.'); else setMessage('All other active sessions have been signed out.');
     setBusy(false);
   };
 
-  const handleSignOutAll = async () => {
-    clearFeedback();
-    setBusy(true);
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) setError(signOutError.message || 'Unable to sign out.');
+  const signOutAll = async () => {
+    clearFeedback(); setBusy(true);
+    const { error: e } = await supabase.auth.signOut();
+    if (e) setError(e.message || 'Unable to sign out.');
     setBusy(false);
   };
-
-  const inputStyle = {
-    width: '100%', boxSizing: 'border-box', border: '1px solid #cfe0ea', borderRadius: 10,
-    padding: '11px 12px', fontSize: 13, color: '#0f2940', background: '#fff', outline: 'none'
-  };
-  const smallButton = {
-    border: '1px solid #cfe0ea', borderRadius: 9, padding: '9px 12px', background: '#fff',
-    color: '#24536d', fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer'
-  };
-  const primaryButton = {
-    border: 0, borderRadius: 9, padding: '10px 14px', background: '#0ea5e9', color: '#fff',
-    fontSize: 12, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .65 : 1
-  };
-  const tabStyle = (active) => ({
-    border: 0, borderRadius: 9, padding: '9px 12px', background: active ? '#e0f5fd' : 'transparent',
-    color: active ? '#0369a1' : '#587188', fontSize: 12, fontWeight: 800, cursor: 'pointer'
-  });
 
   return (
     <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" style={{ marginTop: 18 }}>
       <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-base font-bold text-slate-900">Account &amp; Security</h2>
-          <p className="text-xs text-slate-500 mt-1">Manage your AdLytic account, password and active sessions.</p>
-        </div>
+        <div><h2 className="text-base font-bold text-slate-900">Account &amp; Security</h2><p className="text-xs text-slate-500 mt-1">Manage your AdLytic account, password and active sessions.</p></div>
         <ShieldCheck size={20} className="text-sky-600" />
       </div>
-
       <div className="px-4 pt-3 flex flex-wrap gap-2 border-b border-slate-200">
-        <button type="button" onClick={() => { clearFeedback(); setTab('account'); }} style={tabStyle(tab === 'account')}>Account</button>
-        <button type="button" onClick={() => { clearFeedback(); setTab('security'); }} style={tabStyle(tab === 'security')}>Security</button>
-        <button type="button" onClick={() => { clearFeedback(); setTab('sessions'); }} style={tabStyle(tab === 'sessions')}>Sessions</button>
+        <button type="button" onClick={() => { clearFeedback(); setTab('account'); }} style={tabButton(tab === 'account')}>Account</button>
+        <button type="button" onClick={() => { clearFeedback(); setTab('security'); }} style={tabButton(tab === 'security')}>Security</button>
+        <button type="button" onClick={() => { clearFeedback(); setTab('sessions'); }} style={tabButton(tab === 'sessions')}>Sessions</button>
       </div>
-
       <div className="p-5">
         {error && <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c', fontSize: 12 }}>{error}</div>}
         {message && <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid #bae6fd', background: '#f0f9ff', color: '#0369a1', fontSize: 12 }}>{message}</div>}
 
-        {tab === 'account' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-bold text-slate-900">Account information</div>
-              <div className="text-xs text-slate-500 mt-1">Your authenticated AdLytic identity.</div>
-              <div className="mt-4 space-y-3">
-                <div><div className="text-[10px] font-bold text-slate-500 mb-1">EMAIL</div><div style={{ ...inputStyle, background: '#f8fafc' }}>{session?.user?.email || 'Loading...'}</div></div>
-                <div><div className="text-[10px] font-bold text-slate-500 mb-1">USER ID</div><div style={{ ...inputStyle, background: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session?.user?.id || 'Loading...'}</div></div>
-                <div><div className="text-[10px] font-bold text-slate-500 mb-1">AUTHENTICATION</div><div className="text-sm font-semibold text-emerald-700">Email + password</div></div>
-              </div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-bold text-slate-900">Password recovery</div>
-              <div className="text-xs text-slate-500 mt-1">Send a secure password reset link to your account email.</div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button type="button" onClick={handleResetEmail} disabled={busy} style={primaryButton}>Send reset email</button>
-              </div>
-            </div>
+        {tab === 'account' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Account information</div><div className="text-xs text-slate-500 mt-1">Your authenticated AdLytic identity.</div>
+            <div className="mt-4 space-y-3"><div><div className="text-[10px] font-bold text-slate-500 mb-1">EMAIL</div><div style={{ ...input, background: '#f8fafc' }}>{session?.user?.email || 'Loading...'}</div></div><div><div className="text-[10px] font-bold text-slate-500 mb-1">USER ID</div><div style={{ ...input, background: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session?.user?.id || 'Loading...'}</div></div><div><div className="text-[10px] font-bold text-slate-500 mb-1">AUTHENTICATION</div><div className="text-sm font-semibold text-emerald-700">Email + password</div></div></div>
           </div>
-        )}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Password recovery</div><div className="text-xs text-slate-500 mt-1">Send a secure password reset link to your account email.</div><button type="button" onClick={sendReset} disabled={busy} style={{ ...primary, marginTop: 18 }}>Send reset email</button></div>
+        </div>}
 
-        {tab === 'security' && (
-          <form onSubmit={handleChangePassword} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-bold text-slate-900">Change password</div>
-            <div className="text-xs text-slate-500 mt-1">Verify your current password before setting a new one.</div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-4">
-              <label className="text-xs font-semibold text-slate-600">Current password<div className="relative mt-1"><input style={{ ...inputStyle, paddingRight: 64 }} type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" /><button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 7, top: 7, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showCurrent ? 'Hide' : 'Show'}</button></div></label>
-              <label className="text-xs font-semibold text-slate-600">New password<div className="relative mt-1"><input style={{ ...inputStyle, paddingRight: 64 }} type={showNew ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 7, top: 7, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showNew ? 'Hide' : 'Show'}</button></div></label>
-              <label className="text-xs font-semibold text-slate-600">Confirm password<div className="relative mt-1"><input style={{ ...inputStyle, paddingRight: 64 }} type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowConfirm(v => !v)} style={{ position: 'absolute', right: 7, top: 7, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showConfirm ? 'Hide' : 'Show'}</button></div></label>
-            </div>
-            <div className="mt-4 flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-[11px] text-slate-500">Use at least 8 characters for your new password.</span>
-              <button type="submit" disabled={busy} style={primaryButton}>{busy ? 'Updating...' : 'Update password'}</button>
-            </div>
-          </form>
-        )}
-
-        {tab === 'sessions' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-bold text-slate-900">Current session</div>
-              <div className="text-xs text-slate-500 mt-1">This browser is currently authenticated.</div>
-              <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-700"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Active</div>
-              <button type="button" onClick={handleSignOutAll} disabled={busy} style={{ ...smallButton, marginTop: 14 }}>Log out everywhere</button>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-bold text-slate-900">Other sessions</div>
-              <div className="text-xs text-slate-500 mt-1">Invalidate all other active sessions while keeping this one signed in.</div>
-              <button type="button" onClick={handleSignOutOthers} disabled={busy} style={{ ...smallButton, marginTop: 18 }}>Sign out other devices</button>
-            </div>
+        {tab === 'security' && <form onSubmit={changePassword} className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Change password</div><div className="text-xs text-slate-500 mt-1">Verify your current password before setting a new one.</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-4">
+            <label className="text-xs font-semibold text-slate-600">Current password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" /><button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showCurrent ? 'Hide' : 'Show'}</button></div></label>
+            <label className="text-xs font-semibold text-slate-600">New password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showNew ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showNew ? 'Hide' : 'Show'}</button></div></label>
+            <label className="text-xs font-semibold text-slate-600">Confirm password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowConfirm(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showConfirm ? 'Hide' : 'Show'}</button></div></label>
           </div>
-        )}
+          <div className="mt-4 flex items-center justify-between gap-3 flex-wrap"><span className="text-[11px] text-slate-500">Use at least 8 characters for your new password.</span><button type="submit" disabled={busy} style={primary}>{busy ? 'Updating...' : 'Update password'}</button></div>
+        </form>}
+
+        {tab === 'sessions' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Current session</div><div className="text-xs text-slate-500 mt-1">This browser is currently authenticated.</div><div className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-700"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Active</div><button type="button" onClick={signOutAll} disabled={busy} style={{ ...secondary, marginTop: 14 }}>Log out everywhere</button></div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Other sessions</div><div className="text-xs text-slate-500 mt-1">Invalidate all other active sessions while keeping this one signed in.</div><button type="button" onClick={signOutOthers} disabled={busy} style={{ ...secondary, marginTop: 18 }}>Sign out other devices</button></div>
+        </div>}
       </div>
     </section>
   );
@@ -226,60 +149,31 @@ function AccountSecuritySettings() {
 
           if 'function AccountSecuritySettings()' not in app:
               marker = '\nfunction SettingsView('
-              if marker not in app:
-                  raise SystemExit('SettingsView marker not found')
+              if marker not in app: raise SystemExit('SettingsView marker not found')
               app = app.replace(marker, account_component + marker, 1)
 
-          # Integrate the security section at the top of the existing Settings page without replacing its workspace/data-backup logic.
           if '<AccountSecuritySettings />' not in app:
-              pattern = re.compile(r'(function SettingsView\([\s\S]*?return \(\s*<div[^>]*>)')
-              m = pattern.search(app)
-              if not m:
-                  raise SystemExit('SettingsView root container not found')
-              replacement = m.group(1) + '\n      <AccountSecuritySettings />'
-              app = app[:m.start()] + replacement + app[m.end():]
+              m = re.search(r'(function SettingsView\([\s\S]*?return \(\s*<div[^>]*>)', app)
+              if not m: raise SystemExit('SettingsView root container not found')
+              app = app[:m.start()] + m.group(1) + '\n      <AccountSecuritySettings />' + app[m.end():]
 
           app_path.write_text(app, encoding='utf-8')
 
-          # AuthGate: the small settings icon should open the real Settings page, not a second side drawer.
-          listener_pattern = re.compile(r'\n  // The main application already has a Settings item in its sidebar\.[\s\S]*?\n  \}, \[session\]\);\n')
-          auth, n = listener_pattern.subn('\n  // Account & security is now integrated into the main Settings page.\n', auth, count=1)
-          if n == 0:
-              raise SystemExit('AuthGate settings listener block not found')
-
-          drawer_pattern = re.compile(r'\n        \{settingsOpen && \([\s\S]*?\n        \)\}\n')
-          auth, n = drawer_pattern.subn('\n', auth, count=1)
-          if n == 0:
-              raise SystemExit('AuthGate settings drawer block not found')
-
-          button_pattern = re.compile(r'\n        <button\n          type="button"\n          onClick=\{\(\) => \{\n            clearSettingsFeedback\(\);\n            setSettingsSection\(\'account\'\);\n            setSettingsOpen\(true\);\n          \}\}\n          aria-label="Open account settings"[\s\S]*?\n        </button>\n')
-          replacement_button = r'''
-        <style>{` .adl-shell header button:last-of-type{margin-right:56px!important;} .adl-shell header{padding-right:4px!important;} @media (max-width:900px){.adl-shell header button:last-of-type{margin-right:48px!important;}} `}</style>
-        <button
-          type="button"
-          onClick={() => {
-            const settingsButton = Array.from(document.querySelectorAll('.adl-shell aside button, .adl-shell aside a, .adl-shell nav button, .adl-shell nav a')).find((el) => el.textContent?.replace(/\s+/g, ' ').trim() === 'Settings');
-            if (settingsButton) settingsButton.click();
-          }}
-          aria-label="Open Settings"
-          title="Settings"
-          style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, width: 38, height: 38, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #cbd5e1', borderRadius: 8, background: '#ffffff', color: '#334155', boxShadow: '0 6px 18px rgba(15,23,42,.10)', cursor: 'pointer' }}
-        >
-          <Settings2 size={17} />
-        </button>
-'''
-          auth, n = button_pattern.subn(replacement_button, auth, count=1)
-          if n == 0:
-              raise SystemExit('AuthGate settings button block not found')
-
+          # Remove the separate AuthGate settings drawer/listener and make its icon jump to the real Settings page.
+          auth, n = re.subn(r'\n  // The main application already has a Settings item in its sidebar\.[\s\S]*?\n  \}, \[session\]\);\n', '\n  // Account & security is integrated into the main Settings page.\n', auth, count=1)
+          if n == 0: raise SystemExit('AuthGate settings listener block not found')
+          auth, n = re.subn(r'\n        \{settingsOpen && \([\s\S]*?\n        \)\}\n', '\n', auth, count=1)
+          if n == 0: raise SystemExit('AuthGate settings drawer block not found')
+          auth, n = re.subn(r'\n        <button\n          type="button"\n          onClick=\{\(\) => \{\n            clearSettingsFeedback\(\);\n            setSettingsSection\(\'account\'\);\n            setSettingsOpen\(true\);\n          \}\}\n          aria-label="Open account settings"[\s\S]*?\n        </button>\n', r'''\n        <style>{` .adl-shell header button:last-of-type{margin-right:56px!important;} .adl-shell header{padding-right:4px!important;} `}</style>\n        <button type="button" onClick={() => { const el = Array.from(document.querySelectorAll('.adl-shell aside button, .adl-shell aside a')).find((node) => node.textContent?.replace(/\\s+/g, ' ').trim() === 'Settings'); if (el) el.click(); }} aria-label="Open Settings" title="Settings" style={{ position: 'fixed', top: 14, right: 14, zIndex: 9999, width: 38, height: 38, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #cbd5e1', borderRadius: 8, background: '#ffffff', color: '#334155', boxShadow: '0 6px 18px rgba(15,23,42,.10)', cursor: 'pointer' }}>\n          <Settings2 size={17} />\n        </button>\n''', auth, count=1)
+          if n == 0: raise SystemExit('AuthGate settings button block not found')
           auth_path.write_text(auth, encoding='utf-8')
-          print('Focused UI/auth settings changes applied.')
+          print('Focused UI changes applied.')
+          PY
 
-      - name: Validate source
+      - name: Build check
         run: |
-          node --check <(sed 's/export default function/ function/' src/AuthGate.jsx) || true
-          grep -q "AccountSecuritySettings" App.jsx
-          grep -q "header button:last-of-type" src/AuthGate.jsx
+          npm ci --no-audit --no-fund
+          npm run build
 
       - name: Commit changes and remove one-time workflow
         run: |
