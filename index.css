@@ -16,7 +16,7 @@ body {
   box-sizing: border-box;
 }
 
-/* Desktop is intentionally left alone. These rules are phone-specific. */
+/* Desktop remains unchanged. Everything below is mobile-only. */
 @media (max-width: 767px) {
   html, body, #root {
     width: 100%;
@@ -24,31 +24,23 @@ body {
     overflow-x: hidden;
   }
 
-  body {
-    min-width: 0;
-  }
+  body { min-width: 0; }
 
-  .adl-shell {
-    min-width: 0 !important;
-  }
-
+  .adl-shell,
   .adl-shell main {
-    width: 100% !important;
     min-width: 0 !important;
-    margin: 0 !important;
+    width: 100% !important;
   }
 
-  /* Compact phone header: menu + primary action + settings stay visible. */
+  /* ---------- MOBILE APP BAR ---------- */
   .adl-shell header {
-    height: 76px !important;
-    min-height: 76px !important;
-    padding: 0 12px !important;
-    gap: 8px;
+    height: 70px !important;
+    min-height: 70px !important;
+    padding: 0 10px !important;
+    gap: 8px !important;
   }
 
-  .adl-shell header > div {
-    min-width: 0;
-  }
+  .adl-shell header > div { min-width: 0; }
 
   .adl-shell header > div:last-child {
     margin-left: auto;
@@ -59,89 +51,94 @@ body {
     flex-shrink: 0;
   }
 
-  /* Comfortable phone content without wasting vertical space. */
+  /* Hide secondary desktop header controls; keep the primary action and settings. */
+  .adl-shell header input,
+  .adl-shell header [placeholder*="Search"],
+  .adl-shell header [class*="search"] {
+    display: none !important;
+  }
+
+  /* ---------- CONTENT FRAME ---------- */
   .adl-shell main > div.flex-1.overflow-auto {
-    padding: 16px 12px 28px !important;
-  }
-
-  /* Dashboard/report financial metrics become a compact 2-column grid. */
-  .adl-shell [class*="grid-cols-4"],
-  .adl-shell [class*="grid-cols-5"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 12px !important;
-  }
-
-  /* Cards & USD cards: two compact cards per row on phones. */
-  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 12px !important;
-  }
-
-  .adl-shell [class*="grid-cols-4"] > *,
-  .adl-shell [class*="grid-cols-5"] > *,
-  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > * {
+    padding: 14px 10px 26px !important;
+    width: 100% !important;
     min-width: 0 !important;
-  }
-
-  .adl-shell [class*="grid-cols-4"] > .bg-white,
-  .adl-shell [class*="grid-cols-5"] > .bg-white,
-  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > .bg-white {
-    padding: 14px !important;
-  }
-
-  .adl-shell [class*="grid-cols-4"] h2,
-  .adl-shell [class*="grid-cols-5"] h2 {
-    font-size: 1.35rem !important;
-    line-height: 1.15 !important;
   }
 
   .adl-shell h1 {
     font-size: 1.55rem !important;
-    line-height: 1.2 !important;
+    line-height: 1.18 !important;
+    margin-bottom: 4px !important;
   }
 
-  .adl-shell h2 {
-    line-height: 1.2;
+  .adl-shell h2 { line-height: 1.2 !important; }
+
+  /* ---------- METRIC / SUMMARY CARDS ---------- */
+  /* Covers Tailwind variants such as grid-cols-1 md:grid-cols-2 xl:grid-cols-4. */
+  .adl-shell .grid[class*="grid-cols-4"],
+  .adl-shell .grid[class*="grid-cols-5"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
   }
 
-  .adl-shell button {
-    max-width: 100%;
+  .adl-shell .grid[class*="grid-cols-4"] > *,
+  .adl-shell .grid[class*="grid-cols-5"] > * {
+    min-width: 0 !important;
   }
 
-  /* Large dashboard/report charts stay full width and become shorter on phones. */
-  .adl-shell [class*="xl:grid-cols-3"] {
+  .adl-shell .grid[class*="grid-cols-4"] > .bg-white,
+  .adl-shell .grid[class*="grid-cols-5"] > .bg-white {
+    padding: 13px !important;
+    min-height: 132px !important;
+  }
+
+  .adl-shell .grid[class*="grid-cols-4"] h2,
+  .adl-shell .grid[class*="grid-cols-5"] h2 {
+    font-size: 1.28rem !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Cards & USD collections: two useful cards per row instead of a long list. */
+  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > * {
+    min-width: 0 !important;
+  }
+
+  /* ---------- TWO-COLUMN SECTIONS ---------- */
+  .adl-shell .grid[class*="xl:grid-cols-3"] {
     grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
   }
 
   .adl-shell [class*="xl:col-span-2"] {
     grid-column: auto !important;
   }
 
-  .adl-shell .h-72 {
-    height: 220px !important;
-  }
-
-  .adl-shell .h-64 {
-    height: 210px !important;
-  }
+  /* ---------- CHARTS ---------- */
+  .adl-shell .h-72 { height: 210px !important; }
+  .adl-shell .h-64 { height: 200px !important; }
 
   .adl-shell .recharts-responsive-container,
   .adl-shell .recharts-wrapper {
     max-width: 100% !important;
   }
 
-  /* Data tables scroll inside their own panel instead of widening the whole page. */
+  /* ---------- TABLES ---------- */
   .adl-shell .overflow-x-auto {
+    width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
   }
 
-  .adl-shell table {
-    min-width: 640px;
-  }
+  .adl-shell table { min-width: 640px; }
 
+  /* ---------- FORMS / MODALS ---------- */
   .adl-shell select,
   .adl-shell input,
   .adl-shell textarea,
@@ -149,41 +146,48 @@ body {
     max-width: 100%;
   }
 
-  /* Phone-friendly modal size. */
   .adl-shell [role="dialog"] {
     width: calc(100vw - 20px) !important;
     max-width: calc(100vw - 20px) !important;
     max-height: calc(100vh - 20px) !important;
     margin: 10px !important;
-    overflow-y: auto;
+    overflow-y: auto !important;
   }
 
-  /* Mobile navigation drawer. */
+  /* ---------- MOBILE NAVIGATION ---------- */
   .adl-shell aside {
-    width: min(86vw, 320px) !important;
+    width: min(84vw, 310px) !important;
   }
+
+  /* Compact repeated list rows on phone without changing their desktop design. */
+  .adl-shell .border-b:last-child { border-bottom-width: 0; }
 }
 
 @media (max-width: 480px) {
   .adl-shell main > div.flex-1.overflow-auto {
-    padding: 14px 10px 24px !important;
+    padding: 12px 9px 24px !important;
   }
 
   .adl-shell header {
-    height: 70px !important;
-    min-height: 70px !important;
-    padding: 0 10px !important;
+    height: 66px !important;
+    min-height: 66px !important;
+    padding: 0 9px !important;
   }
 
-  .adl-shell [class*="grid-cols-4"],
-  .adl-shell [class*="grid-cols-5"],
-  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
-    gap: 10px !important;
+  .adl-shell .grid[class*="grid-cols-4"],
+  .adl-shell .grid[class*="grid-cols-5"],
+  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
+    gap: 9px !important;
   }
 
-  .adl-shell [class*="grid-cols-4"] > .bg-white,
-  .adl-shell [class*="grid-cols-5"] > .bg-white,
-  .adl-shell [class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > .bg-white {
-    padding: 12px !important;
+  .adl-shell .grid[class*="grid-cols-4"] > .bg-white,
+  .adl-shell .grid[class*="grid-cols-5"] > .bg-white {
+    padding: 11px !important;
+    min-height: 124px !important;
+  }
+
+  .adl-shell .grid[class*="grid-cols-4"] h2,
+  .adl-shell .grid[class*="grid-cols-5"] h2 {
+    font-size: 1.18rem !important;
   }
 }
