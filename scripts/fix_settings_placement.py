@@ -8,7 +8,7 @@ s = s.replace('      <AccountSecuritySettings />\n', '', 1)
 marker = 'function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {'
 start = s.find(marker)
 if start < 0: raise SystemExit('SettingsView not found')
-root = '<div className=\\"max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500\\">'
+root = '<div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">'
 pos = s.find(root, start)
 if pos < 0: raise SystemExit('Settings root not found')
 pos += len(root)
