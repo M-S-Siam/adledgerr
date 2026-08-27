@@ -1,0 +1,16 @@
+/* FINAL AUTH PLACEHOLDER CONTRAST OVERRIDE
+   Loaded last so the frosted-glass inputs always keep readable hint text. */
+#root .adl-auth-page input.adl-auth-input::placeholder,
+#root .adl-auth-page input.adl-auth-input::-webkit-input-placeholder,
+#root .adl-auth-page input.adl-auth-input::-moz-placeholder,
+#root .adl-auth-page input.adl-auth-input:-ms-input-placeholder {
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+#root .adl-auth-page input.adl-auth-input {
+  color: #334155 !important;
+  -webkit-text-fill-color: #334155 !important;
+}
