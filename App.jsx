@@ -3043,8 +3043,58 @@ function IntegrationsView() {
   </div>;
 }
 
+// --- INITIAL TEAM ACTIVITIES DATA ---
+const INITIAL_TEAM_ACTIVITIES = [
+  {
+    id: 'act_01',
+    userName: 'Awal',
+    userRole: '👑 Founder',
+    action: 'Configured Workspace Financial Safety Rails & 15% VAT',
+    category: 'security',
+    timestamp: '15 mins ago',
+    date: '2026-08-28 21:30'
+  },
+  {
+    id: 'act_02',
+    userName: 'Tanvir Ahmed',
+    userRole: '🎯 Senior Media Buyer',
+    action: 'Logged $185 Meta Ad Spend for client Apex Footwear',
+    category: 'spend',
+    timestamp: '45 mins ago',
+    date: '2026-08-28 21:00'
+  },
+  {
+    id: 'act_03',
+    userName: 'Nafis Rahman',
+    userRole: '📊 Accountant',
+    action: 'Generated Client Monthly Ledger Statement & VAT Audit (PDF)',
+    category: 'finance',
+    timestamp: '2 hours ago',
+    date: '2026-08-28 19:45'
+  },
+  {
+    id: 'act_04',
+    userName: 'Awal',
+    userRole: '👑 Founder',
+    action: 'Invited Tanvir Ahmed as Senior Media Buyer (Daily limit: $1,000)',
+    category: 'team',
+    timestamp: '1 day ago',
+    date: '2026-08-27 16:20'
+  },
+  {
+    id: 'act_05',
+    userName: 'Nafis Rahman',
+    userRole: '📊 Accountant',
+    action: 'Audited Bank USD Buy Rate spread (৳131.25 → ৳140.00)',
+    category: 'finance',
+    timestamp: '2 days ago',
+    date: '2026-08-26 14:10'
+  }
+];
+
 // --- ENTERPRISE AGENCY TEAM & ROLE GOVERNANCE SUITE ---
 function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], workspaceSettings = {} }) {
+  const [activeSubTab, setActiveSubTab] = useState('members'); // 'members' | 'pending' | 'activities'
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -3053,6 +3103,9 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
   const [showPermissionsGuide, setShowPermissionsGuide] = useState(false);
   const [copiedInviteId, setCopiedInviteId] = useState(null);
   const [feedbackToast, setFeedbackToast] = useState(null);
+
+  // Team Activities Audit Log State (persisted locally)
+  const [activities, setActivities] = useLocalStorage('adledger_team_activities', INITIAL_TEAM_ACTIVITIES);
 
   // Form State for Add / Edit Modal
   const [formData, setFormData] = useState({
@@ -3072,14 +3125,27 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     setTimeout(() => setFeedbackToast(null), 3000);
   };
 
-  const openInviteModal = () => {
+  const logActivity = (actionText, category = 'team') => {
+    const newEntry = {
+      id: `act_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      userName: workspaceSettings.businessName ? `${workspaceSettings.businessName} Admin` : 'Workspace Admin',
+      userRole: '👑 Founder',
+      action: actionText,
+      category,
+      timestamp: 'Just now',
+      date: new Date().toISOString().slice(0, 16).replace('T', ' ')
+    };
+    setActivities(prev => [newEntry, ...prev]);
+  };
+
+  const openInviteModal = (defaultStatus = 'Active') => {
     setEditingMember(null);
     setFormData({
       name: '',
       email: '',
       phone: '',
       role: 'Senior Media Buyer',
-      status: 'Active',
+      status: defaultStatus,
       assignedClients: 'All Clients',
       dailySpendLimit: '1000',
       notes: '',
@@ -3128,9 +3194,11 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
 
     if (editingMember) {
       onUpdate(editingMember.id, formData);
+      logActivity(`Updated permissions and role for ${formData.name} (${formData.role})`, 'team');
       showToast(`Updated permissions for ${formData.name}`);
     } else {
       onAdd(formData);
+      logActivity(`Invited ${formData.name} (${formData.email}) as ${formData.role}`, 'team');
       showToast(`Invited ${formData.name} to workspace`);
     }
 
@@ -3149,12 +3217,49 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
   const toggleMemberStatus = (member) => {
     const nextStatus = member.status === 'Suspended' ? 'Active' : 'Suspended';
     onUpdate(member.id, { status: nextStatus });
+    logActivity(`Changed status of ${member.name} to ${nextStatus}`, 'security');
     showToast(`${member.name} is now ${nextStatus}`);
   };
 
-  // Filtered members list
-  const filteredMembers = useMemo(() => {
-    return teamMembers.filter((m) => {
+  const handleAcceptInvite = (member) => {
+    onUpdate(member.id, { status: 'Active' });
+    logActivity(`${member.name} accepted workspace invitation and joined as ${member.role}`, 'team');
+    showToast(`${member.name} is now Active in workspace!`);
+  };
+
+  const exportAuditCSV = () => {
+    const headers = ['ID', 'User', 'Role', 'Action', 'Category', 'Timestamp'];
+    const rows = activities.map(a => [
+      a.id,
+      `"${a.userName || ''}"`,
+      `"${a.userRole || ''}"`,
+      `"${a.action || ''}"`,
+      `"${a.category || ''}"`,
+      `"${a.date || a.timestamp || ''}"`
+    ]);
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `adlytic-team-audit-trail-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('Exported Team Audit Log CSV');
+  };
+
+  // Segregate Active and Pending members
+  const activeMembersList = useMemo(() => {
+    return teamMembers.filter(m => m.status !== 'Pending Invite');
+  }, [teamMembers]);
+
+  const pendingMembersList = useMemo(() => {
+    return teamMembers.filter(m => m.status === 'Pending Invite');
+  }, [teamMembers]);
+
+  // Filtered active members list
+  const filteredActiveMembers = useMemo(() => {
+    return activeMembersList.filter((m) => {
       const matchesSearch =
         (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (m.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -3169,7 +3274,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
 
       return matchesSearch && matchesRole;
     });
-  }, [teamMembers, searchTerm, roleFilter]);
+  }, [activeMembersList, searchTerm, roleFilter]);
 
   const roleBadgeStyle = (role = '') => {
     if (role.includes('Owner')) return 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-400/20';
@@ -3185,6 +3290,13 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     if (role.includes('Buyer') || role.includes('Specialist')) return <Target size={12} className="text-sky-600" />;
     if (role.includes('Accountant')) return <Coins size={12} className="text-emerald-600" />;
     return <Eye size={12} className="text-slate-500" />;
+  };
+
+  const activityCategoryBadge = (cat = '') => {
+    if (cat === 'security') return 'bg-purple-50 text-purple-700 border-purple-200';
+    if (cat === 'spend' || cat === 'campaign') return 'bg-sky-50 text-sky-700 border-sky-200';
+    if (cat === 'finance') return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    return 'bg-blue-50 text-blue-700 border-blue-200';
   };
 
   return (
@@ -3204,7 +3316,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Team & Role Governance</h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {teamMembers.length + 1} Active Seats
+              {activeMembersList.length + 1} Active Seats
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -3224,7 +3336,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
 
           <button
             type="button"
-            onClick={openInviteModal}
+            onClick={() => openInviteModal('Active')}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02]"
           >
             <UserPlus size={15} /> Invite Member
@@ -3240,7 +3352,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
           </div>
           <div>
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Team Seats</span>
-            <span className="text-lg font-black text-slate-900">{teamMembers.length + 1} Members</span>
+            <span className="text-lg font-black text-slate-900">{activeMembersList.length + 1} Members</span>
           </div>
         </div>
 
@@ -3257,14 +3369,12 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <Coins size={22} />
+          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+            <Mail size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Finance & Admins</span>
-            <span className="text-lg font-black text-slate-900">
-              {teamMembers.filter(m => m.role?.includes('Accountant') || m.role?.includes('Admin')).length + 1} Leads
-            </span>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Pending Invites</span>
+            <span className="text-lg font-black text-amber-700">{pendingMembersList.length} Pending</span>
           </div>
         </div>
 
@@ -3273,7 +3383,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             <ShieldCheck size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Security Level</span>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Audit Security</span>
             <span className="text-lg font-black text-purple-700">RBAC Active</span>
           </div>
         </div>
@@ -3379,181 +3489,397 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
       </div>
 
-      {/* DIRECTORY CONTROLS: SEARCH & ROLE TABS */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name, email or role..."
-            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
-          />
-        </div>
+      {/* TEAM SECTION TABS NAVIGATION */}
+      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('members')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === 'members'
+              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+          }`}
+        >
+          <UsersRound size={15} className={activeSubTab === 'members' ? 'text-sky-600' : 'text-slate-400'} />
+          Active Workspace Members
+          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-extrabold">
+            {activeMembersList.length + 1}
+          </span>
+        </button>
 
-        {/* Role Filter Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-100 rounded-xl">
-          {['All', 'Admin', 'Media Buyer', 'Accountant', 'Viewer'].map((tab) => {
-            const active = roleFilter === tab;
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setRoleFilter(tab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                  active
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('pending')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === 'pending'
+              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+          }`}
+        >
+          <Mail size={15} className={activeSubTab === 'pending' ? 'text-amber-600' : 'text-slate-400'} />
+          Pending Invitations
+          {pendingMembersList.length > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">
+              {pendingMembersList.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('activities')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === 'activities'
+              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+          }`}
+        >
+          <Activity size={15} className={activeSubTab === 'activities' ? 'text-emerald-600' : 'text-slate-400'} />
+          Live Audit & Activity Trail
+          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold">
+            {activities.length}
+          </span>
+        </button>
       </div>
 
-      {/* TEAM MEMBERS DIRECTORY LIST */}
-      <div className="space-y-3">
-        {filteredMembers.length === 0 ? (
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-10 text-center space-y-3 shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mx-auto">
-              <UsersRound size={24} />
+      {/* ================= SUBTAB 1: ACTIVE WORKSPACE MEMBERS ================= */}
+      {activeSubTab === 'members' && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          {/* Controls: Search & Role Filters */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name, email or role..."
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+              />
             </div>
-            <h3 className="font-bold text-slate-900 text-base">No team members match your filter</h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Add media buyers, campaign managers or financial accountants to distribute client management and ad spend workflows.
-            </p>
+
+            {/* Role Filter Tabs */}
+            <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-100 rounded-xl">
+              {['All', 'Admin', 'Media Buyer', 'Accountant', 'Viewer'].map((tab) => {
+                const active = roleFilter === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setRoleFilter(tab)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                      active
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Members List */}
+          <div className="space-y-3">
+            {filteredActiveMembers.length === 0 ? (
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-10 text-center space-y-3 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mx-auto">
+                  <UsersRound size={24} />
+                </div>
+                <h3 className="font-bold text-slate-900 text-base">No active members match your search</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  Add media buyers or accountants to distribute client management and ad spend workflows.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openInviteModal('Active')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm mt-2 transition-colors"
+                >
+                  <UserPlus size={14} /> Invite Teammate
+                </button>
+              </div>
+            ) : (
+              filteredActiveMembers.map((member) => {
+                const isSuspended = member.status === 'Suspended';
+
+                return (
+                  <div
+                    key={member.id}
+                    className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                      isSuspended
+                        ? 'border-slate-200 bg-slate-50/60 opacity-75'
+                        : 'border-slate-200/90 hover:border-sky-300 hover:shadow-md'
+                    }`}
+                  >
+                    {/* Member Info */}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="relative shrink-0">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                          {(member.name || member.email || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <span
+                          className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                            isSuspended ? 'bg-slate-400' : 'bg-emerald-500'
+                          }`}
+                        />
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-slate-900 text-sm truncate">
+                            {member.name || 'Workspace Member'}
+                          </h4>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${roleBadgeStyle(member.role)}`}>
+                            {roleIcon(member.role)}
+                            {member.role || 'Media Buyer'}
+                          </span>
+                          {isSuspended && (
+                            <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
+                              Suspended
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
+                          <span className="flex items-center gap-1">
+                            <Mail size={12} className="text-slate-400" /> {member.email}
+                          </span>
+                          {member.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone size={12} className="text-slate-400" /> {member.phone}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                            <Calendar size={12} /> Joined {member.createdAt || 'Recent'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Scope & Limits */}
+                    <div className="flex items-center gap-4 text-xs text-slate-600 flex-wrap md:justify-end">
+                      <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                        <span className="text-[10px] text-slate-400 block font-semibold">Client Scope</span>
+                        <span className="font-bold text-slate-800">{member.assignedClients || 'All Clients'}</span>
+                      </div>
+
+                      <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                        <span className="text-[10px] text-slate-400 block font-semibold">Daily Limit</span>
+                        <span className="font-bold text-slate-800">
+                          {member.dailySpendLimit && member.dailySpendLimit !== 'Unlimited' ? `$${member.dailySpendLimit}/day` : 'Unlimited'}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => copyInviteLink(member.id, member.name || member.email)}
+                          title="Copy Direct Join Link"
+                          className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 transition-colors"
+                        >
+                          {copiedInviteId === member.id ? <Check size={15} className="text-emerald-600" /> : <Link2 size={15} />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(member)}
+                          title="Edit Permissions"
+                          className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 transition-colors"
+                        >
+                          <Edit size={15} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => toggleMemberStatus(member)}
+                          title={isSuspended ? 'Activate Member' : 'Suspend Member'}
+                          className={`p-2 rounded-xl border transition-colors ${
+                            isSuspended
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'border-slate-200 bg-white text-slate-500 hover:text-orange-600 hover:bg-orange-50'
+                          }`}
+                        >
+                          {isSuspended ? <UserCheck size={15} /> : <UserX size={15} />}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmMember(member)}
+                          title="Remove Member"
+                          className="p-2 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 transition-colors"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= SUBTAB 2: PENDING INVITATIONS ================= */}
+      {activeSubTab === 'pending' && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Mail size={20} className="text-amber-600 shrink-0" />
+              <div>
+                <h4 className="text-xs font-bold text-amber-900">Pending Invitation Links</h4>
+                <p className="text-[11px] text-amber-700">
+                  These teammates have been invited but have not completed setup yet. Copy their link or approve instantly.
+                </p>
+              </div>
+            </div>
             <button
               type="button"
-              onClick={openInviteModal}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm mt-2 transition-colors"
+              onClick={() => openInviteModal('Pending Invite')}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition-colors self-start sm:self-auto"
             >
-              <UserPlus size={14} /> Invite New Teammate
+              <UserPlus size={14} /> Create Pending Invite
             </button>
           </div>
-        ) : (
-          filteredMembers.map((member) => {
-            const isSuspended = member.status === 'Suspended';
 
-            return (
-              <div
-                key={member.id}
-                className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                  isSuspended
-                    ? 'border-slate-200 bg-slate-50/60 opacity-75'
-                    : 'border-slate-200/90 hover:border-sky-300 hover:shadow-md'
-                }`}
-              >
-                {/* Member Info */}
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="relative shrink-0">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+          <div className="space-y-3">
+            {pendingMembersList.length === 0 ? (
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-10 text-center space-y-3 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mx-auto">
+                  <Mail size={24} />
+                </div>
+                <h3 className="font-bold text-slate-900 text-base">No pending invitations</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  All invited team members have joined and are actively collaborating in your workspace.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openInviteModal('Pending Invite')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm mt-2 transition-colors"
+                >
+                  <UserPlus size={14} /> Send An Invitation
+                </button>
+              </div>
+            ) : (
+              pendingMembersList.map((member) => (
+                <div
+                  key={member.id}
+                  className="bg-white border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-sm">
                       {(member.name || member.email || 'U').charAt(0).toUpperCase()}
                     </div>
-                    <span
-                      className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                        isSuspended ? 'bg-slate-400' : 'bg-emerald-500'
-                      }`}
-                    />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-bold text-slate-900 text-sm truncate">
-                        {member.name || 'Workspace Member'}
-                      </h4>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${roleBadgeStyle(member.role)}`}>
-                        {roleIcon(member.role)}
-                        {member.role || 'Media Buyer'}
-                      </span>
-                      {isSuspended && (
-                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
-                          Suspended
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-slate-900 text-sm">{member.name || 'Invitee'}</h4>
+                        <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                          Pending Acceptance
                         </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <Mail size={12} className="text-slate-400" /> {member.email}
-                      </span>
-                      {member.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone size={12} className="text-slate-400" /> {member.phone}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                        <Calendar size={12} /> Joined {member.createdAt || 'Recent'}
-                      </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        <span>{member.email}</span>
+                        <span>·</span>
+                        <span className="font-medium text-slate-700">{member.role}</span>
+                        <span>·</span>
+                        <span className="text-[11px] text-slate-400">Invited {member.createdAt || 'Recently'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Scope & Limits */}
-                <div className="flex items-center gap-4 text-xs text-slate-600 flex-wrap md:justify-end">
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-                    <span className="text-[10px] text-slate-400 block font-semibold">Client Scope</span>
-                    <span className="font-bold text-slate-800">{member.assignedClients || 'All Clients'}</span>
-                  </div>
-
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-                    <span className="text-[10px] text-slate-400 block font-semibold">Daily Limit</span>
-                    <span className="font-bold text-slate-800">
-                      {member.dailySpendLimit && member.dailySpendLimit !== 'Unlimited' ? `$${member.dailySpendLimit}/day` : 'Unlimited'}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => copyInviteLink(member.id, member.name || member.email)}
-                      title="Copy Direct Join Link"
-                      className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors"
                     >
-                      {copiedInviteId === member.id ? <Check size={15} className="text-emerald-600" /> : <Link2 size={15} />}
+                      {copiedInviteId === member.id ? <Check size={14} className="text-emerald-600" /> : <Link2 size={14} />}
+                      {copiedInviteId === member.id ? 'Link Copied' : 'Copy Join Link'}
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => openEditModal(member)}
-                      title="Edit Permissions"
-                      className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 transition-colors"
+                      onClick={() => handleAcceptInvite(member)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors"
                     >
-                      <Edit size={15} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleMemberStatus(member)}
-                      title={isSuspended ? 'Activate Member' : 'Suspend Member'}
-                      className={`p-2 rounded-xl border transition-colors ${
-                        isSuspended
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                          : 'border-slate-200 bg-white text-slate-500 hover:text-orange-600 hover:bg-orange-50'
-                      }`}
-                    >
-                      {isSuspended ? <UserCheck size={15} /> : <UserX size={15} />}
+                      <UserCheck size={14} /> Force Activate
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setDeleteConfirmMember(member)}
-                      title="Remove Member"
-                      className="p-2 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 transition-colors"
+                      title="Revoke Invite"
+                      className="p-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors"
                     >
                       <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= SUBTAB 3: LIVE AUDIT & ACTIVITY TRAIL ================= */}
+      {activeSubTab === 'activities' && (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-5 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <Activity size={18} className="text-emerald-600" />
+                Team Activity & Audit Trail
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Real-time chronological log of ad spends, campaign changes, financial audits, and member updates.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={exportAuditCSV}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition-all"
+              >
+                <Download size={14} className="text-sky-600" />
+                Export Audit (CSV)
+              </button>
+            </div>
+          </div>
+
+          <div className="relative border-l-2 border-slate-200 ml-4 pl-6 space-y-6">
+            {activities.map((act) => (
+              <div key={act.id} className="relative group">
+                {/* Dot */}
+                <div className="absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-sky-500 group-hover:scale-125 transition-transform" />
+
+                <div className="bg-slate-50 hover:bg-sky-50/40 border border-slate-200/70 hover:border-sky-200 rounded-2xl p-4 transition-all">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-extrabold text-xs text-slate-900">{act.userName}</span>
+                      <span className="text-[11px] font-semibold text-slate-500">({act.userRole})</span>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border uppercase ${activityCategoryBadge(act.category)}`}>
+                        {act.category || 'team'}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+                      <Calendar size={11} /> {act.timestamp || act.date}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-700 font-medium mt-1.5 leading-relaxed">
+                    {act.action}
+                  </p>
+                </div>
               </div>
-            );
-          })
-        )}
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ================= MODAL 1: INVITE / EDIT MEMBER ================= */}
       {isInviteModalOpen && (
@@ -3731,6 +4057,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                 type="button"
                 onClick={() => {
                   onRemove(deleteConfirmMember.id);
+                  logActivity(`Revoked workspace access for ${deleteConfirmMember.name || deleteConfirmMember.email}`, 'security');
                   showToast(`Removed ${deleteConfirmMember.name || deleteConfirmMember.email}`);
                   setDeleteConfirmMember(null);
                 }}
