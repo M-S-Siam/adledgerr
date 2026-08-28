@@ -3209,7 +3209,7 @@ const INITIAL_WEBHOOK_LOGS = [
     status: 200,
     statusText: 'OK',
     source: 'Developer API',
-    details: 'Workspace API Gateway initialized. Ready to connect marketing pipelines.',
+    details: 'Workspace API Gateway initialized. Ready to connect marketing platforms.',
     timestamp: 'Just now',
     date: new Date().toISOString().slice(0, 19).replace('T', ' ')
   }
@@ -3286,14 +3286,14 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         status: 200,
         statusText: 'OK',
         source: item.name,
-        details: `Manual sync triggered. Verified pipeline handshake and refreshed latest records.`,
+        details: `Manual sync triggered. Verified connection handshake and refreshed latest records.`,
         timestamp: 'Just now',
         date: new Date().toISOString().slice(0, 19).replace('T', ' ')
       };
       setWebhookLogs(prev => [newLog, ...prev]);
 
       setSyncingId(null);
-      showToast(`Synchronized ${item.name} pipeline successfully!`);
+      showToast(`Synchronized ${item.name} successfully!`);
     }, 1200);
   };
 
@@ -3314,14 +3314,14 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         status: 200,
         statusText: 'OK',
         source: 'Global Sync Engine',
-        details: `Synchronized ${connectedCount} connected pipelines simultaneously. All endpoints healthy.`,
+        details: `Synchronized ${connectedCount} connected platforms simultaneously. All endpoints healthy.`,
         timestamp: 'Just now',
         date: new Date().toISOString().slice(0, 19).replace('T', ' ')
       };
       setWebhookLogs(prev => [newLog, ...prev]);
 
       setIsSyncingAll(false);
-      showToast(`All ${connectedCount} active data pipelines synchronized!`);
+      showToast(`All ${connectedCount} active platforms synchronized!`);
     }, 1800);
   };
 
@@ -3407,7 +3407,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
             {connectedCount > 0 ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {connectedCount} Pipelines Active
+                {connectedCount} Connected
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
@@ -3438,7 +3438,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] disabled:opacity-75"
           >
             <RefreshCw size={14} className={isSyncingAll ? 'animate-spin' : ''} />
-            {isSyncingAll ? 'Syncing All Pipelines...' : 'Sync All Services'}
+            {isSyncingAll ? 'Syncing All Services...' : 'Sync All Services'}
           </button>
         </div>
       </div>
@@ -3450,8 +3450,8 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
             <PlugZap size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Data Pipelines</span>
-            <span className="text-lg font-black text-slate-900">{connectedCount > 0 ? `${connectedCount} Connected` : 'Ready to Connect'}</span>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Connected Platforms</span>
+            <span className="text-lg font-black text-slate-900">{connectedCount > 0 ? `${connectedCount} Active` : 'Ready to Connect'}</span>
           </div>
         </div>
 
@@ -3631,7 +3631,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                     Configure {selectedIntegration.name}
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    {selectedIntegration.subtitle} • Encrypted Pipeline Credentials
+                    {selectedIntegration.subtitle} • Encrypted TLS 1.3 Credentials
                   </p>
                 </div>
               </div>
