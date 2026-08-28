@@ -3502,10 +3502,10 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
       </div>
 
-      {/* FILTER TABS & SEARCH BAR (BALANCED FULL-WIDTH EDGE ALIGNMENT) */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-2">
+      {/* FILTER TABS & SEARCH BAR (PERFECTLY CENTERED SPACING) */}
+      <div className="flex flex-col md:flex-row items-center gap-4 pt-2">
         {/* Category Tabs with Sleek GitHub Corners */}
-        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-lg w-full md:w-auto">
+        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-lg w-full md:w-auto shrink-0">
           {[
             { id: 'all', label: 'All Platforms', count: integrations.length },
             { id: 'ads', label: 'Ad Networks', count: integrations.filter(i => i.category === 'ads').length },
@@ -3534,16 +3534,18 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
           })}
         </div>
 
-        {/* Search Input Aligned to Right Grid Boundary */}
-        <div className="relative w-full md:w-64">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search platforms..."
-            className="w-full pl-8 pr-3 py-1.5 border border-slate-200/90 rounded-lg text-xs bg-white focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-          />
+        {/* Search Input Centered in Remaining Space with Equal Space Left & Right */}
+        <div className="flex-1 flex justify-center w-full md:w-auto">
+          <div className="relative w-full max-w-[260px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search platforms..."
+              className="w-full pl-8 pr-3 py-1.5 border border-slate-200/90 rounded-lg text-xs bg-white focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+            />
+          </div>
         </div>
       </div>
 
