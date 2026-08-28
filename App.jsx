@@ -3815,29 +3815,65 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             </div>
           </div>
 
-          {/* Default Calculation Rates */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+          {/* Agency Pricing & Commission Model */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-5">
             <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
               <Coins size={18} className="text-emerald-600" />
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Default Conversion Rates & Margin</h3>
-                <p className="text-[11px] text-slate-500">Auto-filled into new transactions and campaign profits.</p>
+                <h3 className="font-bold text-slate-900 text-sm">Agency Pricing & Commission Model</h3>
+                <p className="text-[11px] text-slate-500">Configure how you charge clients and calculate net profits.</p>
               </div>
             </div>
 
-            <Field label="Default USD Purchase Rate (৳ per $1 USD)">
-              <div className="relative mt-1">
-                <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">৳</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={data.defaultUSDRate || '131.25'}
-                  onChange={(e) => handleChange('defaultUSDRate', e.target.value)}
-                  className="w-full pl-8 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
-                />
-              </div>
+            {/* Primary Pricing Model */}
+            <Field label="Default Client Billing Model">
+              <select
+                value={data.defaultPricingModel || 'margin'}
+                onChange={(e) => handleChange('defaultPricingModel', e.target.value)}
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white font-medium text-slate-800"
+              >
+                <option value="margin">Percentage Commission on Spend (e.g. 10% Service Fee)</option>
+                <option value="rate_markup">USD Rate Markup (Buy from Bank ৳131 → Sell to Client ৳140)</option>
+                <option value="retainer">Fixed Monthly Retainer + Actual Ad Cost</option>
+              </select>
             </Field>
 
+            {/* Exchange Rate Spread (Bank Buy Rate vs Client Sell Rate) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+              <Field label="Bank USD Buy Rate (Your Cost)">
+                <div className="relative mt-1">
+                  <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">৳</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={data.defaultUSDRate || '131.25'}
+                    onChange={(e) => handleChange('defaultUSDRate', e.target.value)}
+                    placeholder="131.25"
+                    className="w-full pl-8 pr-3.5 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-500 mt-1 block">What your dual-currency bank charges you per $1.</span>
+              </Field>
+
+              <Field label="Client USD Sell Rate (Your Bill)">
+                <div className="relative mt-1">
+                  <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">৳</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={data.defaultClientUSDRate || '140.00'}
+                    onChange={(e) => handleChange('defaultClientUSDRate', e.target.value)}
+                    placeholder="140.00"
+                    className="w-full pl-8 pr-3.5 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                  />
+                </div>
+                <span className="text-[10px] text-emerald-700 font-semibold mt-1 block">
+                  Spread Margin: +৳{(Math.max(0, parseFloat(data.defaultClientUSDRate || '140') - parseFloat(data.defaultUSDRate || '131.25'))).toFixed(2)} profit / $1 USD
+                </span>
+              </Field>
+            </div>
+
+            {/* Additional Cost Rates */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Field label="Default Ad Tax (%)">
                 <div className="relative mt-1">
@@ -3850,6 +3886,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                   />
                   <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400">%</span>
                 </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">15% Govt AIT/VAT</span>
               </Field>
 
               <Field label="Cashout Charge (%)">
@@ -3863,6 +3900,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                   />
                   <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400">%</span>
                 </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">bKash/Nagad fee</span>
               </Field>
 
               <Field label="Agency Margin (%)">
@@ -3876,13 +3914,14 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                   />
                   <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400">%</span>
                 </div>
+                <span className="text-[10px] text-slate-400 mt-0.5 block">Service fee %</span>
               </Field>
             </div>
 
             <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60 text-xs text-emerald-800 flex items-start gap-2.5">
               <CheckCircle2 size={16} className="text-emerald-600 mt-0.5 shrink-0" />
               <span>
-                These rates pre-populate when adding transactions like <strong>Buy USD</strong> and <strong>Meta Ad Spend</strong>, saving you repetitive typing.
+                These rates auto-fill across all ledger entries, client invoices, and live profit calculators, ensuring 100% accurate financial accounting.
               </span>
             </div>
           </div>
