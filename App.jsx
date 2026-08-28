@@ -9,7 +9,7 @@ import {
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
   UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw,
   Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock, LogOut, Laptop,
-  FileSpreadsheet, Printer, Crown, UserCheck, UserX, Shield, Mail, Phone, Edit, Filter, UserCog
+  FileSpreadsheet, Printer, Crown, UserCheck, UserX, Shield, Mail, Phone, Edit, Filter, UserCog, MessageCircle, Share2
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import {
@@ -3115,6 +3115,8 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     role: 'Campaign Manager',
     status: 'Active',
     assignedClients: 'All Clients',
+    clientScopeType: 'all',
+    selectedClients: [],
     dailySpendLimit: '50',
     limitPreset: '50',
     customSpendLimit: '',
@@ -3164,6 +3166,8 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       role: 'Campaign Manager',
       status: defaultStatus,
       assignedClients: 'All Clients',
+      clientScopeType: 'all',
+      selectedClients: [],
       dailySpendLimit: '50',
       limitPreset: '50',
       customSpendLimit: '',
@@ -3179,13 +3183,19 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     const existingLimit = member.dailySpendLimit || '50';
     const isPreset = ['10', '25', '50', '100', '250', '500', '1000', 'Unlimited'].includes(existingLimit);
 
+    const rawClients = member.assignedClients || 'All Clients';
+    const isAll = rawClients === 'All Clients' || !rawClients.trim();
+    const parsedSelected = isAll ? [] : rawClients.split(',').map(s => s.trim()).filter(Boolean);
+
     setFormData({
       name: member.name || '',
       email: member.email || '',
       phone: member.phone || '',
       role: member.role || 'Campaign Manager',
       status: member.status || 'Active',
-      assignedClients: member.assignedClients || 'All Clients',
+      assignedClients: rawClients,
+      clientScopeType: isAll ? 'all' : 'custom',
+      selectedClients: parsedSelected,
       dailySpendLimit: existingLimit,
       limitPreset: isPreset ? existingLimit : 'custom',
       customSpendLimit: isPreset ? '' : existingLimit,
@@ -3194,6 +3204,16 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     setFormErrors({});
     setTouchedFields({});
     setIsInviteModalOpen(true);
+  };
+
+  const toggleClientSelection = (clientName) => {
+    setFormData(p => {
+      const current = p.selectedClients || [];
+      const updated = current.includes(clientName)
+        ? current.filter(c => c !== clientName)
+        : [...current, clientName];
+      return { ...p, selectedClients: updated };
+    });
   };
 
   const handleNameChange = (e) => {
@@ -3255,8 +3275,16 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       return;
     }
 
+    let resolvedClients = 'All Clients';
+    if (formData.clientScopeType === 'custom') {
+      resolvedClients = (formData.selectedClients && formData.selectedClients.length > 0)
+        ? formData.selectedClients.join(', ')
+        : 'All Clients';
+    }
+
     const payload = {
       ...formData,
+      assignedClients: resolvedClients,
       dailySpendLimit: formData.limitPreset === 'custom'
         ? (formData.customSpendLimit ? formData.customSpendLimit : '50')
         : formData.dailySpendLimit
@@ -3282,6 +3310,19 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     setCopiedInviteId(memberId);
     showToast(`Invite link copied for ${memberName}`);
     setTimeout(() => setCopiedInviteId(null), 2500);
+  };
+
+  const shareViaWhatsApp = (member) => {
+    const agencyName = workspaceSettings.businessName || 'AdLytic';
+    const inviteUrl = `${window.location.origin}/join?ws=${encodeURIComponent(agencyName)}&token=adl_inv_${member.id}`;
+    const text = `Hello ${member.name || 'Team Member'},\n\nYou have been invited to join the *${agencyName}* workspace on AdLytic as *${member.role || 'Campaign Manager'}*.\n\n👉 Access your portal here:\n${inviteUrl}\n\nWelcome aboard!`;
+    const cleanPhone = (member.phone || '').replace(/[^0-9]/g, '');
+    const waUrl = cleanPhone
+      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+    logActivity(`Shared WhatsApp invitation for ${member.name} (${member.role})`, 'team');
+    showToast(`WhatsApp invitation opened for ${member.name}`);
   };
 
   const toggleMemberStatus = (member) => {
@@ -3746,6 +3787,15 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
+                          onClick={() => shareViaWhatsApp(member)}
+                          title="Share Invite via WhatsApp"
+                          className="p-2 rounded-xl border border-emerald-200 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 transition-colors"
+                        >
+                          <MessageCircle size={15} />
+                        </button>
+
+                        <button
+                          type="button"
                           onClick={() => copyInviteLink(member.id, member.name || member.email)}
                           title="Copy Direct Join Link"
                           className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 transition-colors"
@@ -3861,14 +3911,22 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => shareViaWhatsApp(member)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors"
+                    >
+                      <MessageCircle size={14} /> WhatsApp Invite
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => copyInviteLink(member.id, member.name || member.email)}
                       className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors"
                     >
                       {copiedInviteId === member.id ? <Check size={14} className="text-emerald-600" /> : <Link2 size={14} />}
-                      {copiedInviteId === member.id ? 'Link Copied' : 'Copy Join Link'}
+                      {copiedInviteId === member.id ? 'Link Copied' : 'Copy Link'}
                     </button>
 
                     <button
@@ -4046,19 +4104,63 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                 </Field>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Client Access Scope">
-                  <select
-                    value={formData.assignedClients}
-                    onChange={(e) => setFormData(p => ({ ...p, assignedClients: e.target.value }))}
-                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-sky-500"
-                  >
-                    <option value="All Clients">All Agency Clients ({clients.length} Active)</option>
-                    {clients.map(c => (
-                      <option key={c.id} value={c.name}>Only: {c.name}</option>
-                    ))}
-                  </select>
-                </Field>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Client Access Scope</label>
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, clientScopeType: 'all', selectedClients: [] }))}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-center ${
+                        formData.clientScopeType === 'all'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      All Clients ({clients.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, clientScopeType: 'custom' }))}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all text-center ${
+                        formData.clientScopeType === 'custom'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Specific {formData.selectedClients?.length > 0 && `(${formData.selectedClients.length})`}
+                    </button>
+                  </div>
+
+                  {formData.clientScopeType === 'custom' && (
+                    <div className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 max-h-32 overflow-y-auto space-y-1 animate-in fade-in duration-200">
+                      {clients.length === 0 ? (
+                        <p className="text-[11px] text-slate-400 italic">No clients added to workspace yet.</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {clients.map(c => {
+                            const isSelected = (formData.selectedClients || []).includes(c.name);
+                            return (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => toggleClientSelection(c.name)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 border ${
+                                  isSelected
+                                    ? 'bg-sky-600 border-sky-600 text-white shadow-sm'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:border-sky-300'
+                                }`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-slate-300'}`} />
+                                {c.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <Field label="Daily Spend Approval Limit ($)">
                   <select
