@@ -5984,8 +5984,8 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         </div>
       )}
 
-      {/* TAB NAVIGATION (SLEEK GITHUB CORNERS) */}
-      <div className="flex items-center gap-1 p-1 bg-slate-200/60 rounded-lg overflow-x-auto">
+      {/* TAB NAVIGATION (EQUAL 5-COLUMN FULL WIDTH DISTRIBUTION) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 p-1 bg-slate-200/60 rounded-lg w-full">
         {navTabs.map((tab) => {
           const active = activeTab === tab.id;
           const hasError =
@@ -5998,16 +5998,16 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-bold transition-all whitespace-nowrap relative ${
+              className={`w-full flex items-center justify-center gap-2 py-2.5 px-2 rounded-md text-xs font-bold transition-all whitespace-nowrap relative ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
               }`}
             >
               <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>
-              {tab.label}
+              <span className="truncate">{tab.label}</span>
               {hasError && (
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 ml-0.5 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 ml-0.5 animate-pulse shrink-0" />
               )}
             </button>
           );
