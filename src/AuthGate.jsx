@@ -103,17 +103,25 @@ export default function AuthGate({ children }) {
     clearFeedback();
     setBusy(true);
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const loginPromise = supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
+
+      // 8-second timeout guarantee
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Connection timed out. Please check your internet or credentials.')), 8000)
+      );
+
+      const { data, error: signInError } = await Promise.race([loginPromise, timeoutPromise]);
+
       if (signInError) {
         setError(signInError.message || 'Unable to sign in. Please check your email and password.');
       } else if (data?.session) {
         setSession(data.session);
       }
     } catch (err) {
-      setError(err?.message || 'Network error occurred. Please check your connection and try again.');
+      setError(err?.message || 'Network error occurred. Please try again.');
     } finally {
       setBusy(false);
     }
