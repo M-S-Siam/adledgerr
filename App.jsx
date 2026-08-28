@@ -4738,15 +4738,15 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-extrabold text-xs text-white tracking-tight">
-                  {workspaceSettings.businessName || 'AdLytic'} Founder
+                <h3 className="font-black text-xs text-white tracking-tight flex items-center gap-1.5">
+                  <span className="text-white drop-shadow-sm font-black">{workspaceSettings.businessName || 'AdLytic'} Founder</span>
                 </h3>
-                <span className="px-2 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase tracking-wider">
+                <span className="px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black uppercase tracking-wider shadow-2xs">
                   Super Admin · Root
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-sm" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
+              <p className="text-[11px] text-slate-200/90 font-medium mt-0.5 truncate">
                 Primary Account Holder · Unrestricted Access to Financials, Bank Cards & Settings
               </p>
             </div>
