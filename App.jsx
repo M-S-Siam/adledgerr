@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  LayoutDashboard, Users, CreditCard, DollarSign, 
-  Activity, FileText, Settings, Plus, Search, 
-  ArrowUpRight, ArrowDownRight, Wallet, PieChart, 
+import {
+  LayoutDashboard, Users, CreditCard, DollarSign,
+  Activity, FileText, Settings, Plus, Search,
+  ArrowUpRight, ArrowDownRight, Wallet, PieChart,
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
   AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
@@ -12,8 +12,8 @@ import {
   FileSpreadsheet, Printer
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, 
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   AreaChart, Area, PieChart as RePieChart, Pie, Cell
 } from 'recharts';
@@ -278,7 +278,7 @@ function useLocalStorage(key, initialValue) {
         try {
           window.localStorage.setItem(`adlytic_${key}`, JSON.stringify(next));
           window.localStorage.setItem(key, JSON.stringify(next));
-        } catch (e) {}
+        } catch (e) { }
       }
       return next;
     });
@@ -326,9 +326,9 @@ const getClientDisplayStatus = (client) => {
   if (!client.endDate) return client.status || 'Active';
 
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
   const end = new Date(client.endDate);
-  end.setHours(0,0,0,0);
+  end.setHours(0, 0, 0, 0);
 
   if (today > end) return 'Completed / Ended';
   return client.status || 'Active';
@@ -337,19 +337,19 @@ const getClientDisplayStatus = (client) => {
 const getDurationDays = (client) => {
   if (!client.startDate) return 0;
   const start = new Date(client.startDate);
-  start.setHours(0,0,0,0);
-  
+  start.setHours(0, 0, 0, 0);
+
   let end;
   if (client.currentlyWorking) {
     end = new Date();
   } else {
-    if (!client.endDate) return 0; 
+    if (!client.endDate) return 0;
     end = new Date(client.endDate);
   }
-  end.setHours(0,0,0,0);
+  end.setHours(0, 0, 0, 0);
 
   const diffTime = end - start;
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
   return diffDays > 0 ? diffDays : 0;
 };
 
@@ -363,25 +363,25 @@ const getCampaignDurationDisplay = (client) => {
 const getExpectedBudgetBDT = (client, durationDays) => {
   const amt = parseFloat(client.budgetAmount || client.budget || 0);
   if (!amt) return 0;
-  
+
   const type = client.budgetType || 'Monthly';
   if (type === 'Daily') return amt * durationDays;
   if (type === 'Weekly') return (amt / 7) * durationDays;
   if (type === 'Monthly') return (amt / 30) * durationDays;
-  return amt; 
+  return amt;
 };
 
 const DATE_PRESETS = [
-  'Lifetime', 'Today', 'Yesterday', 'Last 7 Days', 'Last 14 Days', 
-  'Last 28 Days', 'Last 30 Days', 'This Week', 'Last Week', 
+  'Lifetime', 'Today', 'Yesterday', 'Last 7 Days', 'Last 14 Days',
+  'Last 28 Days', 'Last 30 Days', 'This Week', 'Last Week',
   'This Month', 'Last Month', 'This Year', 'Last Year'
 ];
 
 const getPresetDates = (preset) => {
   if (preset === 'Lifetime') return { start: null, end: null };
-  
+
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
   const end = new Date(today);
   const start = new Date(today);
 
@@ -392,18 +392,18 @@ const getPresetDates = (preset) => {
     return `${yr}-${mo}-${da}`;
   };
 
-  switch(preset) {
+  switch (preset) {
     case 'Today': break;
-    case 'Yesterday': 
-      start.setDate(start.getDate() - 1); 
-      end.setDate(end.getDate() - 1); 
+    case 'Yesterday':
+      start.setDate(start.getDate() - 1);
+      end.setDate(end.getDate() - 1);
       break;
     case 'Last 7 Days': start.setDate(start.getDate() - 6); break;
     case 'Last 14 Days': start.setDate(start.getDate() - 13); break;
     case 'Last 28 Days': start.setDate(start.getDate() - 27); break;
     case 'Last 30 Days': start.setDate(start.getDate() - 29); break;
-    case 'This Week': 
-      const day = start.getDay(); 
+    case 'This Week':
+      const day = start.getDay();
       const diff = start.getDate() - day + (day === 0 ? -6 : 1);
       start.setDate(diff);
       break;
@@ -414,9 +414,9 @@ const getPresetDates = (preset) => {
       end.setDate(diffLW + 6);
       break;
     case 'This Month': start.setDate(1); break;
-    case 'Last Month': 
+    case 'Last Month':
       start.setMonth(start.getMonth() - 1); start.setDate(1);
-      end.setDate(0); 
+      end.setDate(0);
       break;
     case 'This Year': start.setMonth(0); start.setDate(1); break;
     case 'Last Year':
@@ -461,7 +461,7 @@ const DEFAULT_SETTINGS = {
 export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   // State Data (Cloud + Local Cached)
   const [clients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
@@ -472,24 +472,24 @@ export default function AdLedgerApp() {
   const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
 
   // Modal State
-  const [activeModal, setActiveModal] = useState(null); 
-  const [selectedCard, setSelectedCard] = useState(null); 
-  const [selectedClient, setSelectedClient] = useState(null); 
+  const [activeModal, setActiveModal] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedClient, setSelectedClient] = useState(null);
 
   // --- FINANCIAL CALCULATIONS (Auto-derived from transactions) ---
   const metrics = useMemo(() => {
     let totalRevenueBDT = 0;
-    
+
     // USD Variables
     let totalUSDPurchased = 0;
-    let totalBDTSpentOnUSD = 0; 
-    let totalCashOutCharges = 0; 
-    
+    let totalBDTSpentOnUSD = 0;
+    let totalCashOutCharges = 0;
+
     let totalAdSpendUSD = 0;
     let totalTaxUSD = 0;
-    
+
     let cardBalances = {};
-    let cardStats = {}; 
+    let cardStats = {};
     cards.forEach(c => {
       cardBalances[c.id] = parseFloat(c.initialBalance || 0);
       cardStats[c.id] = { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
@@ -497,19 +497,19 @@ export default function AdLedgerApp() {
 
     transactions.forEach(t => {
       if (t.type === 'PAYMENT_RECEIVED') totalRevenueBDT += parseFloat(t.amountBDT || 0);
-      
+
       if (t.type === 'USD_PURCHASE') {
         const usdVal = parseFloat(t.amountUSD || 0);
         totalUSDPurchased += usdVal;
         totalBDTSpentOnUSD += parseFloat(t.amountBDT || 0);
         totalCashOutCharges += parseFloat(t.cashOutCharge || 0);
-        
+
         if (t.cardId && cardBalances[t.cardId] !== undefined) {
           cardBalances[t.cardId] += usdVal;
           cardStats[t.cardId].purchased += usdVal;
         }
       }
-      
+
       if (t.type === 'AD_SPEND') {
         const spend = parseFloat(t.amountUSD || 0);
         const tax = parseFloat(t.taxUSD || 0);
@@ -533,12 +533,12 @@ export default function AdLedgerApp() {
     });
 
     const totalBDTCostOfUSD = totalBDTSpentOnUSD + totalCashOutCharges;
-    const avgUSDEffectiveRate = totalUSDPurchased > 0 ? (totalBDTCostOfUSD / totalUSDPurchased) : 0; 
-    
+    const avgUSDEffectiveRate = totalUSDPurchased > 0 ? (totalBDTCostOfUSD / totalUSDPurchased) : 0;
+
     const totalAdCostBDT = (totalAdSpendUSD + totalTaxUSD) * avgUSDEffectiveRate;
     const netProfitBDT = totalRevenueBDT - totalAdCostBDT;
     const profitMargin = totalRevenueBDT > 0 ? (netProfitBDT / totalRevenueBDT) * 100 : 0;
-    
+
     const totalCardBalance = Object.values(cardBalances).reduce((a, b) => a + b, 0);
 
     return {
@@ -560,10 +560,10 @@ export default function AdLedgerApp() {
   }, [transactions]);
 
   const handleAddTransaction = (newTx) => {
-    const tx = { 
-      ...newTx, 
-      id: `t_${Date.now()}_${Math.floor(Math.random()*1000)}`,
-      timestamp: Date.now() 
+    const tx = {
+      ...newTx,
+      id: `t_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      timestamp: Date.now()
     };
     setTransactions(prev => {
       const updated = [tx, ...prev];
@@ -759,31 +759,31 @@ export default function AdLedgerApp() {
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
-      case 'clients': 
-        return <ClientsView 
-                  clients={clients} 
-                  transactions={transactions} 
-                  metrics={metrics}
-                  onAddClient={() => { setSelectedClient(null); setActiveModal('add-client'); }}
-                  onEditClient={(c) => { setSelectedClient(c); setActiveModal('edit-client'); }}
-                  onViewDetails={(c) => { setSelectedClient(c); setActiveModal('client-details'); }}
-                  onDeleteClient={handleDeleteClient}
-                  onReceivePayment={openPaymentForClient}
-                  onAddAdSpend={openAdSpendForClient}
-                   onViewHistory={(c) => { setSelectedClient(c); setActiveModal('client-history'); }}
-                   onToggleStatus={handleToggleClientStatus}
-                />;
+      case 'clients':
+        return <ClientsView
+          clients={clients}
+          transactions={transactions}
+          metrics={metrics}
+          onAddClient={() => { setSelectedClient(null); setActiveModal('add-client'); }}
+          onEditClient={(c) => { setSelectedClient(c); setActiveModal('edit-client'); }}
+          onViewDetails={(c) => { setSelectedClient(c); setActiveModal('client-details'); }}
+          onDeleteClient={handleDeleteClient}
+          onReceivePayment={openPaymentForClient}
+          onAddAdSpend={openAdSpendForClient}
+          onViewHistory={(c) => { setSelectedClient(c); setActiveModal('client-history'); }}
+          onToggleStatus={handleToggleClientStatus}
+        />;
       case 'ledger': return <LedgerView transactions={transactions} clients={clients} cards={cards} />;
-      case 'cards': 
-        return <CardsView 
-                  cards={cards} 
-                  metrics={metrics} 
-                  transactions={transactions} 
-                  onAddCard={() => { setSelectedCard(null); setActiveModal('add-card'); }}
-                  onEditCard={(c) => { setSelectedCard(c); setActiveModal('edit-card'); }}
-                  onDeleteCard={handleDeleteCard}
-                  onViewDetails={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
-                />;
+      case 'cards':
+        return <CardsView
+          cards={cards}
+          metrics={metrics}
+          transactions={transactions}
+          onAddCard={() => { setSelectedCard(null); setActiveModal('add-card'); }}
+          onEditCard={(c) => { setSelectedCard(c); setActiveModal('edit-card'); }}
+          onDeleteCard={handleDeleteCard}
+          onViewDetails={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
+        />;
       case 'reports':
         return <ReportsView clients={clients} cards={cards} transactions={transactions} />;
       case 'campaigns':
@@ -802,128 +802,128 @@ export default function AdLedgerApp() {
     <>
       <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
       <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
-      
-      {/* SIDEBAR */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
-        <div className="p-6 flex items-center justify-between md:justify-center border-b border-slate-800">
-          <div className="flex items-center gap-2.5 text-white min-w-0">
-            {workspaceLogo ? <img src={workspaceLogo} alt="Workspace logo" className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm" /> : <div className="adl-brand-mark w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-lg">A</div>}
-            <span className="text-xl font-bold tracking-tight truncate">AdLytic</span>
-          </div>
-          <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
-            <X size={24} />
-          </button>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => {setCurrentView('clients'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => {setCurrentView('campaigns'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => {setCurrentView('ledger'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => {setCurrentView('cards'); setIsMobileMenuOpen(false);}} />
-          <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setIsMobileMenuOpen(false);}} />
 
-          <div className="pt-5 mt-4 border-t border-slate-800/80">
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Workspace</p>
-            <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => {setCurrentView('integrations'); setIsMobileMenuOpen(false);}} />
-            <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => {setCurrentView('team'); setIsMobileMenuOpen(false);}} />
-          </div>
-        </nav>
-
-        <div className="p-4 border-t border-slate-800">
-          <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => {setCurrentView('settings'); setIsMobileMenuOpen(false);}} />
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* HEADER */}
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
-              <Menu size={24} />
-            </button>
-            <div className="hidden sm:flex items-center bg-slate-100 rounded-md px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500">
-              <Search size={18} className="text-slate-400" />
-              <input type="text" placeholder="Search transactions..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
+        {/* SIDEBAR */}
+        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
+          <div className="p-6 flex items-center justify-between md:justify-center border-b border-slate-800">
+            <div className="flex items-center gap-2.5 text-white min-w-0">
+              {workspaceLogo ? <img src={workspaceLogo} alt="Workspace logo" className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm" /> : <div className="adl-brand-mark w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-lg">A</div>}
+              <span className="text-xl font-bold tracking-tight truncate">AdLytic</span>
             </div>
+            <button className="md:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
+              <X size={24} />
+            </button>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="hidden lg:flex items-center gap-2 mr-4">
-              <span className="text-xs font-medium text-slate-500 uppercase">Avg USD Rate:</span>
-              <span className="text-sm font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
+
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
+            <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />
+            <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => { setCurrentView('campaigns'); setIsMobileMenuOpen(false); }} />
+            <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => { setCurrentView('ledger'); setIsMobileMenuOpen(false); }} />
+            <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => { setCurrentView('cards'); setIsMobileMenuOpen(false); }} />
+            <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} />
+
+            <div className="pt-5 mt-4 border-t border-slate-800/80">
+              <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Workspace</p>
+              <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
             </div>
-            <button onClick={() => { setSelectedClient(null); setActiveModal('payment'); }} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
-              <ArrowDownRight size={16} className="text-green-600"/> Receive BDT
-            </button>
-            <button onClick={() => setActiveModal('usd')} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
-              <DollarSign size={16} className="text-blue-600"/> Buy USD
-            </button>
-            <button onClick={() => { setSelectedClient(null); setActiveModal('spend'); }} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm">
-              <Plus size={16} /> Ad Spend
-            </button>
+          </nav>
+
+          <div className="p-4 border-t border-slate-800">
+            <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
           </div>
-        </header>
+        </aside>
 
-        {/* SCROLLABLE CONTENT */}
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-          {renderContent()}
-        </div>
-      </main>
+        {/* MAIN CONTENT */}
+        <main className="flex-1 flex flex-col h-screen overflow-hidden">
+          {/* HEADER */}
+          <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+            <div className="flex items-center gap-4">
+              <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
+                <Menu size={24} />
+              </button>
+              <div className="hidden sm:flex items-center bg-slate-100 rounded-md px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500">
+                <Search size={18} className="text-slate-400" />
+                <input type="text" placeholder="Search transactions..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-64" />
+              </div>
+            </div>
 
-      {/* MODALS */}
-      {activeModal === 'payment' && (
-        <Modal title="Receive Client Payment" onClose={() => setActiveModal(null)}>
-          <TransactionForm type="PAYMENT_RECEIVED" clients={clients} initialClientId={selectedClient?.id} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
-        </Modal>
-      )}
-      {activeModal === 'usd' && (
-        <Modal title="Record USD Purchase" onClose={() => setActiveModal(null)}>
-          <TransactionForm type="USD_PURCHASE" cards={cards} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
-        </Modal>
-      )}
-      {activeModal === 'spend' && (
-        <Modal title="Record Meta Ad Spend" onClose={() => setActiveModal(null)}>
-          <TransactionForm type="AD_SPEND" clients={clients} cards={cards} initialClientId={selectedClient?.id} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
-        </Modal>
-      )}
-      {(activeModal === 'add-card' || activeModal === 'edit-card') && (
-        <Modal title={activeModal === 'add-card' ? 'Add New Card' : 'Edit Card'} onClose={() => setActiveModal(null)}>
-          <CardForm initialData={activeModal === 'edit-card' ? selectedCard : null} onSubmit={handleSaveCard} onCancel={() => setActiveModal(null)} />
-        </Modal>
-      )}
-      {activeModal === 'card-details' && selectedCard && (
-        <Modal title={`Card Ledger: ${selectedCard.name}`} onClose={() => setActiveModal(null)} width="max-w-4xl">
-           <CardDetailsModal card={selectedCard} metrics={metrics} transactions={transactions} onClose={() => setActiveModal(null)} />
-        </Modal>
-      )}
-      {(activeModal === 'add-client' || activeModal === 'edit-client') && (
-        <Modal title={activeModal === 'add-client' ? 'Add New Client' : 'Edit Client'} onClose={() => setActiveModal(null)} width="max-w-2xl">
-          <ClientForm initialData={activeModal === 'edit-client' ? selectedClient : null} onSubmit={handleSaveClient} onCancel={() => setActiveModal(null)} />
-        </Modal>
-      )}
-      {activeModal === 'client-details' && selectedClient && (
-        <Modal title={`Client Dashboard: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-6xl">
-           <ClientDetailsModal 
-              client={selectedClient} 
-              metrics={metrics} 
-              transactions={transactions} 
+            <div className="flex items-center gap-3">
+              <div className="hidden lg:flex items-center gap-2 mr-4">
+                <span className="text-xs font-medium text-slate-500 uppercase">Avg USD Rate:</span>
+                <span className="text-sm font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
+              </div>
+              <button onClick={() => { setSelectedClient(null); setActiveModal('payment'); }} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
+                <ArrowDownRight size={16} className="text-green-600" /> Receive BDT
+              </button>
+              <button onClick={() => setActiveModal('usd')} className="hidden sm:flex items-center gap-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors">
+                <DollarSign size={16} className="text-blue-600" /> Buy USD
+              </button>
+              <button onClick={() => { setSelectedClient(null); setActiveModal('spend'); }} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm">
+                <Plus size={16} /> Ad Spend
+              </button>
+            </div>
+          </header>
+
+          {/* SCROLLABLE CONTENT */}
+          <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+            {renderContent()}
+          </div>
+        </main>
+
+        {/* MODALS */}
+        {activeModal === 'payment' && (
+          <Modal title="Receive Client Payment" onClose={() => setActiveModal(null)}>
+            <TransactionForm type="PAYMENT_RECEIVED" clients={clients} initialClientId={selectedClient?.id} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          </Modal>
+        )}
+        {activeModal === 'usd' && (
+          <Modal title="Record USD Purchase" onClose={() => setActiveModal(null)}>
+            <TransactionForm type="USD_PURCHASE" cards={cards} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          </Modal>
+        )}
+        {activeModal === 'spend' && (
+          <Modal title="Record Meta Ad Spend" onClose={() => setActiveModal(null)}>
+            <TransactionForm type="AD_SPEND" clients={clients} cards={cards} initialClientId={selectedClient?.id} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          </Modal>
+        )}
+        {(activeModal === 'add-card' || activeModal === 'edit-card') && (
+          <Modal title={activeModal === 'add-card' ? 'Add New Card' : 'Edit Card'} onClose={() => setActiveModal(null)}>
+            <CardForm initialData={activeModal === 'edit-card' ? selectedCard : null} onSubmit={handleSaveCard} onCancel={() => setActiveModal(null)} />
+          </Modal>
+        )}
+        {activeModal === 'card-details' && selectedCard && (
+          <Modal title={`Card Ledger: ${selectedCard.name}`} onClose={() => setActiveModal(null)} width="max-w-4xl">
+            <CardDetailsModal card={selectedCard} metrics={metrics} transactions={transactions} onClose={() => setActiveModal(null)} />
+          </Modal>
+        )}
+        {(activeModal === 'add-client' || activeModal === 'edit-client') && (
+          <Modal title={activeModal === 'add-client' ? 'Add New Client' : 'Edit Client'} onClose={() => setActiveModal(null)} width="max-w-2xl">
+            <ClientForm initialData={activeModal === 'edit-client' ? selectedClient : null} onSubmit={handleSaveClient} onCancel={() => setActiveModal(null)} />
+          </Modal>
+        )}
+        {activeModal === 'client-details' && selectedClient && (
+          <Modal title={`Client Dashboard: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-6xl">
+            <ClientDetailsModal
+              client={selectedClient}
+              metrics={metrics}
+              transactions={transactions}
               onClose={() => setActiveModal(null)}
               onReceivePayment={() => openPaymentForClient(selectedClient)}
               onAdSpend={() => openAdSpendForClient(selectedClient)}
             />
-        </Modal>
-      )}
-      {activeModal === 'client-history' && selectedClient && (
-        <Modal title={`Transaction History: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-5xl">
-          <ClientTransactionHistoryModal
-            client={selectedClient}
-            transactions={transactions}
-            metrics={metrics}
-          />
-        </Modal>
-      )}
+          </Modal>
+        )}
+        {activeModal === 'client-history' && selectedClient && (
+          <Modal title={`Transaction History: ${selectedClient.name}`} onClose={() => setActiveModal(null)} width="max-w-5xl">
+            <ClientTransactionHistoryModal
+              client={selectedClient}
+              transactions={transactions}
+              metrics={metrics}
+            />
+          </Modal>
+        )}
 
       </div>
     </>
@@ -1728,7 +1728,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
             <ResponsiveContainer width="100%" height="100%">
               <RePieChart>
                 <Pie data={dashboardData.expenseData.filter(item => item.value > 0)} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92} paddingAngle={4} cornerRadius={8} stroke="#fff" strokeWidth={4}>
-                  {dashboardData.expenseData.map((entry, index) => <Cell key={`expense-cell-${entry.name}`} fill={['#38bdf8','#f59e0b','#fb7185'][index % 3]} />)}
+                  {dashboardData.expenseData.map((entry, index) => <Cell key={`expense-cell-${entry.name}`} fill={['#38bdf8', '#f59e0b', '#fb7185'][index % 3]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} formatter={(value) => [formatUSD(value), 'USD']} />
               </RePieChart>
@@ -2213,15 +2213,15 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
   const clientStats = useMemo(() => {
     return clients.map(client => {
       const clientTx = transactions.filter(t => t.clientId === client.id);
-      
-      const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + parseFloat(t.amountBDT||0), 0);
-      const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.amountUSD||0), 0);
-      const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.taxUSD||0), 0);
-      
+
+      const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + parseFloat(t.amountBDT || 0), 0);
+      const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
+      const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.taxUSD || 0), 0);
+
       const totalCostBDT = (adSpendUSD + taxUSD) * metrics.avgUSDEffectiveRate;
       const profitBDT = revenue - totalCostBDT;
       const profitMargin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
-      
+
       return { ...client, revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, profitMargin };
     });
   }, [clients, transactions, metrics.avgUSDEffectiveRate]);
@@ -2247,15 +2247,15 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
       <div className="flex flex-col sm:flex-row gap-4 mb-4">
         <div className="relative flex-1 max-w-md">
           <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search clients, business..." 
+          <input
+            type="text"
+            placeholder="Search clients, business..."
             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <select 
+        <select
           className="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white min-w-[150px]"
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
@@ -2288,44 +2288,45 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                 const displayStatus = getClientDisplayStatus(c);
                 const isWorking = displayStatus.includes('Active') || displayStatus.includes('Currently Working');
                 return (
-                <tr key={c.id} className="hover:bg-slate-50 group">
-                  <td className="px-5 py-4">
-                    <div className="font-semibold text-slate-900">{c.name}</div>
-                    <div className="text-xs text-slate-500">{c.company}</div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
-                      ${isWorking ? 'bg-green-100 text-green-700' : 
-                        displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' : 
-                        displayStatus === 'Inactive' ? 'bg-orange-100 text-orange-700' :
-                        'bg-slate-100 text-slate-600'}`}>
-                      {displayStatus}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 text-right text-slate-600 font-medium">
-                    {getBudgetDisplay(c.budgetType, c.budgetAmount || c.budget)}
-                  </td>
-                  <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
-                  <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
-                  <td className="px-5 py-4 text-right">
-                    <div className={`font-bold ${c.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
-                    <div className={`text-[10px] font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-slate-500'}`}>
-                      Margin: {c.profitMargin.toFixed(1)}%
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    <ClientActionsMenu
-                      client={c}
-                      onViewDetails={() => onViewDetails(c)}
-                      onHistory={() => onViewHistory(c)}
-                      onEdit={() => onEditClient(c)}
-                      onReceivePayment={() => onReceivePayment(c)}
-                                            onToggleStatus={(status) => onToggleStatus(c, status)}
-                      onDelete={() => onDeleteClient(c.id)}
-                    />
-                  </td>
-                </tr>
-              )})}
+                  <tr key={c.id} className="hover:bg-slate-50 group">
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-slate-900">{c.name}</div>
+                      <div className="text-xs text-slate-500">{c.company}</div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
+                      ${isWorking ? 'bg-green-100 text-green-700' :
+                          displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' :
+                            displayStatus === 'Inactive' ? 'bg-orange-100 text-orange-700' :
+                              'bg-slate-100 text-slate-600'}`}>
+                        {displayStatus}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-right text-slate-600 font-medium">
+                      {getBudgetDisplay(c.budgetType, c.budgetAmount || c.budget)}
+                    </td>
+                    <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
+                    <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
+                    <td className="px-5 py-4 text-right">
+                      <div className={`font-bold ${c.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
+                      <div className={`text-[10px] font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-slate-500'}`}>
+                        Margin: {c.profitMargin.toFixed(1)}%
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <ClientActionsMenu
+                        client={c}
+                        onViewDetails={() => onViewDetails(c)}
+                        onHistory={() => onViewHistory(c)}
+                        onEdit={() => onEditClient(c)}
+                        onReceivePayment={() => onReceivePayment(c)}
+                        onToggleStatus={(status) => onToggleStatus(c, status)}
+                        onDelete={() => onDeleteClient(c.id)}
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -2340,7 +2341,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
   const [selectedCardFilter, setSelectedCardFilter] = useState('ALL');
   const [selectedTxForModal, setSelectedTxForModal] = useState(null);
 
-  const activeCards = cards; 
+  const activeCards = cards;
 
   const filteredUSDPurchases = useMemo(() => {
     let list = transactions.filter(t => t.type === 'USD_PURCHASE');
@@ -2363,7 +2364,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
         <h1 className="text-2xl font-bold text-slate-900">Cards & USD Ledger</h1>
@@ -2371,33 +2372,33 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
           <Plus size={16} /> Add Card
         </button>
       </div>
-      
+
       {isFilterOpen && (
-        <DateRangePickerModal 
-          onClose={() => setIsFilterOpen(false)} 
-          onApply={(range) => { setGlobalDateRange(range); setIsFilterOpen(false); }} 
+        <DateRangePickerModal
+          onClose={() => setIsFilterOpen(false)}
+          onApply={(range) => { setGlobalDateRange(range); setIsFilterOpen(false); }}
           initialRange={globalDateRange}
         />
       )}
 
       {selectedTxForModal && (
-        <TransactionDetailsModal 
-          tx={selectedTxForModal} 
-          cardName={cards.find(c => c.id === selectedTxForModal.cardId)?.name || 'Unknown Card'} 
-          onClose={() => setSelectedTxForModal(null)} 
+        <TransactionDetailsModal
+          tx={selectedTxForModal}
+          cardName={cards.find(c => c.id === selectedTxForModal.cardId)?.name || 'Unknown Card'}
+          onClose={() => setSelectedTxForModal(null)}
         />
       )}
-      
+
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {activeCards.length === 0 && (
           <div className="col-span-full text-center py-12 text-slate-500 bg-white border border-slate-200 rounded-xl">No cards added yet.</div>
         )}
-        
+
         {activeCards.map(card => {
           const sortedTxs = [...transactions]
             .filter(t => t.cardId === card.id)
-            .sort((a,b) => {
+            .sort((a, b) => {
               const timeA = a.timestamp || new Date(a.date).getTime();
               const timeB = b.timestamp || new Date(b.date).getTime();
               return timeB - timeA;
@@ -2411,17 +2412,17 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                      {card.name} 
+                      {card.name}
                       {card.last4 && <span className="text-xs font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">*{card.last4}</span>}
                     </h3>
                     <p className="text-sm text-slate-500">{card.provider} • {card.cardType}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="bg-blue-50 p-2 rounded-lg text-blue-600 mr-1"><CreditCard size={20} /></div>
-                    <CardDropdownMenu 
-                      onEdit={() => onEditCard(card)} 
-                      onDetails={() => onViewDetails(card)} 
-                      onDelete={() => onDeleteCard(card.id)} 
+                    <CardDropdownMenu
+                      onEdit={() => onEditCard(card)}
+                      onDetails={() => onViewDetails(card)}
+                      onDelete={() => onDeleteCard(card.id)}
                     />
                   </div>
                 </div>
@@ -2464,21 +2465,21 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
       {/* History Header & Filters Row */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-8 mb-4 gap-3">
         <h3 className="text-lg font-bold text-slate-800">USD Purchase History</h3>
-        
+
         <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
           {globalDateRange.label !== 'Lifetime' && (
-            <button onClick={() => setGlobalDateRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 font-medium hover:underline mr-1">
+            <button onClick={() => setGlobalDateRange({ label: 'Lifetime', start: null, end: null })} className="text-xs text-red-600 font-medium hover:underline mr-1">
               Clear Filter
             </button>
           )}
-          
+
           <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
-            <CalendarDays size={14} className="text-blue-600" /> 
+            <CalendarDays size={14} className="text-blue-600" />
             {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `History: ${globalDateRange.label}`}
           </button>
 
-          <select 
-            value={selectedCardFilter} 
+          <select
+            value={selectedCardFilter}
             onChange={(e) => setSelectedCardFilter(e.target.value)}
             className="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs outline-none cursor-pointer"
           >
@@ -2543,9 +2544,9 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
             <tbody className="divide-y divide-slate-100">
               {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases yet.</td></tr>}
               {filteredUSDPurchases.map(tx => {
-                const bdtPaid = parseFloat(tx.amountBDT||0);
-                const coRate = parseFloat(tx.cashOutCharge||0);
-                const usdRcv = parseFloat(tx.amountUSD||1);
+                const bdtPaid = parseFloat(tx.amountBDT || 0);
+                const coRate = parseFloat(tx.cashOutCharge || 0);
+                const usdRcv = parseFloat(tx.amountUSD || 1);
                 const totalCost = bdtPaid + coRate;
                 const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
                 const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
@@ -2553,24 +2554,25 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
                 const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
 
                 return (
-                <tr 
-                  key={tx.id} 
-                  onClick={() => setSelectedTxForModal(tx)}
-                  className="hover:bg-blue-50/50 cursor-pointer transition-colors group"
-                >
-                  <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
-                  <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">{tx.notes}</td>
-                  <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(bdtPaid)}</td>
-                  <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{coRate ? formatBDT(coRate) : formatBDT(0)}</td>
-                  <td className="px-5 py-3 text-right font-bold text-slate-800 whitespace-nowrap">{formatBDT(totalCost)}</td>
-                  <td className="px-5 py-3 text-right font-bold text-green-600 whitespace-nowrap">{formatUSD(tx.amountUSD)}</td>
-                  <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
-                    <span className="bg-slate-100 group-hover:bg-white border border-slate-200 px-2 py-0.5 rounded text-xs">{cardLabel}</span>
-                  </td>
-                  <td className="px-5 py-3 text-right text-slate-500 whitespace-nowrap">৳{baseRate}</td>
-                  <td className="px-5 py-3 text-right font-medium text-blue-600 whitespace-nowrap">৳{effectiveRate}</td>
-                </tr>
-              )})}
+                  <tr
+                    key={tx.id}
+                    onClick={() => setSelectedTxForModal(tx)}
+                    className="hover:bg-blue-50/50 cursor-pointer transition-colors group"
+                  >
+                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
+                    <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">{tx.notes}</td>
+                    <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(bdtPaid)}</td>
+                    <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{coRate ? formatBDT(coRate) : formatBDT(0)}</td>
+                    <td className="px-5 py-3 text-right font-bold text-slate-800 whitespace-nowrap">{formatBDT(totalCost)}</td>
+                    <td className="px-5 py-3 text-right font-bold text-green-600 whitespace-nowrap">{formatUSD(tx.amountUSD)}</td>
+                    <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
+                      <span className="bg-slate-100 group-hover:bg-white border border-slate-200 px-2 py-0.5 rounded text-xs">{cardLabel}</span>
+                    </td>
+                    <td className="px-5 py-3 text-right text-slate-500 whitespace-nowrap">৳{baseRate}</td>
+                    <td className="px-5 py-3 text-right font-medium text-blue-600 whitespace-nowrap">৳{effectiveRate}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -2628,8 +2630,8 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
     const expBal = initialBal + stats.purchased - stats.adSpend - stats.tax - stats.fees;
     const curBal = metrics.cardBalances[card.id] || 0;
     const difference = Math.abs(expBal - curBal);
-    
-    return { 
+
+    return {
       historyWithBalance: displayedHistory,
       openingBalance: initialBal,
       expectedBalance: expBal,
@@ -2643,7 +2645,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
 
   return (
     <div className="flex flex-col h-full max-h-[80vh]">
-      
+
       {/* Global Card Stats summary - Unchanged by date filters */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6 shrink-0">
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
@@ -2667,7 +2669,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
           <p className="text-[11px] text-slate-500 mb-0.5">Total Fees</p>
           <p className="text-base font-bold text-slate-700">
-             {stats.fees > 0 ? '-' : ''}{formatUSD(stats.fees)}
+            {stats.fees > 0 ? '-' : ''}{formatUSD(stats.fees)}
           </p>
         </div>
         <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
@@ -2675,7 +2677,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
           <p className={`text-base font-bold ${currentBal < 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatUSD(currentBal)}</p>
         </div>
       </div>
-      
+
       <div className="text-xs text-slate-600 mb-4 bg-blue-50 p-3 rounded border border-blue-100 flex justify-between shrink-0">
         <span><strong>Provider:</strong> {card.provider}</span>
         <span><strong>Type:</strong> {card.cardType}</span>
@@ -2733,22 +2735,22 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       <div className="flex justify-between items-end mb-3 border-b pb-2 shrink-0">
         <h4 className="font-bold text-slate-800">Transaction History</h4>
         <div className="flex items-center gap-3">
-          {filterRange.label !== 'Lifetime' && <button onClick={() => setFilterRange({label: 'Lifetime', start: null, end: null})} className="text-xs text-red-600 hover:underline font-medium">Clear Filter</button>}
+          {filterRange.label !== 'Lifetime' && <button onClick={() => setFilterRange({ label: 'Lifetime', start: null, end: null })} className="text-xs text-red-600 hover:underline font-medium">Clear Filter</button>}
           <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
-            <CalendarDays size={14} className="text-blue-600" /> 
+            <CalendarDays size={14} className="text-blue-600" />
             {filterRange.label === 'Lifetime' ? 'Filter History' : `Showing: ${filterRange.label}`}
           </button>
         </div>
       </div>
 
       {isFilterOpen && (
-        <DateRangePickerModal 
-          onClose={() => setIsFilterOpen(false)} 
-          onApply={(range) => { setFilterRange(range); setIsFilterOpen(false); }} 
+        <DateRangePickerModal
+          onClose={() => setIsFilterOpen(false)}
+          onApply={(range) => { setFilterRange(range); setIsFilterOpen(false); }}
           initialRange={filterRange}
         />
       )}
-      
+
       <div className="overflow-y-auto flex-1 border border-slate-200 rounded-lg">
         <table className="w-full text-sm text-left whitespace-nowrap">
           <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
@@ -2769,20 +2771,21 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
               const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
 
               return (
-              <tr key={tx.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2.5 font-medium text-slate-800">
-                  <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
-                  <div className="text-[10px] text-slate-400 font-normal">{formatDate(tx.date)} {tx.notes && `• ${tx.notes}`}</div>
-                </td>
-                <td className={`px-4 py-2.5 font-medium ${displayAmount > 0 ? 'text-green-600' : 'text-slate-800'}`}>
-                  {displayAmount > 0 ? '+' : ''}{formatUSD(displayAmount)}
-                  {displayTax > 0 && <span className="block text-[10px] text-red-500 font-normal mt-0.5">+ tax {formatUSD(displayTax)}</span>}
-                </td>
-                <td className={`px-4 py-2.5 font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                  {formatUSD(tx.runningBal)}
-                </td>
-              </tr>
-            )})}
+                <tr key={tx.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                    <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
+                    <div className="text-[10px] text-slate-400 font-normal">{formatDate(tx.date)} {tx.notes && `• ${tx.notes}`}</div>
+                  </td>
+                  <td className={`px-4 py-2.5 font-medium ${displayAmount > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                    {displayAmount > 0 ? '+' : ''}{formatUSD(displayAmount)}
+                    {displayTax > 0 && <span className="block text-[10px] text-red-500 font-normal mt-0.5">+ tax {formatUSD(displayTax)}</span>}
+                  </td>
+                  <td className={`px-4 py-2.5 font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                    {formatUSD(tx.runningBal)}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -2791,10 +2794,10 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
 }
 
 function TransactionDetailsModal({ tx, cardName, onClose }) {
-  const bdtPaid = parseFloat(tx.amountBDT||0);
-  const coRate = parseFloat(tx.cashOutCharge||0);
-  const usdRcv = parseFloat(tx.amountUSD||1);
-  
+  const bdtPaid = parseFloat(tx.amountBDT || 0);
+  const coRate = parseFloat(tx.cashOutCharge || 0);
+  const usdRcv = parseFloat(tx.amountUSD || 1);
+
   const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
   const totalCost = bdtPaid + coRate;
   const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
@@ -2872,23 +2875,23 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
     <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div><h1 className="text-2xl font-bold text-slate-900">Campaigns</h1><p className="text-sm text-slate-500 mt-1">Track budgets, ad spend, results and profitability by campaign.</p></div>
-        <button onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"><Plus size={17}/> Add Campaign</button>
+        <button onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"><Plus size={17} /> Add Campaign</button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniKpi title="Campaigns" value={campaigns.length} icon={<Target size={16}/>} />
-        <MiniKpi title="Active" value={campaigns.filter(c => c.status === 'Active').length} icon={<Activity size={16}/>} />
-        <MiniKpi title="Tracked Spend" value={formatUSD(rows.reduce((s, c) => s + c.spendUSD, 0))} icon={<DollarSign size={16}/>} />
-        <MiniKpi title="Tracked Revenue" value={formatBDT(rows.reduce((s, c) => s + c.revenueBDT, 0))} icon={<TrendingUp size={16}/>} />
+        <MiniKpi title="Campaigns" value={campaigns.length} icon={<Target size={16} />} />
+        <MiniKpi title="Active" value={campaigns.filter(c => c.status === 'Active').length} icon={<Activity size={16} />} />
+        <MiniKpi title="Tracked Spend" value={formatUSD(rows.reduce((s, c) => s + c.spendUSD, 0))} icon={<DollarSign size={16} />} />
+        <MiniKpi title="Tracked Revenue" value={formatBDT(rows.reduce((s, c) => s + c.revenueBDT, 0))} icon={<TrendingUp size={16} />} />
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row gap-3">
-        <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3"><Search size={17} className="text-slate-400"/><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search campaigns, clients, platforms..." className="w-full bg-transparent border-none focus:outline-none px-2 py-2 text-sm"/></div>
+        <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3"><Search size={17} className="text-slate-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search campaigns, clients, platforms..." className="w-full bg-transparent border-none focus:outline-none px-2 py-2 text-sm" /></div>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"><option>All</option><option>Active</option><option>Paused</option><option>Completed</option></select>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between"><div><h3 className="font-semibold text-slate-900">Campaign Performance</h3><p className="text-xs text-slate-500 mt-1">Spend is matched automatically from existing transaction entries using the campaign name.</p></div><BarChart3 size={19} className="text-slate-400"/></div>
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between"><div><h3 className="font-semibold text-slate-900">Campaign Performance</h3><p className="text-xs text-slate-500 mt-1">Spend is matched automatically from existing transaction entries using the campaign name.</p></div><BarChart3 size={19} className="text-slate-400" /></div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="bg-slate-50 text-xs text-slate-500">
@@ -2899,7 +2902,7 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
                 <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60">
                   <td className="px-5 py-4"><div className="font-medium text-slate-800">{c.name}</div><div className="text-[11px] text-slate-400">{c.goal || '—'}</div></td>
                   <td className="px-3 py-4 text-slate-600">{c.clientName}</td><td className="px-3 py-4"><span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs">{c.platform || 'Meta'}</span></td>
-                  <td className="px-3 py-4 text-right text-slate-700">{c.budget ? `${c.budgetType === 'USD' ? '$' : '৳'}${Number(c.budget).toLocaleString('en-US', {maximumFractionDigits:2})}` : '—'}</td>
+                  <td className="px-3 py-4 text-right text-slate-700">{c.budget ? `${c.budgetType === 'USD' ? '$' : '৳'}${Number(c.budget).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—'}</td>
                   <td className="px-3 py-4 text-right text-red-600">{formatUSD(c.spendUSD)}</td><td className="px-3 py-4 text-right text-emerald-600">{formatBDT(c.revenueBDT)}</td><td className="px-3 py-4 text-right font-semibold">{c.roas ? `${c.roas.toFixed(2)}x` : '—'}</td>
                   <td className="px-5 py-4 text-right"><span className={`px-2 py-1 rounded-full border text-[10px] font-medium ${c.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : c.status === 'Completed' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{c.status}</span></td>
                   <td className="px-5 py-4 text-right whitespace-nowrap"><button onClick={() => { setEditing(c); setShowForm(true); }} className="text-xs font-medium text-blue-600 mr-3">Edit</button><button onClick={() => onDelete(c.id)} className="text-xs font-medium text-red-500">Delete</button></td>
@@ -2910,34 +2913,34 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
         </div>
       </div>
 
-      {showForm && <CampaignForm initialData={editing} clients={clients} onCancel={() => setShowForm(false)} onSubmit={data => { onSave(data); setShowForm(false); }}/>}
+      {showForm && <CampaignForm initialData={editing} clients={clients} onCancel={() => setShowForm(false)} onSubmit={data => { onSave(data); setShowForm(false); }} />}
     </div>
   );
 }
 
 function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
-  const [data, setData] = useState(initialData || { name:'', clientId:clients[0]?.id || '', platform:'Meta', budget:'', budgetType:'USD', status:'Active', startDate:new Date().toISOString().slice(0,10), endDate:'', goal:'', resultValue:'', resultLabel:'Leads', revenueBDT:'', notes:'' });
-  const set = (key, value) => setData(prev => ({...prev, [key]:value}));
+  const [data, setData] = useState(initialData || { name: '', clientId: clients[0]?.id || '', platform: 'Meta', budget: '', budgetType: 'USD', status: 'Active', startDate: new Date().toISOString().slice(0, 10), endDate: '', goal: '', resultValue: '', resultLabel: 'Leads', revenueBDT: '', notes: '' });
+  const set = (key, value) => setData(prev => ({ ...prev, [key]: value }));
   const input = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
   return (
     <div className="fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{initialData ? 'Edit Campaign' : 'Add Campaign'}</h2><p className="text-xs text-slate-500 mt-1">Create a campaign record; ad spend will be linked from matching ledger entries.</p></div><button onClick={onCancel} className="text-slate-400"><X size={20}/></button></div>
-        <form onSubmit={e => {e.preventDefault(); if(!data.name.trim()) return; onSubmit(data);}} className="p-6 space-y-4">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{initialData ? 'Edit Campaign' : 'Add Campaign'}</h2><p className="text-xs text-slate-500 mt-1">Create a campaign record; ad spend will be linked from matching ledger entries.</p></div><button onClick={onCancel} className="text-slate-400"><X size={20} /></button></div>
+        <form onSubmit={e => { e.preventDefault(); if (!data.name.trim()) return; onSubmit(data); }} className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Campaign Name"><input required value={data.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Ramadan Lead Campaign" className={input}/></Field>
-            <Field label="Client"><select value={data.clientId} onChange={e=>set('clientId',e.target.value)} className={input}><option value="">Unassigned</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
-            <Field label="Platform"><select value={data.platform} onChange={e=>set('platform',e.target.value)} className={input}><option>Meta</option><option>Google</option><option>TikTok</option><option>Other</option></select></Field>
-            <Field label="Status"><select value={data.status} onChange={e=>set('status',e.target.value)} className={input}><option>Active</option><option>Paused</option><option>Completed</option></select></Field>
-            <Field label="Budget"><input type="number" min="0" step="0.01" value={data.budget} onChange={e=>set('budget',e.target.value)} placeholder="Enter budget" className={input}/></Field>
-            <Field label="Budget Currency"><select value={data.budgetType} onChange={e=>set('budgetType',e.target.value)} className={input}><option value="USD">USD</option><option value="BDT">BDT</option></select></Field>
-            <Field label="Start Date"><input type="date" value={data.startDate} onChange={e=>set('startDate',e.target.value)} className={input}/></Field>
-            <Field label="End Date"><input type="date" value={data.endDate} onChange={e=>set('endDate',e.target.value)} className={input}/></Field>
-            <Field label="Campaign Goal"><input value={data.goal} onChange={e=>set('goal',e.target.value)} placeholder="Leads, Sales, Traffic..." className={input}/></Field>
-            <Field label="Results"><div className="grid grid-cols-2 gap-2"><input type="number" min="0" step="1" value={data.resultValue} onChange={e=>set('resultValue',e.target.value)} placeholder="0" className={input}/><select value={data.resultLabel} onChange={e=>set('resultLabel',e.target.value)} className={input}><option>Leads</option><option>Sales</option><option>Messages</option><option>Clicks</option><option>Conversions</option></select></div></Field>
-            <Field label="Revenue Attributed (BDT)"><input type="number" min="0" step="0.01" value={data.revenueBDT} onChange={e=>set('revenueBDT',e.target.value)} placeholder="Optional" className={input}/></Field>
+            <Field label="Campaign Name"><input required value={data.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Ramadan Lead Campaign" className={input} /></Field>
+            <Field label="Client"><select value={data.clientId} onChange={e => set('clientId', e.target.value)} className={input}><option value="">Unassigned</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
+            <Field label="Platform"><select value={data.platform} onChange={e => set('platform', e.target.value)} className={input}><option>Meta</option><option>Google</option><option>TikTok</option><option>Other</option></select></Field>
+            <Field label="Status"><select value={data.status} onChange={e => set('status', e.target.value)} className={input}><option>Active</option><option>Paused</option><option>Completed</option></select></Field>
+            <Field label="Budget"><input type="number" min="0" step="0.01" value={data.budget} onChange={e => set('budget', e.target.value)} placeholder="Enter budget" className={input} /></Field>
+            <Field label="Budget Currency"><select value={data.budgetType} onChange={e => set('budgetType', e.target.value)} className={input}><option value="USD">USD</option><option value="BDT">BDT</option></select></Field>
+            <Field label="Start Date"><input type="date" value={data.startDate} onChange={e => set('startDate', e.target.value)} className={input} /></Field>
+            <Field label="End Date"><input type="date" value={data.endDate} onChange={e => set('endDate', e.target.value)} className={input} /></Field>
+            <Field label="Campaign Goal"><input value={data.goal} onChange={e => set('goal', e.target.value)} placeholder="Leads, Sales, Traffic..." className={input} /></Field>
+            <Field label="Results"><div className="grid grid-cols-2 gap-2"><input type="number" min="0" step="1" value={data.resultValue} onChange={e => set('resultValue', e.target.value)} placeholder="0" className={input} /><select value={data.resultLabel} onChange={e => set('resultLabel', e.target.value)} className={input}><option>Leads</option><option>Sales</option><option>Messages</option><option>Clicks</option><option>Conversions</option></select></div></Field>
+            <Field label="Revenue Attributed (BDT)"><input type="number" min="0" step="0.01" value={data.revenueBDT} onChange={e => set('revenueBDT', e.target.value)} placeholder="Optional" className={input} /></Field>
           </div>
-          <Field label="Notes"><textarea value={data.notes} onChange={e=>set('notes',e.target.value)} rows="3" placeholder="Campaign notes..." className={input}/></Field>
+          <Field label="Notes"><textarea value={data.notes} onChange={e => set('notes', e.target.value)} rows="3" placeholder="Campaign notes..." className={input} /></Field>
           <div className="flex gap-3 pt-4 border-t border-slate-100"><button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium">Cancel</button><button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold">Save Campaign</button></div>
         </form>
       </div>
@@ -2947,26 +2950,26 @@ function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
 
 function IntegrationsView() {
   const items = [
-    ['Meta Ads','Sync ad accounts, campaigns and spend automatically.',<Globe2 size={22}/>],
-    ['Google Ads','Bring Google campaign spend into the same ledger.',<BarChart3 size={22}/>],
-    ['TikTok Ads','Track TikTok spend alongside Meta and Google.',<Target size={22}/>],
-    ['Google Sheets','Export and sync operational reports.',<Database size={22}/>],
-    ['Payments','Connect payment providers when automated verification is available.',<Link2 size={22}/>]
+    ['Meta Ads', 'Sync ad accounts, campaigns and spend automatically.', <Globe2 size={22} />],
+    ['Google Ads', 'Bring Google campaign spend into the same ledger.', <BarChart3 size={22} />],
+    ['TikTok Ads', 'Track TikTok spend alongside Meta and Google.', <Target size={22} />],
+    ['Google Sheets', 'Export and sync operational reports.', <Database size={22} />],
+    ['Payments', 'Connect payment providers when automated verification is available.', <Link2 size={22} />]
   ];
   return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
     <div><h1 className="text-2xl font-bold text-slate-900">Integrations</h1><p className="text-sm text-slate-500 mt-1">Connect your marketing stack when automated sync is enabled.</p></div>
-    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-800 text-sm flex gap-3"><ShieldCheck size={19}/><span>Integrations are marked <strong>Planned</strong> until a real API connection is available.</span></div>
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map(([name,desc,icon])=><div key={name} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><div className="flex items-start justify-between"><div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">{icon}</div><span className="text-[10px] font-semibold uppercase px-2 py-1 rounded-full bg-slate-100 text-slate-500">Planned</span></div><h3 className="mt-4 font-semibold">{name}</h3><p className="text-sm text-slate-500 mt-1 leading-6">{desc}</p><button disabled className="mt-4 w-full px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-sm">Connect later</button></div>)}</div>
+    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-800 text-sm flex gap-3"><ShieldCheck size={19} /><span>Integrations are marked <strong>Planned</strong> until a real API connection is available.</span></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map(([name, desc, icon]) => <div key={name} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><div className="flex items-start justify-between"><div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">{icon}</div><span className="text-[10px] font-semibold uppercase px-2 py-1 rounded-full bg-slate-100 text-slate-500">Planned</span></div><h3 className="mt-4 font-semibold">{name}</h3><p className="text-sm text-slate-500 mt-1 leading-6">{desc}</p><button disabled className="mt-4 w-full px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-sm">Connect later</button></div>)}</div>
   </div>;
 }
 
 function TeamView({ teamMembers, onAdd, onRemove }) {
-  const [email,setEmail]=useState(''); const [role,setRole]=useState('Manager');
+  const [email, setEmail] = useState(''); const [role, setRole] = useState('Manager');
   return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLedger for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length+1} member{teamMembers.length+1===1?'':'s'}</span></div>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLedger for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length + 1} member{teamMembers.length + 1 === 1 ? '' : 's'}</span></div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Workspace Members</h3><div className="mt-4 space-y-2"><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"><div><p className="font-medium">Workspace Owner</p><p className="text-xs text-slate-500">Owner · full access</p></div><span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">Owner</span></div>{teamMembers.map(m=><div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{m.email}</p><p className="text-xs text-slate-500">{m.role}</p></div><button onClick={()=>onRemove(m.id)} className="text-xs text-red-500">Remove</button></div>)}</div></div>
-      <form onSubmit={e=>{e.preventDefault();if(!email.trim())return;onAdd({email:email.trim(),role});setEmail('')}} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Invite Member</h3><p className="text-xs text-slate-500 mt-1">Local workspace placeholder until real email invitations are connected.</p><Field label="Email"><input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="teammate@email.com" className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field><Field label="Role"><select value={role} onChange={e=>setRole(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Manager</option><option>Staff</option><option>Viewer</option></select></Field><button className="w-full mt-4 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold"><UserPlus size={16} className="inline mr-2"/>Add Member</button></form>
+      <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Workspace Members</h3><div className="mt-4 space-y-2"><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"><div><p className="font-medium">Workspace Owner</p><p className="text-xs text-slate-500">Owner · full access</p></div><span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">Owner</span></div>{teamMembers.map(m => <div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{m.email}</p><p className="text-xs text-slate-500">{m.role}</p></div><button onClick={() => onRemove(m.id)} className="text-xs text-red-500">Remove</button></div>)}</div></div>
+      <form onSubmit={e => { e.preventDefault(); if (!email.trim()) return; onAdd({ email: email.trim(), role }); setEmail('') }} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Invite Member</h3><p className="text-xs text-slate-500 mt-1">Local workspace placeholder until real email invitations are connected.</p><Field label="Email"><input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="teammate@email.com" className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm" /></Field><Field label="Role"><select value={role} onChange={e => setRole(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Manager</option><option>Staff</option><option>Viewer</option></select></Field><button className="w-full mt-4 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold"><UserPlus size={16} className="inline mr-2" />Add Member</button></form>
     </div>
   </div>;
 }
@@ -2982,7 +2985,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [restoreFeedback, setRestoreFeedback] = useState(null);
-  
+
   // Auth state for Security tab
   const [session, setSession] = useState(null);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -3420,11 +3423,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             type="button"
             onClick={handleSave}
             disabled={saveStatus === 'saving'}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm transition-all ${
-              isDirty
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm transition-all ${isDirty
                 ? 'bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 ring-2 ring-blue-400/40'
                 : 'bg-slate-900 hover:bg-slate-800'
-            } disabled:opacity-50`}
+              } disabled:opacity-50`}
           >
             <Save size={16} />
             {saveStatus === 'saving' ? 'Saving...' : isDirty ? 'Save Changes *' : 'Save Settings'}
@@ -3441,11 +3443,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                active
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${active
                   ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 scale-[1.01]'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
-              }`}
+                }`}
             >
               <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>
               {tab.label}
@@ -4108,11 +4109,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         <div className="space-y-5 animate-in fade-in duration-300">
           {restoreFeedback && (
             <div
-              className={`p-4 rounded-xl border text-sm font-semibold flex items-center gap-2 ${
-                restoreFeedback.success
+              className={`p-4 rounded-xl border text-sm font-semibold flex items-center gap-2 ${restoreFeedback.success
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                   : 'bg-red-50 border-red-200 text-red-700'
-              }`}
+                }`}
             >
               {restoreFeedback.success ? <CheckCircle2 size={17} /> : <AlertCircle size={17} />}
               {restoreFeedback.message}
@@ -4402,7 +4402,7 @@ function Modal({ title, onClose, children, width = "max-w-md" }) {
       <div className={`bg-white rounded-xl shadow-xl w-full ${width} overflow-hidden flex flex-col max-h-[95vh]`}>
         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50 shrink-0">
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
         </div>
         <div className="p-5 overflow-y-auto">
           {children}
@@ -4420,7 +4420,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
   const handlePresetClick = (preset) => {
     setSelectedPreset(preset);
     if (preset === 'Custom Range') return;
-    
+
     const dates = getPresetDates(preset);
     setCustomStart(dates.start || '');
     setCustomEnd(dates.end || '');
@@ -4429,7 +4429,7 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
   const handleApply = () => {
     let label = selectedPreset;
     if (selectedPreset === 'Custom Range' || (customStart && customEnd && !DATE_PRESETS.includes(selectedPreset))) {
-       label = `${formatDate(customStart)} – ${formatDate(customEnd)}`;
+      label = `${formatDate(customStart)} – ${formatDate(customEnd)}`;
     }
     if (!customStart && !customEnd) label = 'Lifetime';
 
@@ -4440,14 +4440,14 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col">
         <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><CalendarDays size={20} className="text-blue-600"/> Select Date Range</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><CalendarDays size={20} className="text-blue-600" /> Select Date Range</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
         </div>
-        
+
         <div className="flex flex-col md:flex-row h-[400px]">
           <div className="w-full md:w-1/3 border-r border-slate-100 bg-slate-50 overflow-y-auto p-2 space-y-1">
             {DATE_PRESETS.map(preset => (
-              <button 
+              <button
                 key={preset}
                 onClick={() => handlePresetClick(preset)}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${selectedPreset === preset ? 'bg-blue-100 text-blue-700' : 'text-slate-700 hover:bg-slate-200'}`}
@@ -4455,23 +4455,23 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
                 {preset}
               </button>
             ))}
-            <button 
+            <button
               onClick={() => handlePresetClick('Custom Range')}
               className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors mt-2 border-t border-slate-200 ${selectedPreset === 'Custom Range' ? 'bg-blue-100 text-blue-700' : 'text-slate-700 hover:bg-slate-200'}`}
             >
               Custom Range
             </button>
           </div>
-          
+
           <div className="w-full md:w-2/3 p-6 flex flex-col justify-center bg-white">
             <h4 className="text-sm font-bold text-slate-800 mb-4">Custom Date Range</h4>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Start Date (DD / MM / YYYY)</label>
                 <div className="relative">
-                  <input 
-                    type="date" 
-                    value={customStart} 
+                  <input
+                    type="date"
+                    value={customStart}
                     onChange={(e) => { setCustomStart(e.target.value); setSelectedPreset('Custom Range'); }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
                   />
@@ -4480,9 +4480,9 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
               <div>
                 <label className="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">End Date (DD / MM / YYYY)</label>
                 <div className="relative">
-                  <input 
-                    type="date" 
-                    value={customEnd} 
+                  <input
+                    type="date"
+                    value={customEnd}
                     onChange={(e) => { setCustomEnd(e.target.value); setSelectedPreset('Custom Range'); }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700"
                   />
@@ -4490,14 +4490,14 @@ function DateRangePickerModal({ onClose, onApply, initialRange }) {
               </div>
             </div>
             {customStart && customEnd && (
-               <div className="mt-8 p-3 bg-blue-50 rounded-lg border border-blue-100 text-center">
-                 <p className="text-sm text-blue-800 font-medium">Selected Range:</p>
-                 <p className="text-sm text-blue-600">{formatDate(customStart)} – {formatDate(customEnd)}</p>
-               </div>
+              <div className="mt-8 p-3 bg-blue-50 rounded-lg border border-blue-100 text-center">
+                <p className="text-sm text-blue-800 font-medium">Selected Range:</p>
+                <p className="text-sm text-blue-600">{formatDate(customStart)} – {formatDate(customEnd)}</p>
+              </div>
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between p-4 border-t border-slate-100 bg-slate-50">
           <button onClick={() => { setCustomStart(''); setCustomEnd(''); setSelectedPreset('Lifetime'); }} className="text-sm text-red-600 font-medium hover:underline">Clear Filter</button>
           <div className="flex gap-3">
@@ -4529,10 +4529,10 @@ function CardDropdownMenu({ onEdit, onDetails, onDelete }) {
       </button>
       {isOpen && (
         <div className="absolute right-0 mt-2 w-40 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1 overflow-hidden">
-          <button onClick={() => {onEdit(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Edit Card</button>
-          <button onClick={() => {onDetails(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">View Details</button>
+          <button onClick={() => { onEdit(); setIsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">Edit Card</button>
+          <button onClick={() => { onDetails(); setIsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600">View Details</button>
           <div className="h-px w-full bg-slate-100 my-1"></div>
-          <button onClick={() => {onDelete(); setIsOpen(false);}} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Delete Card <Trash2 size={14}/></button>
+          <button onClick={() => { onDelete(); setIsOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center justify-between">Delete Card <Trash2 size={14} /></button>
         </div>
       )}
     </div>
@@ -4629,105 +4629,105 @@ function ClientActionsMenu({
 
   const menu = isOpen && typeof document !== 'undefined'
     ? createPortal(
-        <div
-          ref={menuRef}
-          className="fixed bg-white border border-slate-200 rounded-xl shadow-2xl z-[99999] p-1.5"
-          style={{
-            top: menuPosition.top,
-            left: menuPosition.left,
-            width: 240
-          }}
-          role="menu"
-          onMouseDown={(e) => e.stopPropagation()}
+      <div
+        ref={menuRef}
+        className="fixed bg-white border border-slate-200 rounded-xl shadow-2xl z-[99999] p-1.5"
+        style={{
+          top: menuPosition.top,
+          left: menuPosition.left,
+          width: 240
+        }}
+        role="menu"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={() => closeAndRun(onViewDetails)}
+          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
         >
-          <button
-            type="button"
-            onClick={() => closeAndRun(onViewDetails)}
-            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
-          >
-            View Details
-          </button>
+          View Details
+        </button>
 
-          <button
-            type="button"
-            onClick={() => closeAndRun(onHistory)}
-            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
-          >
-            Transaction History
-          </button>
+        <button
+          type="button"
+          onClick={() => closeAndRun(onHistory)}
+          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+        >
+          Transaction History
+        </button>
 
-          <button
-            type="button"
-            onClick={() => closeAndRun(onEdit)}
-            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
-          >
-            Edit Client
-          </button>
+        <button
+          type="button"
+          onClick={() => closeAndRun(onEdit)}
+          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+        >
+          Edit Client
+        </button>
 
-          <button
-            type="button"
-            onClick={() => closeAndRun(onReceivePayment)}
-            className="w-full text-left px-4 py-3 text-sm text-green-700 rounded-lg hover:bg-green-50"
-          >
-            Receive Payment
-          </button>
+        <button
+          type="button"
+          onClick={() => closeAndRun(onReceivePayment)}
+          className="w-full text-left px-4 py-3 text-sm text-green-700 rounded-lg hover:bg-green-50"
+        >
+          Receive Payment
+        </button>
 
-          <div className="h-px bg-slate-100 my-1.5" />
+        <div className="h-px bg-slate-100 my-1.5" />
 
-          <button
-            type="button"
-            onClick={() => setShowStatusMenu(prev => !prev)}
-            className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 flex items-center justify-between"
-            aria-expanded={showStatusMenu}
-          >
-            <span>Change Status</span>
-            <ChevronDown
-              size={15}
-              className={`transition-transform ${showStatusMenu ? 'rotate-180' : ''}`}
-            />
-          </button>
+        <button
+          type="button"
+          onClick={() => setShowStatusMenu(prev => !prev)}
+          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 flex items-center justify-between"
+          aria-expanded={showStatusMenu}
+        >
+          <span>Change Status</span>
+          <ChevronDown
+            size={15}
+            className={`transition-transform ${showStatusMenu ? 'rotate-180' : ''}`}
+          />
+        </button>
 
-          {showStatusMenu && (
-            <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 border border-slate-100 p-1">
-              <button
-                type="button"
-                onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
-                className="w-full text-left px-3 py-2.5 text-sm text-green-700 rounded-md hover:bg-green-100"
-              >
-                Mark Active
-              </button>
+        {showStatusMenu && (
+          <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 border border-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
+              className="w-full text-left px-3 py-2.5 text-sm text-green-700 rounded-md hover:bg-green-100"
+            >
+              Mark Active
+            </button>
 
-              <button
-                type="button"
-                onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
-                className="w-full text-left px-3 py-2.5 text-sm text-orange-700 rounded-md hover:bg-orange-100"
-              >
-                Mark Inactive
-              </button>
+            <button
+              type="button"
+              onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
+              className="w-full text-left px-3 py-2.5 text-sm text-orange-700 rounded-md hover:bg-orange-100"
+            >
+              Mark Inactive
+            </button>
 
-              <button
-                type="button"
-                onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
-                className="w-full text-left px-3 py-2.5 text-sm text-blue-700 rounded-md hover:bg-blue-100"
-              >
-                Mark Completed
-              </button>
-            </div>
-          )}
+            <button
+              type="button"
+              onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
+              className="w-full text-left px-3 py-2.5 text-sm text-blue-700 rounded-md hover:bg-blue-100"
+            >
+              Mark Completed
+            </button>
+          </div>
+        )}
 
-          <div className="h-px bg-slate-100 my-1.5" />
+        <div className="h-px bg-slate-100 my-1.5" />
 
-          <button
-            type="button"
-            onClick={() => closeAndRun(onDelete)}
-            className="w-full text-left px-4 py-3 text-sm text-red-600 rounded-lg hover:bg-red-50 flex items-center justify-between"
-          >
-            <span>Delete Client</span>
-            <Trash2 size={15} />
-          </button>
-        </div>,
-        document.body
-      )
+        <button
+          type="button"
+          onClick={() => closeAndRun(onDelete)}
+          className="w-full text-left px-4 py-3 text-sm text-red-600 rounded-lg hover:bg-red-50 flex items-center justify-between"
+        >
+          <span>Delete Client</span>
+          <Trash2 size={15} />
+        </button>
+      </div>,
+      document.body
+    )
     : null;
 
   return (
@@ -4869,20 +4869,20 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     }
     return {
       name: '', company: '', phone: '', email: '', fb: '', website: '',
-      serviceType: 'Meta Ads', budgetType: 'Monthly', budgetAmount: '', status: 'Active', 
+      serviceType: 'Meta Ads', budgetType: 'Monthly', budgetAmount: '', status: 'Active',
       startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true, notes: ''
     };
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  
-  const handleSubmit = (e) => { 
-    e.preventDefault(); 
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     onSubmit({
-      ...formData, 
+      ...formData,
       budgetAmount: parseFloat(formData.budgetAmount) || 0,
       endDate: formData.currentlyWorking ? '' : formData.endDate
-    }); 
+    });
   };
 
   const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
@@ -4893,13 +4893,13 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter client name" className={inputClass} /></div>
         <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="Enter company name" className={inputClass} /></div>
-        
+
         <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
         <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
-        
+
         <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
         <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
-        
+
         <div>
           <label className={labelClass}>Service Type</label>
           <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
@@ -4912,7 +4912,7 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
             <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
           </select>
         </div>
-        
+
         <div>
           <label className={labelClass}>Budget Period</label>
           <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
@@ -4920,17 +4920,17 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
           </select>
         </div>
         <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="Enter BDT amount" className={inputClass} /></div>
-        
+
         <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
         <div>
           <label className={labelClass}>End Date</label>
           <div className="flex flex-col gap-2 mt-1">
             <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
-              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({...formData, currentlyWorking: e.target.checked})} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked })} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
               Currently Working
             </label>
             {!formData.currentlyWorking && (
-              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{marginTop: 0}} />
+              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{ marginTop: 0 }} />
             )}
           </div>
         </div>
@@ -4951,12 +4951,12 @@ function CardForm({ initialData, onSubmit, onCancel }) {
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-  const handleSubmit = (e) => { 
-    e.preventDefault(); 
+  const handleSubmit = (e) => {
+    e.preventDefault();
     onSubmit({
       ...formData,
       initialBalance: parseFloat(formData.initialBalance) || 0
-    }); 
+    });
   };
   const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
 
@@ -5004,20 +5004,20 @@ function CardForm({ initialData, onSubmit, onCancel }) {
 }
 
 function ClientDetailsModal({ client, metrics, transactions, onClose, onReceivePayment, onAdSpend }) {
-  const clientTx = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a,b) => new Date(b.date) - new Date(a.date)), [transactions, client.id]);
-  
+  const clientTx = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a, b) => new Date(b.date) - new Date(a.date)), [transactions, client.id]);
+
   const stats = useMemo(() => {
-    const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + parseFloat(t.amountBDT||0), 0);
-    const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.amountUSD||0), 0);
-    const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.taxUSD||0), 0);
+    const revenue = clientTx.filter(t => t.type === 'PAYMENT_RECEIVED').reduce((sum, t) => sum + parseFloat(t.amountBDT || 0), 0);
+    const adSpendUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
+    const taxUSD = clientTx.filter(t => t.type === 'AD_SPEND').reduce((sum, t) => sum + parseFloat(t.taxUSD || 0), 0);
     const totalCostBDT = (adSpendUSD + taxUSD) * metrics.avgUSDEffectiveRate;
     const profitBDT = revenue - totalCostBDT;
     const margin = revenue > 0 ? (profitBDT / revenue) * 100 : 0;
-    
+
     const durationDays = getDurationDays(client);
     const targetBudgetBDT = getExpectedBudgetBDT(client, durationDays);
     const outstanding = targetBudgetBDT > revenue ? targetBudgetBDT - revenue : 0;
-    
+
     return { revenue, adSpendUSD, taxUSD, totalCostBDT, profitBDT, margin, outstanding, targetBudgetBDT };
   }, [clientTx, metrics.avgUSDEffectiveRate, client]);
 
@@ -5025,9 +5025,9 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
     const map = {};
     clientTx.filter(t => t.type === 'AD_SPEND').forEach(t => {
       const key = `${t.adAccount || 'Unknown'} - ${t.campaign || 'Unknown'}`;
-      if(!map[key]) map[key] = { account: t.adAccount||'Unknown', campaign: t.campaign||'Unknown', spend: 0, tax: 0 };
-      map[key].spend += parseFloat(t.amountUSD||0);
-      map[key].tax += parseFloat(t.taxUSD||0);
+      if (!map[key]) map[key] = { account: t.adAccount || 'Unknown', campaign: t.campaign || 'Unknown', spend: 0, tax: 0 };
+      map[key].spend += parseFloat(t.amountUSD || 0);
+      map[key].tax += parseFloat(t.taxUSD || 0);
     });
     return Object.values(map);
   }, [clientTx]);
@@ -5035,9 +5035,9 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
   const chartData = useMemo(() => {
     const data = [...clientTx].reverse().reduce((acc, t) => {
       const d = t.date.substring(5);
-      if(!acc[d]) acc[d] = { date: d, revenue: 0, cost: 0 };
-      if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += parseFloat(t.amountBDT||0);
-      if (t.type === 'AD_SPEND') acc[d].cost += ((parseFloat(t.amountUSD||0) + parseFloat(t.taxUSD||0)) * metrics.avgUSDEffectiveRate);
+      if (!acc[d]) acc[d] = { date: d, revenue: 0, cost: 0 };
+      if (t.type === 'PAYMENT_RECEIVED') acc[d].revenue += parseFloat(t.amountBDT || 0);
+      if (t.type === 'AD_SPEND') acc[d].cost += ((parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0)) * metrics.avgUSDEffectiveRate);
       return acc;
     }, {});
     return Object.values(data);
@@ -5054,7 +5054,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
             <span className={`px-2 py-0.5 rounded text-xs font-semibold ${displayStatus.includes('Active') || displayStatus.includes('Working') ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-300'}`}>{displayStatus}</span>
           </div>
           <p className="text-slate-400 font-medium">{client.company} • {client.serviceType}</p>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-800 text-sm">
             <div className="text-slate-300"><span className="text-slate-500 block text-xs">Budget Setting</span> <span className="font-medium text-blue-300">{getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</span></div>
             <div className="text-slate-300"><span className="text-slate-500 block text-xs">Campaign Duration</span> {getCampaignDurationDisplay(client)}</div>
@@ -5100,8 +5100,8 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} tickFormatter={(val) => `৳${val/1000}k`} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(val) => `৳${val / 1000}k`} />
                 <Tooltip />
                 <Bar dataKey="revenue" name="Revenue (BDT)" fill="#22c55e" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="cost" name="Cost (BDT)" fill="#f97316" radius={[2, 2, 0, 0]} />
@@ -5161,8 +5161,8 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
                         <span className="font-bold text-green-600">+{formatBDT(tx.amountBDT)}</span>
                       ) : (
                         <div>
-                          <span className="font-bold text-slate-800">{formatUSD(parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0))}</span>
-                          <span className="block text-[10px] text-slate-400">({formatBDT((parseFloat(tx.amountUSD||0) + parseFloat(tx.taxUSD||0)) * metrics.avgUSDEffectiveRate)})</span>
+                          <span className="font-bold text-slate-800">{formatUSD(parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0))}</span>
+                          <span className="block text-[10px] text-slate-400">({formatBDT((parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) * metrics.avgUSDEffectiveRate)})</span>
                         </div>
                       )}
                     </td>
@@ -5184,7 +5184,7 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
     clientId: clients?.[0]?.id || '',
     cardId: cards?.[0]?.id || '',
     taxUSD: '', notes: '',
-    adAccount: '', campaign: '' 
+    adAccount: '', campaign: ''
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -5206,18 +5206,18 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
     } else if (type === 'AD_SPEND') {
       payload.amountUSD = parseFloat(formData.amountUSD) || 0;
       payload.taxUSD = parseFloat(formData.taxUSD) || 0;
-      
+
       // Strict block for empty / zero meta ads spend
       if (payload.amountUSD <= 0 || !formData.cardId || !formData.clientId) {
-        return; 
+        return;
       }
-      
+
       payload.clientId = formData.clientId;
       payload.cardId = formData.cardId;
       payload.adAccount = formData.adAccount;
       payload.campaign = formData.campaign;
     }
-    
+
     onSubmit(payload);
   };
 
@@ -5284,7 +5284,7 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
       {type === 'AD_SPEND' && (
         <>
           <div className="grid grid-cols-2 gap-4">
-             <div><label className={labelClass}>Client</label>
+            <div><label className={labelClass}>Client</label>
               <select name="clientId" value={formData.clientId} onChange={handleChange} required className={inputClass}>
                 {clients?.length === 0 && <option value="" disabled>No clients found</option>}
                 {clients?.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
@@ -5327,7 +5327,7 @@ function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
           <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea>
         </div>
       )}
-      
+
       <div className="flex gap-3 pt-4 border-t border-slate-100">
         <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
         <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Transaction</button>
