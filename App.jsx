@@ -5929,8 +5929,8 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
-      {/* TOP HEADER */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* TOP HEADER (SEAMLESS CANVAS) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Settings Center</h1>
@@ -5947,7 +5947,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         <div className="flex items-center gap-3">
           {saveStatus === 'saved' && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold animate-in fade-in">
-              <CheckCircle2 size={15} className="text-emerald-600" /> Changes Saved
+              <CheckCircle2 size={14} className="text-emerald-600" /> Changes Saved
             </span>
           )}
 
@@ -5955,12 +5955,13 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             type="button"
             onClick={handleSave}
             disabled={saveStatus === 'saving'}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm transition-all ${isDirty
-                ? 'bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 ring-2 ring-blue-400/40'
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white shadow-sm transition-all ${
+              isDirty
+                ? 'bg-sky-600 hover:bg-sky-700 ring-2 ring-sky-400/40'
                 : 'bg-slate-900 hover:bg-slate-800'
-              } disabled:opacity-50`}
+            } disabled:opacity-50`}
           >
-            <Save size={16} />
+            <Save size={14} />
             {saveStatus === 'saving' ? 'Saving...' : isDirty ? 'Save Changes *' : 'Save Settings'}
           </button>
         </div>
@@ -5968,9 +5969,9 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
 
       {/* VALIDATION WARNING BANNER */}
       {validationBanner && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-sm">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-sm">
           <div className="flex items-center gap-2.5">
-            <AlertCircle size={18} className="text-rose-600 shrink-0" />
+            <AlertCircle size={16} className="text-rose-600 shrink-0" />
             <span>{validationBanner}</span>
           </div>
           <button
@@ -5983,8 +5984,8 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         </div>
       )}
 
-      {/* TAB NAVIGATION */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/90 border border-slate-200 rounded-2xl overflow-x-auto">
+      {/* TAB NAVIGATION (SLEEK GITHUB CORNERS) */}
+      <div className="flex items-center gap-1 p-1 bg-slate-200/60 rounded-lg overflow-x-auto">
         {navTabs.map((tab) => {
           const active = activeTab === tab.id;
           const hasError =
@@ -5997,16 +5998,16 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap relative ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-md text-xs font-bold transition-all whitespace-nowrap relative ${
                 active
-                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 scale-[1.01]'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>
               {tab.label}
               {hasError && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 ml-0.5 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 ml-0.5 animate-pulse" />
               )}
             </button>
           );
