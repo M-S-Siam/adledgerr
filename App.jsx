@@ -4434,8 +4434,15 @@ function Field({ label, children }) {
 
 function NavItem({ icon, label, isActive, onClick }) {
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-      {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-[13px] font-semibold ${
+        isActive
+          ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/20'
+          : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+      }`}
+    >
+      {React.cloneElement(icon, { size: 17, className: isActive ? 'text-white' : 'text-slate-400' })}
       {label}
     </button>
   );
