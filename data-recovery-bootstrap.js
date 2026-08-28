@@ -10,49 +10,53 @@ export async function recoverLedgerDataBeforeAppStarts() {
     const user = session?.user;
     if (!user) return;
 
-    let workspaceId = null;
-
-    const { data: owned, error: ownedError } = await supabase
+    // Find every workspace this signed-in user can access instead of blindly
+    // choosing the oldest owned workspace. This prevents an empty workspace
+    // from hiding an existing ledger stored in another accessible workspace.
+    const { data: workspaces, error: workspaceError } = await supabase
       .from('workspaces')
-      .select('id')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .select('id, created_at')
+      .order('created_at', { ascending: true });
 
-    if (!ownedError && owned?.id) {
-      workspaceId = owned.id;
-    } else {
-      const { data: membership, error: membershipError } = await supabase
-        .from('workspace_members')
-        .select('workspace_id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+    if (workspaceError || !Array.isArray(workspaces) || workspaces.length === 0) return;
 
-      if (!membershipError && membership?.workspace_id) {
-        workspaceId = membership.workspace_id;
+    let bestWorkspace = null;
+    let bestRows = [];
+    let bestScore = -1;
+
+    for (const workspace of workspaces) {
+      const { data: rows, error } = await supabase
+        .from('workspace_app_data')
+        .select('data_key, data')
+        .eq('workspace_id', workspace.id)
+        .in('data_key', DATA_KEYS);
+
+      if (error || !Array.isArray(rows)) continue;
+
+      const score = rows.reduce((total, row) => {
+        if (!DATA_KEYS.includes(row.data_key) || !Array.isArray(row.data)) return total;
+        return total + row.data.length;
+      }, 0);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestWorkspace = workspace;
+        bestRows = rows;
       }
     }
 
-    if (!workspaceId) return;
+    if (!bestWorkspace || bestScore <= 0) return;
 
-    const { data: rows, error } = await supabase
-      .from('workspace_app_data')
-      .select('data_key, data')
-      .eq('workspace_id', workspaceId)
-      .in('data_key', DATA_KEYS);
-
-    if (error || !Array.isArray(rows)) return;
-
-    for (const row of rows) {
+    // Only hydrate non-empty cloud datasets. Never replace existing local
+    // data with an empty cloud response.
+    for (const row of bestRows) {
       if (!DATA_KEYS.includes(row.data_key)) continue;
       if (!Array.isArray(row.data) || row.data.length === 0) continue;
       window.localStorage.setItem(row.data_key, JSON.stringify(row.data));
     }
 
     window.localStorage.setItem('adledger_version', '2');
+    window.localStorage.setItem('adledger_recovery_workspace', bestWorkspace.id);
   } catch (error) {
     console.error('AdLytic pre-app data recovery failed', error);
   }
