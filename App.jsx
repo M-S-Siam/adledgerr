@@ -460,10 +460,10 @@ const DEFAULT_SETTINGS = {
 const INITIAL_TEAM = [
   {
     id: 'team_01',
-    name: 'Media Buyer',
-    email: 'buyer@agency.com',
+    name: 'Campaign Specialist',
+    email: 'campaigns@agency.com',
     phone: '+880 1711-889900',
-    role: 'Senior Media Buyer',
+    role: 'Campaign Manager',
     status: 'Active',
     assignedClients: 'All Clients',
     dailySpendLimit: '100',
@@ -3057,7 +3057,7 @@ const INITIAL_TEAM_ACTIVITIES = [
   {
     id: 'act_02',
     userName: 'Media Specialist',
-    userRole: 'Senior Media Buyer',
+    userRole: 'Campaign Manager',
     action: 'Logged $185 Meta Ad Spend for client Apex Footwear',
     category: 'spend',
     timestamp: '45 mins ago',
@@ -3076,7 +3076,7 @@ const INITIAL_TEAM_ACTIVITIES = [
     id: 'act_04',
     userName: 'Awal',
     userRole: 'Founder',
-    action: 'Invited Media Specialist as Senior Media Buyer (Daily limit: $100)',
+    action: 'Invited Media Specialist as Campaign Manager (Daily limit: $100)',
     category: 'team',
     timestamp: '1 day ago',
     date: '2026-08-27 16:20'
@@ -3112,7 +3112,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     name: '',
     email: '',
     phone: '',
-    role: 'Senior Media Buyer',
+    role: 'Campaign Manager',
     status: 'Active',
     assignedClients: 'All Clients',
     dailySpendLimit: '50',
@@ -3161,7 +3161,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       name: '',
       email: '',
       phone: '',
-      role: 'Senior Media Buyer',
+      role: 'Campaign Manager',
       status: defaultStatus,
       assignedClients: 'All Clients',
       dailySpendLimit: '50',
@@ -3183,7 +3183,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       name: member.name || '',
       email: member.email || '',
       phone: member.phone || '',
-      role: member.role || 'Senior Media Buyer',
+      role: member.role || 'Campaign Manager',
       status: member.status || 'Active',
       assignedClients: member.assignedClients || 'All Clients',
       dailySpendLimit: existingLimit,
@@ -3338,7 +3338,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       const matchesRole =
         roleFilter === 'All' ||
         (roleFilter === 'Admin' && m.role?.includes('Admin')) ||
-        (roleFilter === 'Media Buyer' && (m.role?.includes('Buyer') || m.role?.includes('Specialist'))) ||
+        (roleFilter === 'Campaign Manager' && (m.role?.includes('Campaign') || m.role?.includes('Manager') || m.role?.includes('Buyer') || m.role?.includes('Specialist'))) ||
         (roleFilter === 'Accountant' && m.role?.includes('Accountant')) ||
         (roleFilter === 'Viewer' && m.role?.includes('Viewer'));
 
@@ -3349,7 +3349,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
   const roleBadgeStyle = (role = '') => {
     if (role.includes('Owner')) return 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-400/20';
     if (role.includes('Admin')) return 'bg-indigo-50 text-indigo-700 border-indigo-200 ring-1 ring-indigo-400/20';
-    if (role.includes('Buyer') || role.includes('Specialist')) return 'bg-sky-50 text-sky-700 border-sky-200 ring-1 ring-sky-400/20';
+    if (role.includes('Campaign') || role.includes('Manager') || role.includes('Buyer') || role.includes('Specialist')) return 'bg-sky-50 text-sky-700 border-sky-200 ring-1 ring-sky-400/20';
     if (role.includes('Accountant')) return 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-400/20';
     return 'bg-slate-100 text-slate-700 border-slate-200';
   };
@@ -3357,7 +3357,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
   const roleIcon = (role = '') => {
     if (role.includes('Owner')) return <Crown size={12} className="text-purple-600" />;
     if (role.includes('Admin')) return <ShieldCheck size={12} className="text-indigo-600" />;
-    if (role.includes('Buyer') || role.includes('Specialist')) return <Target size={12} className="text-sky-600" />;
+    if (role.includes('Campaign') || role.includes('Manager') || role.includes('Buyer') || role.includes('Specialist')) return <Target size={12} className="text-sky-600" />;
     if (role.includes('Accountant')) return <Coins size={12} className="text-emerald-600" />;
     return <Eye size={12} className="text-slate-500" />;
   };
@@ -3390,7 +3390,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage media buyers, financial accountants, and member roles across your {workspaceSettings.businessName || 'AdLytic'} workspace.
+            Manage campaign managers, financial accountants, and member roles across your {workspaceSettings.businessName || 'AdLytic'} workspace.
           </p>
         </div>
 
@@ -3431,9 +3431,9 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             <Target size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Media Buyers</span>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Campaign Managers</span>
             <span className="text-lg font-black text-slate-900">
-              {teamMembers.filter(m => m.role?.includes('Buyer') || m.role?.includes('Specialist')).length} Active
+              {teamMembers.filter(m => m.role?.includes('Campaign') || m.role?.includes('Manager') || m.role?.includes('Buyer') || m.role?.includes('Specialist')).length} Active
             </span>
           </div>
         </div>
@@ -3477,7 +3477,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                   <th className="py-2.5 px-3 font-bold">Permissions & Capability</th>
                   <th className="py-2.5 px-3 font-bold text-purple-700">Owner</th>
                   <th className="py-2.5 px-3 font-bold text-indigo-700">Agency Admin</th>
-                  <th className="py-2.5 px-3 font-bold text-sky-700">Media Buyer</th>
+                  <th className="py-2.5 px-3 font-bold text-sky-700">Campaign Manager</th>
                   <th className="py-2.5 px-3 font-bold text-emerald-700">Accountant</th>
                   <th className="py-2.5 px-3 font-bold text-slate-600">Client Viewer</th>
                 </tr>
@@ -3631,7 +3631,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
 
             {/* Role Filter Tabs */}
             <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-100 rounded-xl">
-              {['All', 'Admin', 'Media Buyer', 'Accountant', 'Viewer'].map((tab) => {
+              {['All', 'Admin', 'Campaign Manager', 'Accountant', 'Viewer'].map((tab) => {
                 const active = roleFilter === tab;
                 return (
                   <button
@@ -3660,7 +3660,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                 </div>
                 <h3 className="font-bold text-slate-900 text-base">No active members match your search</h3>
                 <p className="text-xs text-slate-500 max-w-md mx-auto">
-                  Add media buyers or accountants to distribute client management and ad spend workflows.
+                  Add campaign managers or accountants to distribute client management and ad spend workflows.
                 </p>
                 <button
                   type="button"
@@ -3703,7 +3703,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                           </h4>
                           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${roleBadgeStyle(member.role)}`}>
                             {roleIcon(member.role)}
-                            {member.role || 'Media Buyer'}
+                            {member.role || 'Campaign Manager'}
                           </span>
                           {isSuspended && (
                             <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
@@ -4038,7 +4038,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                     onChange={(e) => setFormData(p => ({ ...p, role: e.target.value }))}
                     className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-sky-500"
                   >
-                    <option value="Senior Media Buyer">Senior Media Buyer (Ad Spend & Campaigns)</option>
+                    <option value="Campaign Manager">Campaign Manager (Ad Spend & Campaigns)</option>
                     <option value="Agency Admin">Agency Admin (Full Operational Access)</option>
                     <option value="Financial Accountant">Financial Accountant (Audit & PDF Statements)</option>
                     <option value="Client Viewer">Client Viewer (Read-only Portal Access)</option>
@@ -4945,7 +4945,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
               >
                 <option>Digital Marketing Agency</option>
-                <option>Freelance Media Buyer</option>
+                <option>Growth & Performance Marketing</option>
                 <option>E-commerce Brand</option>
                 <option>Corporate In-House</option>
                 <option>Tech Startup</option>
