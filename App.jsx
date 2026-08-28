@@ -3037,8 +3037,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Facebook & Instagram',
     category: 'ads',
     status: 'disconnected',
-    iconColor: 'from-blue-600 to-indigo-600 text-white',
-    iconName: 'Globe2',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'Meta',
     description: 'Auto-sync active campaigns, daily USD spend, impressions, CPC, and client ad accounts.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3056,8 +3056,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Search & YouTube',
     category: 'ads',
     status: 'disconnected',
-    iconColor: 'from-emerald-600 to-teal-700 text-white',
-    iconName: 'BarChart3',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'GoogleAds',
     description: 'Stream search keyword costs, YouTube campaigns, and performance max budgets into ledger.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3074,8 +3074,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Video Campaigns',
     category: 'ads',
     status: 'disconnected',
-    iconColor: 'from-slate-900 to-slate-800 text-white',
-    iconName: 'Target',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'TikTok',
     description: 'Track viral short-video ad spend, spark ads, and pixel conversion metrics automatically.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3090,8 +3090,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Live Cloud Backup',
     category: 'data',
     status: 'disconnected',
-    iconColor: 'from-emerald-700 to-green-800 text-white',
-    iconName: 'Database',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'GoogleSheets',
     description: 'Stream live client ledger balances, transaction rows, and 15% VAT statements to Google Sheets.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3107,8 +3107,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Workflow Automation',
     category: 'data',
     status: 'disconnected',
-    iconColor: 'from-orange-500 to-amber-600 text-white',
-    iconName: 'Zap',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'Zapier',
     description: 'Send instant WhatsApp alerts, Slack notifications, or CRM updates on ledger balance events.',
     lastSync: 'Never',
     statsBadge: 'Ready to configure',
@@ -3123,8 +3123,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Direct MFS & IPN',
     category: 'payments',
     status: 'disconnected',
-    iconColor: 'from-pink-600 to-rose-600 text-white',
-    iconName: 'Coins',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'Bkash',
     description: 'Auto-verify client advance deposits via TRXID and receive Instant Payment Notifications (IPN).',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3140,8 +3140,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Cards & Online Checkout',
     category: 'payments',
     status: 'disconnected',
-    iconColor: 'from-blue-700 to-indigo-800 text-white',
-    iconName: 'CreditCard',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'SSLCommerz',
     description: 'Online card checkout gateway for automated client invoice payments via debit/credit cards.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3157,8 +3157,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Dual-Currency USD Cards',
     category: 'payments',
     status: 'disconnected',
-    iconColor: 'from-emerald-700 to-teal-800 text-white',
-    iconName: 'Building',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'BankCard',
     description: 'Automated bank USD card reload sync, 15% VAT auto-settlement, and daily bank FX buy rates.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3174,8 +3174,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Global USD Invoices',
     category: 'payments',
     status: 'disconnected',
-    iconColor: 'from-violet-600 to-purple-800 text-white',
-    iconName: 'Wallet',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'Stripe',
     description: 'Accept credit cards and USD wire payments from international brands and foreign clients.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
@@ -3190,8 +3190,8 @@ const INITIAL_INTEGRATIONS_DATA = [
     subtitle: 'Workspace Webhooks',
     category: 'developer',
     status: 'disconnected',
-    iconColor: 'from-purple-600 to-indigo-700 text-white',
-    iconName: 'Terminal',
+    iconColor: 'bg-white border-slate-200',
+    iconName: 'DeveloperApi',
     description: 'High-speed REST API endpoints and HMAC-SHA256 secured webhook listener for custom apps.',
     lastSync: 'Never',
     statsBadge: 'Ready to configure',
@@ -3216,7 +3216,7 @@ const INITIAL_WEBHOOK_LOGS = [
 ];
 
 function IntegrationsView({ clients = [], transactions = [], workspaceSettings = {} }) {
-  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v5', INITIAL_INTEGRATIONS_DATA);
+  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v6', INITIAL_INTEGRATIONS_DATA);
   const [webhookLogs, setWebhookLogs] = useLocalStorage('adledger_webhook_logs', INITIAL_WEBHOOK_LOGS);
   const [activeCategory, setActiveCategory] = useState('all'); // 'all' | 'ads' | 'data' | 'payments' | 'developer'
   const [searchQuery, setSearchQuery] = useState('');
@@ -3235,20 +3235,91 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const getIntegrationIcon = (iconName, size = 20) => {
+  // EXACT AUTHENTIC OFFICIAL PLATFORM LOGOS
+  const getIntegrationIcon = (iconName, size = 22) => {
     switch (iconName) {
-      case 'Globe2': return <Globe2 size={size} />;
-      case 'BarChart3': return <BarChart3 size={size} />;
-      case 'Target': return <Target size={size} />;
-      case 'Database': return <Database size={size} />;
-      case 'Zap': return <Zap size={size} />;
-      case 'Coins': return <Coins size={size} />;
-      case 'CreditCard': return <CreditCard size={size} />;
-      case 'Building': return <Building size={size} />;
-      case 'Wallet': return <Wallet size={size} />;
-      case 'Receipt': return <Receipt size={size} />;
-      case 'Terminal': return <Terminal size={size} />;
-      default: return <PlugZap size={size} />;
+      case 'Meta':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <path d="M16.96 4C14.88 4 13.12 5.25 12 6.84C10.88 5.25 9.12 4 7.04 4C3.15 4 0 7.37 0 11.53C0 15.69 3.15 19.06 7.04 19.06C9.55 19.06 11.08 17.65 12 16.27C12.92 17.65 14.45 19.06 16.96 19.06C20.85 19.06 24 15.69 24 11.53C24 7.37 20.85 4 16.96 4ZM7.04 16.2C4.7 16.2 2.8 14.11 2.8 11.53C2.8 8.95 4.7 6.86 7.04 6.86C8.84 6.86 10.15 8.1 10.96 9.69C10.02 11.97 8.52 14.73 7.04 16.2ZM16.96 16.2C15.48 14.73 13.98 11.97 13.04 9.69C13.85 8.1 15.16 6.86 16.96 6.86C19.3 6.86 21.2 8.95 21.2 11.53C21.2 14.11 19.3 16.2 16.96 16.2Z" fill="#0081FB"/>
+          </svg>
+        );
+      case 'GoogleAds':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <path d="M3.24 16.73L9.62 5.67C10.37 4.37 12.04 3.93 13.34 4.68C14.64 5.43 15.08 7.1 14.33 8.4L7.95 19.46C7.2 20.76 5.53 21.2 4.23 20.45C2.93 19.7 2.49 18.03 3.24 16.73Z" fill="#FABB05"/>
+            <path d="M14.33 8.4L20.71 19.46C21.46 20.76 21.02 22.43 19.72 23.18C18.42 23.93 16.75 23.49 16 22.19L9.62 11.13C10.83 10.74 12.56 9.8 14.33 8.4Z" fill="#4285F4"/>
+            <circle cx="5.2" cy="19.2" r="3.2" fill="#34A853"/>
+          </svg>
+        );
+      case 'TikTok':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <path d="M19.5 6.5C18.1 6.2 16.9 5.3 16.3 4C16.1 3.5 16 3 16 2.5H12.5V16C12.5 17.4 11.4 18.5 10 18.5C8.6 18.5 7.5 17.4 7.5 16C7.5 14.6 8.6 13.5 10 13.5C10.4 13.5 10.7 13.6 11 13.8V10.2C10.7 10.1 10.3 10 10 10C6.7 10 4 12.7 4 16C4 19.3 6.7 22 10 22C13.3 22 16 19.3 16 16V9.2C17.5 10.3 19.4 10.9 21.5 10.9V7.4C20.8 7.4 20.1 7.1 19.5 6.5Z" fill="#00F2FE"/>
+            <path d="M18.5 5.5C17.1 5.2 15.9 4.3 15.3 3C15.1 2.5 15 2 15 1.5H11.5V15C11.5 16.4 10.4 17.5 9 17.5C7.6 17.5 6.5 16.4 6.5 15C6.5 13.6 7.6 12.5 9 12.5C9.4 12.5 9.7 12.6 10 12.8V9.2C9.7 9.1 9.3 9 9 9C5.7 9 3 11.7 3 15C3 18.3 5.7 21 9 21C12.3 21 15 18.3 15 15V8.2C16.5 9.3 18.4 9.9 20.5 9.9V6.4C19.8 6.4 19.1 6.1 18.5 5.5Z" fill="#FE2C55"/>
+            <path d="M19 6C17.6 5.7 16.4 4.8 15.8 3.5C15.6 3 15.5 2.5 15.5 2H12V15.5C12 16.9 10.9 18 9.5 18C8.1 18 7 16.9 7 15.5C7 14.1 8.1 13 9.5 13C9.9 13 10.2 13.1 10.5 13.3V9.7C10.2 9.6 9.8 9.5 9.5 9.5C6.2 9.5 3.5 12.2 3.5 15.5C3.5 18.8 6.2 21.5 9.5 21.5C12.8 21.5 15.5 18.8 15.5 15.5V8.7C17 9.8 18.9 10.4 21 10.4V6.9C20.3 6.9 19.6 6.6 19 6Z" fill="#000000"/>
+          </svg>
+        );
+      case 'GoogleSheets':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <path d="M14.5 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V7.5L14.5 2Z" fill="#0F9D58"/>
+            <path d="M14.5 2V7.5H20L14.5 2Z" fill="#87CEAB"/>
+            <path d="M8 12H16V18H8V12ZM8 14H16M8 16H16M12 12V18" stroke="#FFFFFF" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
+      case 'Zapier':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <path d="M12 2V22M2 12H22M4.93 4.93L19.07 19.07M19.07 4.93L4.93 19.07" stroke="#FF4F00" strokeWidth="3.5" strokeLinecap="round"/>
+          </svg>
+        );
+      case 'Bkash':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <path d="M2.5 11.5L9.5 3L11.5 9L2.5 11.5Z" fill="#E2136E"/>
+            <path d="M11.5 9L18.5 2L14.5 10L11.5 9Z" fill="#D12053"/>
+            <path d="M14.5 10L21.5 6.5L17.5 14L14.5 10Z" fill="#E2136E"/>
+            <path d="M17.5 14L22.5 20L13.5 17L17.5 14Z" fill="#D12053"/>
+            <path d="M13.5 17L9.5 21L10.5 14L13.5 17Z" fill="#E2136E"/>
+            <path d="M10.5 14L2.5 11.5L11.5 9L10.5 14Z" fill="#F23E7E"/>
+          </svg>
+        );
+      case 'SSLCommerz':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="4" width="20" height="16" rx="3" fill="#0052CC"/>
+            <path d="M2 9H22" stroke="#FFFFFF" strokeWidth="1.8"/>
+            <rect x="5" y="14" width="5" height="3" rx="1" fill="#FFC72C"/>
+            <circle cx="17" cy="14.5" r="2.2" fill="#36B37E"/>
+          </svg>
+        );
+      case 'BankCard':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="4" width="20" height="16" rx="3" fill="#0F766E"/>
+            <rect x="5" y="8" width="4.5" height="3.5" rx="0.8" fill="#FBBF24" stroke="#D97706" strokeWidth="0.5"/>
+            <circle cx="14" cy="15" r="2.8" fill="#EF4444" fillOpacity="0.9"/>
+            <circle cx="17.2" cy="15" r="2.8" fill="#F59E0B" fillOpacity="0.85"/>
+          </svg>
+        );
+      case 'Stripe':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <rect width="24" height="24" rx="4" fill="#635BFF"/>
+            <path d="M13.9 9.8C13.9 9.1 13.3 8.7 12.3 8.7C11 8.7 9.8 9.2 9.1 9.6L8.5 7.6C9.4 7.1 11 6.6 12.6 6.6C15.4 6.6 17.1 8 17.1 10.3C17.1 13.4 12.8 13.1 12.8 14.6C12.8 15.4 13.5 15.8 14.6 15.8C16 15.8 17.4 15.2 18.2 14.7L18.8 16.8C17.8 17.4 16.1 17.9 14.4 17.9C11.4 17.9 9.6 16.4 9.6 14.1C9.6 10.8 13.9 11.2 13.9 9.8Z" fill="#FFFFFF"/>
+          </svg>
+        );
+      case 'DeveloperApi':
+        return (
+          <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+            <rect width="24" height="24" rx="4" fill="#0F172A"/>
+            <path d="M7 9L10 12L7 15" stroke="#A855F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 15H17" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        );
+      default:
+        return <PlugZap size={size} className="text-sky-600" />;
     }
   };
 
@@ -3558,16 +3629,16 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
           return (
             <div
               key={item.id}
-              className={`bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group ${
-                isConnected ? 'border-slate-200/90' : 'border-slate-200/60 bg-slate-50/40'
+              className={`bg-white border rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-md transition-all flex flex-col justify-between group ${
+                isConnected ? 'border-slate-200/90' : 'border-slate-200/70 bg-white'
               }`}
             >
               <div>
                 {/* Header Row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl bg-gradient-to-tr ${item.iconColor} flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform`}>
-                      {getIntegrationIcon(item.iconName, 20)}
+                    <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center p-2 shrink-0 group-hover:scale-105 transition-transform">
+                      {getIntegrationIcon(item.iconName, 24)}
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-900 text-sm leading-tight">{item.name}</h3>
@@ -3593,7 +3664,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                 </p>
 
                 {/* Performance & Sync Stats */}
-                <div className="mt-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 text-[11px] space-y-1">
+                <div className="mt-4 p-2.5 rounded-lg bg-slate-50 border border-slate-200/70 text-[11px] space-y-1">
                   <div className="flex items-center justify-between text-slate-500">
                     <span className="font-semibold flex items-center gap-1">
                       <Clock size={11} className="text-slate-400" /> Last Synced:
@@ -3606,12 +3677,12 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons with Sleek Corners */}
               <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => openConfigModal(item)}
-                  className="flex-1 py-2 px-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors text-center"
+                  className="flex-1 py-2 px-3 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
                 >
                   {isConnected ? 'Configure' : 'Connect'}
                 </button>
@@ -3622,7 +3693,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                     disabled={isSyncing}
                     onClick={() => handleSyncItem(item)}
                     title="Run Instant Synchronization"
-                    className="py-2 px-3 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60"
+                    className="py-2 px-3 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
                   >
                     <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
                     <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
@@ -3637,12 +3708,12 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
       {/* ================= MODAL 1: PLATFORM CONFIGURATION ================= */}
       {selectedIntegration && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${selectedIntegration.iconColor} flex items-center justify-center text-white shadow-sm`}>
-                  {getIntegrationIcon(selectedIntegration.iconName, 20)}
+                <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center justify-center p-2 shrink-0">
+                  {getIntegrationIcon(selectedIntegration.iconName, 24)}
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">
