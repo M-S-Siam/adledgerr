@@ -3502,10 +3502,10 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
       </div>
 
-      {/* FILTER TABS & SEARCH BAR */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-100 rounded-xl w-full md:w-auto">
+      {/* FILTER TABS & SEARCH BAR (CLEAN & SEAMLESS, NO REDUNDANT OUTER BOX) */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-2">
+        {/* Category Tabs with Sleek GitHub Corners */}
+        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-lg w-full md:w-auto">
           {[
             { id: 'all', label: 'All Platforms', count: integrations.length },
             { id: 'ads', label: 'Ad Networks', count: integrations.filter(i => i.category === 'ads').length },
@@ -3519,14 +3519,14 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveCategory(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   active
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${active ? 'bg-sky-100 text-sky-700 font-extrabold' : 'bg-slate-200 text-slate-600'}`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${active ? 'bg-sky-100 text-sky-700 font-extrabold' : 'bg-slate-300/80 text-slate-700 font-bold'}`}>
                   {tab.count}
                 </span>
               </button>
@@ -3534,15 +3534,15 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
           })}
         </div>
 
-        {/* Search */}
+        {/* Search Input with Sleek Corners */}
         <div className="relative w-full md:w-64">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search integrations..."
-            className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+            placeholder="Search platforms..."
+            className="w-full pl-8 pr-3 py-1.5 border border-slate-200/90 rounded-lg text-xs bg-white focus:bg-white focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
           />
         </div>
       </div>
