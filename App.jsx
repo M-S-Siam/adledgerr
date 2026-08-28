@@ -3502,10 +3502,10 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
       </div>
 
-      {/* FILTER TABS & SEARCH BAR (CLEAN & SEAMLESS, NO REDUNDANT OUTER BOX) */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 pt-2">
+      {/* FILTER TABS & SEARCH BAR (ALIGNED TO THE LEFT TOGETHER) */}
+      <div className="flex flex-col sm:flex-row items-center justify-start gap-3 pt-2 flex-wrap">
         {/* Category Tabs with Sleek GitHub Corners */}
-        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-lg w-full md:w-auto">
+        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-lg w-full sm:w-auto">
           {[
             { id: 'all', label: 'All Platforms', count: integrations.length },
             { id: 'ads', label: 'Ad Networks', count: integrations.filter(i => i.category === 'ads').length },
@@ -3534,8 +3534,8 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
           })}
         </div>
 
-        {/* Search Input with Sleek Corners */}
-        <div className="relative w-full md:w-64">
+        {/* Search Input with Sleek Corners Aligned Right Beside Tabs */}
+        <div className="relative w-full sm:w-56">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
