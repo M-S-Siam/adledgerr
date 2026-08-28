@@ -815,31 +815,30 @@ export default function AdLedgerApp() {
 
         {/* SIDEBAR */}
         <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
-          {/* Top: Current Workspace Card - Spacious & Premium */}
-          <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/40">
-            <div className="flex items-center gap-3.5 text-white min-w-0 flex-1">
+          {/* Top: Current Workspace Card */}
+          <div className="p-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/20">
+            <div className="flex items-center gap-3 text-white min-w-0 flex-1">
               {workspaceLogo ? (
                 <img
                   src={workspaceLogo}
                   alt="Workspace logo"
-                  className="w-12 h-12 rounded-2xl object-cover ring-2 ring-sky-400/30 shadow-lg shrink-0 bg-white/10"
+                  className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm shrink-0 bg-white"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-white text-xl shadow-lg shrink-0 border border-white/25">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center font-bold text-white text-sm shadow-sm shrink-0 border border-white/20">
                   {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <span className="block text-base font-extrabold tracking-tight text-white truncate leading-snug">
+                <span className="block text-sm font-bold tracking-tight text-white truncate">
                   {workspaceSettings.businessName || 'My Workspace'}
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-400/90 truncate mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] shrink-0" />
+                <span className="block text-[10px] font-medium text-slate-400 truncate">
                   {workspaceSettings.workspaceType || 'Agency'} Workspace
                 </span>
               </div>
             </div>
-            <button className="md:hidden text-slate-400 hover:text-white p-1 ml-1" onClick={() => setIsMobileMenuOpen(false)}>
+            <button className="md:hidden text-slate-400 hover:text-white p-1" onClick={() => setIsMobileMenuOpen(false)}>
               <X size={20} />
             </button>
           </div>
@@ -859,24 +858,24 @@ export default function AdLedgerApp() {
             </div>
           </nav>
 
-          {/* Sidebar Footer: Settings + Sleek Master Platform Brand */}
-          <div className="p-3 border-t border-slate-800 space-y-2 bg-slate-950/40">
+          {/* Sidebar Footer: Settings + Master AdLytic Platform Brand */}
+          <div className="p-3.5 border-t border-slate-800 space-y-3 bg-slate-950/50">
             <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
             
-            {/* Master AdLytic Platform Branding Badge */}
-            <div className="px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-800/80 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center font-black text-xs text-white shadow-md border border-white/20">
-                  A
+            {/* Master AdLytic Platform Brand Card — Spacious, Large & Elegant */}
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-850 border border-slate-800/90 shadow-lg flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-lg text-white shadow-md ring-2 ring-sky-500/30 shrink-0">
+                A
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-extrabold text-white tracking-tight flex items-center gap-1.5">
+                  AdLytic
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-100 tracking-wide leading-none">AdLytic</div>
-                  <div className="text-[9.5px] font-medium text-slate-400 leading-none mt-1">Enterprise Cloud</div>
+                <div className="text-[10.5px] font-medium text-slate-400 truncate">
+                  Digital Media Ledger
                 </div>
               </div>
-              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 border border-sky-400/30">
-                PRO
-              </span>
             </div>
           </div>
         </aside>
