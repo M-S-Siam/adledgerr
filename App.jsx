@@ -460,13 +460,13 @@ const DEFAULT_SETTINGS = {
 const INITIAL_TEAM = [
   {
     id: 'team_01',
-    name: 'Tanvir Ahmed',
-    email: 'tanvir.media@agency.com',
+    name: 'Media Buyer',
+    email: 'buyer@agency.com',
     phone: '+880 1711-889900',
     role: 'Senior Media Buyer',
     status: 'Active',
     assignedClients: 'All Clients',
-    dailySpendLimit: '1000',
+    dailySpendLimit: '100',
     createdAt: '2026-08-15',
   },
   {
@@ -3056,7 +3056,7 @@ const INITIAL_TEAM_ACTIVITIES = [
   },
   {
     id: 'act_02',
-    userName: 'Tanvir Ahmed',
+    userName: 'Media Specialist',
     userRole: 'Senior Media Buyer',
     action: 'Logged $185 Meta Ad Spend for client Apex Footwear',
     category: 'spend',
@@ -3076,7 +3076,7 @@ const INITIAL_TEAM_ACTIVITIES = [
     id: 'act_04',
     userName: 'Awal',
     userRole: 'Founder',
-    action: 'Invited Tanvir Ahmed as Senior Media Buyer (Daily limit: $1,000)',
+    action: 'Invited Media Specialist as Senior Media Buyer (Daily limit: $100)',
     category: 'team',
     timestamp: '1 day ago',
     date: '2026-08-27 16:20'
@@ -3150,7 +3150,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     if (!val || !val.trim()) return 'Email address is required.';
     const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(val.trim())) {
-      return 'Please enter a valid email address (e.g. tanvir@agency.com).';
+      return 'Please enter a valid email address (e.g. member@agency.com).';
     }
     return '';
   };
@@ -3986,7 +3986,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                     value={formData.name}
                     onChange={handleNameChange}
                     onBlur={handleNameBlur}
-                    placeholder="e.g. Tanvir Ahmed"
+                    placeholder="Enter team member name"
                     className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-xs outline-none transition-colors ${
                       formErrors.name
                         ? 'border-rose-400 bg-rose-50/40 focus:ring-2 focus:ring-rose-400 text-slate-900'
@@ -4006,7 +4006,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                     value={formData.email}
                     onChange={handleEmailChange}
                     onBlur={handleEmailBlur}
-                    placeholder="e.g. tanvir@agency.com"
+                    placeholder="name@agency.com"
                     className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-xs outline-none transition-colors ${
                       formErrors.email
                         ? 'border-rose-400 bg-rose-50/40 focus:ring-2 focus:ring-rose-400 text-slate-900'
