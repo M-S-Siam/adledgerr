@@ -3268,9 +3268,9 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         return (
           <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
             <rect width="24" height="24" rx="5" fill="#000000"/>
-            <path d="M16.6 8.2c-.9-.6-1.5-1.5-1.7-2.6h-2.3v10.3c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7 1.2-2.7 2.7-2.7c.3 0 .6.1.9.2v-2.4c-.3 0-.6-.1-.9-.1-2.8 0-5.1 2.3-5.1 5.1s2.3 5.1 5.1 5.1 5.1-2.3 5.1-5.1v-6.3c1.1.8 2.5 1.3 4 1.3V8.5c-.8 0-1.7-.1-2.4-.3z" fill="#25F4EE"/>
-            <path d="M16.2 7.8c-.9-.6-1.5-1.5-1.7-2.6h-2.3v10.3c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7 1.2-2.7 2.7-2.7c.3 0 .6.1.9.2v-2.4c-.3 0-.6-.1-.9-.1-2.8 0-5.1 2.3-5.1 5.1s2.3 5.1 5.1 5.1 5.1-2.3 5.1-5.1v-6.3c1.1.8 2.5 1.3 4 1.3V8.1c-.8 0-1.7-.1-2.4-.3z" fill="#FE2C55"/>
-            <path d="M16.4 8c-.9-.6-1.5-1.5-1.7-2.6h-2.3v10.3c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7 1.2-2.7 2.7-2.7c.3 0 .6.1.9.2v-2.4c-.3 0-.6-.1-.9-.1-2.8 0-5.1 2.3-5.1 5.1s2.3 5.1 5.1 5.1 5.1-2.3 5.1-5.1v-6.3c1.1.8 2.5 1.3 4 1.3V8.3c-.8 0-1.7-.1-2.4-.3z" fill="#FFFFFF"/>
+            <path d="M16.6 8.2c-.9-.6-1.5-1.5-1.7-2.6h-2.3v10.3c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7 1.2-2.7 2.7-2.7c.3 0 .6.1.9.2v-2.4c-.3 0-.6-.1-.9-.1-2.8 0-5.1 2.3-5.1 5.1s2.3 5.1 5.1 5.1 5.1-2.3 5.1-5.1v-6.3c1.1.8 2.5 1.3 4 1.3V8.5c-.8 0-1.7-.1-2.4-.3z" fill="#25F4EE" transform="translate(-0.8, -0.6)"/>
+            <path d="M16.6 8.2c-.9-.6-1.5-1.5-1.7-2.6h-2.3v10.3c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7 1.2-2.7 2.7-2.7c.3 0 .6.1.9.2v-2.4c-.3 0-.6-.1-.9-.1-2.8 0-5.1 2.3-5.1 5.1s2.3 5.1 5.1 5.1 5.1-2.3 5.1-5.1v-6.3c1.1.8 2.5 1.3 4 1.3V8.5c-.8 0-1.7-.1-2.4-.3z" fill="#FE2C55" transform="translate(0.8, 0.6)"/>
+            <path d="M16.6 8.2c-.9-.6-1.5-1.5-1.7-2.6h-2.3v10.3c0 1.5-1.2 2.7-2.7 2.7s-2.7-1.2-2.7-2.7 1.2-2.7 2.7-2.7c.3 0 .6.1.9.2v-2.4c-.3 0-.6-.1-.9-.1-2.8 0-5.1 2.3-5.1 5.1s2.3 5.1 5.1 5.1 5.1-2.3 5.1-5.1v-6.3c1.1.8 2.5 1.3 4 1.3V8.5c-.8 0-1.7-.1-2.4-.3z" fill="#FFFFFF"/>
           </svg>
         );
       case 'GoogleSheets':
@@ -3278,14 +3278,15 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
           <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
             <path d="M30 4H10C7.79 4 6 5.79 6 8v32c0 2.21 1.79 4 4 4h28c2.21 0 4-1.79 4-4V16L30 4z" fill="#0F9D58"/>
             <path d="M30 4v12h12L30 4z" fill="#87CEAB"/>
-            <path d="M14 22h20v16H14z" fill="#FFFFFF"/>
-            <path d="M14 27h20v2H14zm0 5h20v2H14zm6-10h2v16h-2zm8 0h2v16h-2z" fill="#0F9D58"/>
+            <path d="M13 22h22v17H13z" fill="#FFFFFF" rx="1.5"/>
+            <path d="M13 27.5h22v2H13zm0 5.5h22v2H13zm7-11h2v17h-2zm8 0h2v17h-2z" fill="#0F9D58"/>
           </svg>
         );
       case 'Zapier':
         return (
           <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-            <path d="M12 0a1.5 1.5 0 00-1.5 1.5v7.5L5 4.3a1.5 1.5 0 10-2.1 2.1l4.7 4.7H1.5a1.5 1.5 0 000 3h6.1l-4.7 4.7a1.5 1.5 0 102.1 2.1l5.5-4.8v7.4a1.5 1.5 0 003 0v-7.4l5.5 4.8a1.5 1.5 0 102.1-2.1l-4.7-4.7h6.1a1.5 1.5 0 000-3h-6.1l4.7-4.7a1.5 1.5 0 10-2.1-2.1l-5.5 4.7V1.5A1.5 1.5 0 0012 0z" fill="#FF4F00"/>
+            <rect width="24" height="24" rx="5" fill="#FFF2EB"/>
+            <path d="M12 2.5c-.7 0-1.3.6-1.3 1.3V9L6 4.3c-.6-.6-1.5-.6-2.1 0s-.6 1.5 0 2.1l4.7 4.7H3.8c-.7 0-1.3.6-1.3 1.3s.6 1.3 1.3 1.3h4.8l-4.7 4.7c-.6.6-.6 1.5 0 2.1.3.3.7.4 1.1.4.4 0 .7-.1 1-.4l4.7-4.7v5.2c0 .7.6 1.3 1.3 1.3s1.3-.6 1.3-1.3v-5.2l4.7 4.7c.3.3.7.4 1 .4.4 0 .8-.1 1.1-.4.6-.6.6-1.5 0-2.1l-4.7-4.7h4.8c.7 0 1.3-.6 1.3-1.3s-.6-1.3-1.3-1.3h-4.8l4.7-4.7c.6-.6.6-1.5 0-2.1s-1.5-.6-2.1 0L13.3 9V3.8c0-.7-.6-1.3-1.3-1.3z" fill="#FF4A00"/>
           </svg>
         );
       case 'Bkash':
@@ -3305,36 +3306,36 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         return (
           <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
             <rect width="24" height="24" rx="4" fill="#0052CC"/>
-            <path d="M3 8h18M3 11h18" stroke="#FFFFFF" strokeWidth="1.2" strokeOpacity="0.3"/>
+            <path d="M3 7h18" stroke="#FFFFFF" strokeWidth="1.2" strokeOpacity="0.4"/>
             <circle cx="7.5" cy="15.5" r="2.8" fill="#EB001B"/>
             <circle cx="11.5" cy="15.5" r="2.8" fill="#F79E1B" fillOpacity="0.9"/>
-            <path d="M15.5 14h3.5v3.2h-3.5z" fill="#00875A" rx="0.5"/>
-            <path d="M16.5 15.6l.8.8 1.4-1.4" stroke="#FFFFFF" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M15.5 13.5h5v4h-5z" fill="#00875A" rx="0.5"/>
+            <path d="M17 15.5l1 1 2-2" stroke="#FFFFFF" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         );
       case 'BankCard':
         return (
           <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
             <rect width="24" height="24" rx="4" fill="#0F172A"/>
-            <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" fill="#1E293B" stroke="#334155" strokeWidth="0.8"/>
-            <rect x="5.5" y="7.5" width="4.5" height="3.5" rx="0.8" fill="#F59E0B" stroke="#D97706" strokeWidth="0.5"/>
-            <circle cx="14" cy="15" r="2.8" fill="#EF4444" fillOpacity="0.95"/>
-            <circle cx="17.2" cy="15" r="2.8" fill="#F59E0B" fillOpacity="0.9"/>
+            <rect x="2.5" y="3.5" width="19" height="17" rx="2" fill="#1E293B" stroke="#334155" strokeWidth="0.8"/>
+            <rect x="4.5" y="6" width="4.5" height="3.5" rx="0.8" fill="#F59E0B" stroke="#D97706" strokeWidth="0.5"/>
+            <circle cx="13.5" cy="15" r="2.8" fill="#EB001B"/>
+            <circle cx="16.8" cy="15" r="2.8" fill="#F79E1B" fillOpacity="0.9"/>
           </svg>
         );
       case 'Stripe':
         return (
           <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-            <rect width="24" height="24" rx="4" fill="#635BFF"/>
-            <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.462 5.76 6.466 7.19 2.599.92 3.483 1.583 3.483 2.55 0 .97-.803 1.488-2.274 1.488-2.52 0-5.14-1.22-6.942-2.228l-.946 5.568c1.677.99 4.887 1.814 8.01 1.814 2.62 0 4.793-.654 6.31-1.872 1.597-1.275 2.402-3.14 2.402-5.485 0-4.04-2.556-5.836-6.29-7.093z" fill="#FFFFFF" transform="scale(0.8) translate(3, 3)"/>
+            <rect width="24" height="24" rx="5" fill="#635BFF"/>
+            <path d="M13.9 9.3c0-.8-.7-1.3-1.8-1.3-1.6 0-3.3.6-4.4 1.2L7 6.8c1.3-.7 3.2-1.3 5.3-1.3 3.6 0 5.8 1.8 5.8 4.7 0 4.1-5.7 3.4-5.7 5.2 0 1 .9 1.4 2.2 1.4 1.8 0 3.7-.8 4.8-1.5l.7 2.4c-1.4.8-3.4 1.4-5.7 1.4-3.8 0-6.1-1.8-6.1-4.7 0-4.4 5.7-3.6 5.7-5.1z" fill="#FFFFFF"/>
           </svg>
         );
       case 'DeveloperApi':
         return (
           <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-            <rect width="24" height="24" rx="4" fill="#0F172A"/>
-            <path d="M7 9L10 12L7 15" stroke="#A855F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 15H17" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round"/>
+            <rect width="24" height="24" rx="5" fill="#0F172A"/>
+            <path d="M6.5 8.5L10 12l-3.5 3.5" stroke="#A855F7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12.5 15.5h5" stroke="#38BDF8" strokeWidth="2.2" strokeLinecap="round"/>
           </svg>
         );
       default:
