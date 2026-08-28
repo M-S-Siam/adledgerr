@@ -3033,6 +3033,8 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [restoreFeedback, setRestoreFeedback] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [validationBanner, setValidationBanner] = useState('');
 
   // Auth state for Security tab
   const [session, setSession] = useState(null);
@@ -3064,12 +3066,88 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     };
   }, []);
 
+  const validateSettings = (formData = data) => {
+    const errors = {};
+    // Tab 1: Identity & Localization
+    if (!formData.businessName || !formData.businessName.trim()) {
+      errors.businessName = 'Workspace / Business name is required.';
+    }
+
+    // Tab 2: Agency Profile
+    if (formData.contactEmail && formData.contactEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.contactEmail.trim())) {
+        errors.contactEmail = 'Please enter a valid email address (e.g. contact@youragency.com).';
+      }
+    }
+
+    if (formData.phone && formData.phone.trim()) {
+      const phoneRegex = /^(\+?[0-9\s\-()]{7,20})$/;
+      if (!phoneRegex.test(formData.phone.trim())) {
+        errors.phone = 'Please enter a valid contact phone number (e.g. +880 1XXXXXXXXX).';
+      }
+    }
+
+    if (formData.website && formData.website.trim()) {
+      const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+      if (!urlRegex.test(formData.website.trim())) {
+        errors.website = 'Please enter a valid website URL (e.g. https://youragency.com).';
+      }
+    }
+
+    // Tab 3: Financial Safety & Rates
+    const buyRate = parseFloat(formData.defaultUSDRate);
+    if (isNaN(buyRate) || buyRate <= 0) {
+      errors.defaultUSDRate = 'Bank USD Buy Rate must be greater than 0.';
+    }
+
+    const sellRate = parseFloat(formData.defaultClientUSDRate);
+    if (isNaN(sellRate) || sellRate <= 0) {
+      errors.defaultClientUSDRate = 'Client USD Sell Rate must be greater than 0.';
+    }
+
+    const tax = parseFloat(formData.defaultAdTax);
+    if (isNaN(tax) || tax < 0 || tax > 100) {
+      errors.defaultAdTax = 'Tax rate must be between 0% and 100%.';
+    }
+
+    const cashout = parseFloat(formData.cashoutCharge);
+    if (isNaN(cashout) || cashout < 0 || cashout > 100) {
+      errors.cashoutCharge = 'Cashout fee must be between 0% and 100%.';
+    }
+
+    const margin = parseFloat(formData.defaultMargin);
+    if (isNaN(margin) || margin < 0 || margin > 100) {
+      errors.defaultMargin = 'Agency margin must be between 0% and 100%.';
+    }
+
+    return errors;
+  };
+
   const handleChange = (key, value) => {
-    setData(prev => ({ ...prev, [key]: value }));
+    const next = { ...data, [key]: value };
+    setData(next);
     setIsDirty(true);
+    // Live validation update
+    const errs = validateSettings(next);
+    setValidationErrors(errs);
+    if (Object.keys(errs).length === 0) {
+      setValidationBanner('');
+    }
   };
 
   const handleSave = () => {
+    const errors = validateSettings(data);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setValidationBanner('Please fix the highlighted errors before saving changes.');
+      if (errors.businessName) setActiveTab('branding');
+      else if (errors.contactEmail || errors.phone || errors.website) setActiveTab('agency');
+      else if (errors.defaultUSDRate || errors.defaultClientUSDRate || errors.defaultAdTax || errors.cashoutCharge || errors.defaultMargin) setActiveTab('financial');
+      return;
+    }
+    setValidationErrors({});
+    setValidationBanner('');
     setSaveStatus('saving');
     onSave(data);
     setTimeout(() => {
@@ -3482,22 +3560,48 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         </div>
       </div>
 
+      {/* VALIDATION WARNING BANNER */}
+      {validationBanner && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle size={18} className="text-rose-600 shrink-0" />
+            <span>{validationBanner}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setValidationBanner('')}
+            className="text-rose-500 hover:text-rose-700 font-bold p-1"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
       {/* TAB NAVIGATION */}
       <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/90 border border-slate-200 rounded-2xl overflow-x-auto">
         {navTabs.map((tab) => {
           const active = activeTab === tab.id;
+          const hasError =
+            (tab.id === 'branding' && validationErrors.businessName) ||
+            (tab.id === 'agency' && (validationErrors.contactEmail || validationErrors.phone || validationErrors.website)) ||
+            (tab.id === 'financial' && (validationErrors.defaultUSDRate || validationErrors.defaultClientUSDRate || validationErrors.defaultAdTax || validationErrors.cashoutCharge || validationErrors.defaultMargin));
+
           return (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${active
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap relative ${
+                active
                   ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 scale-[1.01]'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
-                }`}
+              }`}
             >
               <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>
               {tab.label}
+              {hasError && (
+                <span className="w-2 h-2 rounded-full bg-rose-500 ml-0.5 animate-pulse" />
+              )}
             </button>
           );
         })}
@@ -3589,14 +3693,24 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
-                <Field label="Workspace / Business Name">
+                <Field label="Workspace / Business Name *">
                   <input
                     type="text"
+                    required
                     value={data.businessName || ''}
                     onChange={(e) => handleChange('businessName', e.target.value)}
                     placeholder="e.g. AdLytic Agency"
-                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+                    className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
+                      validationErrors.businessName
+                        ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                        : 'border-slate-300 bg-white focus:ring-2 focus:ring-sky-500'
+                    }`}
                   />
+                  {validationErrors.businessName && (
+                    <p className="mt-1 text-[11px] font-semibold text-rose-600 flex items-center gap-1 animate-in fade-in">
+                      <AlertCircle size={12} className="shrink-0" /> {validationErrors.businessName}
+                    </p>
+                  )}
                 </Field>
               </div>
 
@@ -3604,7 +3718,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 <Field label="Short Code / Slug">
                   <input
                     type="text"
-                    maxLength={5}
+                    maxLength={6}
                     value={data.shortCode || ''}
                     onChange={(e) => handleChange('shortCode', e.target.value.toUpperCase())}
                     placeholder="ADL"
@@ -3732,8 +3846,17 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 value={data.contactEmail || ''}
                 onChange={(e) => handleChange('contactEmail', e.target.value)}
                 placeholder="contact@youragency.com"
-                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+                className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
+                  validationErrors.contactEmail
+                    ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                    : 'border-slate-300 bg-white focus:ring-2 focus:ring-sky-500'
+                }`}
               />
+              {validationErrors.contactEmail && (
+                <p className="mt-1 text-[11px] font-semibold text-rose-600 flex items-center gap-1 animate-in fade-in">
+                  <AlertCircle size={12} className="shrink-0" /> {validationErrors.contactEmail}
+                </p>
+              )}
             </Field>
 
             <Field label="Contact Phone">
@@ -3742,8 +3865,17 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 value={data.phone || ''}
                 onChange={(e) => handleChange('phone', e.target.value)}
                 placeholder="+880 1XXXXXXXXX"
-                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+                className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
+                  validationErrors.phone
+                    ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                    : 'border-slate-300 bg-white focus:ring-2 focus:ring-sky-500'
+                }`}
               />
+              {validationErrors.phone && (
+                <p className="mt-1 text-[11px] font-semibold text-rose-600 flex items-center gap-1 animate-in fade-in">
+                  <AlertCircle size={12} className="shrink-0" /> {validationErrors.phone}
+                </p>
+              )}
             </Field>
 
             <Field label="Business Website">
@@ -3752,8 +3884,17 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 value={data.website || ''}
                 onChange={(e) => handleChange('website', e.target.value)}
                 placeholder="https://youragency.com"
-                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+                className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
+                  validationErrors.website
+                    ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
+                    : 'border-slate-300 bg-white focus:ring-2 focus:ring-sky-500'
+                }`}
               />
+              {validationErrors.website && (
+                <p className="mt-1 text-[11px] font-semibold text-rose-600 flex items-center gap-1 animate-in fade-in">
+                  <AlertCircle size={12} className="shrink-0" /> {validationErrors.website}
+                </p>
+              )}
             </Field>
           </div>
 
@@ -3888,36 +4029,60 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
 
             {/* Exchange Rate Spread (Bank Buy Rate vs Client Sell Rate) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-              <Field label="Bank USD Buy Rate (Your Cost)">
+              <Field label="Bank USD Buy Rate (Your Cost) *">
                 <div className="relative mt-1">
-                  <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">৳</span>
+                  <span className="absolute left-3.5 top-2 text-sm font-bold text-slate-400">৳</span>
                   <input
                     type="number"
                     step="0.01"
+                    min="1"
+                    required
                     value={data.defaultUSDRate || '131.25'}
                     onChange={(e) => handleChange('defaultUSDRate', e.target.value)}
                     placeholder="131.25"
-                    className="w-full pl-8 pr-3.5 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                    className={`w-full pl-8 pr-3.5 py-2 border rounded-xl text-sm font-bold text-slate-900 outline-none transition-colors ${
+                      validationErrors.defaultUSDRate
+                        ? 'border-rose-400 bg-rose-50/30 focus:ring-2 focus:ring-rose-400'
+                        : 'border-slate-300 bg-white focus:ring-2 focus:ring-sky-500'
+                    }`}
                   />
                 </div>
-                <span className="text-[10px] text-slate-500 mt-1 block">What your dual-currency bank charges you per $1.</span>
+                {validationErrors.defaultUSDRate ? (
+                  <span className="text-[10px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                    <AlertCircle size={11} /> {validationErrors.defaultUSDRate}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 mt-1 block">What your dual-currency bank charges you per $1.</span>
+                )}
               </Field>
 
-              <Field label="Client USD Sell Rate (Your Bill)">
+              <Field label="Client USD Sell Rate (Your Bill) *">
                 <div className="relative mt-1">
-                  <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">৳</span>
+                  <span className="absolute left-3.5 top-2 text-sm font-bold text-slate-400">৳</span>
                   <input
                     type="number"
                     step="0.01"
+                    min="1"
+                    required
                     value={data.defaultClientUSDRate || '140.00'}
                     onChange={(e) => handleChange('defaultClientUSDRate', e.target.value)}
                     placeholder="140.00"
-                    className="w-full pl-8 pr-3.5 py-2 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                    className={`w-full pl-8 pr-3.5 py-2 border rounded-xl text-sm font-bold text-slate-900 outline-none transition-colors ${
+                      validationErrors.defaultClientUSDRate
+                        ? 'border-rose-400 bg-rose-50/30 focus:ring-2 focus:ring-rose-400'
+                        : 'border-slate-300 bg-white focus:ring-2 focus:ring-sky-500'
+                    }`}
                   />
                 </div>
-                <span className="text-[10px] text-emerald-700 font-semibold mt-1 block">
-                  Spread Margin: +৳{(Math.max(0, parseFloat(data.defaultClientUSDRate || '140') - parseFloat(data.defaultUSDRate || '131.25'))).toFixed(2)} profit / $1 USD
-                </span>
+                {validationErrors.defaultClientUSDRate ? (
+                  <span className="text-[10px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                    <AlertCircle size={11} /> {validationErrors.defaultClientUSDRate}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-emerald-700 font-semibold mt-1 block">
+                    Spread Margin: +৳{(Math.max(0, parseFloat(data.defaultClientUSDRate || '140') - parseFloat(data.defaultUSDRate || '131.25'))).toFixed(2)} profit / $1 USD
+                  </span>
+                )}
               </Field>
             </div>
 
