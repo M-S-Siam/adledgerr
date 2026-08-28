@@ -3400,7 +3400,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
       )}
 
       {/* TOP HEADER & GLOBAL CONTROLS */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Integrations & API Hub</h1>
