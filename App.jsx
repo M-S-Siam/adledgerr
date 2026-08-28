@@ -815,32 +815,35 @@ export default function AdLedgerApp() {
 
         {/* SIDEBAR */}
         <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
-          {/* Top: Current Workspace Card */}
-          <div className="p-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/20">
-            <div className="flex items-center gap-3 text-white min-w-0 flex-1">
+          {/* Top: Active Agency Workspace Switcher Card */}
+          <div className="p-3 border-b border-slate-800/80 bg-slate-950/30">
+            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
               {workspaceLogo ? (
                 <img
                   src={workspaceLogo}
                   alt="Workspace logo"
-                  className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm shrink-0 bg-white"
+                  className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shrink-0 bg-white"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center font-bold text-white text-sm shadow-sm shrink-0 border border-white/20">
+                <div className="w-8 h-8 rounded-lg bg-slate-800 text-sky-400 flex items-center justify-center font-bold text-xs shadow-sm shrink-0 border border-slate-700">
                   {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <span className="block text-sm font-bold tracking-tight text-white truncate">
-                  {workspaceSettings.businessName || 'My Workspace'}
-                </span>
-                <span className="block text-[10px] font-medium text-slate-400 truncate mt-0.5">
-                  {workspaceSettings.workspaceType || 'Agency'} Workspace
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="block text-xs font-bold tracking-tight text-white truncate">
+                    {workspaceSettings.businessName || 'My Workspace'}
+                  </span>
+                  <ChevronDown size={13} className="text-slate-400 shrink-0 ml-1 opacity-70" />
+                </div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] shrink-0" />
+                  <span className="text-[9.5px] font-semibold text-slate-400 uppercase tracking-wider truncate">
+                    Active Agency
+                  </span>
+                </div>
               </div>
             </div>
-            <button className="md:hidden text-slate-400 hover:text-white p-1" onClick={() => setIsMobileMenuOpen(false)}>
-              <X size={18} />
-            </button>
           </div>
 
           <nav className="flex-1 px-3.5 py-4 space-y-1 overflow-y-auto">
@@ -859,17 +862,20 @@ export default function AdLedgerApp() {
             </div>
           </nav>
 
-          {/* Sidebar Footer: Master AdLytic Brand Card (Spacious, Big Logo & Subtitle Underneath) */}
-          <div className="p-4 border-t border-slate-800/80 bg-slate-950/30">
+          {/* Sidebar Footer: Master Software Platform Brand (Distinctive & High-Tech) */}
+          <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-base text-white shadow-md ring-2 ring-sky-500/25 shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-lg text-white shadow-[0_0_20px_rgba(56,189,248,0.35)] ring-2 ring-sky-400/40 shrink-0">
                 A
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-bold text-white tracking-tight leading-none">
-                  AdLytic
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-extrabold text-white tracking-tight">AdLytic</span>
+                  <span className="text-[8.5px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 uppercase tracking-wider">
+                    PLATFORM
+                  </span>
                 </div>
-                <div className="text-[10.5px] font-medium text-sky-400 tracking-wide leading-none mt-1.5 truncate">
+                <div className="text-[10px] font-medium text-sky-400 tracking-wide mt-1 truncate">
                   Ad Spend Intelligence
                 </div>
               </div>
