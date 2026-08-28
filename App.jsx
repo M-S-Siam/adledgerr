@@ -3443,49 +3443,61 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
       </div>
 
-      {/* COMPACT THEMED TAG-STYLE KPI CARDS (SLEEK GITHUB CORNERS) */}
+      {/* COMPACT KPI METRIC CARDS (BLACK TITLES + THEMED VALUES + SLEEK CORNERS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Platforms */}
-        <div className="bg-gradient-to-r from-sky-50/90 to-blue-50/60 border border-sky-200/80 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 transition-all hover:border-sky-300">
-          <div className="w-8 h-8 rounded-md bg-white border border-sky-200/90 flex items-center justify-center text-sky-600 shadow-xs shrink-0">
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-sky-300/80 transition-all">
+          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
             <PlugZap size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-extrabold text-sky-700 uppercase tracking-wider block truncate leading-tight">Connected Platforms</span>
-            <span className="text-xs font-bold text-slate-900 block truncate whitespace-nowrap leading-tight mt-0.5">{connectedCount > 0 ? `${connectedCount} Active` : 'Ready to Connect'}</span>
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Connected Platforms</span>
+            <span className="text-[11px] font-bold text-sky-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
+              {connectedCount > 0 ? `${connectedCount} Active` : 'Ready to Connect'}
+            </span>
           </div>
         </div>
 
         {/* Card 2: Sync Engine */}
-        <div className="bg-gradient-to-r from-emerald-50/90 to-teal-50/60 border border-emerald-200/80 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 transition-all hover:border-emerald-300">
-          <div className="w-8 h-8 rounded-md bg-white border border-emerald-200/90 flex items-center justify-center text-emerald-600 shadow-xs shrink-0">
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-emerald-300/80 transition-all">
+          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-xs shrink-0">
             <Clock size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider block truncate leading-tight">Sync Engine</span>
-            <span className="text-xs font-bold text-slate-900 block truncate whitespace-nowrap leading-tight mt-0.5">15m Auto-Interval</span>
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Sync Engine</span>
+            <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              15m Auto-Interval
+            </span>
           </div>
         </div>
 
         {/* Card 3: API Security */}
-        <div className="bg-gradient-to-r from-purple-50/90 to-indigo-50/60 border border-purple-200/80 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 transition-all hover:border-purple-300">
-          <div className="w-8 h-8 rounded-md bg-white border border-purple-200/90 flex items-center justify-center text-purple-600 shadow-xs shrink-0">
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-purple-300/80 transition-all">
+          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
             <ShieldCheck size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-extrabold text-purple-700 uppercase tracking-wider block truncate leading-tight">API Security</span>
-            <span className="text-xs font-bold text-purple-950 block truncate whitespace-nowrap leading-tight mt-0.5">TLS 1.3 Encrypted</span>
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">API Security</span>
+            <span className="text-[11px] font-bold text-purple-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+              TLS 1.3 Encrypted
+            </span>
           </div>
         </div>
 
         {/* Card 4: Live Stream */}
-        <div className="bg-gradient-to-r from-amber-50/90 to-orange-50/60 border border-amber-200/80 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 transition-all hover:border-amber-300">
-          <div className="w-8 h-8 rounded-md bg-white border border-amber-200/90 flex items-center justify-center text-amber-600 shadow-xs shrink-0">
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-amber-300/80 transition-all">
+          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-xs shrink-0">
             <Activity size={16} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider block truncate leading-tight">Live Stream</span>
-            <span className="text-xs font-bold text-amber-950 block truncate whitespace-nowrap leading-tight mt-0.5">99.98% Uptime</span>
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Live Stream</span>
+            <span className="text-[11px] font-bold text-amber-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+              99.98% Uptime
+            </span>
           </div>
         </div>
       </div>
