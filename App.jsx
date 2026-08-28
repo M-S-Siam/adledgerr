@@ -3115,10 +3115,13 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     role: 'Senior Media Buyer',
     status: 'Active',
     assignedClients: 'All Clients',
-    dailySpendLimit: '1000',
+    dailySpendLimit: '50',
+    limitPreset: '50',
+    customSpendLimit: '',
     notes: '',
   });
   const [formErrors, setFormErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
 
   const showToast = (msg) => {
     setFeedbackToast(msg);
@@ -3138,6 +3141,20 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     setActivities(prev => [newEntry, ...prev]);
   };
 
+  const validateName = (val) => {
+    if (!val || !val.trim()) return 'Full name is required.';
+    return '';
+  };
+
+  const validateEmail = (val) => {
+    if (!val || !val.trim()) return 'Email address is required.';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(val.trim())) {
+      return 'Please enter a valid email address (e.g. tanvir@agency.com).';
+    }
+    return '';
+  };
+
   const openInviteModal = (defaultStatus = 'Active') => {
     setEditingMember(null);
     setFormData({
@@ -3147,15 +3164,21 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       role: 'Senior Media Buyer',
       status: defaultStatus,
       assignedClients: 'All Clients',
-      dailySpendLimit: '1000',
+      dailySpendLimit: '50',
+      limitPreset: '50',
+      customSpendLimit: '',
       notes: '',
     });
     setFormErrors({});
+    setTouchedFields({});
     setIsInviteModalOpen(true);
   };
 
   const openEditModal = (member) => {
     setEditingMember(member);
+    const existingLimit = member.dailySpendLimit || '50';
+    const isPreset = ['10', '25', '50', '100', '250', '500', '1000', 'Unlimited'].includes(existingLimit);
+
     setFormData({
       name: member.name || '',
       email: member.email || '',
@@ -3163,45 +3186,90 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       role: member.role || 'Senior Media Buyer',
       status: member.status || 'Active',
       assignedClients: member.assignedClients || 'All Clients',
-      dailySpendLimit: member.dailySpendLimit || 'Unlimited',
+      dailySpendLimit: existingLimit,
+      limitPreset: isPreset ? existingLimit : 'custom',
+      customSpendLimit: isPreset ? '' : existingLimit,
       notes: member.notes || '',
     });
     setFormErrors({});
+    setTouchedFields({});
     setIsInviteModalOpen(true);
   };
 
-  const validateMemberForm = () => {
-    const errs = {};
-    if (!formData.name || !formData.name.trim()) {
-      errs.name = 'Full name is required.';
+  const handleNameChange = (e) => {
+    const val = e.target.value;
+    setFormData(p => ({ ...p, name: val }));
+    if (touchedFields.name) {
+      const err = validateName(val);
+      setFormErrors(p => ({ ...p, name: err }));
     }
-    if (!formData.email || !formData.email.trim()) {
-      errs.email = 'Email address is required.';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        errs.email = 'Please enter a valid email address (e.g. teammate@agency.com).';
+  };
+
+  const handleNameBlur = () => {
+    setTouchedFields(p => ({ ...p, name: true }));
+    const err = validateName(formData.name);
+    setFormErrors(p => ({ ...p, name: err }));
+  };
+
+  const handleEmailChange = (e) => {
+    const val = e.target.value;
+    setFormData(p => ({ ...p, email: val }));
+    if (touchedFields.email) {
+      const err = validateEmail(val);
+      setFormErrors(p => ({ ...p, email: err }));
+    }
+  };
+
+  const handleEmailBlur = () => {
+    setTouchedFields(p => ({ ...p, email: true }));
+    const err = validateEmail(formData.email);
+    setFormErrors(p => ({ ...p, email: err }));
+  };
+
+  const handleLimitPresetChange = (e) => {
+    const val = e.target.value;
+    setFormData(p => {
+      if (val === 'custom') {
+        return { ...p, limitPreset: 'custom', dailySpendLimit: p.customSpendLimit || '35' };
       }
-    }
-    return errs;
+      return { ...p, limitPreset: val, dailySpendLimit: val };
+    });
+  };
+
+  const handleCustomLimitChange = (e) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    setFormData(p => ({ ...p, customSpendLimit: raw, dailySpendLimit: raw || '0' }));
   };
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    const errs = validateMemberForm();
+    const nameErr = validateName(formData.name);
+    const emailErr = validateEmail(formData.email);
+    const errs = {};
+    if (nameErr) errs.name = nameErr;
+    if (emailErr) errs.email = emailErr;
+
     if (Object.keys(errs).length > 0) {
+      setTouchedFields({ name: true, email: true });
       setFormErrors(errs);
       return;
     }
 
+    const payload = {
+      ...formData,
+      dailySpendLimit: formData.limitPreset === 'custom'
+        ? (formData.customSpendLimit ? formData.customSpendLimit : '50')
+        : formData.dailySpendLimit
+    };
+
     if (editingMember) {
-      onUpdate(editingMember.id, formData);
-      logActivity(`Updated permissions and role for ${formData.name} (${formData.role})`, 'team');
-      showToast(`Updated permissions for ${formData.name}`);
+      onUpdate(editingMember.id, payload);
+      logActivity(`Updated permissions and role for ${payload.name} (${payload.role})`, 'team');
+      showToast(`Updated permissions for ${payload.name}`);
     } else {
-      onAdd(formData);
-      logActivity(`Invited ${formData.name} (${formData.email}) as ${formData.role}`, 'team');
-      showToast(`Invited ${formData.name} to workspace`);
+      onAdd(payload);
+      logActivity(`Invited ${payload.name} (${payload.email}) as ${payload.role}`, 'team');
+      showToast(`Invited ${payload.name} to workspace`);
     }
 
     setIsInviteModalOpen(false);
@@ -3910,22 +3978,24 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <form onSubmit={handleFormSubmit} noValidate className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Full Name *">
                   <input
                     type="text"
-                    required
                     value={formData.name}
-                    onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+                    onChange={handleNameChange}
+                    onBlur={handleNameBlur}
                     placeholder="e.g. Tanvir Ahmed"
                     className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-xs outline-none transition-colors ${
-                      formErrors.name ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                      formErrors.name
+                        ? 'border-rose-400 bg-rose-50/40 focus:ring-2 focus:ring-rose-400 text-slate-900'
+                        : 'border-slate-300 focus:ring-2 focus:ring-sky-500 bg-white'
                     }`}
                   />
                   {formErrors.name && (
-                    <p className="mt-1 text-[10.5px] font-semibold text-rose-600 flex items-center gap-1">
-                      <AlertCircle size={11} /> {formErrors.name}
+                    <p className="mt-1 text-[10.5px] font-semibold text-rose-600 flex items-center gap-1 animate-in fade-in">
+                      <AlertCircle size={11} className="shrink-0" /> {formErrors.name}
                     </p>
                   )}
                 </Field>
@@ -3933,17 +4003,19 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                 <Field label="Email Address *">
                   <input
                     type="email"
-                    required
                     value={formData.email}
-                    onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
+                    onChange={handleEmailChange}
+                    onBlur={handleEmailBlur}
                     placeholder="e.g. tanvir@agency.com"
                     className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-xs outline-none transition-colors ${
-                      formErrors.email ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                      formErrors.email
+                        ? 'border-rose-400 bg-rose-50/40 focus:ring-2 focus:ring-rose-400 text-slate-900'
+                        : 'border-slate-300 focus:ring-2 focus:ring-sky-500 bg-white'
                     }`}
                   />
                   {formErrors.email && (
-                    <p className="mt-1 text-[10.5px] font-semibold text-rose-600 flex items-center gap-1">
-                      <AlertCircle size={11} /> {formErrors.email}
+                    <p className="mt-1 text-[10.5px] font-semibold text-rose-600 flex items-center gap-1 animate-in fade-in">
+                      <AlertCircle size={11} className="shrink-0" /> {formErrors.email}
                     </p>
                   )}
                 </Field>
@@ -3990,16 +4062,35 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
 
                 <Field label="Daily Spend Approval Limit ($)">
                   <select
-                    value={formData.dailySpendLimit}
-                    onChange={(e) => setFormData(p => ({ ...p, dailySpendLimit: e.target.value }))}
+                    value={formData.limitPreset}
+                    onChange={handleLimitPresetChange}
                     className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-sky-500 font-semibold"
                   >
-                    <option value="250">$250 / Day</option>
-                    <option value="500">$500 / Day</option>
-                    <option value="1000">$1,000 / Day</option>
-                    <option value="2500">$2,500 / Day</option>
+                    <option value="10">$10 / Day (Starter Buyer)</option>
+                    <option value="25">$25 / Day (Standard Limit)</option>
+                    <option value="50">$50 / Day (Recommended for BD)</option>
+                    <option value="100">$100 / Day (Senior Buyer)</option>
+                    <option value="250">$250 / Day (Team Lead)</option>
+                    <option value="500">$500 / Day (Scale Manager)</option>
+                    <option value="1000">$1,000 / Day (High Budget)</option>
+                    <option value="custom">Custom Dollar Limit ($)</option>
                     <option value="Unlimited">Unlimited Budget</option>
                   </select>
+
+                  {formData.limitPreset === 'custom' && (
+                    <div className="relative mt-2 animate-in fade-in duration-200">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">$</span>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={formData.customSpendLimit || ''}
+                        onChange={handleCustomLimitChange}
+                        placeholder="Enter custom limit e.g. 15 or 35"
+                        className="w-full pl-7 pr-4 py-2 border border-sky-300 rounded-xl text-xs bg-sky-50/40 focus:bg-white focus:ring-2 focus:ring-sky-500 font-bold text-slate-900 outline-none"
+                      />
+                    </div>
+                  )}
                 </Field>
               </div>
 
