@@ -1,4 +1,4 @@
-# Deploys the AdLedger production build, including cloud-backed workspace persistence.
+# Deploys the AdLytic production build cleanly to GitHub Pages.
 name: Deploy AdLytic to GitHub Pages
 
 on:
@@ -26,143 +26,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm install
-
-      - name: Apply workspace data isolation fix
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          path = Path('App.jsx')
-          text = path.read_text(encoding='utf-8')
-
-          pattern = r"// --- CLOUD-BACKED PERSISTENCE \(WITH LOCAL MIGRATION/FALLBACK\) ---.*?// --- CLEAN INITIAL STATE ---"
-          replacement = r'''// --- CLOUD-BACKED PERSISTENCE (WORKSPACE-ISOLATED CLOUD SOURCE OF TRUTH) ---
-          let adLedgerWorkspacePromise = null;
-          let adLedgerWorkspaceUserId = null;
-
-          async function getAdLedgerWorkspaceId() {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if (userError) throw userError;
-            if (!user) throw new Error('No authenticated user.');
-
-            if (adLedgerWorkspacePromise && adLedgerWorkspaceUserId === user.id) {
-              return adLedgerWorkspacePromise;
-            }
-
-            adLedgerWorkspaceUserId = user.id;
-            adLedgerWorkspacePromise = (async () => {
-              const { data: owned, error: ownedError } = await supabase
-                .from('workspaces')
-                .select('id')
-                .eq('owner_id', user.id)
-                .order('created_at', { ascending: true })
-                .limit(1)
-                .maybeSingle();
-              if (ownedError) throw ownedError;
-              if (owned?.id) return owned.id;
-
-              const { data: membership, error: membershipError } = await supabase
-                .from('workspace_members')
-                .select('workspace_id')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: true })
-                .limit(1)
-                .maybeSingle();
-              if (membershipError) throw membershipError;
-              if (!membership?.workspace_id) throw new Error('No AdLytic workspace found for this account.');
-              return membership.workspace_id;
-            })();
-
-            return adLedgerWorkspacePromise;
-          }
-
-          function useLocalStorage(key, initialValue) {
-            // Cloud is the source of truth. Never initialize from an unscoped
-            // browser key because that can leak one user's data into another user's workspace.
-            const [storedValue, setStoredValue] = useState(initialValue);
-            const [hydrated, setHydrated] = useState(false);
-
-            useEffect(() => {
-              let cancelled = false;
-              (async () => {
-                try {
-                  const workspaceId = await getAdLedgerWorkspaceId();
-                  const cacheKey = `${key}__workspace_${workspaceId}`;
-                  const { data: row, error } = await supabase
-                    .from('workspace_app_data')
-                    .select('data')
-                    .eq('workspace_id', workspaceId)
-                    .eq('data_key', key)
-                    .maybeSingle();
-                  if (error) throw error;
-                  if (cancelled) return;
-
-                  const cloudHasData = row?.data != null;
-                  if (cloudHasData) {
-                    setStoredValue(row.data);
-                    if (typeof window !== 'undefined') {
-                      window.localStorage.setItem(cacheKey, JSON.stringify(row.data));
-                    }
-                  } else {
-                    // Brand-new workspaces must start clean; do not import legacy
-                    // browser data from another account.
-                    setStoredValue(initialValue);
-                    if (typeof window !== 'undefined') {
-                      window.localStorage.setItem(cacheKey, JSON.stringify(initialValue));
-                    }
-                  }
-                } catch (error) {
-                  console.error('AdLytic cloud data load failed for', key, error);
-                } finally {
-                  if (!cancelled) setHydrated(true);
-                }
-              })();
-              return () => { cancelled = true; };
-            }, [key]);
-
-            useEffect(() => {
-              if (!hydrated) return;
-              let cancelled = false;
-              (async () => {
-                try {
-                  const workspaceId = await getAdLedgerWorkspaceId();
-                  if (cancelled) return;
-                  const { error } = await supabase.from('workspace_app_data').upsert({
-                    workspace_id: workspaceId,
-                    data_key: key,
-                    data: storedValue,
-                    updated_at: new Date().toISOString(),
-                  }, { onConflict: 'workspace_id,data_key' });
-                  if (error) throw error;
-                  if (typeof window !== 'undefined') {
-                    window.localStorage.setItem(`${key}__workspace_${workspaceId}`, JSON.stringify(storedValue));
-                  }
-                } catch (error) {
-                  console.error('AdLytic cloud data save failed for', key, error);
-                }
-              })();
-              return () => { cancelled = true; };
-            }, [storedValue, hydrated, key]);
-
-            const setValue = (value) => {
-              setStoredValue(prev => value instanceof Function ? value(prev) : value);
-            };
-
-            return [storedValue, setValue];
-          }
-
-          // --- CLEAN INITIAL STATE ---'''
-
-          updated, count = re.subn(pattern, replacement, text, flags=re.S)
-          if count != 1:
-              raise SystemExit(f'Workspace isolation patch expected 1 match, found {count}')
-          path.write_text(updated, encoding='utf-8')
-          print('Workspace data isolation patch applied.')
-          PY
 
       - name: Build
         run: npm run build
@@ -177,3 +44,4 @@ jobs:
 
       - name: Deploy
         uses: actions/deploy-pages@v4
+

@@ -16,135 +16,189 @@ import {
   AreaChart, Area, PieChart as RePieChart, Pie, Cell
 } from 'recharts';
 
-// --- SAFE VERSIONED DATA MIGRATION ---
-const APP_DATA_VERSION = "2";
-
-if (typeof window !== "undefined") {
-  try {
-    const storedVersion = window.localStorage.getItem('adledger_version');
-    if (storedVersion !== APP_DATA_VERSION) {
-      window.localStorage.removeItem('adledger_clients');
-      window.localStorage.removeItem('adledger_cards');
-      window.localStorage.removeItem('adledger_transactions');
-      window.localStorage.setItem('adledger_version', APP_DATA_VERSION);
-      console.log("AdLedger: Safely migrated to data version", APP_DATA_VERSION);
-    }
-  } catch (error) {
-    console.error("AdLedger: Migration failed", error);
-  }
-}
-
-// --- CLOUD-BACKED PERSISTENCE (WITH LOCAL MIGRATION/FALLBACK) ---
+// --- WORKSPACE RESOLVER & CLOUD PERSISTENCE ---
 let adLedgerWorkspacePromise = null;
+let adLedgerWorkspaceUserId = null;
 
-async function getAdLedgerWorkspaceId() {
-  if (adLedgerWorkspacePromise) return adLedgerWorkspacePromise;
+export async function getAdLedgerWorkspaceId() {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) throw new Error('No authenticated user.');
+
+  if (adLedgerWorkspacePromise && adLedgerWorkspaceUserId === user.id) {
+    return adLedgerWorkspacePromise;
+  }
+
+  adLedgerWorkspaceUserId = user.id;
   adLedgerWorkspacePromise = (async () => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('No authenticated user.');
+    try {
+      // 1. Try to find owned workspace
+      const { data: owned, error: ownedError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
-    const { data: owned, error: ownedError } = await supabase
-      .from('workspaces')
-      .select('id')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (ownedError) throw ownedError;
-    if (owned?.id) return owned.id;
+      if (!ownedError && owned?.id) return owned.id;
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('workspace_id')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (membershipError) throw membershipError;
-    if (!membership?.workspace_id) throw new Error('No AdLytic workspace found for this account.');
-    return membership.workspace_id;
+      // 2. Try to find membership
+      const { data: membership, error: membershipError } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (!membershipError && membership?.workspace_id) return membership.workspace_id;
+
+      // 3. Auto-create workspace for user if none exists
+      const { data: created, error: createError } = await supabase
+        .from('workspaces')
+        .insert([{ owner_id: user.id }])
+        .select('id')
+        .maybeSingle();
+
+      if (!createError && created?.id) return created.id;
+
+      return user.id;
+    } catch (err) {
+      console.warn('AdLytic workspace resolution fallback:', err);
+      return user.id;
+    }
   })();
+
   return adLedgerWorkspacePromise;
 }
 
+// --- BULLETPROOF LOCAL CACHE & CLOUD SYNC HOOK ---
 function useLocalStorage(key, initialValue) {
+  // Read local cache immediately so the UI renders instantaneously without flickering
   const [storedValue, setStoredValue] = useState(() => {
-    if (typeof window === "undefined") return initialValue;
+    if (typeof window === 'undefined') return initialValue;
     try {
-      const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.error('AdLytic local data read failed', error);
+      const primaryCache = window.localStorage.getItem(`adlytic_${key}`);
+      if (primaryCache !== null) return JSON.parse(primaryCache);
+
+      const legacyCache = window.localStorage.getItem(key);
+      if (legacyCache !== null) return JSON.parse(legacyCache);
+
+      return initialValue;
+    } catch (e) {
       return initialValue;
     }
   });
-  const [hydrated, setHydrated] = useState(false);
 
+  const [hydrated, setHydrated] = useState(false);
+  const saveTimeoutRef = useRef(null);
+  const isUserEditRef = useRef(false);
+
+  // 1. Hydrate from Cloud on Mount (Read-Only; NEVER overwrites on load)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const workspaceId = await getAdLedgerWorkspaceId();
+        if (cancelled) return;
+
         const { data: row, error } = await supabase
           .from('workspace_app_data')
           .select('data')
           .eq('workspace_id', workspaceId)
           .eq('data_key', key)
           .maybeSingle();
-        if (error) throw error;
+
+        if (error) {
+          console.warn(`Supabase load error for ${key}:`, error.message);
+        }
+
         if (cancelled) return;
 
-        const localRaw = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
-        const localValue = localRaw ? JSON.parse(localRaw) : initialValue;
-        const localHasData = Array.isArray(localValue) ? localValue.length > 0 : !!localRaw;
-        const cloudHasData = row?.data != null && (Array.isArray(row.data) ? row.data.length > 0 : true);
+        const cloudHasData = row && row.data !== null && row.data !== undefined;
 
         if (cloudHasData) {
           setStoredValue(row.data);
-          if (typeof window !== 'undefined') window.localStorage.setItem(key, JSON.stringify(row.data));
-        } else if (localHasData) {
-          const { error: migrateError } = await supabase.from('workspace_app_data').upsert({
-            workspace_id: workspaceId,
-            data_key: key,
-            data: localValue,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'workspace_id,data_key' });
-          if (migrateError) throw migrateError;
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(`adlytic_${key}`, JSON.stringify(row.data));
+            window.localStorage.setItem(key, JSON.stringify(row.data));
+          }
+        } else {
+          // Cloud has no data row for this key yet. Check if local cache has existing data to migrate safely.
+          const localRaw = typeof window !== 'undefined' ? (window.localStorage.getItem(`adlytic_${key}`) || window.localStorage.getItem(key)) : null;
+          if (localRaw) {
+            try {
+              const localParsed = JSON.parse(localRaw);
+              const hasData = Array.isArray(localParsed) ? localParsed.length > 0 : (localParsed && typeof localParsed === 'object' && Object.keys(localParsed).length > 0);
+              if (hasData) {
+                setStoredValue(localParsed);
+                await supabase.from('workspace_app_data').upsert({
+                  workspace_id: workspaceId,
+                  data_key: key,
+                  data: localParsed,
+                  updated_at: new Date().toISOString(),
+                }, { onConflict: 'workspace_id,data_key' });
+              }
+            } catch (migrationErr) {
+              console.warn(`Migration error for ${key}:`, migrationErr);
+            }
+          }
         }
-      } catch (error) {
-        console.error('AdLytic cloud data load failed for', key, error);
+      } catch (err) {
+        console.error(`AdLytic cloud sync error for ${key}:`, err);
       } finally {
         if (!cancelled) setHydrated(true);
       }
     })();
+
     return () => { cancelled = true; };
   }, [key]);
 
+  // 2. Persist to Cloud ONLY when user makes an edit
   useEffect(() => {
-    if (!hydrated) return;
-    let cancelled = false;
-    (async () => {
+    if (!hydrated || !isUserEditRef.current) return;
+
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+    saveTimeoutRef.current = setTimeout(async () => {
       try {
         const workspaceId = await getAdLedgerWorkspaceId();
-        if (cancelled) return;
         const { error } = await supabase.from('workspace_app_data').upsert({
           workspace_id: workspaceId,
           data_key: key,
           data: storedValue,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'workspace_id,data_key' });
+
         if (error) throw error;
-        if (typeof window !== 'undefined') window.localStorage.setItem(key, JSON.stringify(storedValue));
-      } catch (error) {
-        console.error('AdLytic cloud data save failed for', key, error);
+
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(`adlytic_${key}`, JSON.stringify(storedValue));
+          window.localStorage.setItem(key, JSON.stringify(storedValue));
+        }
+      } catch (err) {
+        console.error(`AdLytic cloud save error for ${key}:`, err);
       }
-    })();
-    return () => { cancelled = true; };
+    }, 400);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
   }, [storedValue, hydrated, key]);
 
   const setValue = (value) => {
-    setStoredValue(prev => value instanceof Function ? value(prev) : value);
+    isUserEditRef.current = true;
+    setStoredValue(prev => {
+      const next = value instanceof Function ? value(prev) : value;
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(`adlytic_${key}`, JSON.stringify(next));
+          window.localStorage.setItem(key, JSON.stringify(next));
+        } catch (e) {}
+      }
+      return next;
+    });
   };
 
   return [storedValue, setValue];
@@ -291,34 +345,39 @@ const getPresetDates = (preset) => {
   return { start: formatDateString(start), end: formatDateString(end) };
 };
 
+// --- DEFAULT WORKSPACE SETTINGS ---
+const DEFAULT_SETTINGS = {
+  businessName: 'AdLytic',
+  workspaceType: 'Agency',
+  industry: 'Digital Marketing',
+  country: 'BD',
+  currency: 'BDT',
+  language: 'English',
+  timezone: 'Asia/Dhaka',
+  defaultReportRange: 'This Month',
+  website: '',
+  contactEmail: '',
+  phone: '',
+  address: '',
+  description: '',
+  alerts: true,
+  financialAlertThreshold: '80',
+  financialEmailAlerts: false,
+};
+
 // --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // State Data (Persisted)
+  // State Data (Cloud + Local Cached)
   const [clients, setClients] = useLocalStorage('adledger_clients', INITIAL_CLIENTS);
   const [cards, setCards] = useLocalStorage('adledger_cards', INITIAL_CARDS);
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
-
-  // Additive SaaS modules. Existing financial data remains untouched.
   const [campaigns, setCampaigns] = useLocalStorage('adledger_campaigns', []);
-  const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', {
-    businessName: 'AdLytic',
-    timezone: 'Asia/Dhaka',
-    alerts: true,
-    defaultReportRange: 'This Month'
-  });
+  const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', DEFAULT_SETTINGS);
   const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', []);
   const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
-  
-  // Clean invalid Meta Ads on load (Purges old demo data with zero amounts)
-  useEffect(() => {
-    const hasZeroAdSpend = transactions.some(t => t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0);
-    if (hasZeroAdSpend) {
-      setTransactions(prev => prev.filter(t => !(t.type === 'AD_SPEND' && (parseFloat(t.amountUSD) || 0) <= 0)));
-    }
-  }, [transactions, setTransactions]);
 
   // Modal State
   const [activeModal, setActiveModal] = useState(null); 
@@ -2897,28 +2956,392 @@ function AccountSecuritySettings() {
 }
 
 function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
-  const [data,setData]=useState(settings); const fileRef=useRef(null);
-  useEffect(()=>setData(settings),[settings]);
-  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <AccountSecuritySettings />
-    <div><h1 className="text-2xl font-bold text-slate-900">Settings</h1><p className="text-sm text-slate-500 mt-1">Workspace preferences, data safety and operational controls.</p></div>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><SlidersHorizontal size={20} className="text-sky-600"/><div><h3 className="font-semibold">Workspace</h3><p className="text-xs text-slate-500">Branding and basic preferences.</p></div></div><div className="mt-5 space-y-4">
-        <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4"><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3 min-w-0">{logo ? <img src={logo} alt="Workspace logo preview" className="w-14 h-14 rounded-2xl object-cover bg-white border border-sky-100 shadow-sm" /> : <div className="adl-brand-mark w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold">A</div>}<div><p className="text-sm font-semibold text-slate-800">Workspace Logo</p><p className="text-xs text-slate-500 mt-0.5">Upload PNG, JPG or WebP. Max 2 MB.</p></div></div><div className="flex items-center gap-2"><label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600"><Upload size={14}/>{logo ? 'Change' : 'Upload'}<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={e=>{onLogoUpload(e.target.files?.[0]);e.target.value='';}}/></label>{logo && <button type="button" onClick={onRemoveLogo} className="px-3 py-2 rounded-lg border border-red-200 bg-white text-red-600 text-xs font-semibold">Remove</button>}</div></div></div>
-        <Field label="Business / Workspace Name"><input value={data.businessName} onChange={e=>setData({...data,businessName:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"/></Field>
-        <Field label="Timezone"><select value={data.timezone} onChange={e=>setData({...data,timezone:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Asia/Dhaka</option><option>UTC</option><option>Asia/Kolkata</option></select></Field>
-        <Field label="Default Report Range"><select value={data.defaultReportRange} onChange={e=>setData({...data,defaultReportRange:e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>This Month</option><option>Last 7 Days</option><option>Last 30 Days</option><option>Lifetime</option></select></Field>
-        <label className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 p-3"><span><span className="block text-sm font-medium">Financial alerts</span><span className="block text-xs text-slate-500 mt-0.5">Show negative card balance warnings.</span></span><input type="checkbox" checked={!!data.alerts} onChange={e=>setData({...data,alerts:e.target.checked})} className="w-4 h-4"/></label>
-        <button onClick={()=>{onSave(data);window.alert('Settings saved.')}} className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold"><Save size={16}/>Save Settings</button>
-      </div></div>
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><div className="flex items-center gap-3"><Database size={20} className="text-emerald-600"/><div><h3 className="font-semibold">Data & Backup</h3><p className="text-xs text-slate-500">Protect your workspace before major changes.</p></div></div><div className="mt-5 space-y-3">
-        <button onClick={onExport} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Download size={18} className="text-blue-600"/><span className="text-left"><strong className="block text-sm">Export Full Backup</strong><small className="text-xs text-slate-500">Clients, cards, transactions, campaigns and settings.</small></span></span><ArrowUpRight size={16}/></button>
-        <button onClick={()=>fileRef.current?.click()} className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-4 hover:bg-slate-50"><span className="flex items-center gap-3"><Upload size={18} className="text-emerald-600"/><span className="text-left"><strong className="block text-sm">Restore Backup</strong><small className="text-xs text-slate-500">Import an AdLytic JSON backup.</small></span></span><ArrowUpRight size={16}/></button>
-        <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={e=>{onImport(e.target.files?.[0]);e.target.value=''}}/>
-        <button onClick={onReset} className="w-full flex items-center justify-between rounded-xl border border-red-100 bg-red-50/60 p-4 hover:bg-red-50"><span className="flex items-center gap-3"><RotateCcw size={18} className="text-red-600"/><span className="text-left"><strong className="block text-sm text-red-700">Reset Workspace Data</strong><small className="text-xs text-red-600/70">Permanently clear locally stored data.</small></span></span><AlertCircle size={16}/></button>
-      </div></div>
+  const [data, setData] = useState(() => ({ ...DEFAULT_SETTINGS, ...settings }));
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    setData(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...settings }));
+  }, [settings]);
+
+  const handleChange = (key, value) => {
+    setData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = () => {
+    onSave(data);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
+  };
+
+  const timezoneList = [
+    ['Asia/Dhaka', 'Asia/Dhaka (GMT+6)'],
+    ['UTC', 'UTC (GMT+0)'],
+    ['Asia/Kolkata', 'Asia/Kolkata (GMT+5:30)'],
+    ['Asia/Dubai', 'Asia/Dubai (GMT+4)'],
+    ['Asia/Singapore', 'Asia/Singapore (GMT+8)'],
+    ['Asia/Tokyo', 'Asia/Tokyo (GMT+9)'],
+    ['Asia/Bangkok', 'Asia/Bangkok (GMT+7)'],
+    ['Europe/London', 'Europe/London (GMT+0 / BST)'],
+    ['Europe/Berlin', 'Europe/Berlin (GMT+1)'],
+    ['Europe/Paris', 'Europe/Paris (GMT+1)'],
+    ['America/New_York', 'America/New_York (EST / EDT)'],
+    ['America/Chicago', 'America/Chicago (CST / CDT)'],
+    ['America/Denver', 'America/Denver (MST / MDT)'],
+    ['America/Los_Angeles', 'America/Los_Angeles (PST / PDT)'],
+    ['America/Toronto', 'America/Toronto (EST / EDT)'],
+    ['Australia/Sydney', 'Australia/Sydney (AEST)']
+  ];
+
+  const countryList = [
+    ['BD', 'Bangladesh'], ['US', 'United States'], ['GB', 'United Kingdom'], ['CA', 'Canada'],
+    ['AU', 'Australia'], ['IN', 'India'], ['PK', 'Pakistan'], ['AE', 'United Arab Emirates'],
+    ['SA', 'Saudi Arabia'], ['SG', 'Singapore'], ['MY', 'Malaysia'], ['DE', 'Germany'],
+    ['FR', 'France'], ['IT', 'Italy'], ['JP', 'Japan'], ['OTHER', 'Other']
+  ];
+
+  const currencyList = [
+    ['BDT', 'BDT — Bangladeshi Taka (৳)'],
+    ['USD', 'USD — US Dollar ($)'],
+    ['EUR', 'EUR — Euro (€)'],
+    ['GBP', 'GBP — British Pound (£)'],
+    ['INR', 'INR — Indian Rupee (₹)'],
+    ['AED', 'AED — UAE Dirham'],
+    ['SAR', 'SAR — Saudi Riyal'],
+    ['SGD', 'SGD — Singapore Dollar'],
+    ['AUD', 'AUD — Australian Dollar'],
+    ['CAD', 'CAD — Canadian Dollar'],
+    ['MYR', 'MYR — Malaysian Ringgit'],
+    ['PKR', 'PKR — Pakistani Rupee']
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+      <AccountSecuritySettings />
+
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">Workspace & Business Settings</h1>
+        <p className="text-sm text-slate-500 mt-1">Preferences, agency details, currencies and data safety.</p>
+      </div>
+
+      {savedSuccess && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-2">
+          <CheckCircle2 size={18} className="text-emerald-600" /> Settings saved successfully.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* GENERAL WORKSPACE */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+            <SlidersHorizontal size={20} className="text-sky-600" />
+            <div>
+              <h3 className="font-bold text-slate-900">General Identity</h3>
+              <p className="text-xs text-slate-500">Core workspace branding and reporting defaults.</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                {logo ? (
+                  <img src={logo} alt="Workspace logo" className="w-14 h-14 rounded-2xl object-cover bg-white border border-sky-100 shadow-sm" />
+                ) : (
+                  <div className="adl-brand-mark w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold text-white">A</div>
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Workspace Logo</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Upload PNG, JPG or WebP (max 2 MB).</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600 transition-colors shadow-sm">
+                  <Upload size={14} />{logo ? 'Change' : 'Upload'}
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={e => { onLogoUpload(e.target.files?.[0]); e.target.value = ''; }} />
+                </label>
+                {logo && (
+                  <button type="button" onClick={onRemoveLogo} className="px-3 py-2 rounded-lg border border-red-200 bg-white text-red-600 text-xs font-semibold hover:bg-red-50">
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <Field label="Business / Workspace Name">
+            <input
+              type="text"
+              value={data.businessName || ''}
+              onChange={e => handleChange('businessName', e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Timezone">
+              <select
+                value={data.timezone || 'Asia/Dhaka'}
+                onChange={e => handleChange('timezone', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+              >
+                {timezoneList.map(([tz, label]) => (
+                  <option key={tz} value={tz}>{label}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Default Report Range">
+              <select
+                value={data.defaultReportRange || 'This Month'}
+                onChange={e => handleChange('defaultReportRange', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+              >
+                <option>This Month</option>
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+                <option>Lifetime</option>
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Language">
+              <select
+                value={data.language || 'English'}
+                onChange={e => handleChange('language', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+              >
+                <option value="English">English</option>
+                <option value="Bangla">বাংলা (Bangla)</option>
+              </select>
+            </Field>
+
+            <Field label="Primary Currency">
+              <select
+                value={data.currency || 'BDT'}
+                onChange={e => handleChange('currency', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+              >
+                {currencyList.map(([code, name]) => (
+                  <option key={code} value={code}>{name}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </div>
+
+        {/* WORKSPACE PROFILE */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+            <Building size={20} className="text-sky-600" />
+            <div>
+              <h3 className="font-bold text-slate-900">Organization & Contact</h3>
+              <p className="text-xs text-slate-500">Business details for client reports and invoicing.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Workspace Type">
+              <select
+                value={data.workspaceType || 'Agency'}
+                onChange={e => handleChange('workspaceType', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              >
+                <option>Agency</option>
+                <option>Freelancer</option>
+                <option>In-house Marketing</option>
+                <option>E-commerce</option>
+                <option>Startup</option>
+                <option>Other</option>
+              </select>
+            </Field>
+
+            <Field label="Industry">
+              <select
+                value={data.industry || 'Digital Marketing'}
+                onChange={e => handleChange('industry', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              >
+                <option>Digital Marketing</option>
+                <option>Advertising</option>
+                <option>E-commerce</option>
+                <option>Technology</option>
+                <option>Retail</option>
+                <option>Other</option>
+              </select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Country / Region">
+              <select
+                value={data.country || 'BD'}
+                onChange={e => handleChange('country', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              >
+                {countryList.map(([c, n]) => (
+                  <option key={c} value={c}>{n}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Business Phone">
+              <input
+                type="tel"
+                value={data.phone || ''}
+                onChange={e => handleChange('phone', e.target.value)}
+                placeholder="+880 1XXXXXXXXX"
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Business Email">
+              <input
+                type="email"
+                value={data.contactEmail || ''}
+                onChange={e => handleChange('contactEmail', e.target.value)}
+                placeholder="contact@agency.com"
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              />
+            </Field>
+
+            <Field label="Business Website">
+              <input
+                type="url"
+                value={data.website || ''}
+                onChange={e => handleChange('website', e.target.value)}
+                placeholder="https://agency.com"
+                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+              />
+            </Field>
+          </div>
+
+          <Field label="Business Address">
+            <input
+              type="text"
+              value={data.address || ''}
+              onChange={e => handleChange('address', e.target.value)}
+              placeholder="Dhaka, Bangladesh"
+              className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+            />
+          </Field>
+        </div>
+      </div>
+
+      {/* FINANCIAL ALERTS & DATA MANAGEMENT */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+            <AlertCircle size={20} className="text-orange-600" />
+            <div>
+              <h3 className="font-bold text-slate-900">Financial Alerts</h3>
+              <p className="text-xs text-slate-500">Monitor negative card balances and budget limits.</p>
+            </div>
+          </div>
+
+          <label className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 p-3.5 cursor-pointer">
+            <div>
+              <span className="block text-sm font-medium text-slate-900">Enable Financial Alerts</span>
+              <span className="block text-xs text-slate-500 mt-0.5">Highlight negative card balances & budget overruns.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={!!data.alerts}
+              onChange={e => handleChange('alerts', e.target.checked)}
+              className="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer"
+            />
+          </label>
+
+          <Field label="Alert Threshold">
+            <select
+              value={String(data.financialAlertThreshold || '80')}
+              onChange={e => handleChange('financialAlertThreshold', e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+            >
+              <option value="70">Alert at 70% of target budget</option>
+              <option value="80">Alert at 80% of target budget</option>
+              <option value="90">Alert at 90% of target budget</option>
+              <option value="100">Alert at 100% of target budget</option>
+            </select>
+          </Field>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all"
+          >
+            <Save size={16} /> Save All Workspace Settings
+          </button>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+            <Database size={20} className="text-emerald-600" />
+            <div>
+              <h3 className="font-bold text-slate-900">Data & Backup</h3>
+              <p className="text-xs text-slate-500">Export full JSON backups and restore safely.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={onExport}
+              className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3.5 hover:bg-slate-50 transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <Download size={18} className="text-blue-600" />
+                <span className="text-left">
+                  <strong className="block text-sm text-slate-800">Export Full JSON Backup</strong>
+                  <small className="text-xs text-slate-500">Clients, cards, transactions, campaigns and settings.</small>
+                </span>
+              </span>
+              <ArrowUpRight size={16} className="text-slate-400" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3.5 hover:bg-slate-50 transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <Upload size={18} className="text-emerald-600" />
+                <span className="text-left">
+                  <strong className="block text-sm text-slate-800">Restore Backup</strong>
+                  <small className="text-xs text-slate-500">Import an AdLytic JSON backup file.</small>
+                </span>
+              </span>
+              <ArrowUpRight size={16} className="text-slate-400" />
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={e => { onImport(e.target.files?.[0]); e.target.value = ''; }}
+            />
+
+            <button
+              type="button"
+              onClick={onReset}
+              className="w-full flex items-center justify-between rounded-xl border border-red-100 bg-red-50/50 p-3.5 hover:bg-red-50 transition-colors"
+            >
+              <span className="flex items-center gap-3">
+                <RotateCcw size={18} className="text-red-600" />
+                <span className="text-left">
+                  <strong className="block text-sm text-red-700">Reset Local Cache</strong>
+                  <small className="text-xs text-red-600/70">Clear browser cache and reload from Supabase cloud.</small>
+                </span>
+              </span>
+              <AlertCircle size={16} className="text-red-500" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>;
+  );
 }
 
 function MiniKpi({ title, value, icon }) {
