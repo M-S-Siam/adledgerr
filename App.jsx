@@ -3096,29 +3096,29 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     }
 
     // Tab 3: Financial Safety & Rates
-    const buyRate = parseFloat(formData.defaultUSDRate);
+    const buyRate = parseFloat(formData.defaultUSDRate ?? '131.25');
     if (isNaN(buyRate) || buyRate <= 0) {
       errors.defaultUSDRate = 'Bank USD Buy Rate must be greater than 0.';
     }
 
-    const sellRate = parseFloat(formData.defaultClientUSDRate);
+    const sellRate = parseFloat(formData.defaultClientUSDRate ?? '140.00');
     if (isNaN(sellRate) || sellRate <= 0) {
       errors.defaultClientUSDRate = 'Client USD Sell Rate must be greater than 0.';
     }
 
-    const tax = parseFloat(formData.defaultAdTax);
+    const tax = parseFloat(formData.defaultAdTaxRate ?? '15');
     if (isNaN(tax) || tax < 0 || tax > 100) {
-      errors.defaultAdTax = 'Tax rate must be between 0% and 100%.';
+      errors.defaultAdTaxRate = 'Tax rate must be between 0% and 100%.';
     }
 
-    const cashout = parseFloat(formData.cashoutCharge);
+    const cashout = parseFloat(formData.defaultCashoutChargeRate ?? '1.5');
     if (isNaN(cashout) || cashout < 0 || cashout > 100) {
-      errors.cashoutCharge = 'Cashout fee must be between 0% and 100%.';
+      errors.defaultCashoutChargeRate = 'Cashout fee must be between 0% and 100%.';
     }
 
-    const margin = parseFloat(formData.defaultMargin);
+    const margin = parseFloat(formData.defaultAgencyMarginRate ?? '10');
     if (isNaN(margin) || margin < 0 || margin > 100) {
-      errors.defaultMargin = 'Agency margin must be between 0% and 100%.';
+      errors.defaultAgencyMarginRate = 'Agency margin must be between 0% and 100%.';
     }
 
     return errors;
@@ -3143,7 +3143,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
       setValidationBanner('Please fix the highlighted errors before saving changes.');
       if (errors.businessName) setActiveTab('branding');
       else if (errors.contactEmail || errors.phone || errors.website) setActiveTab('agency');
-      else if (errors.defaultUSDRate || errors.defaultClientUSDRate || errors.defaultAdTax || errors.cashoutCharge || errors.defaultMargin) setActiveTab('financial');
+      else if (errors.defaultUSDRate || errors.defaultClientUSDRate || errors.defaultAdTaxRate || errors.defaultCashoutChargeRate || errors.defaultAgencyMarginRate) setActiveTab('financial');
       return;
     }
     setValidationErrors({});
@@ -3584,7 +3584,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
           const hasError =
             (tab.id === 'branding' && validationErrors.businessName) ||
             (tab.id === 'agency' && (validationErrors.contactEmail || validationErrors.phone || validationErrors.website)) ||
-            (tab.id === 'financial' && (validationErrors.defaultUSDRate || validationErrors.defaultClientUSDRate || validationErrors.defaultAdTax || validationErrors.cashoutCharge || validationErrors.defaultMargin));
+            (tab.id === 'financial' && (validationErrors.defaultUSDRate || validationErrors.defaultClientUSDRate || validationErrors.defaultAdTaxRate || validationErrors.defaultCashoutChargeRate || validationErrors.defaultAgencyMarginRate));
 
           return (
             <button
