@@ -103,17 +103,10 @@ export default function AuthGate({ children }) {
     clearFeedback();
     setBusy(true);
     try {
-      const loginPromise = supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
-
-      // 30-second timeout to accommodate Supabase cloud wake-up
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connecting to Supabase took longer than expected. Please try again.')), 30000)
-      );
-
-      const { data, error: signInError } = await Promise.race([loginPromise, timeoutPromise]);
 
       if (signInError) {
         setError(signInError.message || 'Unable to sign in. Please check your email and password.');
