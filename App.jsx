@@ -3048,7 +3048,7 @@ const INITIAL_TEAM_ACTIVITIES = [
   {
     id: 'act_01',
     userName: 'Awal',
-    userRole: '👑 Founder',
+    userRole: 'Founder',
     action: 'Configured Workspace Financial Safety Rails & 15% VAT',
     category: 'security',
     timestamp: '15 mins ago',
@@ -3057,7 +3057,7 @@ const INITIAL_TEAM_ACTIVITIES = [
   {
     id: 'act_02',
     userName: 'Tanvir Ahmed',
-    userRole: '🎯 Senior Media Buyer',
+    userRole: 'Senior Media Buyer',
     action: 'Logged $185 Meta Ad Spend for client Apex Footwear',
     category: 'spend',
     timestamp: '45 mins ago',
@@ -3066,7 +3066,7 @@ const INITIAL_TEAM_ACTIVITIES = [
   {
     id: 'act_03',
     userName: 'Nafis Rahman',
-    userRole: '📊 Accountant',
+    userRole: 'Accountant',
     action: 'Generated Client Monthly Ledger Statement & VAT Audit (PDF)',
     category: 'finance',
     timestamp: '2 hours ago',
@@ -3075,7 +3075,7 @@ const INITIAL_TEAM_ACTIVITIES = [
   {
     id: 'act_04',
     userName: 'Awal',
-    userRole: '👑 Founder',
+    userRole: 'Founder',
     action: 'Invited Tanvir Ahmed as Senior Media Buyer (Daily limit: $1,000)',
     category: 'team',
     timestamp: '1 day ago',
@@ -3084,7 +3084,7 @@ const INITIAL_TEAM_ACTIVITIES = [
   {
     id: 'act_05',
     userName: 'Nafis Rahman',
-    userRole: '📊 Accountant',
+    userRole: 'Accountant',
     action: 'Audited Bank USD Buy Rate spread (৳131.25 → ৳140.00)',
     category: 'finance',
     timestamp: '2 days ago',
@@ -3129,7 +3129,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     const newEntry = {
       id: `act_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       userName: workspaceSettings.businessName ? `${workspaceSettings.businessName} Admin` : 'Workspace Admin',
-      userRole: '👑 Founder',
+      userRole: 'Founder',
       action: actionText,
       category,
       timestamp: 'Just now',
@@ -3172,13 +3172,15 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
 
   const validateMemberForm = () => {
     const errs = {};
-    if (!formData.name.trim()) errs.name = 'Full name is required.';
-    if (!formData.email.trim()) {
+    if (!formData.name || !formData.name.trim()) {
+      errs.name = 'Full name is required.';
+    }
+    if (!formData.email || !formData.email.trim()) {
       errs.email = 'Email address is required.';
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email.trim())) {
-        errs.email = 'Please enter a valid email address.';
+        errs.email = 'Please enter a valid email address (e.g. teammate@agency.com).';
       }
     }
     return errs;
@@ -3313,14 +3315,14 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Team & Role Governance</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Team Management</h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {activeMembersList.length + 1} Active Seats
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage media buyers, financial accountants, and permissions across your {workspaceSettings.businessName || 'AdLytic'} workspace.
+            Manage media buyers, financial accountants, and member roles across your {workspaceSettings.businessName || 'AdLytic'} workspace.
           </p>
         </div>
 
@@ -3331,7 +3333,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition-all"
           >
             <ShieldCheck size={14} className="text-sky-600" />
-            {showPermissionsGuide ? 'Hide RBAC Matrix' : 'View Role Matrix'}
+            {showPermissionsGuide ? 'Hide Roles Guide' : 'View Roles Guide'}
           </button>
 
           <button
@@ -3405,53 +3407,53 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-700">
                   <th className="py-2.5 px-3 font-bold">Permissions & Capability</th>
-                  <th className="py-2.5 px-3 font-bold text-purple-700">👑 Owner</th>
-                  <th className="py-2.5 px-3 font-bold text-indigo-700">👔 Agency Admin</th>
-                  <th className="py-2.5 px-3 font-bold text-sky-700">🎯 Media Buyer</th>
-                  <th className="py-2.5 px-3 font-bold text-emerald-700">📊 Accountant</th>
-                  <th className="py-2.5 px-3 font-bold text-slate-600">👁️ Client Viewer</th>
+                  <th className="py-2.5 px-3 font-bold text-purple-700">Owner</th>
+                  <th className="py-2.5 px-3 font-bold text-indigo-700">Agency Admin</th>
+                  <th className="py-2.5 px-3 font-bold text-sky-700">Media Buyer</th>
+                  <th className="py-2.5 px-3 font-bold text-emerald-700">Accountant</th>
+                  <th className="py-2.5 px-3 font-bold text-slate-600">Client Viewer</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-600">
                 <tr>
                   <td className="py-2.5 px-3 font-semibold text-slate-900">Manage Workspace Settings & Rates</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-3 font-semibold text-slate-900">Manage Bank Cards & USD Top-ups</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
-                  <td className="py-2.5 px-3 text-sky-600 font-bold">👁️ View Rates</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">View Rates</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-3 font-semibold text-slate-900">Create & Log Ad Campaigns & Spend</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Assigned Clients</td>
-                  <td className="py-2.5 px-3 text-sky-600 font-bold">👁️ Read Only</td>
-                  <td className="py-2.5 px-3 text-sky-600 font-bold">👁️ Own Portal</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Assigned Clients</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">Read Only</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">Own Portal</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-3 font-semibold text-slate-900">Client Invoices, PDF & Excel Exports</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-sky-600 font-bold">✓ Assigned Invoices</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full Financials</td>
-                  <td className="py-2.5 px-3 text-sky-600 font-bold">✓ Own Statement</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">Assigned Invoices</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Financials</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">Own Statement</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-3 font-semibold text-slate-900">Invite, Edit & Manage Team Members</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
-                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">Full Access</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">No Access</td>
                 </tr>
               </tbody>
             </table>
@@ -3460,30 +3462,30 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       )}
 
       {/* WORKSPACE FOUNDER / OWNER CARD */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-2xl p-5 shadow-lg text-white">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 via-indigo-600 to-sky-400 flex items-center justify-center font-black text-xl text-white shadow-md ring-2 ring-purple-400/30 shrink-0">
-              👑
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center font-black text-sm text-white shadow-sm shrink-0">
+              <ShieldCheck size={20} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-base text-white tracking-tight">
-                  {workspaceSettings.businessName || 'AdLytic Agency'} Founder
+                <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
+                  {workspaceSettings.businessName || 'AdLytic'} Founder
                 </h3>
-                <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-extrabold uppercase">
+                <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-extrabold uppercase">
                   Super Admin · Root
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Primary Account Holder · Unrestricted Access to Financials, Bank Cards & API Keys
+              <p className="text-xs text-slate-500 mt-0.5">
+                Primary Account Holder · Unrestricted Access to Financials, Bank Cards & Settings
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-semibold text-slate-300">
-              <ShieldCheck size={14} className="text-emerald-400" /> 2FA Protected
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+              <ShieldCheck size={14} className="text-emerald-600" /> 2FA Protected
             </span>
           </div>
         </div>
