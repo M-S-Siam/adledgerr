@@ -3033,8 +3033,8 @@ function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
 const INITIAL_INTEGRATIONS_DATA = [
   {
     id: 'meta',
-    name: 'Meta Marketing API',
-    subtitle: 'Facebook & Instagram Ads',
+    name: 'Meta Ads',
+    subtitle: 'Facebook & Instagram',
     category: 'ads',
     status: 'connected',
     iconColor: 'from-blue-600 to-indigo-600 text-white',
@@ -3052,8 +3052,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'google_ads',
-    name: 'Google Ads API',
-    subtitle: 'Search, YouTube & P-Max',
+    name: 'Google Ads',
+    subtitle: 'Search & YouTube',
     category: 'ads',
     status: 'connected',
     iconColor: 'from-emerald-600 to-teal-700 text-white',
@@ -3070,8 +3070,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'tiktok_ads',
-    name: 'TikTok Ads API',
-    subtitle: 'TikTok For Business',
+    name: 'TikTok Ads',
+    subtitle: 'Video Campaigns',
     category: 'ads',
     status: 'disconnected',
     iconColor: 'from-slate-900 to-slate-800 text-white',
@@ -3086,8 +3086,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'google_sheets',
-    name: 'Google Sheets 2-Way Sync',
-    subtitle: 'Live Cloud Ledger Backup',
+    name: 'Google Sheets',
+    subtitle: 'Live Cloud Backup',
     category: 'data',
     status: 'connected',
     iconColor: 'from-emerald-700 to-green-800 text-white',
@@ -3103,8 +3103,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'zapier',
-    name: 'Zapier & Make Automations',
-    subtitle: 'Webhook Event Triggers',
+    name: 'Zapier & Make',
+    subtitle: 'Workflow Automation',
     category: 'data',
     status: 'disconnected',
     iconColor: 'from-orange-500 to-amber-600 text-white',
@@ -3119,8 +3119,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'bkash',
-    name: 'bKash Merchant Gateway',
-    subtitle: 'Direct MFS Payment & IPN',
+    name: 'Bkash Gateway',
+    subtitle: 'Direct MFS & IPN',
     category: 'payments',
     status: 'connected',
     iconColor: 'from-pink-600 to-rose-600 text-white',
@@ -3136,8 +3136,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'sslcommerz',
-    name: 'SSLCommerz Card Gateway',
-    subtitle: 'Visa, Mastercard & NetBanking',
+    name: 'SSLCommerz',
+    subtitle: 'Cards & Online Checkout',
     category: 'payments',
     status: 'connected',
     iconColor: 'from-blue-700 to-indigo-800 text-white',
@@ -3153,8 +3153,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'bank_cards',
-    name: 'Dual-Currency Bank FX & Cards',
-    subtitle: 'City Bank, EBL, Brac Bank',
+    name: 'Bank Cards & FX',
+    subtitle: 'Dual-Currency USD Cards',
     category: 'payments',
     status: 'connected',
     iconColor: 'from-emerald-700 to-teal-800 text-white',
@@ -3170,8 +3170,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'stripe',
-    name: 'Stripe Global USD Gateway',
-    subtitle: 'International Client Settlements',
+    name: 'Stripe Gateway',
+    subtitle: 'Global USD Invoices',
     category: 'payments',
     status: 'disconnected',
     iconColor: 'from-violet-600 to-purple-800 text-white',
@@ -3186,8 +3186,8 @@ const INITIAL_INTEGRATIONS_DATA = [
   },
   {
     id: 'custom_api',
-    name: 'Developer REST API & Webhooks',
-    subtitle: 'Secure Agency Endpoints',
+    name: 'Developer API',
+    subtitle: 'Workspace Webhooks',
     category: 'developer',
     status: 'connected',
     iconColor: 'from-purple-600 to-indigo-700 text-white',
@@ -3208,7 +3208,7 @@ const INITIAL_WEBHOOK_LOGS = [
     endpoint: 'POST /v1/meta-spend-sync',
     status: 200,
     statusText: 'OK',
-    source: 'Meta Marketing API',
+    source: 'Meta Ads',
     details: 'Synced 3 active campaigns (Apex Winter, Shwapno Mega). $185 spend pulled.',
     timestamp: '4 mins ago',
     date: '2026-08-28 23:45:10'
@@ -3218,7 +3218,7 @@ const INITIAL_WEBHOOK_LOGS = [
     endpoint: 'POST /v1/bkash-ipn',
     status: 200,
     statusText: 'OK',
-    source: 'bKash Gateway IPN',
+    source: 'Bkash Gateway IPN',
     details: 'Verified TRXID: 9X882194. Credited ৳50,000 to Apex Footwear advance wallet.',
     timestamp: '42 mins ago',
     date: '2026-08-28 23:08:22'
@@ -3228,7 +3228,7 @@ const INITIAL_WEBHOOK_LOGS = [
     endpoint: 'POST /v1/sheets-stream',
     status: 200,
     statusText: 'OK',
-    source: 'Google Sheets 2-Way Sync',
+    source: 'Google Sheets',
     details: 'Streamed 14 updated client ledger rows to cloud master spreadsheet.',
     timestamp: '1 hour ago',
     date: '2026-08-28 22:50:00'
@@ -3238,7 +3238,7 @@ const INITIAL_WEBHOOK_LOGS = [
     endpoint: 'POST /v1/google-ads-pull',
     status: 200,
     statusText: 'OK',
-    source: 'Google Ads API',
+    source: 'Google Ads',
     details: 'Handshake verified. Synced $110 search ad spend for MCC account.',
     timestamp: '2 hours ago',
     date: '2026-08-28 21:40:15'
@@ -3246,7 +3246,7 @@ const INITIAL_WEBHOOK_LOGS = [
 ];
 
 function IntegrationsView({ clients = [], transactions = [], workspaceSettings = {} }) {
-  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v2', INITIAL_INTEGRATIONS_DATA);
+  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v3', INITIAL_INTEGRATIONS_DATA);
   const [webhookLogs, setWebhookLogs] = useLocalStorage('adledger_webhook_logs', INITIAL_WEBHOOK_LOGS);
   const [activeCategory, setActiveCategory] = useState('all'); // 'all' | 'ads' | 'data' | 'payments' | 'developer'
   const [searchQuery, setSearchQuery] = useState('');
