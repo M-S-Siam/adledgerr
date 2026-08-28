@@ -3278,13 +3278,15 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         );
       case 'Bkash':
         return (
-          <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
-            <polygon points="6,60 62,8 52,48 6,60" fill="#E2136E"/>
-            <polygon points="62,8 114,36 76,50 62,8" fill="#C4164D"/>
-            <polygon points="76,50 118,92 70,72 76,50" fill="#E2136E"/>
-            <polygon points="70,72 78,114 46,84 70,72" fill="#B01244"/>
-            <polygon points="46,84 6,108 34,64 46,84" fill="#E2136E"/>
-            <polygon points="34,64 52,48 70,72 34,64" fill="#F03380"/>
+          <svg width={size} height={size} viewBox="245 10 226 215" fill="none">
+            <path d="M327.99 110.75l12.99 58.4 85.01-43.04z" fill="#D12053"/>
+            <path d="M352.16 23.48L328 110.76l98.01 15.35z" fill="#E2136E"/>
+            <path d="M248.31 10.7l101.38 12.11-23.97 86.76z" fill="#D12053"/>
+            <path d="M247.52 27.76h11.29l31.67 40.5z" fill="#9E1638"/>
+            <path d="M428.69 125.55l-29.46-40.77 47.66-8.53z" fill="#D12053"/>
+            <path d="M423.77 137.5l3.04-9.07-74.39 37.74z" fill="#E2136E"/>
+            <path d="M325.91 113.05l15.52 69.77-46.06 37.46z" fill="#9E1638"/>
+            <path d="M442.25 96.97l27.05-.46-19.55-19.89z" fill="#E2136E"/>
           </svg>
         );
       case 'SSLCommerz':
