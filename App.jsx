@@ -810,40 +810,40 @@ export default function AdLedgerApp() {
 
   return (
     <>
-      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
+      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell aside nav{scrollbar-width:none;-ms-overflow-style:none;} .adl-shell aside nav::-webkit-scrollbar{display:none;} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
       <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
 
         {/* SIDEBAR */}
         <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
-          {/* Top: Current Workspace Card */}
-          <div className="p-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/20">
-            <div className="flex items-center gap-3 text-white min-w-0 flex-1">
+          {/* Top: Current Workspace Card - Compact & Clean */}
+          <div className="px-4 py-3 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/20">
+            <div className="flex items-center gap-2.5 text-white min-w-0 flex-1">
               {workspaceLogo ? (
                 <img
                   src={workspaceLogo}
                   alt="Workspace logo"
-                  className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm shrink-0 bg-white"
+                  className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shadow-sm shrink-0 bg-white"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center font-bold text-white text-sm shadow-sm shrink-0 border border-white/20">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center font-bold text-white text-xs shadow-sm shrink-0 border border-white/20">
                   {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <span className="block text-sm font-bold tracking-tight text-white truncate">
+                <span className="block text-xs font-bold tracking-tight text-white truncate leading-none">
                   {workspaceSettings.businessName || 'My Workspace'}
                 </span>
-                <span className="block text-[10px] font-medium text-slate-400 truncate">
+                <span className="block text-[9.5px] font-medium text-slate-400 truncate leading-none mt-1">
                   {workspaceSettings.workspaceType || 'Agency'} Workspace
                 </span>
               </div>
             </div>
             <button className="md:hidden text-slate-400 hover:text-white p-1" onClick={() => setIsMobileMenuOpen(false)}>
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
 
-          <nav className="flex-1 px-3.5 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3 py-2.5 space-y-0.5 overflow-y-auto">
             <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
             <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />
             <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => { setCurrentView('campaigns'); setIsMobileMenuOpen(false); }} />
@@ -851,31 +851,28 @@ export default function AdLedgerApp() {
             <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => { setCurrentView('cards'); setIsMobileMenuOpen(false); }} />
             <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} />
 
-            <div className="pt-4 mt-3 border-t border-slate-800/70">
-              <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">Workspace</p>
+            <div className="pt-2 mt-2 border-t border-slate-800/70">
+              <p className="px-3 pb-1 text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Workspace</p>
               <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
               <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
             </div>
           </nav>
 
-          {/* Sidebar Footer: Settings + Master AdLytic Platform Brand */}
-          <div className="p-3.5 border-t border-slate-800 space-y-3 bg-slate-950/50">
+          {/* Sidebar Footer: Settings + Clean Integrated AdLytic Brand */}
+          <div className="p-3 border-t border-slate-800/80 space-y-1.5 bg-slate-950/25">
             <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
             
-            {/* Master AdLytic Platform Brand Card — Spacious, Large & Elegant */}
-            <div className="p-3 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-850 border border-slate-800/90 shadow-lg flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-lg text-white shadow-md ring-2 ring-sky-500/30 shrink-0">
-                A
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-extrabold text-white tracking-tight flex items-center gap-1.5">
-                  AdLytic
-                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+            {/* Unboxed, Native Minimalist AdLytic Brand */}
+            <div className="px-3 pt-2 pb-1 flex items-center justify-between text-slate-400 border-t border-slate-800/50">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-md bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center font-black text-[11px] text-white shadow-sm ring-1 ring-white/20">
+                  A
                 </div>
-                <div className="text-[10.5px] font-medium text-slate-400 truncate">
-                  Digital Media Ledger
-                </div>
+                <span className="text-xs font-bold text-slate-100 tracking-tight">AdLytic</span>
               </div>
+              <span className="text-[10px] font-semibold text-sky-400/90 tracking-wide">
+                Ad Spend Intelligence
+              </span>
             </div>
           </div>
         </aside>
@@ -4431,8 +4428,8 @@ function Field({ label, children }) {
 
 function NavItem({ icon, label, isActive, onClick }) {
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-      {React.cloneElement(icon, { size: 18, className: isActive ? 'text-white' : 'text-slate-400' })}
+    <button onClick={onClick} className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-xs font-semibold ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+      {React.cloneElement(icon, { size: 17, className: isActive ? 'text-white' : 'text-slate-400' })}
       {label}
     </button>
   );
