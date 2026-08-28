@@ -54,28 +54,33 @@ export default function AuthGate({ children }) {
     const isRecoveryUrl = typeof window !== 'undefined' && /(^|&)type=recovery(&|$)/.test(window.location.hash.replace(/^#/, ''));
     if (isRecoveryUrl) setMode('reset');
 
-    // Safety timeout: Never stay stuck on loading screen
-    const timeoutId = setTimeout(() => {
-      if (mounted) setChecking(false);
-    }, 1200);
+    const checkSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (mounted && data?.session) {
+          setSession(data.session);
+        }
+      } catch (err) {
+        console.warn('Session verification fallback:', err);
+      } finally {
+        if (mounted) setChecking(false);
+      }
+    };
 
-    supabase.auth.getSession()
-      .then(({ data }) => {
-        if (!mounted) return;
-        clearTimeout(timeoutId);
-        setSession(data?.session ?? null);
-        setChecking(false);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        clearTimeout(timeoutId);
-        setChecking(false);
-      });
+    checkSession();
+
+    // Failsafe timer so loading is never stuck
+    const timer = setTimeout(() => {
+      if (mounted) setChecking(false);
+    }, 1500);
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
-      clearTimeout(timeoutId);
-      setSession(nextSession ?? null);
+      if (nextSession) {
+        setSession(nextSession);
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null);
+      }
       setChecking(false);
       if (event === 'PASSWORD_RECOVERY') {
         setMode('reset');
@@ -86,7 +91,7 @@ export default function AuthGate({ children }) {
 
     return () => {
       mounted = false;
-      clearTimeout(timeoutId);
+      clearTimeout(timer);
       listener?.subscription?.unsubscribe();
     };
   }, []);
@@ -94,52 +99,117 @@ export default function AuthGate({ children }) {
   const clearFeedback = () => { setError(''); setMessage(''); };
 
   const handleLogin = async (event) => {
-    event.preventDefault(); clearFeedback(); setBusy(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (signInError) setError(signInError.message || 'Unable to sign in. Please check your email and password.');
-    setBusy(false);
+    event.preventDefault();
+    clearFeedback();
+    setBusy(true);
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message || 'Unable to sign in. Please check your email and password.');
+      } else if (data?.session) {
+        setSession(data.session);
+      }
+    } catch (err) {
+      setError(err?.message || 'Network error occurred. Please check your connection and try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleSignUp = async (event) => {
-    event.preventDefault(); clearFeedback();
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
-    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-      setError('For a strong password, use uppercase, lowercase, a number and a symbol.'); return;
+    event.preventDefault();
+    clearFeedback();
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
     }
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      setError('For a strong password, use uppercase, lowercase, a number and a symbol.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     setBusy(true);
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(), password,
-      options: { emailRedirectTo: redirectUrl, data: { business_name: businessName.trim() || 'AdLytic' } },
-    });
-    if (signUpError) { setError(signUpError.message || 'Unable to create your account.'); setBusy(false); return; }
-    setPassword(''); setConfirmPassword('');
-    if (data.session) setMessage('Account created successfully. Your AdLytic workspace is ready.');
-    else { setMode('login'); setMessage('Account created. Check your email to confirm your account, then sign in.'); }
-    setBusy(false);
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: redirectUrl, data: { business_name: businessName.trim() || 'AdLytic' } },
+      });
+      if (signUpError) {
+        setError(signUpError.message || 'Unable to create your account.');
+      } else {
+        setPassword('');
+        setConfirmPassword('');
+        if (data?.session) {
+          setSession(data.session);
+          setMessage('Account created successfully. Your AdLytic workspace is ready.');
+        } else {
+          setMode('login');
+          setMessage('Account created. Check your email to confirm your account, then sign in.');
+        }
+      }
+    } catch (err) {
+      setError(err?.message || 'Network error during signup.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleForgotPassword = async (event) => {
-    event.preventDefault(); clearFeedback();
-    if (!email.trim()) { setError('Enter your account email first.'); return; }
+    event.preventDefault();
+    clearFeedback();
+    if (!email.trim()) {
+      setError('Enter your account email first.');
+      return;
+    }
     setBusy(true);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectUrl });
-    if (resetError) setError(resetError.message || 'Unable to send the password reset email.');
-    else setMessage('Password reset email sent. Check your inbox and use the newest reset link.');
-    setBusy(false);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirectUrl });
+      if (resetError) setError(resetError.message || 'Unable to send the password reset email.');
+      else setMessage('Password reset email sent. Check your inbox and use the newest reset link.');
+    } catch (err) {
+      setError(err?.message || 'Failed to send reset email.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleUpdatePassword = async (event) => {
-    event.preventDefault(); clearFeedback();
-    if (password.length < 8) { setError('New password must be at least 8 characters.'); return; }
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    event.preventDefault();
+    clearFeedback();
+    if (password.length < 8) {
+      setError('New password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     setBusy(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    if (updateError) { setError(updateError.message || 'Unable to update your password.'); setBusy(false); return; }
-    await supabase.auth.signOut({ scope: 'local' });
-    if (typeof window !== 'undefined') window.history.replaceState({}, document.title, window.location.pathname);
-    setSession(null); setPassword(''); setConfirmPassword(''); setMode('login');
-    setMessage('Password updated successfully. Please sign in with your new password.'); setBusy(false);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        setError(updateError.message || 'Unable to update your password.');
+      } else {
+        await supabase.auth.signOut({ scope: 'local' });
+        if (typeof window !== 'undefined') window.history.replaceState({}, document.title, window.location.pathname);
+        setSession(null);
+        setPassword('');
+        setConfirmPassword('');
+        setMode('login');
+        setMessage('Password updated successfully. Please sign in with your new password.');
+      }
+    } catch (err) {
+      setError(err?.message || 'Failed to update password.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (checking) return (
