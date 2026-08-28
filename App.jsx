@@ -2991,7 +2991,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [securityBusy, setSecurityBusy] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [signOutOthersBusy, setSignOutOthersBusy] = useState(false);
+  const [logoutBusy, setLogoutBusy] = useState(false);
   const [securityFeedback, setSecurityFeedback] = useState({ error: '', message: '' });
 
   const fileRef = useRef(null);
@@ -3043,24 +3046,27 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     if (newPassword !== confirmPassword) return setSecurityFeedback({ error: 'New passwords do not match.', message: '' });
     if (currentPassword === newPassword) return setSecurityFeedback({ error: 'Your new password must be different.', message: '' });
 
-    setSecurityBusy(true);
-    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
-    if (verifyError) {
-      setSecurityBusy(false);
-      return setSecurityFeedback({ error: 'Current password is incorrect.', message: '' });
-    }
+    setPasswordBusy(true);
+    try {
+      const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+      if (verifyError) {
+        return setSecurityFeedback({ error: 'Current password is incorrect.', message: '' });
+      }
 
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-    if (updateError) {
-      setSecurityBusy(false);
-      return setSecurityFeedback({ error: updateError.message || 'Failed to update password.', message: '' });
-    }
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) {
+        return setSecurityFeedback({ error: updateError.message || 'Failed to update password.', message: '' });
+      }
 
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setSecurityBusy(false);
-    setSecurityFeedback({ error: '', message: 'Password updated successfully!' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setSecurityFeedback({ error: '', message: 'Password updated successfully!' });
+    } catch (err) {
+      setSecurityFeedback({ error: err?.message || 'Password update failed.', message: '' });
+    } finally {
+      setPasswordBusy(false);
+    }
   };
 
   const handleSendResetEmail = async () => {
@@ -3068,29 +3074,45 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     const email = session?.user?.email || '';
     if (!email) return setSecurityFeedback({ error: 'Authenticated email not found.', message: '' });
 
-    setSecurityBusy(true);
-    const redirectTo = typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
-    setSecurityBusy(false);
-    if (error) {
-      setSecurityFeedback({ error: error.message || 'Unable to send reset email.', message: '' });
-    } else {
-      setSecurityFeedback({ error: '', message: `Reset link sent to ${email}` });
+    setResetBusy(true);
+    try {
+      const redirectTo = typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
+      if (error) {
+        setSecurityFeedback({ error: error.message || 'Unable to send reset email.', message: '' });
+      } else {
+        setSecurityFeedback({ error: '', message: `Reset link sent to ${email}` });
+      }
+    } catch (err) {
+      setSecurityFeedback({ error: err?.message || 'Failed to send reset email.', message: '' });
+    } finally {
+      setResetBusy(false);
     }
   };
 
   const handleSignOutOthers = async () => {
-    setSecurityBusy(true);
-    const { error } = await supabase.auth.signOut({ scope: 'others' });
-    setSecurityBusy(false);
-    if (error) setSecurityFeedback({ error: error.message, message: '' });
-    else setSecurityFeedback({ error: '', message: 'All other sessions have been signed out.' });
+    setSignOutOthersBusy(true);
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'others' });
+      if (error) setSecurityFeedback({ error: error.message, message: '' });
+      else setSecurityFeedback({ error: '', message: 'All other sessions have been signed out.' });
+    } catch (err) {
+      setSecurityFeedback({ error: err?.message || 'Failed to sign out other devices.', message: '' });
+    } finally {
+      setSignOutOthersBusy(false);
+    }
   };
 
   const handleLogOut = async () => {
-    setSecurityBusy(true);
-    await supabase.auth.signOut();
-    setSecurityBusy(false);
+    setLogoutBusy(true);
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Sign out error:', err);
+    } finally {
+      setLogoutBusy(false);
+      setSession(null);
+    }
   };
 
   // --- EXCEL / CSV EXPORTERS ---
@@ -3927,10 +3949,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                   <button
                     type="button"
                     onClick={handleSendResetEmail}
-                    disabled={securityBusy}
-                    className="px-3.5 py-2 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold transition-colors"
+                    disabled={resetBusy}
+                    className="px-3.5 py-2 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold transition-colors disabled:opacity-50"
                   >
-                    Send Reset Link
+                    {resetBusy ? 'Sending Link...' : 'Send Reset Link'}
                   </button>
                 </div>
               </div>
@@ -4013,10 +4035,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
 
               <button
                 type="submit"
-                disabled={securityBusy}
+                disabled={passwordBusy}
                 className="w-full px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-sm disabled:opacity-50"
               >
-                {securityBusy ? 'Updating Password...' : 'Change Password'}
+                {passwordBusy ? 'Updating Password...' : 'Change Password'}
               </button>
             </form>
           </div>
@@ -4050,10 +4072,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 <button
                   type="button"
                   onClick={handleLogOut}
-                  disabled={securityBusy}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition-colors shadow-sm"
+                  disabled={logoutBusy}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition-colors shadow-sm disabled:opacity-50"
                 >
-                  <LogOut size={13} /> Log Out
+                  <LogOut size={13} /> {logoutBusy ? 'Logging Out...' : 'Log Out'}
                 </button>
               </div>
 
@@ -4070,10 +4092,10 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 <button
                   type="button"
                   onClick={handleSignOutOthers}
-                  disabled={securityBusy}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 text-xs font-bold text-sky-700 transition-colors shadow-sm"
+                  disabled={signOutOthersBusy}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 text-xs font-bold text-sky-700 transition-colors shadow-sm disabled:opacity-50"
                 >
-                  <ShieldCheck size={13} /> Sign Out Other Devices
+                  <ShieldCheck size={13} /> {signOutOthersBusy ? 'Revoking...' : 'Sign Out Other Devices'}
                 </button>
               </div>
             </div>
