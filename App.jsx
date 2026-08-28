@@ -7,7 +7,8 @@ import {
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
   AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
-  UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw
+  UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw,
+  Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import { 
@@ -16,7 +17,6 @@ import {
   AreaChart, Area, PieChart as RePieChart, Pie, Cell
 } from 'recharts';
 
-// --- WORKSPACE RESOLVER & CLOUD PERSISTENCE ---
 // --- WORKSPACE RESOLVER & CLOUD PERSISTENCE ---
 let resolvedWorkspaceId = null;
 let resolvedWorkspacePromise = null;
@@ -430,6 +430,7 @@ const getPresetDates = (preset) => {
 // --- DEFAULT WORKSPACE SETTINGS ---
 const DEFAULT_SETTINGS = {
   businessName: 'AdLytic',
+  shortCode: 'ADL',
   workspaceType: 'Agency',
   industry: 'Digital Marketing',
   country: 'BD',
@@ -441,10 +442,17 @@ const DEFAULT_SETTINGS = {
   contactEmail: '',
   phone: '',
   address: '',
-  description: '',
+  taxId: '',
+  invoiceNotes: 'Thank you for choosing our digital advertising services.',
   alerts: true,
+  cardLowBalanceAlert: true,
+  cardLowBalanceThreshold: '10',
   financialAlertThreshold: '80',
+  audioAlerts: false,
   financialEmailAlerts: false,
+  defaultUSDRate: '131.25',
+  defaultAdTaxRate: '15',
+  defaultCashoutChargeRate: '1.5',
 };
 
 // --- MAIN APPLICATION ---
@@ -2962,330 +2970,515 @@ function TeamView({ teamMembers, onAdd, onRemove }) {
 }
 
 
-// --- ACCOUNT & SECURITY (INTEGRATED INTO SETTINGS) ---
-function AccountSecuritySettings() {
+// --- PROFESSIONAL SETTINGS CENTER ---
+function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
+  const [activeTab, setActiveTab] = useState('branding');
+  const [data, setData] = useState(() => ({ ...DEFAULT_SETTINGS, ...settings }));
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null); // 'saving' | 'saved'
+  const [copiedId, setCopiedId] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [restoreFeedback, setRestoreFeedback] = useState(null);
+  
+  // Auth state for Security tab
   const [session, setSession] = useState(null);
-  const [tab, setTab] = useState('account');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => mounted && setSession(data?.session || null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => mounted && setSession(nextSession || null));
-    return () => { mounted = false; listener?.subscription?.unsubscribe(); };
-  }, []);
-  const clearFeedback = () => { setError(''); setMessage(''); };
-  const primary = { border: 0, borderRadius: 9, padding: '10px 14px', background: '#0ea5e9', color: '#fff', fontSize: 12, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .65 : 1 };
-  const secondary = { border: '1px solid #cfe0ea', borderRadius: 9, padding: '9px 12px', background: '#fff', color: '#24536d', fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' };
-  const input = { width: '100%', boxSizing: 'border-box', border: '1px solid #cfe0ea', borderRadius: 10, padding: '11px 12px', fontSize: 13, color: '#0f2940', background: '#fff', outline: 'none' };
-  const tabs = (active) => ({ border: 0, borderRadius: 9, padding: '9px 12px', background: active ? '#e0f5fd' : 'transparent', color: active ? '#0369a1' : '#587188', fontSize: 12, fontWeight: 800, cursor: 'pointer' });
-  const changePassword = async (event) => {
-    event.preventDefault(); clearFeedback();
-    const email = session?.user?.email || '';
-    if (!email) return setError('Your authenticated email could not be found.');
-    if (!currentPassword) return setError('Enter your current password.');
-    if (newPassword.length < 8) return setError('New password must be at least 8 characters.');
-    if (newPassword !== confirmPassword) return setError('New passwords do not match.');
-    if (currentPassword === newPassword) return setError('Your new password must be different from the current password.');
-    setBusy(true);
-    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
-    if (verifyError) { setError('Current password is incorrect.'); setBusy(false); return; }
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-    if (updateError) { setError(updateError.message || 'Unable to change your password.'); setBusy(false); return; }
-    setCurrentPassword(''); setNewPassword(''); setConfirmPassword(''); setMessage('Password changed successfully.'); setBusy(false);
-  };
-  const sendReset = async () => {
-    clearFeedback(); const email = session?.user?.email || '';
-    if (!email) return setError('Your authenticated email could not be found.');
-    setBusy(true);
-    const redirectTo = typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined;
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
-    if (resetError) setError(resetError.message || 'Unable to send the reset email.'); else setMessage('Password reset email sent to your account email.');
-    setBusy(false);
-  };
-  const signOutOthers = async () => {
-    clearFeedback(); setBusy(true);
-    const { error: e } = await supabase.auth.signOut({ scope: 'others' });
-    if (e) setError(e.message || 'Unable to sign out other sessions.'); else setMessage('All other active sessions have been signed out.');
-    setBusy(false);
-  };
-  const signOutAll = async () => {
-    clearFeedback(); setBusy(true);
-    const { error: e } = await supabase.auth.signOut();
-    if (e) setError(e.message || 'Unable to sign out.');
-    setBusy(false);
-  };
-  return (
-    <section className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden" style={{ marginTop: 18 }}>
-      <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-4"><div><h2 className="text-base font-bold text-slate-900">Account &amp; Security</h2><p className="text-xs text-slate-500 mt-1">Manage your AdLytic account, password and active sessions.</p></div><ShieldCheck size={20} className="text-sky-600" /></div>
-      <div className="px-4 pt-3 flex flex-wrap gap-2 border-b border-slate-200"><button type="button" onClick={() => { clearFeedback(); setTab('account'); }} style={tabs(tab === 'account')}>Account</button><button type="button" onClick={() => { clearFeedback(); setTab('security'); }} style={tabs(tab === 'security')}>Security</button><button type="button" onClick={() => { clearFeedback(); setTab('sessions'); }} style={tabs(tab === 'sessions')}>Sessions</button></div>
-      <div className="p-5">
-        {error && <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid #fecaca', background: '#fff1f2', color: '#b91c1c', fontSize: 12 }}>{error}</div>}
-        {message && <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid #bae6fd', background: '#f0f9ff', color: '#0369a1', fontSize: 12 }}>{message}</div>}
-        {tab === 'account' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Account information</div><div className="text-xs text-slate-500 mt-1">Your authenticated AdLytic identity.</div><div className="mt-4 space-y-3"><div><div className="text-[10px] font-bold text-slate-500 mb-1">EMAIL</div><div style={{ ...input, background: '#f8fafc' }}>{session?.user?.email || 'Loading...'}</div></div><div><div className="text-[10px] font-bold text-slate-500 mb-1">USER ID</div><div style={{ ...input, background: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis' }}>{session?.user?.id || 'Loading...'}</div></div><div><div className="text-[10px] font-bold text-slate-500 mb-1">AUTHENTICATION</div><div className="text-sm font-semibold text-emerald-700">Email + password</div></div></div></div><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Password recovery</div><div className="text-xs text-slate-500 mt-1">Send a secure password reset link to your account email.</div><button type="button" onClick={sendReset} disabled={busy} style={{ ...primary, marginTop: 18 }}>Send reset email</button></div></div>}
-        {tab === 'security' && <form onSubmit={changePassword} className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Change password</div><div className="text-xs text-slate-500 mt-1">Verify your current password before setting a new one.</div><div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-4"><label className="text-xs font-semibold text-slate-600">Current password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" /><button type="button" onClick={() => setShowCurrent(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showCurrent ? 'Hide' : 'Show'}</button></div></label><label className="text-xs font-semibold text-slate-600">New password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showNew ? 'text' : 'password'} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowNew(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showNew ? 'Hide' : 'Show'}</button></div></label><label className="text-xs font-semibold text-slate-600">Confirm password<div className="relative mt-1"><input style={{ ...input, paddingRight: 60 }} type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" /><button type="button" onClick={() => setShowConfirm(v => !v)} style={{ position: 'absolute', right: 7, top: 8, border: 0, background: 'transparent', color: '#0369a1', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{showConfirm ? 'Hide' : 'Show'}</button></div></label></div><div className="mt-4 flex items-center justify-between gap-3 flex-wrap"><span className="text-[11px] text-slate-500">Use at least 8 characters for your new password.</span><button type="submit" disabled={busy} style={primary}>{busy ? 'Updating...' : 'Update password'}</button></div></form>}
-        {tab === 'sessions' && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Current session</div><div className="text-xs text-slate-500 mt-1">This browser is currently authenticated.</div><div className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-700"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Active</div><button type="button" onClick={signOutAll} disabled={busy} style={{ ...secondary, marginTop: 14 }}>Log out everywhere</button></div><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm font-bold text-slate-900">Other sessions</div><div className="text-xs text-slate-500 mt-1">Invalidate all other active sessions while keeping this one signed in.</div><button type="button" onClick={signOutOthers} disabled={busy} style={{ ...secondary, marginTop: 18 }}>Sign out other devices</button></div></div>}
-      </div>
-    </section>
-  );
-}
+  const [securityBusy, setSecurityBusy] = useState(false);
+  const [securityFeedback, setSecurityFeedback] = useState({ error: '', message: '' });
 
-function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
-  const [data, setData] = useState(() => ({ ...DEFAULT_SETTINGS, ...settings }));
-  const [savedSuccess, setSavedSuccess] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
     setData(prev => ({ ...DEFAULT_SETTINGS, ...prev, ...settings }));
   }, [settings]);
 
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => mounted && setSession(data?.session || null));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => mounted && setSession(nextSession || null));
+    return () => {
+      mounted = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
+
   const handleChange = (key, value) => {
     setData(prev => ({ ...prev, [key]: value }));
+    setIsDirty(true);
   };
 
   const handleSave = () => {
+    setSaveStatus('saving');
     onSave(data);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    setTimeout(() => {
+      setSaveStatus('saved');
+      setIsDirty(false);
+      setTimeout(() => setSaveStatus(null), 3000);
+    }, 400);
+  };
+
+  const copyUserId = () => {
+    if (session?.user?.id) {
+      navigator.clipboard?.writeText(session.user.id);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setSecurityFeedback({ error: '', message: '' });
+    const email = session?.user?.email || '';
+    if (!email) return setSecurityFeedback({ error: 'Your authenticated email could not be found.', message: '' });
+    if (!currentPassword) return setSecurityFeedback({ error: 'Enter your current password.', message: '' });
+    if (newPassword.length < 8) return setSecurityFeedback({ error: 'New password must be at least 8 characters.', message: '' });
+    if (newPassword !== confirmPassword) return setSecurityFeedback({ error: 'New passwords do not match.', message: '' });
+    if (currentPassword === newPassword) return setSecurityFeedback({ error: 'Your new password must be different.', message: '' });
+
+    setSecurityBusy(true);
+    const { error: verifyError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+    if (verifyError) {
+      setSecurityBusy(false);
+      return setSecurityFeedback({ error: 'Current password is incorrect.', message: '' });
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) {
+      setSecurityBusy(false);
+      return setSecurityFeedback({ error: updateError.message || 'Failed to update password.', message: '' });
+    }
+
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setSecurityBusy(false);
+    setSecurityFeedback({ error: '', message: 'Password updated successfully!' });
+  };
+
+  const handleSendResetEmail = async () => {
+    setSecurityFeedback({ error: '', message: '' });
+    const email = session?.user?.email || '';
+    if (!email) return setSecurityFeedback({ error: 'Authenticated email not found.', message: '' });
+
+    setSecurityBusy(true);
+    const redirectTo = typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, redirectTo ? { redirectTo } : undefined);
+    setSecurityBusy(false);
+    if (error) {
+      setSecurityFeedback({ error: error.message || 'Unable to send reset email.', message: '' });
+    } else {
+      setSecurityFeedback({ error: '', message: `Reset link sent to ${email}` });
+    }
+  };
+
+  const handleSignOutOthers = async () => {
+    setSecurityBusy(true);
+    const { error } = await supabase.auth.signOut({ scope: 'others' });
+    setSecurityBusy(false);
+    if (error) setSecurityFeedback({ error: error.message, message: '' });
+    else setSecurityFeedback({ error: '', message: 'All other sessions have been signed out.' });
+  };
+
+  const handleSignOutAll = async () => {
+    setSecurityBusy(true);
+    await supabase.auth.signOut();
+    setSecurityBusy(false);
+  };
+
+  const handleFileRestore = (file) => {
+    if (!file) return;
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && (parsed.clients || parsed.transactions || parsed.cards || Array.isArray(parsed))) {
+            onImport(file);
+            setRestoreFeedback({ success: true, message: 'Backup imported successfully!' });
+          } else {
+            setRestoreFeedback({ success: false, message: 'Invalid AdLytic backup format.' });
+          }
+        } catch (err) {
+          setRestoreFeedback({ success: false, message: 'JSON parsing failed. Please upload a valid JSON file.' });
+        }
+      };
+      reader.readAsText(file);
+    } catch (err) {
+      setRestoreFeedback({ success: false, message: 'Error reading file.' });
+    }
   };
 
   const timezoneList = [
-    ['Asia/Dhaka', 'Asia/Dhaka (GMT+6)'],
-    ['UTC', 'UTC (GMT+0)'],
-    ['Asia/Kolkata', 'Asia/Kolkata (GMT+5:30)'],
-    ['Asia/Dubai', 'Asia/Dubai (GMT+4)'],
-    ['Asia/Singapore', 'Asia/Singapore (GMT+8)'],
-    ['Asia/Tokyo', 'Asia/Tokyo (GMT+9)'],
-    ['Asia/Bangkok', 'Asia/Bangkok (GMT+7)'],
-    ['Europe/London', 'Europe/London (GMT+0 / BST)'],
-    ['Europe/Berlin', 'Europe/Berlin (GMT+1)'],
-    ['Europe/Paris', 'Europe/Paris (GMT+1)'],
-    ['America/New_York', 'America/New_York (EST / EDT)'],
-    ['America/Chicago', 'America/Chicago (CST / CDT)'],
-    ['America/Denver', 'America/Denver (MST / MDT)'],
-    ['America/Los_Angeles', 'America/Los_Angeles (PST / PDT)'],
-    ['America/Toronto', 'America/Toronto (EST / EDT)'],
-    ['Australia/Sydney', 'Australia/Sydney (AEST)']
+    ['Asia/Dhaka', 'Asia/Dhaka (GMT+6 · Bangladesh Standard Time)'],
+    ['UTC', 'UTC (GMT+0 · Universal Coordinated Time)'],
+    ['Asia/Kolkata', 'Asia/Kolkata (GMT+5:30 · India Standard Time)'],
+    ['Asia/Dubai', 'Asia/Dubai (GMT+4 · Gulf Standard Time)'],
+    ['Asia/Singapore', 'Asia/Singapore (GMT+8 · Singapore Time)'],
+    ['Asia/Tokyo', 'Asia/Tokyo (GMT+9 · Japan Standard Time)'],
+    ['Asia/Bangkok', 'Asia/Bangkok (GMT+7 · Indochina Time)'],
+    ['Europe/London', 'Europe/London (GMT+0 / BST · UK Time)'],
+    ['Europe/Berlin', 'Europe/Berlin (GMT+1 · Central European Time)'],
+    ['Europe/Paris', 'Europe/Paris (GMT+1 · Western European Time)'],
+    ['America/New_York', 'America/New_York (EST / EDT · Eastern Time)'],
+    ['America/Chicago', 'America/Chicago (CST / CDT · Central Time)'],
+    ['America/Denver', 'America/Denver (MST / MDT · Mountain Time)'],
+    ['America/Los_Angeles', 'America/Los_Angeles (PST / PDT · Pacific Time)'],
+    ['America/Toronto', 'America/Toronto (EST / EDT · Canada)'],
+    ['Australia/Sydney', 'Australia/Sydney (AEST · Sydney Time)']
   ];
 
   const countryList = [
-    ['BD', 'Bangladesh'], ['US', 'United States'], ['GB', 'United Kingdom'], ['CA', 'Canada'],
-    ['AU', 'Australia'], ['IN', 'India'], ['PK', 'Pakistan'], ['AE', 'United Arab Emirates'],
-    ['SA', 'Saudi Arabia'], ['SG', 'Singapore'], ['MY', 'Malaysia'], ['DE', 'Germany'],
-    ['FR', 'France'], ['IT', 'Italy'], ['JP', 'Japan'], ['OTHER', 'Other']
+    ['BD', 'Bangladesh (🇧🇩)'],
+    ['US', 'United States (🇺🇸)'],
+    ['GB', 'United Kingdom (🇬🇧)'],
+    ['CA', 'Canada (🇨🇦)'],
+    ['AU', 'Australia (🇦🇺)'],
+    ['IN', 'India (🇮🇳)'],
+    ['PK', 'Pakistan (🇵🇰)'],
+    ['AE', 'United Arab Emirates (🇦🇪)'],
+    ['SA', 'Saudi Arabia (🇸🇦)'],
+    ['SG', 'Singapore (🇸🇬)'],
+    ['MY', 'Malaysia (🇲🇾)'],
+    ['DE', 'Germany (🇩🇪)'],
+    ['FR', 'France (🇫🇷)'],
+    ['IT', 'Italy (🇮🇹)'],
+    ['JP', 'Japan (🇯🇵)'],
+    ['OTHER', 'Other Region']
   ];
 
   const currencyList = [
-    ['BDT', 'BDT — Bangladeshi Taka (৳)'],
-    ['USD', 'USD — US Dollar ($)'],
-    ['EUR', 'EUR — Euro (€)'],
-    ['GBP', 'GBP — British Pound (£)'],
-    ['INR', 'INR — Indian Rupee (₹)'],
-    ['AED', 'AED — UAE Dirham'],
-    ['SAR', 'SAR — Saudi Riyal'],
-    ['SGD', 'SGD — Singapore Dollar'],
-    ['AUD', 'AUD — Australian Dollar'],
-    ['CAD', 'CAD — Canadian Dollar'],
-    ['MYR', 'MYR — Malaysian Ringgit'],
-    ['PKR', 'PKR — Pakistani Rupee']
+    ['BDT', '৳ BDT — Bangladeshi Taka', '৳'],
+    ['USD', '$ USD — US Dollar', '$'],
+    ['EUR', '€ EUR — Euro', '€'],
+    ['GBP', '£ GBP — British Pound', '£'],
+    ['INR', '₹ INR — Indian Rupee', '₹'],
+    ['AED', 'AED — UAE Dirham', 'AED '],
+    ['SAR', 'SAR — Saudi Riyal', 'SAR '],
+    ['SGD', 'S$ SGD — Singapore Dollar', 'S$'],
+    ['AUD', 'A$ AUD — Australian Dollar', 'A$'],
+    ['CAD', 'C$ CAD — Canadian Dollar', 'C$'],
+    ['MYR', 'RM MYR — Malaysian Ringgit', 'RM '],
+    ['PKR', 'Rs PKR — Pakistani Rupee', 'Rs ']
   ];
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-      <AccountSecuritySettings />
+  const navTabs = [
+    { id: 'branding', label: 'General & Branding', icon: <SlidersHorizontal size={17} /> },
+    { id: 'agency', label: 'Agency Profile', icon: <Building size={17} /> },
+    { id: 'financial', label: 'Financial Safety & Rates', icon: <Coins size={17} /> },
+    { id: 'security', label: 'Account & Security', icon: <Lock size={17} /> },
+    { id: 'backups', label: 'Data & Cloud Sync', icon: <Database size={17} /> },
+  ];
 
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Workspace & Business Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">Preferences, agency details, currencies and data safety.</p>
+  const selectedCurrencySymbol = currencyList.find(c => c[0] === data.currency)?.[2] || '৳';
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
+      {/* TOP HEADER */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Settings Center</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+              {data.shortCode || 'ADL'} · Active
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage your agency branding, currencies, safety rails, credentials and cloud backups.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {saveStatus === 'saved' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold animate-in fade-in">
+              <CheckCircle2 size={15} className="text-emerald-600" /> Changes Saved
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saveStatus === 'saving'}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-sm transition-all ${
+              isDirty
+                ? 'bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 ring-2 ring-blue-400/40'
+                : 'bg-slate-900 hover:bg-slate-800'
+            } disabled:opacity-50`}
+          >
+            <Save size={16} />
+            {saveStatus === 'saving' ? 'Saving...' : isDirty ? 'Save Changes *' : 'Save Settings'}
+          </button>
+        </div>
       </div>
 
-      {savedSuccess && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-2">
-          <CheckCircle2 size={18} className="text-emerald-600" /> Settings saved successfully.
-        </div>
-      )}
+      {/* TAB NAVIGATION */}
+      <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/90 border border-slate-200 rounded-2xl overflow-x-auto">
+        {navTabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                active
+                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 scale-[1.01]'
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
+              }`}
+            >
+              <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* GENERAL WORKSPACE */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-            <SlidersHorizontal size={20} className="text-sky-600" />
-            <div>
-              <h3 className="font-bold text-slate-900">General Identity</h3>
-              <p className="text-xs text-slate-500">Core workspace branding and reporting defaults.</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                {logo ? (
-                  <img src={logo} alt="Workspace logo" className="w-14 h-14 rounded-2xl object-cover bg-white border border-sky-100 shadow-sm" />
-                ) : (
-                  <div className="adl-brand-mark w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-extrabold text-white">A</div>
-                )}
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">Workspace Logo</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Upload PNG, JPG or WebP (max 2 MB).</p>
-                </div>
+      {/* ================= TAB 1: GENERAL & BRANDING ================= */}
+      {activeTab === 'branding' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-in fade-in duration-300">
+          {/* Logo Card */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <Sparkles size={18} className="text-sky-600" />
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Workspace Brand Logo</h3>
+                <p className="text-[11px] text-slate-500">Appears on headers and PDF reports.</p>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-sky-500 text-white text-xs font-semibold hover:bg-sky-600 transition-colors shadow-sm">
-                  <Upload size={14} />{logo ? 'Change' : 'Upload'}
-                  <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={e => { onLogoUpload(e.target.files?.[0]); e.target.value = ''; }} />
+            </div>
+
+            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-sky-200 rounded-2xl bg-sky-50/40 text-center relative group">
+              {logo ? (
+                <div className="relative">
+                  <img
+                    src={logo}
+                    alt="Workspace Logo"
+                    className="w-24 h-24 rounded-2xl object-cover bg-white border border-sky-200 shadow-md transition-transform group-hover:scale-105"
+                  />
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-extrabold uppercase">
+                    Active Logo
+                  </div>
+                </div>
+              ) : (
+                <div className="adl-brand-mark w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-md">
+                  {data.shortCode?.[0] || data.businessName?.[0] || 'A'}
+                </div>
+              )}
+
+              <p className="text-xs font-semibold text-slate-700 mt-4">
+                {logo ? 'Custom Brandmark Attached' : 'Default Brand Symbol'}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">PNG, JPG, SVG or WebP · Max 2MB</p>
+
+              <div className="flex items-center gap-2 mt-4">
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all">
+                  <Upload size={13} /> {logo ? 'Change Logo' : 'Upload Logo'}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={(e) => {
+                      onLogoUpload(e.target.files?.[0]);
+                      e.target.value = '';
+                    }}
+                  />
                 </label>
+
                 {logo && (
-                  <button type="button" onClick={onRemoveLogo} className="px-3 py-2 rounded-lg border border-red-200 bg-white text-red-600 text-xs font-semibold hover:bg-red-50">
+                  <button
+                    type="button"
+                    onClick={onRemoveLogo}
+                    className="px-3 py-2 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-bold transition-colors"
+                  >
                     Remove
                   </button>
                 )}
               </div>
             </div>
-          </div>
 
-          <Field label="Business / Workspace Name">
-            <input
-              type="text"
-              value={data.businessName || ''}
-              onChange={e => handleChange('businessName', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
-            />
-          </Field>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Timezone">
-              <select
-                value={data.timezone || 'Asia/Dhaka'}
-                onChange={e => handleChange('timezone', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
-              >
-                {timezoneList.map(([tz, label]) => (
-                  <option key={tz} value={tz}>{label}</option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Default Report Range">
-              <select
-                value={data.defaultReportRange || 'This Month'}
-                onChange={e => handleChange('defaultReportRange', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
-              >
-                <option>This Month</option>
-                <option>Last 7 Days</option>
-                <option>Last 30 Days</option>
-                <option>Lifetime</option>
-              </select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Language">
-              <select
-                value={data.language || 'English'}
-                onChange={e => handleChange('language', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
-              >
-                <option value="English">English</option>
-                <option value="Bangla">বাংলা (Bangla)</option>
-              </select>
-            </Field>
-
-            <Field label="Primary Currency">
-              <select
-                value={data.currency || 'BDT'}
-                onChange={e => handleChange('currency', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
-              >
-                {currencyList.map(([code, name]) => (
-                  <option key={code} value={code}>{name}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-        </div>
-
-        {/* WORKSPACE PROFILE */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-            <Building size={20} className="text-sky-600" />
-            <div>
-              <h3 className="font-bold text-slate-900">Organization & Contact</h3>
-              <p className="text-xs text-slate-500">Business details for client reports and invoicing.</p>
+            {/* Currency Live Preview Card */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
+              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Display Preview</div>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-xs text-slate-600">Sample Metric:</span>
+                <span className="text-sm font-black text-slate-900">
+                  {selectedCurrencySymbol}15,450.00
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Workspace Type">
-              <select
-                value={data.workspaceType || 'Agency'}
-                onChange={e => handleChange('workspaceType', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
-              >
-                <option>Agency</option>
-                <option>Freelancer</option>
-                <option>In-house Marketing</option>
-                <option>E-commerce</option>
-                <option>Startup</option>
-                <option>Other</option>
-              </select>
-            </Field>
+          {/* General Inputs */}
+          <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <SlidersHorizontal size={18} className="text-sky-600" />
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Identity & Localization</h3>
+                <p className="text-[11px] text-slate-500">Default currencies, timezones and reporting language.</p>
+              </div>
+            </div>
 
-            <Field label="Industry">
-              <select
-                value={data.industry || 'Digital Marketing'}
-                onChange={e => handleChange('industry', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
-              >
-                <option>Digital Marketing</option>
-                <option>Advertising</option>
-                <option>E-commerce</option>
-                <option>Technology</option>
-                <option>Retail</option>
-                <option>Other</option>
-              </select>
-            </Field>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <Field label="Workspace / Business Name">
+                  <input
+                    type="text"
+                    value={data.businessName || ''}
+                    onChange={(e) => handleChange('businessName', e.target.value)}
+                    placeholder="e.g. AdLytic Agency"
+                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+                  />
+                </Field>
+              </div>
+
+              <div>
+                <Field label="Short Code / Slug">
+                  <input
+                    type="text"
+                    maxLength={5}
+                    value={data.shortCode || ''}
+                    onChange={(e) => handleChange('shortCode', e.target.value.toUpperCase())}
+                    placeholder="ADL"
+                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none uppercase font-mono font-bold"
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Primary Currency">
+                <select
+                  value={data.currency || 'BDT'}
+                  onChange={(e) => handleChange('currency', e.target.value)}
+                  className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none font-medium"
+                >
+                  {currencyList.map(([code, name]) => (
+                    <option key={code} value={code}>{name}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Default Report Date Preset">
+                <select
+                  value={data.defaultReportRange || 'This Month'}
+                  onChange={(e) => handleChange('defaultReportRange', e.target.value)}
+                  className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+                >
+                  {DATE_PRESETS.map((preset) => (
+                    <option key={preset} value={preset}>{preset}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Workspace Timezone">
+                <select
+                  value={data.timezone || 'Asia/Dhaka'}
+                  onChange={(e) => handleChange('timezone', e.target.value)}
+                  className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+                >
+                  {timezoneList.map(([tz, label]) => (
+                    <option key={tz} value={tz}>{label}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Interface Language">
+                <select
+                  value={data.language || 'English'}
+                  onChange={(e) => handleChange('language', e.target.value)}
+                  className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+                >
+                  <option value="English">English (US / Global)</option>
+                  <option value="Bangla">বাংলা (Bangla)</option>
+                </select>
+              </Field>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= TAB 2: AGENCY PROFILE ================= */}
+      {activeTab === 'agency' && (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-5 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+            <Building size={18} className="text-sky-600" />
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Agency & Business Information</h3>
+              <p className="text-[11px] text-slate-500">Official business profile for client communication and statements.</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Country / Region">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Field label="Organization Type">
+              <select
+                value={data.workspaceType || 'Agency'}
+                onChange={(e) => handleChange('workspaceType', e.target.value)}
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+              >
+                <option>Digital Marketing Agency</option>
+                <option>Freelance Media Buyer</option>
+                <option>E-commerce Brand</option>
+                <option>Corporate In-House</option>
+                <option>Tech Startup</option>
+                <option>Other Organization</option>
+              </select>
+            </Field>
+
+            <Field label="Industry Sector">
+              <select
+                value={data.industry || 'Digital Marketing'}
+                onChange={(e) => handleChange('industry', e.target.value)}
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+              >
+                <option>Digital Marketing & Ads</option>
+                <option>E-commerce & Retail</option>
+                <option>Information Technology</option>
+                <option>Real Estate & Construction</option>
+                <option>Education & EdTech</option>
+                <option>Healthcare & Pharma</option>
+                <option>Finance & Banking</option>
+                <option>Other</option>
+              </select>
+            </Field>
+
+            <Field label="Country / Base Region">
               <select
                 value={data.country || 'BD'}
-                onChange={e => handleChange('country', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                onChange={(e) => handleChange('country', e.target.value)}
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
               >
-                {countryList.map(([c, n]) => (
-                  <option key={c} value={c}>{n}</option>
+                {countryList.map(([code, label]) => (
+                  <option key={code} value={code}>{label}</option>
                 ))}
               </select>
             </Field>
-
-            <Field label="Business Phone">
-              <input
-                type="tel"
-                value={data.phone || ''}
-                onChange={e => handleChange('phone', e.target.value)}
-                placeholder="+880 1XXXXXXXXX"
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
-              />
-            </Field>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Business Email">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Field label="Official Support Email">
               <input
                 type="email"
                 value={data.contactEmail || ''}
-                onChange={e => handleChange('contactEmail', e.target.value)}
-                placeholder="contact@agency.com"
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                onChange={(e) => handleChange('contactEmail', e.target.value)}
+                placeholder="contact@youragency.com"
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+              />
+            </Field>
+
+            <Field label="Contact Phone">
+              <input
+                type="tel"
+                value={data.phone || ''}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                placeholder="+880 1XXXXXXXXX"
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
               />
             </Field>
 
@@ -3293,135 +3486,558 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
               <input
                 type="url"
                 value={data.website || ''}
-                onChange={e => handleChange('website', e.target.value)}
-                placeholder="https://agency.com"
-                className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                onChange={(e) => handleChange('website', e.target.value)}
+                placeholder="https://youragency.com"
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
               />
             </Field>
           </div>
 
-          <Field label="Business Address">
-            <input
-              type="text"
-              value={data.address || ''}
-              onChange={e => handleChange('address', e.target.value)}
-              placeholder="Dhaka, Bangladesh"
-              className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Physical Address / Headquarters">
+              <input
+                type="text"
+                value={data.address || ''}
+                onChange={(e) => handleChange('address', e.target.value)}
+                placeholder="Level 4, Road 12, Banani, Dhaka"
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+              />
+            </Field>
+
+            <Field label="Trade License / Tax ID (Optional)">
+              <input
+                type="text"
+                value={data.taxId || ''}
+                onChange={(e) => handleChange('taxId', e.target.value)}
+                placeholder="TRAD/DNCC/123456/2026"
+                className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
+              />
+            </Field>
+          </div>
+
+          <Field label="Client Statement / Report Footer Note">
+            <textarea
+              rows={2}
+              value={data.invoiceNotes || ''}
+              onChange={(e) => handleChange('invoiceNotes', e.target.value)}
+              placeholder="Custom footer message on generated client summaries and invoices..."
+              className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-sky-500"
             />
           </Field>
         </div>
-      </div>
+      )}
 
-      {/* FINANCIAL ALERTS & DATA MANAGEMENT */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-            <AlertCircle size={20} className="text-orange-600" />
-            <div>
-              <h3 className="font-bold text-slate-900">Financial Alerts</h3>
-              <p className="text-xs text-slate-500">Monitor negative card balances and budget limits.</p>
+      {/* ================= TAB 3: FINANCIAL SAFETY & RATES ================= */}
+      {activeTab === 'financial' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 animate-in fade-in duration-300">
+          {/* Safety Rails */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <AlertCircle size={18} className="text-orange-600" />
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Financial Safety Rails</h3>
+                <p className="text-[11px] text-slate-500">Live warnings for negative balances & overspending.</p>
+              </div>
+            </div>
+
+            {/* Master Toggle */}
+            <label className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200/70 cursor-pointer hover:bg-slate-100/70 transition-colors">
+              <div>
+                <span className="block text-sm font-bold text-slate-900">Master Financial Alerts</span>
+                <span className="block text-xs text-slate-500 mt-0.5">
+                  Display high-visibility visual warning badges on cards and ledger.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={!!data.alerts}
+                onChange={(e) => handleChange('alerts', e.target.checked)}
+                className="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer"
+              />
+            </label>
+
+            {/* Card Low Balance Alert */}
+            <label className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200/70 cursor-pointer hover:bg-slate-100/70 transition-colors">
+              <div>
+                <span className="block text-sm font-bold text-slate-900">Low Card Balance Alert</span>
+                <span className="block text-xs text-slate-500 mt-0.5">
+                  Warn when a card available balance drops below ${data.cardLowBalanceThreshold || '10'}.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={!!data.cardLowBalanceAlert}
+                onChange={(e) => handleChange('cardLowBalanceAlert', e.target.checked)}
+                className="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer"
+              />
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Card Low Balance Limit ($)">
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={data.cardLowBalanceThreshold || '10'}
+                  onChange={(e) => handleChange('cardLowBalanceThreshold', e.target.value)}
+                  className="w-full mt-1 px-3.5 py-2 border border-slate-300 rounded-xl text-sm bg-white"
+                />
+              </Field>
+
+              <Field label="Client Budget Threshold Alert">
+                <select
+                  value={String(data.financialAlertThreshold || '80')}
+                  onChange={(e) => handleChange('financialAlertThreshold', e.target.value)}
+                  className="w-full mt-1 px-3.5 py-2 border border-slate-300 rounded-xl text-sm bg-white"
+                >
+                  <option value="70">Warn at 70% budget spend</option>
+                  <option value="80">Warn at 80% budget spend</option>
+                  <option value="90">Warn at 90% budget spend</option>
+                  <option value="100">Warn at 100% budget spend</option>
+                </select>
+              </Field>
             </div>
           </div>
 
-          <label className="flex items-center justify-between rounded-xl bg-slate-50 border border-slate-100 p-3.5 cursor-pointer">
-            <div>
-              <span className="block text-sm font-medium text-slate-900">Enable Financial Alerts</span>
-              <span className="block text-xs text-slate-500 mt-0.5">Highlight negative card balances & budget overruns.</span>
+          {/* Default Calculation Rates */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <Coins size={18} className="text-emerald-600" />
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Default Conversion Rates</h3>
+                <p className="text-[11px] text-slate-500">Auto-filled into new transactions for faster entry.</p>
+              </div>
             </div>
-            <input
-              type="checkbox"
-              checked={!!data.alerts}
-              onChange={e => handleChange('alerts', e.target.checked)}
-              className="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-500 cursor-pointer"
-            />
-          </label>
 
-          <Field label="Alert Threshold">
-            <select
-              value={String(data.financialAlertThreshold || '80')}
-              onChange={e => handleChange('financialAlertThreshold', e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+            <Field label="Default USD Purchase Rate (৳ per $1 USD)">
+              <div className="relative mt-1">
+                <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">৳</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={data.defaultUSDRate || '131.25'}
+                  onChange={(e) => handleChange('defaultUSDRate', e.target.value)}
+                  className="w-full pl-8 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                />
+              </div>
+            </Field>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Default Ad Tax / VAT (%)">
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={data.defaultAdTaxRate || '15'}
+                    onChange={(e) => handleChange('defaultAdTaxRate', e.target.value)}
+                    className="w-full pr-8 pl-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                  />
+                  <span className="absolute right-3.5 top-2.5 text-sm font-bold text-slate-400">%</span>
+                </div>
+              </Field>
+
+              <Field label="Default Cashout Charge (%)">
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    step="0.05"
+                    value={data.defaultCashoutChargeRate || '1.5'}
+                    onChange={(e) => handleChange('defaultCashoutChargeRate', e.target.value)}
+                    className="w-full pr-8 pl-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                  />
+                  <span className="absolute right-3.5 top-2.5 text-sm font-bold text-slate-400">%</span>
+                </div>
+              </Field>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60 text-xs text-emerald-800 flex items-start gap-2.5">
+              <CheckCircle2 size={16} className="text-emerald-600 mt-0.5 shrink-0" />
+              <span>
+                These rates pre-populate when adding transactions like <strong>Buy USD</strong> and <strong>Meta Ad Spend</strong>, saving you repetitive typing.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= TAB 4: ACCOUNT & SECURITY ================= */}
+      {activeTab === 'security' && (
+        <div className="space-y-5 animate-in fade-in duration-300">
+          {securityFeedback.error && (
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold flex items-center gap-2">
+              <AlertCircle size={17} className="text-red-600" /> {securityFeedback.error}
+            </div>
+          )}
+
+          {securityFeedback.message && (
+            <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-2">
+              <CheckCircle2 size={17} className="text-emerald-600" /> {securityFeedback.message}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Identity Card */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <ShieldCheck size={18} className="text-sky-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Account Identity</h3>
+                  <p className="text-[11px] text-slate-500">Your authenticated credentials.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account Email</label>
+                  <div className="mt-1 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-800">
+                    {session?.user?.email || 'Authenticated User'}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User ID</label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      readOnly
+                      value={session?.user?.id || '—'}
+                      className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-mono text-slate-600 select-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={copyUserId}
+                      className="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
+                    >
+                      {copiedId ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                      {copiedId ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800">Password Recovery</div>
+                    <div className="text-[11px] text-slate-500">Send an instant reset link to your email.</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendResetEmail}
+                    disabled={securityBusy}
+                    className="px-3.5 py-2 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold transition-colors"
+                  >
+                    Send Reset Link
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Change Password Form */}
+            <form onSubmit={handleChangePassword} className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <KeyRound size={18} className="text-sky-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Update Password</h3>
+                  <p className="text-[11px] text-slate-500">Change your login password securely.</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700">Current Password</label>
+                <div className="relative mt-1">
+                  <input
+                    type={showCurrent ? 'text' : 'password'}
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3.5 py-2.5 pr-10 border border-slate-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrent(!showCurrent)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                  >
+                    {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700">New Password</label>
+                  <div className="relative mt-1">
+                    <input
+                      type={showNew ? 'text' : 'password'}
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min 8 chars"
+                      className="w-full px-3.5 py-2.5 pr-10 border border-slate-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew(!showNew)}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                    >
+                      {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700">Confirm Password</label>
+                  <div className="relative mt-1">
+                    <input
+                      type={showConfirm ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repeat password"
+                      className="w-full px-3.5 py-2.5 pr-10 border border-slate-300 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                    >
+                      {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={securityBusy}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-sm disabled:opacity-50"
+              >
+                {securityBusy ? 'Updating Password...' : 'Change Password'}
+              </button>
+            </form>
+          </div>
+
+          {/* Sessions Card */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Active Browser Sessions</h3>
+                <p className="text-[11px] text-slate-500">Manage signed-in devices for this account.</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Current Session Active
+              </span>
+            </div>
+
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs text-slate-600">
+                Invalidate all other devices if you logged in on a public or shared computer.
+              </p>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSignOutOthers}
+                  disabled={securityBusy}
+                  className="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors shadow-sm"
+                >
+                  Sign Out Other Devices
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOutAll}
+                  disabled={securityBusy}
+                  className="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600 transition-colors"
+                >
+                  Log Out Everywhere
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= TAB 5: DATA & CLOUD SYNC ================= */}
+      {activeTab === 'backups' && (
+        <div className="space-y-5 animate-in fade-in duration-300">
+          {restoreFeedback && (
+            <div
+              className={`p-4 rounded-xl border text-sm font-semibold flex items-center gap-2 ${
+                restoreFeedback.success
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-red-50 border-red-200 text-red-700'
+              }`}
             >
-              <option value="70">Alert at 70% of target budget</option>
-              <option value="80">Alert at 80% of target budget</option>
-              <option value="90">Alert at 90% of target budget</option>
-              <option value="100">Alert at 100% of target budget</option>
-            </select>
-          </Field>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-all"
-          >
-            <Save size={16} /> Save All Workspace Settings
-          </button>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-            <Database size={20} className="text-emerald-600" />
-            <div>
-              <h3 className="font-bold text-slate-900">Data & Backup</h3>
-              <p className="text-xs text-slate-500">Export full JSON backups and restore safely.</p>
+              {restoreFeedback.success ? <CheckCircle2 size={17} /> : <AlertCircle size={17} />}
+              {restoreFeedback.message}
             </div>
-          </div>
+          )}
 
-          <div className="space-y-3">
+          {/* Cloud Health Card */}
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
+                <Database size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-sm text-white">Supabase Cloud Database</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase">
+                    Connected · Free Tier
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  All ledger mutations are encrypted and mirrored in real-time.
+                </p>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={onExport}
-              className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3.5 hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold transition-all shadow-sm whitespace-nowrap"
             >
-              <span className="flex items-center gap-3">
-                <Download size={18} className="text-blue-600" />
-                <span className="text-left">
-                  <strong className="block text-sm text-slate-800">Export Full JSON Backup</strong>
-                  <small className="text-xs text-slate-500">Clients, cards, transactions, campaigns and settings.</small>
-                </span>
-              </span>
-              <ArrowUpRight size={16} className="text-slate-400" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-3.5 hover:bg-slate-50 transition-colors"
-            >
-              <span className="flex items-center gap-3">
-                <Upload size={18} className="text-emerald-600" />
-                <span className="text-left">
-                  <strong className="block text-sm text-slate-800">Restore Backup</strong>
-                  <small className="text-xs text-slate-500">Import an AdLytic JSON backup file.</small>
-                </span>
-              </span>
-              <ArrowUpRight size={16} className="text-slate-400" />
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={e => { onImport(e.target.files?.[0]); e.target.value = ''; }}
-            />
-
-            <button
-              type="button"
-              onClick={onReset}
-              className="w-full flex items-center justify-between rounded-xl border border-red-100 bg-red-50/50 p-3.5 hover:bg-red-50 transition-colors"
-            >
-              <span className="flex items-center gap-3">
-                <RotateCcw size={18} className="text-red-600" />
-                <span className="text-left">
-                  <strong className="block text-sm text-red-700">Reset Local Cache</strong>
-                  <small className="text-xs text-red-600/70">Clear browser cache and reload from Supabase cloud.</small>
-                </span>
-              </span>
-              <AlertCircle size={16} className="text-red-500" />
+              <Download size={15} /> 1-Click JSON Backup
             </button>
           </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Backup Operations */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <Download size={18} className="text-blue-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Export & Import</h3>
+                  <p className="text-[11px] text-slate-500">Safeguard your data before major updates.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={onExport}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/40 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-105 transition-transform">
+                      <Download size={17} />
+                    </div>
+                    <div>
+                      <strong className="block text-xs font-bold text-slate-900">Export Complete JSON Backup</strong>
+                      <span className="text-[11px] text-slate-500">Clients, cards, transactions, campaigns & settings.</span>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={16} className="text-slate-400 group-hover:text-blue-600" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
+                      <Upload size={17} />
+                    </div>
+                    <div>
+                      <strong className="block text-xs font-bold text-slate-900">Restore From Backup File</strong>
+                      <span className="text-[11px] text-slate-500">Upload and restore an existing AdLytic JSON file.</span>
+                    </div>
+                  </div>
+                  <ArrowUpRight size={16} className="text-slate-400 group-hover:text-emerald-600" />
+                </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleFileRestore(e.target.files?.[0]);
+                    e.target.value = '';
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-white border border-red-100 rounded-2xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center gap-2.5 border-b border-red-100 pb-3">
+                <AlertCircle size={18} className="text-red-600" />
+                <div>
+                  <h3 className="font-bold text-red-950 text-sm">Danger Zone</h3>
+                  <p className="text-[11px] text-red-600/70">Local storage and cache purge tools.</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-red-50/50 border border-red-100 space-y-3">
+                <div>
+                  <div className="text-xs font-bold text-red-900">Reset Browser Cache</div>
+                  <p className="text-[11px] text-red-700/80 mt-0.5">
+                    Clears local browser cache storage and resynchronizes everything cleanly from the Supabase cloud database.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm transition-colors"
+                >
+                  <RotateCcw size={14} /> Purge Cache & Resync Cloud
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Reset Confirmation Modal */}
+          {showResetModal && (
+            <div className="fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 border border-slate-200 animate-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center">
+                  <AlertCircle size={24} />
+                </div>
+
+                <div>
+                  <h4 className="text-lg font-bold text-slate-900">Confirm Cache Purge?</h4>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    This action will clear your browser's local cache and reload freshly from Supabase cloud. Type{' '}
+                    <strong className="text-slate-900 font-mono">RESET</strong> below to confirm.
+                  </p>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Type RESET"
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-mono outline-none focus:ring-2 focus:ring-red-500"
+                />
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResetModal(false);
+                      setResetConfirmText('');
+                    }}
+                    className="flex-1 px-4 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={resetConfirmText.trim() !== 'RESET'}
+                    onClick={() => {
+                      onReset();
+                      setShowResetModal(false);
+                      setResetConfirmText('');
+                    }}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  >
+                    Confirm Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
