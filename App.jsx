@@ -17,79 +17,168 @@ import {
 } from 'recharts';
 
 // --- WORKSPACE RESOLVER & CLOUD PERSISTENCE ---
-let adLedgerWorkspacePromise = null;
-let adLedgerWorkspaceUserId = null;
+// --- WORKSPACE RESOLVER & CLOUD PERSISTENCE ---
+let resolvedWorkspaceId = null;
+let resolvedWorkspacePromise = null;
+let resolvedUserId = null;
 
 export async function getAdLedgerWorkspaceId() {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-  if (!user) throw new Error('No authenticated user.');
+  if (userError || !user) throw userError || new Error('No authenticated user.');
 
-  if (adLedgerWorkspacePromise && adLedgerWorkspaceUserId === user.id) {
-    return adLedgerWorkspacePromise;
+  if (resolvedWorkspaceId && resolvedUserId === user.id) {
+    return resolvedWorkspaceId;
   }
 
-  adLedgerWorkspaceUserId = user.id;
-  adLedgerWorkspacePromise = (async () => {
+  if (resolvedWorkspacePromise && resolvedUserId === user.id) {
+    return resolvedWorkspacePromise;
+  }
+
+  resolvedUserId = user.id;
+  resolvedWorkspacePromise = (async () => {
     try {
-      // 1. Try to find owned workspace
-      const { data: owned, error: ownedError } = await supabase
+      // 1. Check cached workspace in localStorage first
+      if (typeof window !== 'undefined') {
+        const cachedWsId = window.localStorage.getItem('adlytic_active_workspace_id');
+        if (cachedWsId) {
+          const { data: testRows } = await supabase
+            .from('workspace_app_data')
+            .select('data_key, data')
+            .eq('workspace_id', cachedWsId)
+            .limit(3);
+          if (Array.isArray(testRows) && testRows.length > 0) {
+            resolvedWorkspaceId = cachedWsId;
+            return cachedWsId;
+          }
+        }
+      }
+
+      // 2. Fetch all workspaces the user owns
+      const { data: ownedWorkspaces } = await supabase
         .from('workspaces')
-        .select('id')
+        .select('id, created_at')
         .eq('owner_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
-      if (!ownedError && owned?.id) return owned.id;
-
-      // 2. Try to find membership
-      const { data: membership, error: membershipError } = await supabase
+      // 3. Fetch all workspaces where user is a member
+      const { data: memberWorkspaces } = await supabase
         .from('workspace_members')
-        .select('workspace_id')
+        .select('workspace_id, created_at')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
+        .order('created_at', { ascending: false });
 
-      if (!membershipError && membership?.workspace_id) return membership.workspace_id;
+      const allWorkspaceIds = [
+        ...(ownedWorkspaces || []).map(w => w.id),
+        ...(memberWorkspaces || []).map(m => m.workspace_id)
+      ];
 
-      // 3. Auto-create workspace for user if none exists
-      const { data: created, error: createError } = await supabase
-        .from('workspaces')
-        .insert([{ owner_id: user.id }])
-        .select('id')
-        .maybeSingle();
+      const uniqueIds = Array.from(new Set(allWorkspaceIds.filter(Boolean)));
 
-      if (!createError && created?.id) return created.id;
+      if (uniqueIds.length === 0) {
+        const { data: created } = await supabase
+          .from('workspaces')
+          .insert([{ owner_id: user.id }])
+          .select('id')
+          .single();
 
-      return user.id;
+        const newId = created?.id || user.id;
+        resolvedWorkspaceId = newId;
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('adlytic_active_workspace_id', newId);
+        }
+        return newId;
+      }
+
+      if (uniqueIds.length === 1) {
+        const onlyId = uniqueIds[0];
+        resolvedWorkspaceId = onlyId;
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem('adlytic_active_workspace_id', onlyId);
+        }
+        return onlyId;
+      }
+
+      // Multiple workspaces exist: find the one that has the user's ledger data!
+      let bestWsId = uniqueIds[0];
+      let maxDataScore = -1;
+
+      for (const wsId of uniqueIds) {
+        const { data: rows } = await supabase
+          .from('workspace_app_data')
+          .select('data_key, data')
+          .eq('workspace_id', wsId);
+
+        if (Array.isArray(rows) && rows.length > 0) {
+          const score = rows.reduce((acc, r) => {
+            if (Array.isArray(r.data)) return acc + r.data.length;
+            if (r.data && typeof r.data === 'object') return acc + Object.keys(r.data).length;
+            return acc;
+          }, 0);
+
+          if (score > maxDataScore) {
+            maxDataScore = score;
+            bestWsId = wsId;
+          }
+        }
+      }
+
+      resolvedWorkspaceId = bestWsId;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('adlytic_active_workspace_id', bestWsId);
+      }
+      return bestWsId;
     } catch (err) {
       console.warn('AdLytic workspace resolution fallback:', err);
-      return user.id;
+      const fallbackId = user.id;
+      resolvedWorkspaceId = fallbackId;
+      return fallbackId;
     }
   })();
 
-  return adLedgerWorkspacePromise;
+  return resolvedWorkspacePromise;
+}
+
+// Helper to inspect all local cache variations on frame 1
+function getInitialLocalValue(key, initialValue) {
+  if (typeof window === 'undefined') return initialValue;
+  try {
+    const k1 = window.localStorage.getItem(`adlytic_${key}`);
+    if (k1 !== null) {
+      const p1 = JSON.parse(k1);
+      if (Array.isArray(p1) ? p1.length > 0 : !!p1) return p1;
+    }
+
+    const k2 = window.localStorage.getItem(key);
+    if (k2 !== null) {
+      const p2 = JSON.parse(k2);
+      if (Array.isArray(p2) ? p2.length > 0 : !!p2) return p2;
+    }
+
+    // Check workspace-scoped keys in localStorage
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const storageKey = window.localStorage.key(i);
+      if (storageKey && storageKey.startsWith(key) && storageKey.includes('workspace')) {
+        const val = window.localStorage.getItem(storageKey);
+        if (val) {
+          const parsed = JSON.parse(val);
+          if (Array.isArray(parsed) ? parsed.length > 0 : !!parsed) return parsed;
+        }
+      }
+    }
+
+    if (k1 !== null) return JSON.parse(k1);
+    if (k2 !== null) return JSON.parse(k2);
+
+    return initialValue;
+  } catch (e) {
+    return initialValue;
+  }
 }
 
 // --- BULLETPROOF LOCAL CACHE & CLOUD SYNC HOOK ---
 function useLocalStorage(key, initialValue) {
-  // Read local cache immediately so the UI renders instantaneously without flickering
-  const [storedValue, setStoredValue] = useState(() => {
-    if (typeof window === 'undefined') return initialValue;
-    try {
-      const primaryCache = window.localStorage.getItem(`adlytic_${key}`);
-      if (primaryCache !== null) return JSON.parse(primaryCache);
-
-      const legacyCache = window.localStorage.getItem(key);
-      if (legacyCache !== null) return JSON.parse(legacyCache);
-
-      return initialValue;
-    } catch (e) {
-      return initialValue;
-    }
-  });
+  // Read local cache immediately so the UI renders instantaneously on frame 1
+  const [storedValue, setStoredValue] = useState(() => getInitialLocalValue(key, initialValue));
 
   const [hydrated, setHydrated] = useState(false);
   const saveTimeoutRef = useRef(null);
@@ -110,10 +199,6 @@ function useLocalStorage(key, initialValue) {
           .eq('data_key', key)
           .maybeSingle();
 
-        if (error) {
-          console.warn(`Supabase load error for ${key}:`, error.message);
-        }
-
         if (cancelled) return;
 
         const cloudHasData = row && row.data !== null && row.data !== undefined;
@@ -123,25 +208,21 @@ function useLocalStorage(key, initialValue) {
           if (typeof window !== 'undefined') {
             window.localStorage.setItem(`adlytic_${key}`, JSON.stringify(row.data));
             window.localStorage.setItem(key, JSON.stringify(row.data));
+            window.localStorage.setItem(`${key}__workspace_${workspaceId}`, JSON.stringify(row.data));
           }
         } else {
-          // Cloud has no data row for this key yet. Check if local cache has existing data to migrate safely.
-          const localRaw = typeof window !== 'undefined' ? (window.localStorage.getItem(`adlytic_${key}`) || window.localStorage.getItem(key)) : null;
-          if (localRaw) {
-            try {
-              const localParsed = JSON.parse(localRaw);
-              const hasData = Array.isArray(localParsed) ? localParsed.length > 0 : (localParsed && typeof localParsed === 'object' && Object.keys(localParsed).length > 0);
-              if (hasData) {
-                setStoredValue(localParsed);
-                await supabase.from('workspace_app_data').upsert({
-                  workspace_id: workspaceId,
-                  data_key: key,
-                  data: localParsed,
-                  updated_at: new Date().toISOString(),
-                }, { onConflict: 'workspace_id,data_key' });
-              }
-            } catch (migrationErr) {
-              console.warn(`Migration error for ${key}:`, migrationErr);
+          // If cloud is empty for this workspace, check if local cache has existing data to migrate safely
+          const localVal = getInitialLocalValue(key, null);
+          if (localVal) {
+            const hasData = Array.isArray(localVal) ? localVal.length > 0 : (localVal && typeof localVal === 'object' && Object.keys(localVal).length > 0);
+            if (hasData) {
+              setStoredValue(localVal);
+              await supabase.from('workspace_app_data').upsert({
+                workspace_id: workspaceId,
+                data_key: key,
+                data: localVal,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'workspace_id,data_key' });
             }
           }
         }
@@ -176,6 +257,7 @@ function useLocalStorage(key, initialValue) {
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(`adlytic_${key}`, JSON.stringify(storedValue));
           window.localStorage.setItem(key, JSON.stringify(storedValue));
+          window.localStorage.setItem(`${key}__workspace_${workspaceId}`, JSON.stringify(storedValue));
         }
       } catch (err) {
         console.error(`AdLytic cloud save error for ${key}:`, err);
