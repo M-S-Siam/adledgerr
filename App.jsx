@@ -3036,15 +3036,15 @@ const INITIAL_INTEGRATIONS_DATA = [
     name: 'Meta Ads',
     subtitle: 'Facebook & Instagram',
     category: 'ads',
-    status: 'connected',
+    status: 'disconnected',
     iconColor: 'from-blue-600 to-indigo-600 text-white',
     iconName: 'Globe2',
     description: 'Auto-sync active campaigns, daily USD spend, impressions, CPC, and client ad accounts.',
-    lastSync: '4 mins ago',
-    statsBadge: '2 Ad Accounts Active • $1,280 Synced Today',
+    lastSync: 'Never',
+    statsBadge: 'Ready to connect',
     config: {
-      accountIds: 'act_884920194, act_991823412',
-      accessToken: 'EAAQ...live_sec_token_991',
+      accountIds: '',
+      accessToken: '',
       syncFreq: '15m',
       autoVat: true,
       autoAssignClients: true
@@ -3055,15 +3055,15 @@ const INITIAL_INTEGRATIONS_DATA = [
     name: 'Google Ads',
     subtitle: 'Search & YouTube',
     category: 'ads',
-    status: 'connected',
+    status: 'disconnected',
     iconColor: 'from-emerald-600 to-teal-700 text-white',
     iconName: 'BarChart3',
     description: 'Stream search keyword costs, YouTube campaigns, and performance max budgets into ledger.',
-    lastSync: '18 mins ago',
-    statsBadge: 'MCC Account Active • $420 Synced Today',
+    lastSync: 'Never',
+    statsBadge: 'Ready to connect',
     config: {
-      customerId: '821-492-9011',
-      developerToken: 'goog_live_dev_token_88',
+      customerId: '',
+      developerToken: '',
       syncFreq: '1h',
       currencyConvert: true
     }
@@ -3089,14 +3089,14 @@ const INITIAL_INTEGRATIONS_DATA = [
     name: 'Google Sheets',
     subtitle: 'Live Cloud Backup',
     category: 'data',
-    status: 'connected',
+    status: 'disconnected',
     iconColor: 'from-emerald-700 to-green-800 text-white',
     iconName: 'Database',
     description: 'Stream live client ledger balances, transaction rows, and 15% VAT statements to Google Sheets.',
-    lastSync: 'Just now',
-    statsBadge: '2-Way Live Sync Active • 14 Sheets Connected',
+    lastSync: 'Never',
+    statsBadge: 'Ready to connect',
     config: {
-      sheetUrl: 'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZj_adlytic/edit',
+      sheetUrl: '',
       syncFreq: 'realtime',
       autoCreateTabs: true
     }
@@ -3122,15 +3122,15 @@ const INITIAL_INTEGRATIONS_DATA = [
     name: 'Bkash Gateway',
     subtitle: 'Direct MFS & IPN',
     category: 'payments',
-    status: 'connected',
+    status: 'disconnected',
     iconColor: 'from-pink-600 to-rose-600 text-white',
     iconName: 'Coins',
     description: 'Auto-verify client advance deposits via TRXID and receive Instant Payment Notifications (IPN).',
-    lastSync: '42 mins ago',
-    statsBadge: 'Auto-IPN Active • ৳420,000 Verified',
+    lastSync: 'Never',
+    statsBadge: 'Ready to connect',
     config: {
-      merchantPhone: '018XXXXXXXX',
-      appKey: 'bk_live_sec_8849201948',
+      merchantPhone: '',
+      appKey: '',
       autoApproveDeposits: true
     }
   },
@@ -3139,15 +3139,15 @@ const INITIAL_INTEGRATIONS_DATA = [
     name: 'SSLCommerz',
     subtitle: 'Cards & Online Checkout',
     category: 'payments',
-    status: 'connected',
+    status: 'disconnected',
     iconColor: 'from-blue-700 to-indigo-800 text-white',
     iconName: 'CreditCard',
     description: 'Online card checkout gateway for automated client invoice payments via debit/credit cards.',
-    lastSync: '25 mins ago',
-    statsBadge: 'Store ID Live • Instant Card IPN Active',
+    lastSync: 'Never',
+    statsBadge: 'Ready to connect',
     config: {
-      storeId: 'adlytic_live_01',
-      storePass: 'ssl_live_sec_pass_992',
+      storeId: '',
+      storePass: '',
       autoApproveDeposits: true
     }
   },
@@ -3156,12 +3156,12 @@ const INITIAL_INTEGRATIONS_DATA = [
     name: 'Bank Cards & FX',
     subtitle: 'Dual-Currency USD Cards',
     category: 'payments',
-    status: 'connected',
+    status: 'disconnected',
     iconColor: 'from-emerald-700 to-teal-800 text-white',
     iconName: 'Building',
     description: 'Automated bank USD card reload sync, 15% VAT auto-settlement, and daily bank FX buy rates.',
-    lastSync: '1 hour ago',
-    statsBadge: '4 Cards Linked • 15% VAT Auto-Calculated',
+    lastSync: 'Never',
+    statsBadge: 'Ready to connect',
     config: {
       bankName: 'City Bank & EBL Dual Currency',
       autoVat15: true,
@@ -3205,48 +3205,18 @@ const INITIAL_INTEGRATIONS_DATA = [
 const INITIAL_WEBHOOK_LOGS = [
   {
     id: 'log_01',
-    endpoint: 'POST /v1/meta-spend-sync',
+    endpoint: 'POST /v1/workspace/init',
     status: 200,
     statusText: 'OK',
-    source: 'Meta Ads',
-    details: 'Synced 3 active campaigns (Apex Winter, Shwapno Mega). $185 spend pulled.',
-    timestamp: '4 mins ago',
-    date: '2026-08-28 23:45:10'
-  },
-  {
-    id: 'log_02',
-    endpoint: 'POST /v1/bkash-ipn',
-    status: 200,
-    statusText: 'OK',
-    source: 'Bkash Gateway IPN',
-    details: 'Verified TRXID: 9X882194. Credited ৳50,000 to Apex Footwear advance wallet.',
-    timestamp: '42 mins ago',
-    date: '2026-08-28 23:08:22'
-  },
-  {
-    id: 'log_03',
-    endpoint: 'POST /v1/sheets-stream',
-    status: 200,
-    statusText: 'OK',
-    source: 'Google Sheets',
-    details: 'Streamed 14 updated client ledger rows to cloud master spreadsheet.',
-    timestamp: '1 hour ago',
-    date: '2026-08-28 22:50:00'
-  },
-  {
-    id: 'log_04',
-    endpoint: 'POST /v1/google-ads-pull',
-    status: 200,
-    statusText: 'OK',
-    source: 'Google Ads',
-    details: 'Handshake verified. Synced $110 search ad spend for MCC account.',
-    timestamp: '2 hours ago',
-    date: '2026-08-28 21:40:15'
+    source: 'Developer API',
+    details: 'Workspace API Gateway initialized. Ready to connect marketing pipelines.',
+    timestamp: 'Just now',
+    date: new Date().toISOString().slice(0, 19).replace('T', ' ')
   }
 ];
 
 function IntegrationsView({ clients = [], transactions = [], workspaceSettings = {} }) {
-  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v3', INITIAL_INTEGRATIONS_DATA);
+  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v4', INITIAL_INTEGRATIONS_DATA);
   const [webhookLogs, setWebhookLogs] = useLocalStorage('adledger_webhook_logs', INITIAL_WEBHOOK_LOGS);
   const [activeCategory, setActiveCategory] = useState('all'); // 'all' | 'ads' | 'data' | 'payments' | 'developer'
   const [searchQuery, setSearchQuery] = useState('');
