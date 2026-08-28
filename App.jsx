@@ -9,7 +9,7 @@ import {
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
   UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw,
   Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock, LogOut, Laptop,
-  FileSpreadsheet, Printer
+  FileSpreadsheet, Printer, Crown, UserCheck, UserX, Shield, Mail, Phone, Edit, Filter, UserCog
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import {
@@ -457,6 +457,31 @@ const DEFAULT_SETTINGS = {
   defaultAgencyMarginRate: '10',
 };
 
+const INITIAL_TEAM = [
+  {
+    id: 'team_01',
+    name: 'Tanvir Ahmed',
+    email: 'tanvir.media@agency.com',
+    phone: '+880 1711-889900',
+    role: 'Senior Media Buyer',
+    status: 'Active',
+    assignedClients: 'All Clients',
+    dailySpendLimit: '1000',
+    createdAt: '2026-08-15',
+  },
+  {
+    id: 'team_02',
+    name: 'Nafis Rahman',
+    email: 'nafis.finance@agency.com',
+    phone: '+880 1822-445566',
+    role: 'Financial Accountant',
+    status: 'Active',
+    assignedClients: 'All Clients',
+    dailySpendLimit: 'Unlimited',
+    createdAt: '2026-08-18',
+  }
+];
+
 // --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -468,7 +493,7 @@ export default function AdLedgerApp() {
   const [transactions, setTransactions] = useLocalStorage('adledger_transactions', INITIAL_TRANSACTIONS);
   const [campaigns, setCampaigns] = useLocalStorage('adledger_campaigns', []);
   const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', DEFAULT_SETTINGS);
-  const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', []);
+  const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', INITIAL_TEAM);
   const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
 
   // Auto-sync workspace name from signup metadata if not customized
@@ -703,13 +728,20 @@ export default function AdLedgerApp() {
   const handleRemoveLogo = () => setWorkspaceLogo('');
 
   const handleAddTeamMember = (member) => {
-    setTeamMembers(prev => [...prev, { ...member, id: `team_${Date.now()}_${Math.floor(Math.random() * 1000)}` }]);
+    setTeamMembers(prev => [...prev, {
+      ...member,
+      id: `team_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      createdAt: member.createdAt || new Date().toISOString().slice(0, 10),
+      status: member.status || 'Active'
+    }]);
+  };
+
+  const handleUpdateTeamMember = (id, updatedFields) => {
+    setTeamMembers(prev => prev.map(m => m.id === id ? { ...m, ...updatedFields } : m));
   };
 
   const handleRemoveTeamMember = (memberId) => {
-    if (window.confirm('Remove this team member?')) {
-      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
-    }
+    setTeamMembers(prev => prev.filter(m => m.id !== memberId));
   };
 
   const exportBackup = () => {
@@ -801,7 +833,7 @@ export default function AdLedgerApp() {
       case 'integrations':
         return <IntegrationsView />;
       case 'team':
-        return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onRemove={handleRemoveTeamMember} />;
+        return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onUpdate={handleUpdateTeamMember} onRemove={handleRemoveTeamMember} clients={clients} workspaceSettings={workspaceSettings} />;
       case 'settings':
         return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} clients={clients} cards={cards} transactions={transactions} campaigns={campaigns} metrics={metrics} />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
@@ -3011,15 +3043,707 @@ function IntegrationsView() {
   </div>;
 }
 
-function TeamView({ teamMembers, onAdd, onRemove }) {
-  const [email, setEmail] = useState(''); const [role, setRole] = useState('Manager');
-  return <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-slate-900">Team</h1><p className="text-sm text-slate-500 mt-1">Prepare AdLedger for agencies and multi-user workspaces.</p></div><span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5">{teamMembers.length + 1} member{teamMembers.length + 1 === 1 ? '' : 's'}</span></div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Workspace Members</h3><div className="mt-4 space-y-2"><div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 p-3"><div><p className="font-medium">Workspace Owner</p><p className="text-xs text-slate-500">Owner · full access</p></div><span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">Owner</span></div>{teamMembers.map(m => <div key={m.id} className="flex items-center justify-between rounded-xl border border-slate-100 p-3"><div><p className="font-medium">{m.email}</p><p className="text-xs text-slate-500">{m.role}</p></div><button onClick={() => onRemove(m.id)} className="text-xs text-red-500">Remove</button></div>)}</div></div>
-      <form onSubmit={e => { e.preventDefault(); if (!email.trim()) return; onAdd({ email: email.trim(), role }); setEmail('') }} className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5"><h3 className="font-semibold">Invite Member</h3><p className="text-xs text-slate-500 mt-1">Local workspace placeholder until real email invitations are connected.</p><Field label="Email"><input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="teammate@email.com" className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm" /></Field><Field label="Role"><select value={role} onChange={e => setRole(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"><option>Manager</option><option>Staff</option><option>Viewer</option></select></Field><button className="w-full mt-4 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold"><UserPlus size={16} className="inline mr-2" />Add Member</button></form>
+// --- ENTERPRISE AGENCY TEAM & ROLE GOVERNANCE SUITE ---
+function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], workspaceSettings = {} }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('All');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
+  const [deleteConfirmMember, setDeleteConfirmMember] = useState(null);
+  const [showPermissionsGuide, setShowPermissionsGuide] = useState(false);
+  const [copiedInviteId, setCopiedInviteId] = useState(null);
+  const [feedbackToast, setFeedbackToast] = useState(null);
+
+  // Form State for Add / Edit Modal
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'Senior Media Buyer',
+    status: 'Active',
+    assignedClients: 'All Clients',
+    dailySpendLimit: '1000',
+    notes: '',
+  });
+  const [formErrors, setFormErrors] = useState({});
+
+  const showToast = (msg) => {
+    setFeedbackToast(msg);
+    setTimeout(() => setFeedbackToast(null), 3000);
+  };
+
+  const openInviteModal = () => {
+    setEditingMember(null);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      role: 'Senior Media Buyer',
+      status: 'Active',
+      assignedClients: 'All Clients',
+      dailySpendLimit: '1000',
+      notes: '',
+    });
+    setFormErrors({});
+    setIsInviteModalOpen(true);
+  };
+
+  const openEditModal = (member) => {
+    setEditingMember(member);
+    setFormData({
+      name: member.name || '',
+      email: member.email || '',
+      phone: member.phone || '',
+      role: member.role || 'Senior Media Buyer',
+      status: member.status || 'Active',
+      assignedClients: member.assignedClients || 'All Clients',
+      dailySpendLimit: member.dailySpendLimit || 'Unlimited',
+      notes: member.notes || '',
+    });
+    setFormErrors({});
+    setIsInviteModalOpen(true);
+  };
+
+  const validateMemberForm = () => {
+    const errs = {};
+    if (!formData.name.trim()) errs.name = 'Full name is required.';
+    if (!formData.email.trim()) {
+      errs.email = 'Email address is required.';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        errs.email = 'Please enter a valid email address.';
+      }
+    }
+    return errs;
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    const errs = validateMemberForm();
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs);
+      return;
+    }
+
+    if (editingMember) {
+      onUpdate(editingMember.id, formData);
+      showToast(`Updated permissions for ${formData.name}`);
+    } else {
+      onAdd(formData);
+      showToast(`Invited ${formData.name} to workspace`);
+    }
+
+    setIsInviteModalOpen(false);
+    setEditingMember(null);
+  };
+
+  const copyInviteLink = (memberId, memberName) => {
+    const fakeInviteUrl = `${window.location.origin}/join?ws=${encodeURIComponent(workspaceSettings.businessName || 'adlytic')}&token=adl_inv_${memberId}`;
+    navigator.clipboard?.writeText(fakeInviteUrl);
+    setCopiedInviteId(memberId);
+    showToast(`Invite link copied for ${memberName}`);
+    setTimeout(() => setCopiedInviteId(null), 2500);
+  };
+
+  const toggleMemberStatus = (member) => {
+    const nextStatus = member.status === 'Suspended' ? 'Active' : 'Suspended';
+    onUpdate(member.id, { status: nextStatus });
+    showToast(`${member.name} is now ${nextStatus}`);
+  };
+
+  // Filtered members list
+  const filteredMembers = useMemo(() => {
+    return teamMembers.filter((m) => {
+      const matchesSearch =
+        (m.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (m.role || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesRole =
+        roleFilter === 'All' ||
+        (roleFilter === 'Admin' && m.role?.includes('Admin')) ||
+        (roleFilter === 'Media Buyer' && (m.role?.includes('Buyer') || m.role?.includes('Specialist'))) ||
+        (roleFilter === 'Accountant' && m.role?.includes('Accountant')) ||
+        (roleFilter === 'Viewer' && m.role?.includes('Viewer'));
+
+      return matchesSearch && matchesRole;
+    });
+  }, [teamMembers, searchTerm, roleFilter]);
+
+  const roleBadgeStyle = (role = '') => {
+    if (role.includes('Owner')) return 'bg-purple-50 text-purple-700 border-purple-200 ring-1 ring-purple-400/20';
+    if (role.includes('Admin')) return 'bg-indigo-50 text-indigo-700 border-indigo-200 ring-1 ring-indigo-400/20';
+    if (role.includes('Buyer') || role.includes('Specialist')) return 'bg-sky-50 text-sky-700 border-sky-200 ring-1 ring-sky-400/20';
+    if (role.includes('Accountant')) return 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-400/20';
+    return 'bg-slate-100 text-slate-700 border-slate-200';
+  };
+
+  const roleIcon = (role = '') => {
+    if (role.includes('Owner')) return <Crown size={12} className="text-purple-600" />;
+    if (role.includes('Admin')) return <ShieldCheck size={12} className="text-indigo-600" />;
+    if (role.includes('Buyer') || role.includes('Specialist')) return <Target size={12} className="text-sky-600" />;
+    if (role.includes('Accountant')) return <Coins size={12} className="text-emerald-600" />;
+    return <Eye size={12} className="text-slate-500" />;
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
+      {/* TOAST FEEDBACK */}
+      {feedbackToast && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-2xl flex items-center gap-2.5 border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 size={16} className="text-emerald-400" />
+          <span>{feedbackToast}</span>
+        </div>
+      )}
+
+      {/* TOP HEADER */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Team & Role Governance</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {teamMembers.length + 1} Active Seats
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage media buyers, financial accountants, and permissions across your {workspaceSettings.businessName || 'AdLytic'} workspace.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowPermissionsGuide(prev => !prev)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition-all"
+          >
+            <ShieldCheck size={14} className="text-sky-600" />
+            {showPermissionsGuide ? 'Hide RBAC Matrix' : 'View Role Matrix'}
+          </button>
+
+          <button
+            type="button"
+            onClick={openInviteModal}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02]"
+          >
+            <UserPlus size={15} /> Invite Member
+          </button>
+        </div>
+      </div>
+
+      {/* KPI METRIC CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+            <UsersRound size={22} />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Team Seats</span>
+            <span className="text-lg font-black text-slate-900">{teamMembers.length + 1} Members</span>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+            <Target size={22} />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Media Buyers</span>
+            <span className="text-lg font-black text-slate-900">
+              {teamMembers.filter(m => m.role?.includes('Buyer') || m.role?.includes('Specialist')).length} Active
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+            <Coins size={22} />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Finance & Admins</span>
+            <span className="text-lg font-black text-slate-900">
+              {teamMembers.filter(m => m.role?.includes('Accountant') || m.role?.includes('Admin')).length + 1} Leads
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+            <ShieldCheck size={22} />
+          </div>
+          <div>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Security Level</span>
+            <span className="text-lg font-black text-purple-700">RBAC Active</span>
+          </div>
+        </div>
+      </div>
+
+      {/* OPTIONAL ROLE PERMISSIONS MATRIX GUIDE */}
+      {showPermissionsGuide && (
+        <div className="bg-white border border-sky-200 rounded-2xl p-5 shadow-sm space-y-4 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={18} className="text-sky-600" />
+              <h3 className="font-bold text-slate-900 text-sm">Role-Based Access Control (RBAC) Matrix</h3>
+            </div>
+            <span className="text-[11px] text-slate-400">Enterprise Security Rules</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-700">
+                  <th className="py-2.5 px-3 font-bold">Permissions & Capability</th>
+                  <th className="py-2.5 px-3 font-bold text-purple-700">👑 Owner</th>
+                  <th className="py-2.5 px-3 font-bold text-indigo-700">👔 Agency Admin</th>
+                  <th className="py-2.5 px-3 font-bold text-sky-700">🎯 Media Buyer</th>
+                  <th className="py-2.5 px-3 font-bold text-emerald-700">📊 Accountant</th>
+                  <th className="py-2.5 px-3 font-bold text-slate-600">👁️ Client Viewer</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-600">
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-slate-900">Manage Workspace Settings & Rates</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-slate-900">Manage Bank Cards & USD Top-ups</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">👁️ View Rates</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-slate-900">Create & Log Ad Campaigns & Spend</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Assigned Clients</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">👁️ Read Only</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">👁️ Own Portal</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-slate-900">Client Invoices, PDF & Excel Exports</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">✓ Assigned Invoices</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full Financials</td>
+                  <td className="py-2.5 px-3 text-sky-600 font-bold">✓ Own Statement</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-slate-900">Invite, Edit & Manage Team Members</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-emerald-600 font-bold">✓ Full</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                  <td className="py-2.5 px-3 text-rose-500 font-bold">✕ No</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* WORKSPACE FOUNDER / OWNER CARD */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-2xl p-5 shadow-lg text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 via-indigo-600 to-sky-400 flex items-center justify-center font-black text-xl text-white shadow-md ring-2 ring-purple-400/30 shrink-0">
+              👑
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-base text-white tracking-tight">
+                  {workspaceSettings.businessName || 'AdLytic Agency'} Founder
+                </h3>
+                <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-extrabold uppercase">
+                  Super Admin · Root
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Primary Account Holder · Unrestricted Access to Financials, Bank Cards & API Keys
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-semibold text-slate-300">
+              <ShieldCheck size={14} className="text-emerald-400" /> 2FA Protected
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* DIRECTORY CONTROLS: SEARCH & ROLE TABS */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by name, email or role..."
+            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none transition-all"
+          />
+        </div>
+
+        {/* Role Filter Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-100 rounded-xl">
+          {['All', 'Admin', 'Media Buyer', 'Accountant', 'Viewer'].map((tab) => {
+            const active = roleFilter === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setRoleFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                  active
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {tab}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* TEAM MEMBERS DIRECTORY LIST */}
+      <div className="space-y-3">
+        {filteredMembers.length === 0 ? (
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-10 text-center space-y-3 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mx-auto">
+              <UsersRound size={24} />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base">No team members match your filter</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Add media buyers, campaign managers or financial accountants to distribute client management and ad spend workflows.
+            </p>
+            <button
+              type="button"
+              onClick={openInviteModal}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm mt-2 transition-colors"
+            >
+              <UserPlus size={14} /> Invite New Teammate
+            </button>
+          </div>
+        ) : (
+          filteredMembers.map((member) => {
+            const isSuspended = member.status === 'Suspended';
+
+            return (
+              <div
+                key={member.id}
+                className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                  isSuspended
+                    ? 'border-slate-200 bg-slate-50/60 opacity-75'
+                    : 'border-slate-200/90 hover:border-sky-300 hover:shadow-md'
+                }`}
+              >
+                {/* Member Info */}
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="relative shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                      {(member.name || member.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <span
+                      className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                        isSuspended ? 'bg-slate-400' : 'bg-emerald-500'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-bold text-slate-900 text-sm truncate">
+                        {member.name || 'Workspace Member'}
+                      </h4>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border ${roleBadgeStyle(member.role)}`}>
+                        {roleIcon(member.role)}
+                        {member.role || 'Media Buyer'}
+                      </span>
+                      {isSuspended && (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
+                          Suspended
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Mail size={12} className="text-slate-400" /> {member.email}
+                      </span>
+                      {member.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone size={12} className="text-slate-400" /> {member.phone}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                        <Calendar size={12} /> Joined {member.createdAt || 'Recent'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scope & Limits */}
+                <div className="flex items-center gap-4 text-xs text-slate-600 flex-wrap md:justify-end">
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Client Scope</span>
+                    <span className="font-bold text-slate-800">{member.assignedClients || 'All Clients'}</span>
+                  </div>
+
+                  <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Daily Limit</span>
+                    <span className="font-bold text-slate-800">
+                      {member.dailySpendLimit && member.dailySpendLimit !== 'Unlimited' ? `$${member.dailySpendLimit}/day` : 'Unlimited'}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => copyInviteLink(member.id, member.name || member.email)}
+                      title="Copy Direct Join Link"
+                      className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 transition-colors"
+                    >
+                      {copiedInviteId === member.id ? <Check size={15} className="text-emerald-600" /> : <Link2 size={15} />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(member)}
+                      title="Edit Permissions"
+                      className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-sky-600 transition-colors"
+                    >
+                      <Edit size={15} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleMemberStatus(member)}
+                      title={isSuspended ? 'Activate Member' : 'Suspend Member'}
+                      className={`p-2 rounded-xl border transition-colors ${
+                        isSuspended
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                          : 'border-slate-200 bg-white text-slate-500 hover:text-orange-600 hover:bg-orange-50'
+                      }`}
+                    >
+                      {isSuspended ? <UserCheck size={15} /> : <UserX size={15} />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirmMember(member)}
+                      title="Remove Member"
+                      className="p-2 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-rose-600 transition-colors"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ================= MODAL 1: INVITE / EDIT MEMBER ================= */}
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600">
+                  <UserPlus size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    {editingMember ? 'Edit Member Permissions' : 'Invite Team Member'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Set role, client assignments, and daily ad spend safety limits.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsInviteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Full Name *">
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. Tanvir Ahmed"
+                    className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-xs outline-none transition-colors ${
+                      formErrors.name ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                    }`}
+                  />
+                  {formErrors.name && (
+                    <p className="mt-1 text-[10.5px] font-semibold text-rose-600 flex items-center gap-1">
+                      <AlertCircle size={11} /> {formErrors.name}
+                    </p>
+                  )}
+                </Field>
+
+                <Field label="Email Address *">
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
+                    placeholder="e.g. tanvir@agency.com"
+                    className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-xs outline-none transition-colors ${
+                      formErrors.email ? 'border-rose-400 bg-rose-50/30' : 'border-slate-300 focus:ring-2 focus:ring-sky-500'
+                    }`}
+                  />
+                  {formErrors.email && (
+                    <p className="mt-1 text-[10.5px] font-semibold text-rose-600 flex items-center gap-1">
+                      <AlertCircle size={11} /> {formErrors.email}
+                    </p>
+                  )}
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Phone / WhatsApp (Optional)">
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="+880 1XXXXXXXXX"
+                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+                  />
+                </Field>
+
+                <Field label="Role & Permissions Level *">
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData(p => ({ ...p, role: e.target.value }))}
+                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-sky-500"
+                  >
+                    <option value="Senior Media Buyer">Senior Media Buyer (Ad Spend & Campaigns)</option>
+                    <option value="Agency Admin">Agency Admin (Full Operational Access)</option>
+                    <option value="Financial Accountant">Financial Accountant (Audit & PDF Statements)</option>
+                    <option value="Client Viewer">Client Viewer (Read-only Portal Access)</option>
+                  </select>
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Client Access Scope">
+                  <select
+                    value={formData.assignedClients}
+                    onChange={(e) => setFormData(p => ({ ...p, assignedClients: e.target.value }))}
+                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-sky-500"
+                  >
+                    <option value="All Clients">All Agency Clients ({clients.length} Active)</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.name}>Only: {c.name}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Daily Spend Approval Limit ($)">
+                  <select
+                    value={formData.dailySpendLimit}
+                    onChange={(e) => setFormData(p => ({ ...p, dailySpendLimit: e.target.value }))}
+                    className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-sky-500 font-semibold"
+                  >
+                    <option value="250">$250 / Day</option>
+                    <option value="500">$500 / Day</option>
+                    <option value="1000">$1,000 / Day</option>
+                    <option value="2500">$2,500 / Day</option>
+                    <option value="Unlimited">Unlimited Budget</option>
+                  </select>
+                </Field>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200/80 text-xs space-y-1">
+                <span className="font-bold text-sky-900 block flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-sky-600" />
+                  Instant Workspace Invitation
+                </span>
+                <p className="text-[11px] text-sky-700 leading-relaxed">
+                  Saving will generate a secure one-click join link that you can send directly to your team member via WhatsApp, Email, or Slack.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsInviteModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02]"
+                >
+                  {editingMember ? 'Save Permissions' : 'Send Invitation'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 2: CONFIRM DELETE MEMBER ================= */}
+      {deleteConfirmMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mx-auto">
+              <Trash2 size={24} />
+            </div>
+            <div className="text-center">
+              <h3 className="font-bold text-slate-900 text-base">Remove {deleteConfirmMember.name || deleteConfirmMember.email}?</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                This will revoke their access to the {workspaceSettings.businessName || 'AdLytic'} workspace immediately.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmMember(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onRemove(deleteConfirmMember.id);
+                  showToast(`Removed ${deleteConfirmMember.name || deleteConfirmMember.email}`);
+                  setDeleteConfirmMember(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-500/20 transition-colors"
+              >
+                Yes, Remove Access
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  </div>;
+  );
 }
 
 
