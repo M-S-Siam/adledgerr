@@ -3189,12 +3189,12 @@ const INITIAL_INTEGRATIONS_DATA = [
     name: 'Developer API',
     subtitle: 'Workspace Webhooks',
     category: 'developer',
-    status: 'connected',
+    status: 'disconnected',
     iconColor: 'from-purple-600 to-indigo-700 text-white',
     iconName: 'Terminal',
     description: 'High-speed REST API endpoints and HMAC-SHA256 secured webhook listener for custom apps.',
-    lastSync: 'Listening Live',
-    statsBadge: 'API Key Active • 99.99% Handshake',
+    lastSync: 'Never',
+    statsBadge: 'Ready to configure',
     config: {
       apiKey: 'adl_live_sec_99a8b7c6d5e4f3a2b1c0d9e8',
       webhookEndpoint: 'https://api.adlytic.app/v1/workspace/sync'
@@ -3216,7 +3216,7 @@ const INITIAL_WEBHOOK_LOGS = [
 ];
 
 function IntegrationsView({ clients = [], transactions = [], workspaceSettings = {} }) {
-  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v4', INITIAL_INTEGRATIONS_DATA);
+  const [integrations, setIntegrations] = useLocalStorage('adledger_integrations_v5', INITIAL_INTEGRATIONS_DATA);
   const [webhookLogs, setWebhookLogs] = useLocalStorage('adledger_webhook_logs', INITIAL_WEBHOOK_LOGS);
   const [activeCategory, setActiveCategory] = useState('all'); // 'all' | 'ads' | 'data' | 'payments' | 'developer'
   const [searchQuery, setSearchQuery] = useState('');
