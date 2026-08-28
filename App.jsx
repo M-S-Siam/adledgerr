@@ -4569,7 +4569,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Team Management</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Team Management</h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {activeMembersList.length + 1} Active Seats
