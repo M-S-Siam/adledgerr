@@ -4729,31 +4729,32 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
       )}
 
-      {/* WORKSPACE FOUNDER / OWNER CARD */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center font-black text-sm text-white shadow-sm shrink-0">
-              <ShieldCheck size={20} className="text-white" />
+      {/* WORKSPACE FOUNDER / OWNER CARD (VIP LUXURY EDITION) */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white border border-slate-800/80 rounded-lg p-3 sm:px-4 sm:py-3 shadow-md shadow-slate-950/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black shadow-xs shrink-0">
+              <Crown size={16} className="text-slate-950" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-sm text-slate-900 tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-extrabold text-xs text-white tracking-tight">
                   {workspaceSettings.businessName || 'AdLytic'} Founder
                 </h3>
-                <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-extrabold uppercase">
+                <span className="px-2 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/30 text-[9px] font-black uppercase tracking-wider">
                   Super Admin · Root
                 </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-400 mt-0.5 truncate">
                 Primary Account Holder · Unrestricted Access to Financials, Bank Cards & Settings
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
-              <ShieldCheck size={14} className="text-emerald-600" /> 2FA Protected
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-400 shadow-2xs whitespace-nowrap">
+              <ShieldCheck size={13} className="text-emerald-400" /> 2FA Protected
             </span>
           </div>
         </div>
