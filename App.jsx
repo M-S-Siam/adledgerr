@@ -8,7 +8,7 @@ import {
   AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
   UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw,
-  Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock
+  Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock, LogOut, Laptop
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import { 
@@ -3085,7 +3085,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     else setSecurityFeedback({ error: '', message: 'All other sessions have been signed out.' });
   };
 
-  const handleSignOutAll = async () => {
+  const handleLogOut = async () => {
     setSecurityBusy(true);
     await supabase.auth.signOut();
     setSecurityBusy(false);
@@ -3815,38 +3815,59 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             </form>
           </div>
 
-          {/* Sessions Card */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+          {/* Sessions & Access Control Card */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">Active Browser Sessions</h3>
-                <p className="text-[11px] text-slate-500">Manage signed-in devices for this account.</p>
+              <div className="flex items-center gap-2.5">
+                <Laptop size={18} className="text-sky-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">Session & Access Control</h3>
+                  <p className="text-[11px] text-slate-500">Manage account access on this browser and other devices.</p>
+                </div>
               </div>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Current Session Active
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active (This Browser)
               </span>
             </div>
 
-            <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-slate-600">
-                Invalidate all other devices if you logged in on a public or shared computer.
-              </p>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Option 1: Standard Log Out */}
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <LogOut size={15} className="text-slate-600" /> Current Session
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Safely log out from this browser session.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogOut}
+                  disabled={securityBusy}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition-colors shadow-sm"
+                >
+                  <LogOut size={13} /> Log Out
+                </button>
+              </div>
+
+              {/* Option 2: Sign Out Other Devices */}
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <ShieldCheck size={15} className="text-sky-600" /> Revoke Other Devices
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Terminate sessions on any other phones or computers while staying logged in here.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={handleSignOutOthers}
                   disabled={securityBusy}
-                  className="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors shadow-sm"
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 text-xs font-bold text-sky-700 transition-colors shadow-sm"
                 >
-                  Sign Out Other Devices
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSignOutAll}
-                  disabled={securityBusy}
-                  className="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600 transition-colors"
-                >
-                  Log Out Everywhere
+                  <ShieldCheck size={13} /> Sign Out Other Devices
                 </button>
               </div>
             </div>
