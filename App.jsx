@@ -4600,47 +4600,61 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
       </div>
 
-      {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-            <UsersRound size={22} />
+      {/* COMPACT KPI METRIC CARDS (PREMIUM FROSTED GLASS & LUXURY TAGS) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Card 1: Team Seats */}
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
+            <UsersRound size={16} />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Team Seats</span>
-            <span className="text-lg font-black text-slate-900">{activeMembersList.length + 1} Members</span>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Team Seats</span>
+            <span className="text-[11px] font-bold text-sky-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-600 shrink-0" />
+              {activeMembersList.length + 1} Active Seats
+            </span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-            <Target size={22} />
+        {/* Card 2: Campaign Managers */}
+        <div className="bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border border-blue-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-blue-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-blue-100/90 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
+            <Target size={16} />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Campaign Managers</span>
-            <span className="text-lg font-black text-slate-900">
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Campaign Managers</span>
+            <span className="text-[11px] font-bold text-blue-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
               {teamMembers.filter(m => m.role?.includes('Campaign') || m.role?.includes('Manager') || m.role?.includes('Buyer') || m.role?.includes('Specialist')).length} Active
             </span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-            <Mail size={22} />
+        {/* Card 3: Pending Invites */}
+        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-amber-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-amber-100/90 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs shrink-0">
+            <Mail size={16} />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Pending Invites</span>
-            <span className="text-lg font-black text-amber-700">{pendingMembersList.length} Pending</span>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Pending Invites</span>
+            <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0" />
+              {pendingMembersList.length} Pending
+            </span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-            <ShieldCheck size={22} />
+        {/* Card 4: Audit Security */}
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
+            <ShieldCheck size={16} />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Audit Security</span>
-            <span className="text-lg font-black text-purple-700">RBAC Active</span>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Audit Security</span>
+            <span className="text-[11px] font-bold text-purple-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
+              RBAC Active
+            </span>
           </div>
         </div>
       </div>
