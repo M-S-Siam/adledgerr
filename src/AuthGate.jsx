@@ -54,21 +54,41 @@ export default function AuthGate({ children }) {
     const isRecoveryUrl = typeof window !== 'undefined' && /(^|&)type=recovery(&|$)/.test(window.location.hash.replace(/^#/, ''));
     if (isRecoveryUrl) setMode('reset');
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session ?? null);
-      setChecking(false);
-    });
+    // Safety timeout: Never stay stuck on loading screen
+    const timeoutId = setTimeout(() => {
+      if (mounted) setChecking(false);
+    }, 1200);
+
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        if (!mounted) return;
+        clearTimeout(timeoutId);
+        setSession(data?.session ?? null);
+        setChecking(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        clearTimeout(timeoutId);
+        setChecking(false);
+      });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
+      clearTimeout(timeoutId);
       setSession(nextSession ?? null);
       setChecking(false);
       if (event === 'PASSWORD_RECOVERY') {
-        setMode('reset'); setError(''); setMessage('Choose a new password for your AdLytic account.');
+        setMode('reset');
+        setError('');
+        setMessage('Choose a new password for your AdLytic account.');
       }
     });
-    return () => { mounted = false; listener.subscription.unsubscribe(); };
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeoutId);
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
 
   const clearFeedback = () => { setError(''); setMessage(''); };
