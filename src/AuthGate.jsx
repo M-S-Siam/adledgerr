@@ -108,9 +108,9 @@ export default function AuthGate({ children }) {
         password,
       });
 
-      // 8-second timeout guarantee
+      // 30-second timeout to accommodate Supabase cloud wake-up
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timed out. Please check your internet or credentials.')), 8000)
+        setTimeout(() => reject(new Error('Connecting to Supabase took longer than expected. Please try again.')), 30000)
       );
 
       const { data, error: signInError } = await Promise.race([loginPromise, timeoutPromise]);
@@ -121,7 +121,7 @@ export default function AuthGate({ children }) {
         setSession(data.session);
       }
     } catch (err) {
-      setError(err?.message || 'Network error occurred. Please try again.');
+      setError(err?.message || 'Login request failed. Please try again.');
     } finally {
       setBusy(false);
     }
