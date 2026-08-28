@@ -8,3 +8,4 @@ npm run dev
 
 ## GitHub Pages
 This repository includes a GitHub Actions workflow that builds and deploys the app to GitHub Pages.
+
