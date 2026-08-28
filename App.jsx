@@ -4565,11 +4565,11 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
       )}
 
-      {/* TOP HEADER */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* TOP HEADER (SEAMLESS CANVAS) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Team Management</h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Team Management</h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {activeMembersList.length + 1} Active Seats
@@ -4584,7 +4584,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
           <button
             type="button"
             onClick={() => setShowPermissionsGuide(prev => !prev)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all"
           >
             <ShieldCheck size={14} className="text-sky-600" />
             {showPermissionsGuide ? 'Hide Roles Guide' : 'View Roles Guide'}
@@ -4593,7 +4593,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
           <button
             type="button"
             onClick={() => openInviteModal('Active')}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
           >
             <UserPlus size={15} /> Invite Member
           </button>
