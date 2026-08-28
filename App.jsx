@@ -8,7 +8,8 @@ import {
   AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
   UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw,
-  Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock, LogOut, Laptop
+  Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock, LogOut, Laptop,
+  FileSpreadsheet, Printer
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import { 
@@ -453,6 +454,7 @@ const DEFAULT_SETTINGS = {
   defaultUSDRate: '131.25',
   defaultAdTaxRate: '15',
   defaultCashoutChargeRate: '1.5',
+  defaultAgencyMarginRate: '10',
 };
 
 // --- MAIN APPLICATION ---
@@ -791,7 +793,7 @@ export default function AdLedgerApp() {
       case 'team':
         return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onRemove={handleRemoveTeamMember} />;
       case 'settings':
-        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} />;
+        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} clients={clients} cards={cards} transactions={transactions} campaigns={campaigns} metrics={metrics} />;
       default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
     }
   };
@@ -2971,7 +2973,7 @@ function TeamView({ teamMembers, onAdd, onRemove }) {
 
 
 // --- PROFESSIONAL SETTINGS CENTER ---
-function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset }) {
+function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset, clients = [], cards = [], transactions = [], campaigns = [], metrics = {} }) {
   const [activeTab, setActiveTab] = useState('branding');
   const [data, setData] = useState(() => ({ ...DEFAULT_SETTINGS, ...settings }));
   const [isDirty, setIsDirty] = useState(false);
@@ -3091,6 +3093,197 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     setSecurityBusy(false);
   };
 
+  // --- EXCEL / CSV EXPORTERS ---
+  const exportTransactionsCSV = () => {
+    if (!transactions || transactions.length === 0) {
+      alert('No transactions to export.');
+      return;
+    }
+    const headers = ['ID', 'Date', 'Type', 'Client', 'Card', 'Amount BDT', 'Amount USD', 'Rate', 'Notes'];
+    const rows = transactions.map(t => [
+      t.id || '',
+      t.date || '',
+      t.type || '',
+      `"${(t.clientName || t.client || '').replace(/"/g, '""')}"`,
+      `"${(t.cardName || t.card || '').replace(/"/g, '""')}"`,
+      t.amountBDT || t.bdt || 0,
+      t.amountUSD || t.usd || 0,
+      t.rate || '',
+      `"${(t.notes || t.description || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `AdLytic_Transactions_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportClientsCSV = () => {
+    if (!clients || clients.length === 0) {
+      alert('No clients to export.');
+      return;
+    }
+    const headers = ['ID', 'Name', 'Phone', 'Email', 'Monthly Budget', 'Total Spend', 'Status', 'Notes'];
+    const rows = clients.map(c => [
+      c.id || '',
+      `"${(c.name || '').replace(/"/g, '""')}"`,
+      c.phone || '',
+      c.email || '',
+      c.monthlyBudget || c.budget || 0,
+      c.totalSpend || 0,
+      c.status || 'Active',
+      `"${(c.notes || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `AdLytic_Clients_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportCardsCSV = () => {
+    if (!cards || cards.length === 0) {
+      alert('No cards to export.');
+      return;
+    }
+    const headers = ['ID', 'Card Name', 'Bank', 'Last 4 Digits', 'Currency', 'Balance', 'Status', 'Cardholder'];
+    const rows = cards.map(c => [
+      c.id || '',
+      `"${(c.name || c.cardName || '').replace(/"/g, '""')}"`,
+      `"${(c.bank || c.bankName || '').replace(/"/g, '""')}"`,
+      c.last4 || c.cardNumber?.slice(-4) || '****',
+      c.currency || 'USD',
+      c.balance || c.currentBalance || 0,
+      c.status || 'Active',
+      `"${(c.holder || c.cardHolder || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `AdLytic_Cards_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- PRINTABLE / PDF FINANCIAL AUDIT STATEMENT ---
+  const exportPrintablePDF = () => {
+    const printWin = window.open('', '_blank', 'width=950,height=800');
+    if (!printWin) {
+      alert('Please allow popups to open the printable statement.');
+      return;
+    }
+    const txRows = (transactions || []).slice(0, 60).map(t => `
+      <tr>
+        <td style="padding:9px 10px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#334155;">${t.date || ''}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:700;color:#0f172a;">${t.type || ''}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569;">${t.clientName || t.client || '—'}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#475569;">${t.cardName || t.card || '—'}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:right;font-weight:800;color:#0369a1;">৳${Number(t.amountBDT || t.bdt || 0).toLocaleString()}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #e2e8f0;font-size:12px;text-align:right;font-weight:800;color:#059669;">$${Number(t.amountUSD || t.usd || 0).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>AdLytic Financial Statement — ${data.businessName || 'AdLytic'}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 36px; line-height: 1.5; background: #fff; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 18px; margin-bottom: 24px; }
+          .brand { font-size: 26px; font-weight: 900; color: #0284c7; letter-spacing: -0.5px; }
+          .contact { font-size: 11px; color: #64748b; margin-top: 4px; }
+          .meta-title { font-size: 15px; font-weight: 800; color: #0f172a; text-transform: uppercase; }
+          .meta-date { font-size: 11px; color: #64748b; margin-top: 3px; }
+          .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+          .kpi { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
+          .kpi-title { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.5px; }
+          .kpi-val { font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 5px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          th { background: #f1f5f9; text-align: left; padding: 10px; font-size: 11px; text-transform: uppercase; color: #475569; font-weight: 800; border-bottom: 2px solid #cbd5e1; }
+          .footer { margin-top: 40px; font-size: 11px; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 18px; }
+          .print-btn { background: #0284c7; color: #fff; border: 0; padding: 10px 20px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 8px rgba(2,132,199,0.3); }
+          @media print { body { margin: 0; } .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+          <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        </div>
+        <div class="header">
+          <div>
+            <div class="brand">${data.businessName || 'AdLytic Agency'}</div>
+            <div class="contact">
+              ${data.contactEmail ? data.contactEmail + ' · ' : ''}
+              ${data.phone ? data.phone + ' · ' : ''}
+              ${data.address || 'Bangladesh'}
+            </div>
+            ${data.taxId ? '<div class="contact" style="margin-top:2px;"><strong>Tax/Trade ID:</strong> ' + data.taxId + '</div>' : ''}
+          </div>
+          <div style="text-align: right;">
+            <div class="meta-title">Financial Audit Statement</div>
+            <div class="meta-date">Date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+            <div class="meta-date">Ledger: ${data.shortCode || 'ADL'} · Official Summary</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="kpi">
+            <div class="kpi-title">Total Client Received</div>
+            <div class="kpi-val">৳${Number(metrics?.totalClientReceived || 0).toLocaleString()}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-title">Total Ad Spend USD</div>
+            <div class="kpi-val">$${Number(metrics?.totalAdSpendUSD || 0).toFixed(2)}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-title">Total Clients</div>
+            <div class="kpi-val">${clients?.length || 0}</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-title">Active Payment Cards</div>
+            <div class="kpi-val">${cards?.length || 0}</div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 15px; font-weight: 800; margin: 0 0 8px 0; color: #0f172a;">Ledger Transactions Record</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Transaction Type</th>
+              <th>Client</th>
+              <th>Card / Source</th>
+              <th style="text-align:right;">Amount BDT</th>
+              <th style="text-align:right;">Amount USD</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${txRows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">No ledger entries found.</td></tr>'}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          ${data.invoiceNotes || 'Thank you for choosing our digital advertising services.'}
+          <div style="margin-top: 4px; font-size: 10px; color: #94a3b8;">Generated via AdLytic — Digital Marketing & Media Buying Ledger System</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWin.document.write(html);
+    printWin.document.close();
+    printWin.focus();
+  };
+
   const handleFileRestore = (file) => {
     if (!file) return;
     try {
@@ -3190,7 +3383,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage your agency branding, currencies, safety rails, credentials and cloud backups.
+            Manage your agency branding, currencies, safety rails, credentials, Excel/PDF exports and cloud backups.
           </p>
         </div>
 
@@ -3604,8 +3797,8 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
               <Coins size={18} className="text-emerald-600" />
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Default Conversion Rates</h3>
-                <p className="text-[11px] text-slate-500">Auto-filled into new transactions for faster entry.</p>
+                <h3 className="font-bold text-slate-900 text-sm">Default Conversion Rates & Margin</h3>
+                <p className="text-[11px] text-slate-500">Auto-filled into new transactions and campaign profits.</p>
               </div>
             </div>
 
@@ -3622,30 +3815,43 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
               </div>
             </Field>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Default Ad Tax / VAT (%)">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="Default Ad Tax (%)">
                 <div className="relative mt-1">
                   <input
                     type="number"
                     step="0.1"
                     value={data.defaultAdTaxRate || '15'}
                     onChange={(e) => handleChange('defaultAdTaxRate', e.target.value)}
-                    className="w-full pr-8 pl-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                    className="w-full pr-7 pl-3 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white"
                   />
-                  <span className="absolute right-3.5 top-2.5 text-sm font-bold text-slate-400">%</span>
+                  <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400">%</span>
                 </div>
               </Field>
 
-              <Field label="Default Cashout Charge (%)">
+              <Field label="Cashout Charge (%)">
                 <div className="relative mt-1">
                   <input
                     type="number"
                     step="0.05"
                     value={data.defaultCashoutChargeRate || '1.5'}
                     onChange={(e) => handleChange('defaultCashoutChargeRate', e.target.value)}
-                    className="w-full pr-8 pl-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 bg-white"
+                    className="w-full pr-7 pl-3 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white"
                   />
-                  <span className="absolute right-3.5 top-2.5 text-sm font-bold text-slate-400">%</span>
+                  <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400">%</span>
+                </div>
+              </Field>
+
+              <Field label="Agency Margin (%)">
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={data.defaultAgencyMarginRate || '10'}
+                    onChange={(e) => handleChange('defaultAgencyMarginRate', e.target.value)}
+                    className="w-full pr-7 pl-3 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 bg-white"
+                  />
+                  <span className="absolute right-2.5 top-2 text-xs font-bold text-slate-400">%</span>
                 </div>
               </Field>
             </div>
@@ -3875,7 +4081,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         </div>
       )}
 
-      {/* ================= TAB 5: DATA & CLOUD SYNC ================= */}
+      {/* ================= TAB 5: DATA, EXPORTS & CLOUD SYNC ================= */}
       {activeTab === 'backups' && (
         <div className="space-y-5 animate-in fade-in duration-300">
           {restoreFeedback && (
@@ -3919,89 +4125,134 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             </button>
           </div>
 
+          {/* SPREADSHEET (EXCEL/CSV) & PRINTABLE PDF EXPORTS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Backup Operations */}
+            {/* Excel / CSV Exports */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
               <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-                <Download size={18} className="text-blue-600" />
+                <FileSpreadsheet size={18} className="text-emerald-600" />
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">Export & Import</h3>
-                  <p className="text-[11px] text-slate-500">Safeguard your data before major updates.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">Spreadsheet (Excel / CSV) Exports</h3>
+                  <p className="text-[11px] text-slate-500">Open in Microsoft Excel, Google Sheets, or Apple Numbers.</p>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <button
                   type="button"
-                  onClick={onExport}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/40 transition-all text-left group"
+                  onClick={exportTransactionsCSV}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all text-left group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-105 transition-transform">
-                      <Download size={17} />
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <FileSpreadsheet size={16} />
                     </div>
                     <div>
-                      <strong className="block text-xs font-bold text-slate-900">Export Complete JSON Backup</strong>
-                      <span className="text-[11px] text-slate-500">Clients, cards, transactions, campaigns & settings.</span>
+                      <strong className="block text-xs font-bold text-slate-900">Export Transactions (.csv)</strong>
+                      <span className="text-[10px] text-slate-500">Full ledger history with BDT, USD, exchange rates and notes.</span>
                     </div>
                   </div>
-                  <ArrowUpRight size={16} className="text-slate-400 group-hover:text-blue-600" />
+                  <Download size={15} className="text-slate-400 group-hover:text-emerald-600" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition-all text-left group"
+                  onClick={exportClientsCSV}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all text-left group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
-                      <Upload size={17} />
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <Users size={16} />
                     </div>
                     <div>
-                      <strong className="block text-xs font-bold text-slate-900">Restore From Backup File</strong>
-                      <span className="text-[11px] text-slate-500">Upload and restore an existing AdLytic JSON file.</span>
+                      <strong className="block text-xs font-bold text-slate-900">Export Clients Directory (.csv)</strong>
+                      <span className="text-[10px] text-slate-500">Client list with monthly budgets, total spend and contact info.</span>
                     </div>
                   </div>
-                  <ArrowUpRight size={16} className="text-slate-400 group-hover:text-emerald-600" />
+                  <Download size={15} className="text-slate-400 group-hover:text-emerald-600" />
                 </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="application/json,.json"
-                  className="hidden"
-                  onChange={(e) => {
-                    handleFileRestore(e.target.files?.[0]);
-                    e.target.value = '';
-                  }}
-                />
+
+                <button
+                  type="button"
+                  onClick={exportCardsCSV}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                      <CreditCard size={16} />
+                    </div>
+                    <div>
+                      <strong className="block text-xs font-bold text-slate-900">Export Cards & Balances (.csv)</strong>
+                      <span className="text-[10px] text-slate-500">Card details, banks, last 4 digits and current balances.</span>
+                    </div>
+                  </div>
+                  <Download size={15} className="text-slate-400 group-hover:text-emerald-600" />
+                </button>
               </div>
             </div>
 
-            {/* Danger Zone */}
-            <div className="bg-white border border-red-100 rounded-2xl p-5 shadow-sm space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-red-100 pb-3">
-                <AlertCircle size={18} className="text-red-600" />
-                <div>
-                  <h3 className="font-bold text-red-950 text-sm">Danger Zone</h3>
-                  <p className="text-[11px] text-red-600/70">Local storage and cache purge tools.</p>
+            {/* Printable PDF Statement & JSON Restore */}
+            <div className="space-y-5">
+              {/* PDF Financial Statement */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
+                <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                  <Printer size={18} className="text-sky-600" />
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">Printable Audit Statement / PDF</h3>
+                    <p className="text-[11px] text-slate-500">Formatted agency statement with logo and KPIs.</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-sky-100 bg-sky-50/50 flex flex-col justify-between gap-3">
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Generate an official, branded financial statement suitable for sharing with clients, accounting, or archiving as a PDF document.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={exportPrintablePDF}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-all shadow-sm"
+                  >
+                    <Printer size={14} /> Open Printable PDF Statement
+                  </button>
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-red-50/50 border border-red-100 space-y-3">
-                <div>
-                  <div className="text-xs font-bold text-red-900">Reset Browser Cache</div>
-                  <p className="text-[11px] text-red-700/80 mt-0.5">
-                    Clears local browser cache storage and resynchronizes everything cleanly from the Supabase cloud database.
-                  </p>
+              {/* JSON Backup & Danger Zone */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Restore & Danger Zone</h4>
+                    <p className="text-[10px] text-slate-500">Restore AdLytic JSON or purge local browser cache.</p>
+                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowResetModal(true)}
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm transition-colors"
-                >
-                  <RotateCcw size={14} /> Purge Cache & Resync Cloud
-                </button>
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 transition-colors"
+                  >
+                    <Upload size={13} className="text-emerald-600" /> Restore JSON
+                  </button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={(e) => {
+                      handleFileRestore(e.target.files?.[0]);
+                      e.target.value = '';
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowResetModal(true)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-red-100 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600 transition-colors"
+                  >
+                    <RotateCcw size={13} /> Reset Cache
+                  </button>
+                </div>
               </div>
             </div>
           </div>
