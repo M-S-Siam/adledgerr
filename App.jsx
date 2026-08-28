@@ -3135,18 +3135,52 @@ const INITIAL_INTEGRATIONS_DATA = [
     }
   },
   {
-    id: 'nagad',
-    name: 'Nagad & Bank Gateway',
-    subtitle: 'MFS & Card Settlements',
+    id: 'sslcommerz',
+    name: 'SSLCommerz Payment Gateway',
+    subtitle: 'Cards, bKash, Nagad & Upay',
+    category: 'payments',
+    status: 'connected',
+    iconColor: 'from-blue-700 to-indigo-800 text-white',
+    iconName: 'CreditCard',
+    description: 'Unified online checkout for automated client invoice payments via cards and all MFS.',
+    lastSync: '25 mins ago',
+    statsBadge: 'Store ID Live • Instant IPN Active',
+    config: {
+      storeId: 'adlytic_live_01',
+      storePass: 'ssl_live_sec_pass_992',
+      autoApproveDeposits: true
+    }
+  },
+  {
+    id: 'bank_cards',
+    name: 'Dual-Currency Bank FX & Cards',
+    subtitle: 'City Bank, EBL, Brac Bank',
+    category: 'payments',
+    status: 'connected',
+    iconColor: 'from-emerald-700 to-teal-800 text-white',
+    iconName: 'Building',
+    description: 'Automated bank USD card reload sync, 15% VAT auto-settlement, and daily bank FX buy rates.',
+    lastSync: '1 hour ago',
+    statsBadge: '4 Cards Linked • 15% VAT Auto-Calculated',
+    config: {
+      bankName: 'City Bank & EBL Dual Currency',
+      autoVat15: true,
+      bankBuyRate: '131.25'
+    }
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe Global USD Gateway',
+    subtitle: 'International Client Settlements',
     category: 'payments',
     status: 'disconnected',
-    iconColor: 'from-amber-600 to-orange-700 text-white',
-    iconName: 'Receipt',
-    description: 'Automated bank USD card reload sync with 15% VAT settlement receipts and bank buy rates.',
+    iconColor: 'from-violet-600 to-purple-800 text-white',
+    iconName: 'Wallet',
+    description: 'Accept credit cards and USD wire payments from international brands and foreign clients.',
     lastSync: 'Never',
     statsBadge: 'Ready to connect',
     config: {
-      merchantId: '',
+      publishableKey: '',
       secretKey: ''
     }
   },
@@ -3239,6 +3273,9 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
       case 'Database': return <Database size={size} />;
       case 'Zap': return <Zap size={size} />;
       case 'Coins': return <Coins size={size} />;
+      case 'CreditCard': return <CreditCard size={size} />;
+      case 'Building': return <Building size={size} />;
+      case 'Wallet': return <Wallet size={size} />;
       case 'Receipt': return <Receipt size={size} />;
       case 'Terminal': return <Terminal size={size} />;
       default: return <PlugZap size={size} />;
@@ -3775,6 +3812,111 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                 </div>
               )}
 
+              {/* SSLCOMMERZ FORM */}
+              {selectedIntegration.id === 'sslcommerz' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Store ID *">
+                      <input
+                        type="text"
+                        required
+                        value={modalFormData.storeId || ''}
+                        onChange={(e) => setModalFormData(p => ({ ...p, storeId: e.target.value }))}
+                        placeholder="e.g. adlytic_live_01"
+                        className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-mono outline-none"
+                      />
+                    </Field>
+
+                    <Field label="Store Password / Secret *">
+                      <input
+                        type="password"
+                        required
+                        value={modalFormData.storePass || ''}
+                        onChange={(e) => setModalFormData(p => ({ ...p, storePass: e.target.value }))}
+                        placeholder="ssl_live_sec_..."
+                        className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-mono outline-none"
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-xs space-y-1">
+                    <span className="font-bold text-blue-900 block">Instant IPN Webhook Listener</span>
+                    <p className="text-[11px] text-blue-700 font-mono">
+                      https://api.adlytic.app/v1/ipn/sslcommerz
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* DUAL-CURRENCY BANK FX CARDS FORM */}
+              {selectedIntegration.id === 'bank_cards' && (
+                <div className="space-y-4">
+                  <Field label="Primary Card Issuer Bank *">
+                    <input
+                      type="text"
+                      required
+                      value={modalFormData.bankName || ''}
+                      onChange={(e) => setModalFormData(p => ({ ...p, bankName: e.target.value }))}
+                      placeholder="e.g. City Bank, Eastern Bank (EBL), BRAC Bank"
+                      className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white outline-none"
+                    />
+                  </Field>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Default Bank USD Buy Rate (৳)">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={modalFormData.bankBuyRate || '131.25'}
+                        onChange={(e) => setModalFormData(p => ({ ...p, bankBuyRate: e.target.value }))}
+                        placeholder="131.25"
+                        className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-mono font-bold outline-none"
+                      />
+                    </Field>
+
+                    <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 mt-1">
+                      <div>
+                        <span className="font-bold text-xs text-slate-800 block">Auto 15% VAT</span>
+                        <span className="text-[10.5px] text-slate-500">Calculate bank VAT on reload</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={modalFormData.autoVat15 ?? true}
+                        onChange={(e) => setModalFormData(p => ({ ...p, autoVat15: e.target.checked }))}
+                        className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STRIPE GLOBAL FORM */}
+              {selectedIntegration.id === 'stripe' && (
+                <div className="space-y-4">
+                  <Field label="Stripe Publishable Key *">
+                    <input
+                      type="text"
+                      required
+                      value={modalFormData.publishableKey || ''}
+                      onChange={(e) => setModalFormData(p => ({ ...p, publishableKey: e.target.value }))}
+                      placeholder="pk_live_..."
+                      className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-mono outline-none"
+                    />
+                  </Field>
+
+                  <Field label="Stripe Secret Key *">
+                    <input
+                      type="password"
+                      required
+                      value={modalFormData.secretKey || ''}
+                      onChange={(e) => setModalFormData(p => ({ ...p, secretKey: e.target.value }))}
+                      placeholder="sk_live_..."
+                      className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-mono outline-none"
+                    />
+                  </Field>
+                </div>
+              )}
+
               {/* DEVELOPER API FORM */}
               {selectedIntegration.id === 'custom_api' && (
                 <div className="space-y-4">
@@ -3809,8 +3951,8 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                 </div>
               )}
 
-              {/* DEFAULT FORM FOR OTHER SERVICES (TikTok, Zapier, Nagad) */}
-              {!['meta', 'google_ads', 'google_sheets', 'bkash', 'custom_api'].includes(selectedIntegration.id) && (
+              {/* DEFAULT FORM FOR OTHER SERVICES (TikTok, Zapier) */}
+              {!['meta', 'google_ads', 'google_sheets', 'bkash', 'sslcommerz', 'bank_cards', 'stripe', 'custom_api'].includes(selectedIntegration.id) && (
                 <div className="space-y-4">
                   <Field label="API Endpoint or Client ID *">
                     <input
