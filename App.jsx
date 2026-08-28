@@ -3404,10 +3404,17 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Integrations & API Hub</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {connectedCount} Pipelines Live
-            </span>
+            {connectedCount > 0 ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {connectedCount} Pipelines Active
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                Auto-Sync Ready
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
             Connect ad networks, 2-way Google Sheets, payment gateways, and custom agency webhooks with TLS 1.3 security.
@@ -3443,8 +3450,8 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
             <PlugZap size={22} />
           </div>
           <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Active Pipelines</span>
-            <span className="text-lg font-black text-slate-900">{connectedCount} Connected</span>
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Data Pipelines</span>
+            <span className="text-lg font-black text-slate-900">{connectedCount > 0 ? `${connectedCount} Connected` : 'Ready to Connect'}</span>
           </div>
         </div>
 
