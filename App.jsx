@@ -3443,45 +3443,45 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
       </div>
 
-      {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-            <PlugZap size={22} />
+      {/* COMPACT KPI METRIC CARDS (SLEEK GITHUB CORNERS) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-md bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+            <PlugZap size={16} />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Connected Platforms</span>
-            <span className="text-lg font-black text-slate-900">{connectedCount > 0 ? `${connectedCount} Active` : 'Ready to Connect'}</span>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <Clock size={22} />
-          </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Sync Engine</span>
-            <span className="text-lg font-black text-slate-900">15m Auto-Interval</span>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate leading-none mb-1">Connected Platforms</span>
+            <span className="text-xs font-bold text-slate-900 block truncate whitespace-nowrap leading-none">{connectedCount > 0 ? `${connectedCount} Active` : 'Ready to Connect'}</span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-            <ShieldCheck size={22} />
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-md bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+            <Clock size={16} />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">API Security</span>
-            <span className="text-lg font-black text-purple-700">TLS 1.3 Encrypted</span>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate leading-none mb-1">Sync Engine</span>
+            <span className="text-xs font-bold text-slate-900 block truncate whitespace-nowrap leading-none">15m Auto-Interval</span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-            <Activity size={22} />
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-md bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+            <ShieldCheck size={16} />
           </div>
-          <div>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Live Stream</span>
-            <span className="text-lg font-black text-amber-700">99.98% Uptime</span>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate leading-none mb-1">API Security</span>
+            <span className="text-xs font-bold text-purple-700 block truncate whitespace-nowrap leading-none">TLS 1.3 Encrypted</span>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+            <Activity size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate leading-none mb-1">Live Stream</span>
+            <span className="text-xs font-bold text-amber-700 block truncate whitespace-nowrap leading-none">99.98% Uptime</span>
           </div>
         </div>
       </div>
