@@ -3443,59 +3443,59 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
       </div>
 
-      {/* COMPACT KPI METRIC CARDS (BLACK TITLES + THEMED VALUES + SLEEK CORNERS) */}
+      {/* COMPACT KPI METRIC CARDS (PREMIUM FROSTED GLASS & LUXURY TAGS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Platforms */}
-        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-sky-300/80 transition-all">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
             <PlugZap size={16} />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-xs font-black text-slate-900 block truncate leading-tight">Connected Platforms</span>
-            <span className="text-[11px] font-bold text-sky-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
+            <span className="text-[11px] font-bold text-sky-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-600 shrink-0" />
               {connectedCount > 0 ? `${connectedCount} Active` : 'Ready to Connect'}
             </span>
           </div>
         </div>
 
         {/* Card 2: Sync Engine */}
-        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-emerald-300/80 transition-all">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-xs shrink-0">
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-emerald-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-emerald-100/90 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
             <Clock size={16} />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-xs font-black text-slate-900 block truncate leading-tight">Sync Engine</span>
-            <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
               15m Auto-Interval
             </span>
           </div>
         </div>
 
         {/* Card 3: API Security */}
-        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-purple-300/80 transition-all">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
             <ShieldCheck size={16} />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-xs font-black text-slate-900 block truncate leading-tight">API Security</span>
-            <span className="text-[11px] font-bold text-purple-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+            <span className="text-[11px] font-bold text-purple-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
               TLS 1.3 Encrypted
             </span>
           </div>
         </div>
 
         {/* Card 4: Live Stream */}
-        <div className="bg-white border border-slate-200/90 rounded-lg px-3.5 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex items-center gap-3 min-w-0 hover:border-amber-300/80 transition-all">
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-xs shrink-0">
+        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-amber-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-amber-100/90 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs shrink-0">
             <Activity size={16} />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-xs font-black text-slate-900 block truncate leading-tight">Live Stream</span>
-            <span className="text-[11px] font-bold text-amber-600 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+            <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0" />
               99.98% Uptime
             </span>
           </div>
