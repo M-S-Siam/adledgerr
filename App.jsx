@@ -4436,14 +4436,14 @@ function NavItem({ icon, label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all text-[13px] font-semibold ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-[13px] font-semibold ${
         isActive
-          ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/20'
+          ? 'bg-blue-600 text-white shadow-sm ring-1 ring-white/10'
           : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
       }`}
     >
       {React.cloneElement(icon, { size: 17, className: isActive ? 'text-white' : 'text-slate-400' })}
-      {label}
+      <span>{label}</span>
     </button>
   );
 }
