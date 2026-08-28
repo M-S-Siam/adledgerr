@@ -3784,14 +3784,15 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <button
                           type="button"
                           onClick={() => shareViaWhatsApp(member)}
-                          title="Share Invite via WhatsApp"
-                          className="p-2 rounded-xl border border-emerald-200 bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 transition-colors"
+                          title="Share Direct Invite via WhatsApp"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-all shadow-sm"
                         >
-                          <MessageCircle size={15} />
+                          <MessageCircle size={14} className="text-emerald-600" />
+                          <span>WhatsApp</span>
                         </button>
 
                         <button
