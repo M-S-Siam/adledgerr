@@ -809,6 +809,7 @@ export default function AdLedgerApp() {
       case 'dashboard':
         return <DashboardView
           metrics={metrics}
+          chartData={revenueChartData}
           cards={cards}
           clients={clients}
           transactions={transactions}
@@ -1644,7 +1645,7 @@ function ReportEmptyState() {
   );
 }
 
-function DashboardView({ metrics, chartData, transactions, clients, cards }) {
+function DashboardView({ metrics, chartData = [], transactions = [], clients = [], cards = [] }) {
   const dashboardData = useMemo(() => {
     let totalBDTSpentOnUSD = 0;
     let totalCashOutCharges = 0;
@@ -1723,7 +1724,7 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
       })
       .slice(0, 6);
 
-    const flowData = chartData.map(row => ({
+    const flowData = (chartData || []).map(row => ({
       ...row,
       adCostBDT: (parseFloat(row.spendUSD || 0) * (metrics.avgUSDEffectiveRate || 0))
     }));
