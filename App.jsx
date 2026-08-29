@@ -980,7 +980,7 @@ export default function AdLedgerApp() {
           </Modal>
         )}
         {(activeModal === 'add-client' || activeModal === 'edit-client') && (
-          <Modal title={activeModal === 'add-client' ? 'Add New Client' : 'Edit Client'} onClose={() => setActiveModal(null)} width="max-w-lg">
+          <Modal title={activeModal === 'add-client' ? 'Add New Client' : 'Edit Client'} onClose={() => setActiveModal(null)} width="max-w-3xl">
             <ClientForm initialData={activeModal === 'edit-client' ? selectedClient : null} onSubmit={handleSaveClient} onCancel={() => setActiveModal(null)} />
           </Modal>
         )}
@@ -7684,7 +7684,7 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     const clean = formData.phone.replace(/[\s\-()]/g, '');
     const phoneRegex = /^(\+?[0-9]{8,15})$/;
     if (!phoneRegex.test(clean)) {
-      return 'Enter valid 8-15 digit phone number';
+      return 'Invalid phone number';
     }
     return null;
   }, [formData.phone]);
@@ -7693,7 +7693,7 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     if (!formData.email || !formData.email.trim()) return null;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email.trim())) {
-      return 'Enter a valid email format';
+      return 'Invalid email format';
     }
     return null;
   }, [formData.email]);
@@ -7714,60 +7714,53 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     });
   };
 
-  const inputClass = "w-full mt-0.5 px-3 py-1.5 border rounded-lg shadow-2xs focus:outline-none focus:ring-2 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal h-[34px]";
+  const inputClass = "w-full mt-0.5 px-2.5 py-1.5 border rounded-lg shadow-2xs focus:outline-none focus:ring-2 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal h-[34px]";
   const normalInputBorder = "border-slate-200/90 focus:ring-sky-500/20 focus:border-sky-500";
   const errorInputBorder = "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500 bg-rose-50/20";
   const labelClass = "block text-[9.5px] font-bold text-slate-500 uppercase tracking-wider";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3.5 gap-y-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-3 gap-y-2">
+        {/* ROW 1 */}
         <div>
           <label className={labelClass}>Client Name *</label>
           <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. John Doe" className={`${inputClass} ${normalInputBorder}`} />
         </div>
         <div>
-          <label className={labelClass}>Business / Company Name *</label>
+          <label className={labelClass}>Business / Company *</label>
           <input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="e.g. Apex Media Ltd" className={`${inputClass} ${normalInputBorder}`} />
         </div>
-
-        <div>
-          <div className="flex items-center justify-between">
-            <label className={labelClass}>Phone Number</label>
-            {phoneError && touched.phone && <span className="text-[9px] text-rose-500 font-bold truncate max-w-[150px]">{phoneError}</span>}
-          </div>
-          <input type="text" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="e.g. +8801700000000" className={`${inputClass} ${phoneError && touched.phone ? errorInputBorder : normalInputBorder}`} />
-        </div>
-        <div>
-          <div className="flex items-center justify-between">
-            <label className={labelClass}>Email Address</label>
-            {emailError && touched.email && <span className="text-[9px] text-rose-500 font-bold truncate max-w-[150px]">{emailError}</span>}
-          </div>
-          <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="e.g. client@company.com" className={`${inputClass} ${emailError && touched.email ? errorInputBorder : normalInputBorder}`} />
-        </div>
-
-        <div>
-          <label className={labelClass}>Facebook Page URL</label>
-          <input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="facebook.com/..." className={`${inputClass} ${normalInputBorder}`} />
-        </div>
-        <div>
-          <label className={labelClass}>Website URL</label>
-          <input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://company.com" className={`${inputClass} ${normalInputBorder}`} />
-        </div>
-
         <div>
           <label className={labelClass}>Service Type</label>
           <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={`${inputClass} ${normalInputBorder}`}>
             <option>Meta Ads</option><option>Facebook Marketing</option><option>Instagram Marketing</option><option>Google Ads</option><option>TikTok Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
           </select>
         </div>
+
+        {/* ROW 2 */}
         <div>
-          <label className={labelClass}>Status</label>
+          <div className="flex items-center justify-between">
+            <label className={labelClass}>Phone Number</label>
+            {phoneError && touched.phone && <span className="text-[9px] text-rose-500 font-bold truncate">{phoneError}</span>}
+          </div>
+          <input type="text" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="e.g. +8801700000000" className={`${inputClass} ${phoneError && touched.phone ? errorInputBorder : normalInputBorder}`} />
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <label className={labelClass}>Email Address</label>
+            {emailError && touched.email && <span className="text-[9px] text-rose-500 font-bold truncate">{emailError}</span>}
+          </div>
+          <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="e.g. client@company.com" className={`${inputClass} ${emailError && touched.email ? errorInputBorder : normalInputBorder}`} />
+        </div>
+        <div>
+          <label className={labelClass}>Account Status</label>
           <select name="status" value={formData.status} onChange={handleChange} className={`${inputClass} ${normalInputBorder}`}>
             <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
           </select>
         </div>
 
+        {/* ROW 3 */}
         <div>
           <label className={labelClass}>Budget Period</label>
           <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={`${inputClass} ${normalInputBorder}`}>
@@ -7778,10 +7771,19 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
           <label className={labelClass}>Budget Amount (BDT)</label>
           <input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="e.g. 50000" className={`${inputClass} ${normalInputBorder}`} />
         </div>
-
         <div>
           <label className={labelClass}>Start Date</label>
           <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={`${inputClass} ${normalInputBorder}`} />
+        </div>
+
+        {/* ROW 4 */}
+        <div>
+          <label className={labelClass}>Facebook Page URL</label>
+          <input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="facebook.com/..." className={`${inputClass} ${normalInputBorder}`} />
+        </div>
+        <div>
+          <label className={labelClass}>Website URL</label>
+          <input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://company.com" className={`${inputClass} ${normalInputBorder}`} />
         </div>
         <div>
           <div className="flex items-center justify-between mb-0.5">
@@ -7801,7 +7803,7 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
 
       <div>
         <label className={labelClass}>Notes & Campaign Objectives</label>
-        <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional client notes..." rows="1" className="w-full mt-0.5 px-3 py-1.5 border border-slate-200/90 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal resize-none" />
+        <input type="text" name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional client notes, target KPI..." className={`${inputClass} ${normalInputBorder}`} />
       </div>
 
       <div className="flex gap-2.5 pt-2 border-t border-slate-100">
