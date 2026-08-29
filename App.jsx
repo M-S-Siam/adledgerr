@@ -2133,24 +2133,25 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
   return (
     <div className="flex flex-col space-y-4">
       {/* OBSIDIAN VOUCHER HEADER */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-4.5 border border-slate-800 shadow-md flex justify-between items-center gap-3">
-        <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-4 sm:p-5 border border-slate-800 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
             <MasterLedgerBadge type={tx.type} />
-            <span className="font-mono text-xs font-black text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/80">
+            <span className="font-mono text-xs font-black text-sky-400 bg-sky-950/90 px-2.5 py-0.5 rounded border border-sky-800/80 shadow-2xs">
               #{String(tx.id).slice(-8)}
             </span>
           </div>
-          <p className="text-slate-300 text-xs font-semibold">
-            Timestamp: <span className="text-white font-bold">{formatDate(tx.date)}</span>
-          </p>
+          <div className="text-slate-300 text-xs font-semibold flex items-center gap-1.5 pt-0.5">
+            <span className="text-slate-400">Timestamp:</span>
+            <span className="text-white font-bold">{formatDate(tx.date)}</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={handlePrintVoucher}
-            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all hover:text-white"
+            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:text-white"
           >
             <Printer size={13} /> Print Voucher
           </button>
@@ -2158,39 +2159,39 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
       </div>
 
       {/* 4 DUAL-CURRENCY BREAKDOWN PILLARS */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT Inflow</span>
-          <span className="text-sm font-black text-emerald-700 mt-0.5 block">{bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Client Deposit</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/50 border border-emerald-200/80 rounded-xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">BDT Inflow</span>
+          <span className="text-base font-black text-emerald-700 mt-1 block">{bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">Client Deposit</span>
         </div>
 
-        <div className="bg-gradient-to-br from-rose-50/80 via-white to-red-50/40 border border-rose-200/70 rounded-lg p-3 shadow-2xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT Outflow</span>
-          <span className="text-sm font-black text-rose-700 mt-0.5 block">{bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">USD Purchase Cost</span>
+        <div className="bg-gradient-to-br from-rose-50/90 via-white to-red-50/50 border border-rose-200/80 rounded-xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">BDT Outflow</span>
+          <span className="text-base font-black text-rose-700 mt-1 block">{bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">USD Purchase Cost</span>
         </div>
 
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg p-3 shadow-2xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD Funded</span>
-          <span className="text-sm font-black text-sky-700 mt-0.5 block">{usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Card Inflow</span>
+        <div className="bg-gradient-to-br from-sky-50/90 via-white to-blue-50/50 border border-sky-200/80 rounded-xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Funded</span>
+          <span className="text-base font-black text-sky-700 mt-1 block">{usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">Card Inflow</span>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD Outflow</span>
-          <span className="text-sm font-black text-purple-700 mt-0.5 block">{usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Ad Spend + Tax</span>
+        <div className="bg-gradient-to-br from-purple-50/90 via-white to-indigo-50/50 border border-purple-200/80 rounded-xl p-3.5 shadow-2xs">
+          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Outflow</span>
+          <span className="text-base font-black text-purple-700 mt-1 block">{usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">Ad Spend + Tax</span>
         </div>
       </div>
 
       {/* COUNTERPARTY & LEDGER CONTEXT */}
-      <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs space-y-3">
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs space-y-3.5">
         <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
           Counterparty & Financial Narrative
         </h4>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase block">Linked Client Account</span>
             <span className="font-bold text-slate-800 mt-0.5 block">
@@ -2237,7 +2238,7 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
         {tx.notes && (
           <div className="pt-2 border-t border-slate-100">
             <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Ledger Notes</span>
-            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 whitespace-pre-wrap">
+            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200/60 whitespace-pre-wrap">
               {tx.notes}
             </p>
           </div>
@@ -2249,7 +2250,7 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
         <button
           type="button"
           onClick={() => { onClose(); onDelete(tx.id); }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all"
         >
           <Trash2 size={13} /> Delete Record
         </button>
@@ -2257,7 +2258,7 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all"
+          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all"
         >
           Close
         </button>
@@ -2794,7 +2795,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
 
       {/* VIP AUDIT VOUCHER MODAL */}
       {inspectingTx && (
-        <Modal title={`Transaction Audit Voucher: #${String(inspectingTx.id).slice(-8)}`} onClose={() => setInspectingTx(null)} width="max-w-2xl">
+        <Modal title={`Transaction Audit Voucher: #${String(inspectingTx.id).slice(-8)}`} onClose={() => setInspectingTx(null)} width="max-w-3xl">
           <TransactionAuditModal
             tx={inspectingTx}
             clients={clients}
