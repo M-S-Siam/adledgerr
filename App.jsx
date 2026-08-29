@@ -7803,7 +7803,14 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
 
       <div>
         <label className={labelClass}>Notes & Campaign Objectives</label>
-        <input type="text" name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional client notes, target KPI..." className={`${inputClass} ${normalInputBorder}`} />
+        <textarea
+          name="notes"
+          value={formData.notes}
+          onChange={handleChange}
+          rows={2}
+          placeholder="Optional client notes, target KPI, campaign requirements..."
+          className="w-full mt-0.5 px-2.5 py-1.5 border border-slate-200/90 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal min-h-[52px] max-h-[85px] overflow-y-auto leading-relaxed resize-y"
+        />
       </div>
 
       <div className="flex gap-2.5 pt-2 border-t border-slate-100">
