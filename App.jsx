@@ -3476,6 +3476,7 @@ function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
         budgetType: initialData.budgetType || 'USD',
         status: initialData.status || 'Active',
         resultLabel: initialData.resultLabel || 'Leads',
+        adAccount: initialData.adAccount || '',
         currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : !initialData.endDate,
       };
     }
@@ -3484,11 +3485,19 @@ function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
       goal: 'Lead Generation', status: 'Active',
       budget: '', budgetType: 'USD',
       startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true,
-      resultValue: '', resultLabel: 'Leads', revenueBDT: '', notes: ''
+      resultValue: '', resultLabel: 'Leads', revenueBDT: '', adAccount: '', notes: ''
     };
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // Live Calculations Preview
+  const estBudgetUSD = formData.budgetType === 'BDT' ? ((parseFloat(formData.budget) || 0) / 130) : (parseFloat(formData.budget) || 0);
+  const estResults = parseFloat(formData.resultValue) || 0;
+  const estRevenueBDT = parseFloat(formData.revenueBDT) || 0;
+  const estCostBDT = estBudgetUSD * 130;
+  const estCPA = (estBudgetUSD > 0 && estResults > 0) ? (estBudgetUSD / estResults) : 0;
+  const estROAS = (estCostBDT > 0 && estRevenueBDT > 0) ? (estRevenueBDT / estCostBDT) : 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -3596,7 +3605,28 @@ function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
               <label className={labelClass}>Attributed Revenue (BDT)</label>
               <input type="number" min="0" step="0.01" name="revenueBDT" value={formData.revenueBDT} onChange={handleChange} placeholder="e.g. 75000" className={inputClass} />
             </div>
+
+            {/* ROW 5 (Ad Account) */}
+            <div className="sm:col-span-3">
+              <label className={labelClass}>Ad Account Name / ID (Optional Reference)</label>
+              <input type="text" name="adAccount" value={formData.adAccount || ''} onChange={handleChange} placeholder="e.g. ACT-984120 / Primary BM Account" className={inputClass} />
+            </div>
           </div>
+
+          {/* LIVE ESTIMATE BANNER */}
+          {(estCPA > 0 || estROAS > 0) && (
+            <div className="flex items-center gap-4 px-3.5 py-2 rounded-lg bg-sky-50/80 border border-sky-200/70 text-xs text-sky-900 font-bold">
+              <span className="flex items-center gap-1 text-[11px] text-sky-700 font-bold uppercase tracking-wider">
+                <Zap size={13} className="text-sky-600" /> Live Estimate:
+              </span>
+              {estCPA > 0 && (
+                <span>Est. CPA: <span className="text-sky-800 font-black">${estCPA.toFixed(2)}</span> / {formData.resultLabel?.slice(0, -1) || 'result'}</span>
+              )}
+              {estROAS > 0 && (
+                <span>Est. ROAS: <span className="text-emerald-700 font-black">{estROAS.toFixed(2)}x</span></span>
+              )}
+            </div>
+          )}
 
           <div>
             <label className={labelClass}>Target Audience, Angles & Notes</label>
@@ -3736,13 +3766,7 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
       {/* SEAMLESS CANVAS HEADER */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">Campaigns Command Center</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              {summary.activeCount} Active • {summary.totalCount} Tracked
-            </span>
-          </div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900">Campaigns Command Center</h1>
           <p className="text-xs font-semibold text-slate-500 mt-1">
             Track multi-channel ad budgets, live USD spend, conversion results, and campaign ROAS.
           </p>
