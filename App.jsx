@@ -3060,105 +3060,1009 @@ function TransactionDetailsModal({ tx, cardName, onClose }) {
    Additive modules. Existing financial view component bodies remain untouched.
    ========================================================================== */
 
-function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDelete }) {
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-
-  const rows = useMemo(() => campaigns.map(c => {
-    const matching = transactions.filter(t =>
-      String(t.campaign || '').trim().toLowerCase() === String(c.name || '').trim().toLowerCase()
+function PlatformBadge({ platform }) {
+  const p = (platform || 'Meta').toLowerCase();
+  if (p.includes('meta') || p.includes('facebook') || p.includes('instagram')) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 text-[11px] font-bold shadow-2xs">
+        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" />
+        </svg>
+        Meta Ads
+      </span>
     );
-    const spendUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.amountUSD || 0) : 0), 0);
-    const taxUSD = matching.reduce((sum, t) => sum + (t.type === 'AD_SPEND' ? parseFloat(t.taxUSD || 0) : 0), 0);
-    const spendBDT = (spendUSD + taxUSD) * (metrics.avgUSDEffectiveRate || 0);
-    const revenueBDT = parseFloat(c.revenueBDT || 0);
-    const roas = spendBDT > 0 ? revenueBDT / spendBDT : 0;
-    const client = clients.find(x => x.id === c.clientId);
-    return { ...c, clientName: client?.name || 'Unassigned', spendUSD, taxUSD, spendBDT, revenueBDT, roas };
-  }), [campaigns, clients, transactions, metrics.avgUSDEffectiveRate]);
+  }
+  if (p.includes('google') || p.includes('youtube')) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-bold shadow-2xs">
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+        </svg>
+        Google Ads
+      </span>
+    );
+  }
+  if (p.includes('tiktok')) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-bold shadow-2xs">
+        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.86 4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-2.04-.52 4.81 4.81 0 0 1-1.77-1.4 4.87 4.87 0 0 1-.82-2.6z" />
+        </svg>
+        TikTok Ads
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
+      <Target size={13} className="text-slate-500" />
+      {platform || 'Digital Ads'}
+    </span>
+  );
+}
 
-  const filtered = rows.filter(c => {
-    const q = search.trim().toLowerCase();
-    const matchesSearch = !q || [c.name, c.clientName, c.platform, c.goal].some(v => String(v || '').toLowerCase().includes(q));
-    const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+function CampaignActionsMenu({ campaign, onInspect, onEdit, onToggleStatus, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false);
+    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div><h1 className="text-2xl font-bold text-slate-900">Campaigns</h1><p className="text-sm text-slate-500 mt-1">Track budgets, ad spend, results and profitability by campaign.</p></div>
-        <button onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm"><Plus size={17} /> Add Campaign</button>
+    <div className="relative inline-block text-left" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+        title="Campaign Actions"
+      >
+        <MoreVertical size={16} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
+          <button
+            onClick={() => { setIsOpen(false); onInspect(campaign); }}
+            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2.5 transition-colors"
+          >
+            <Eye size={14} className="text-sky-600" /> Deep-Dive Analytics
+          </button>
+          <button
+            onClick={() => { setIsOpen(false); onEdit(campaign); }}
+            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+          >
+            <Edit size={14} className="text-blue-600" /> Edit Campaign
+          </button>
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              onToggleStatus(campaign.id, campaign.status === 'Active' ? 'Paused' : 'Active');
+            }}
+            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+          >
+            {campaign.status === 'Active' ? (
+              <>
+                <Pause size={14} className="text-amber-600" /> Pause Campaign
+              </>
+            ) : (
+              <>
+                <Play size={14} className="text-emerald-600" /> Activate Campaign
+              </>
+            )}
+          </button>
+
+          <div className="my-1 border-t border-slate-100" />
+
+          <button
+            onClick={() => { setIsOpen(false); onDelete(campaign.id); }}
+            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
+          >
+            <Trash2 size={14} className="text-rose-500" /> Delete Campaign
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CampaignDetailsModal({ campaign, clients, transactions, metrics, onClose, onEdit }) {
+  const client = clients.find(x => x.id === campaign.clientId);
+
+  const matchingTxs = useMemo(() => {
+    return transactions.filter(t =>
+      t.type === 'AD_SPEND' &&
+      String(t.campaign || '').trim().toLowerCase() === String(campaign.name || '').trim().toLowerCase()
+    ).sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [transactions, campaign.name]);
+
+  const stats = useMemo(() => {
+    const totalUSD = matchingTxs.reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
+    const totalTaxUSD = matchingTxs.reduce((sum, t) => sum + parseFloat(t.taxUSD || 0), 0);
+    const grossSpendUSD = totalUSD + totalTaxUSD;
+    const grossSpendBDT = grossSpendUSD * (metrics.avgUSDEffectiveRate || 0);
+    const revenueBDT = parseFloat(campaign.revenueBDT || 0);
+    const profitBDT = revenueBDT - grossSpendBDT;
+    const roas = grossSpendBDT > 0 ? revenueBDT / grossSpendBDT : 0;
+    const resultCount = parseFloat(campaign.resultValue || 0);
+    const cpr = resultCount > 0 ? (grossSpendUSD / resultCount) : 0;
+
+    const budgetNum = parseFloat(campaign.budget || 0);
+    const budgetUSD = campaign.budgetType === 'BDT' ? (budgetNum / (metrics.avgUSDEffectiveRate || 130)) : budgetNum;
+    const pacingPercent = budgetUSD > 0 ? Math.min(100, Math.round((grossSpendUSD / budgetUSD) * 100)) : 0;
+
+    return { totalUSD, totalTaxUSD, grossSpendUSD, grossSpendBDT, revenueBDT, profitBDT, roas, resultCount, cpr, budgetUSD, pacingPercent };
+  }, [matchingTxs, metrics.avgUSDEffectiveRate, campaign]);
+
+  const handlePrintCampaignReport = () => {
+    const printWindow = window.open('', '_blank', 'width=900,height=750');
+    if (!printWindow) return;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Campaign Performance Report - ${campaign.name}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 32px; margin: 0; background: #fff; line-height: 1.5; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0284c7; padding-bottom: 16px; margin-bottom: 24px; }
+          .brand { font-size: 24px; font-weight: 900; color: #0284c7; }
+          .client-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 13px; }
+          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+          .kpi-card { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px; text-align: center; }
+          .kpi-title { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #0369a1; }
+          .kpi-val { font-size: 18px; font-weight: 900; color: #0c4a6e; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+          th { background: #f1f5f9; text-align: left; padding: 8px 12px; border-bottom: 1px solid #cbd5e1; font-weight: 700; }
+          td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+          .green { color: #16a34a; font-weight: bold; }
+          .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 11px; color: #64748b; text-align: center; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Campaign Intelligence</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Campaign Audit & ROI Report</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 14px;">Date: ${new Date().toLocaleDateString('en-GB')}</div>
+          </div>
+        </div>
+
+        <div class="client-box">
+          <div><strong>Campaign:</strong><br/>${campaign.name}</div>
+          <div><strong>Client:</strong><br/>${client?.name || 'Unassigned'} (${client?.company || 'Direct'})</div>
+          <div><strong>Platform:</strong><br/>${campaign.platform || 'Meta Ads'}</div>
+          <div><strong>Objective / Goal:</strong><br/>${campaign.goal || 'General Performance'}</div>
+          <div><strong>Timeline:</strong><br/>${formatDate(campaign.startDate)} – ${campaign.endDate ? formatDate(campaign.endDate) : 'Ongoing'}</div>
+          <div><strong>Status:</strong><br/>${campaign.status || 'Active'}</div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-title">Total Spend</div><div class="kpi-val">${formatUSD(stats.grossSpendUSD)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Results Delivered</div><div class="kpi-val">${stats.resultCount.toLocaleString()} ${campaign.resultLabel || 'Results'}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Avg Cost / Result</div><div class="kpi-val">$${stats.cpr.toFixed(2)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Attributed ROAS</div><div class="kpi-val">${stats.roas.toFixed(2)}x</div></div>
+        </div>
+
+        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Matching Transaction Ledger</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ad Account</th>
+              <th>Card / Source</th>
+              <th style="text-align: right;">Ad Spend (USD)</th>
+              <th style="text-align: right;">15% VAT</th>
+              <th style="text-align: right;">Total Cost (BDT)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${matchingTxs.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding: 16px; color:#94a3b8;">No matching ad spend transactions recorded.</td></tr>' : ''}
+            ${matchingTxs.map(tx => `
+              <tr>
+                <td>${formatDate(tx.date)}</td>
+                <td>${tx.adAccount || 'Default Account'}</td>
+                <td>${tx.notes || 'Meta Card'}</td>
+                <td style="text-align: right; font-weight: bold;">${formatUSD(tx.amountUSD)}</td>
+                <td style="text-align: right;">${formatUSD(tx.taxUSD)}</td>
+                <td style="text-align: right; font-weight: bold;">${formatBDT((parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) * (metrics.avgUSDEffectiveRate || 0))}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          Generated automatically by AdLytic Platform • Confidential Campaign Intelligence Report
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
+  };
+
+  return (
+    <div className="flex flex-col h-full space-y-5">
+      {/* VIP OBSIDIAN HEADER */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-5 border border-slate-800 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+            <PlatformBadge platform={campaign.platform} />
+            <h2 className="text-xl font-black text-white tracking-tight">{campaign.name}</h2>
+            <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold flex items-center gap-1.5 ${
+              campaign.status === 'Active'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : campaign.status === 'Completed'
+                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+            }`}>
+              {campaign.status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+              {campaign.status || 'Active'}
+            </span>
+          </div>
+          <p className="text-slate-300 text-xs font-semibold">
+            Client: <span className="text-sky-300 font-bold">{client?.name || 'Unassigned'}</span> {client?.company ? `(${client.company})` : ''} • Objective: <span className="text-slate-200">{campaign.goal || 'General Performance'}</span>
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-3.5 pt-3.5 border-t border-slate-800/80 text-xs">
+            <div className="text-slate-300">
+              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Target Budget</span>
+              <span className="font-bold text-sky-400">
+                {campaign.budget ? `${campaign.budgetType === 'BDT' ? '৳' : '$'}${Number(campaign.budget).toLocaleString()}` : 'Flexible / Ongoing'}
+              </span>
+            </div>
+            <div className="text-slate-300">
+              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Timeline</span>
+              <span className="font-semibold text-slate-200">{formatDate(campaign.startDate)} – {campaign.endDate ? formatDate(campaign.endDate) : 'Ongoing'}</span>
+            </div>
+            <div className="text-slate-300">
+              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Attributed Revenue</span>
+              <span className="font-bold text-emerald-400">{formatBDT(stats.revenueBDT)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-row md:flex-col gap-2 shrink-0 self-start md:self-center justify-center">
+          <button
+            type="button"
+            onClick={() => { onClose(); onEdit(campaign); }}
+            className="inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+          >
+            <Edit size={13} /> Edit Campaign
+          </button>
+          <button
+            type="button"
+            onClick={handlePrintCampaignReport}
+            className="inline-flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap hover:text-white"
+          >
+            <Printer size={13} /> PDF Report
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniKpi title="Campaigns" value={campaigns.length} icon={<Target size={16} />} />
-        <MiniKpi title="Active" value={campaigns.filter(c => c.status === 'Active').length} icon={<Activity size={16} />} />
-        <MiniKpi title="Tracked Spend" value={formatUSD(rows.reduce((s, c) => s + c.spendUSD, 0))} icon={<DollarSign size={16} />} />
-        <MiniKpi title="Tracked Revenue" value={formatBDT(rows.reduce((s, c) => s + c.revenueBDT, 0))} icon={<TrendingUp size={16} />} />
+      {/* 4 FROSTED KPI CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Ad Spend</span>
+            <Activity size={14} className="text-purple-600" />
+          </div>
+          <span className="text-sm font-black text-purple-700 mt-1 block">{formatUSD(stats.grossSpendUSD)}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">{formatBDT(stats.grossSpendBDT)} with 15% VAT</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Delivered Results</span>
+            <Target size={14} className="text-sky-600" />
+          </div>
+          <span className="text-sm font-black text-sky-700 mt-1 block">{stats.resultCount.toLocaleString()} {campaign.resultLabel || 'Leads'}</span>
+          <span className="text-[10px] text-sky-600 font-semibold mt-0.5 block">Delivered</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Per Result (CPA)</span>
+            <DollarSign size={14} className="text-amber-600" />
+          </div>
+          <span className="text-sm font-black text-amber-700 mt-1 block">${stats.cpr.toFixed(2)}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Avg per {campaign.resultLabel?.slice(0, -1) || 'result'}</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net ROAS</span>
+            <TrendingUp size={14} className="text-emerald-600" />
+          </div>
+          <span className="text-sm font-black text-emerald-700 mt-1 block">{stats.roas.toFixed(2)}x ROAS</span>
+          <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 block">{formatBDT(stats.profitBDT)} Net Profit</span>
+        </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row gap-3">
-        <div className="flex-1 flex items-center bg-slate-50 border border-slate-200 rounded-lg px-3"><Search size={17} className="text-slate-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search campaigns, clients, platforms..." className="w-full bg-transparent border-none focus:outline-none px-2 py-2 text-sm" /></div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"><option>All</option><option>Active</option><option>Paused</option><option>Completed</option></select>
-      </div>
+      {/* BUDGET PACING BAR */}
+      {stats.budgetUSD > 0 && (
+        <div className="bg-white border border-slate-200/80 rounded-lg p-3 shadow-2xs">
+          <div className="flex justify-between items-center text-xs mb-1.5">
+            <span className="font-bold text-slate-700">Budget Burn Pacing</span>
+            <span className="font-black text-slate-800">{formatUSD(stats.grossSpendUSD)} of {formatUSD(stats.budgetUSD)} ({stats.pacingPercent}%)</span>
+          </div>
+          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all rounded-full ${stats.pacingPercent > 90 ? 'bg-rose-500' : stats.pacingPercent > 70 ? 'bg-amber-500' : 'bg-sky-500'}`}
+              style={{ width: `${stats.pacingPercent}%` }}
+            />
+          </div>
+        </div>
+      )}
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between"><div><h3 className="font-semibold text-slate-900">Campaign Performance</h3><p className="text-xs text-slate-500 mt-1">Spend is matched automatically from existing transaction entries using the campaign name.</p></div><BarChart3 size={19} className="text-slate-400" /></div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="bg-slate-50 text-xs text-slate-500">
-              <th className="px-5 py-3 text-left font-medium">Campaign</th><th className="px-3 py-3 text-left font-medium">Client</th><th className="px-3 py-3 text-left font-medium">Platform</th><th className="px-3 py-3 text-right font-medium">Budget</th><th className="px-3 py-3 text-right font-medium">Spent</th><th className="px-3 py-3 text-right font-medium">Revenue</th><th className="px-3 py-3 text-right font-medium">ROAS</th><th className="px-5 py-3 text-right font-medium">Status</th><th className="px-5 py-3 text-right font-medium">Actions</th>
-            </tr></thead>
-            <tbody>
-              {filtered.length ? filtered.map(c => (
-                <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60">
-                  <td className="px-5 py-4"><div className="font-medium text-slate-800">{c.name}</div><div className="text-[11px] text-slate-400">{c.goal || '—'}</div></td>
-                  <td className="px-3 py-4 text-slate-600">{c.clientName}</td><td className="px-3 py-4"><span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs">{c.platform || 'Meta'}</span></td>
-                  <td className="px-3 py-4 text-right text-slate-700">{c.budget ? `${c.budgetType === 'USD' ? '$' : '৳'}${Number(c.budget).toLocaleString('en-US', { maximumFractionDigits: 2 })}` : '—'}</td>
-                  <td className="px-3 py-4 text-right text-red-600">{formatUSD(c.spendUSD)}</td><td className="px-3 py-4 text-right text-emerald-600">{formatBDT(c.revenueBDT)}</td><td className="px-3 py-4 text-right font-semibold">{c.roas ? `${c.roas.toFixed(2)}x` : '—'}</td>
-                  <td className="px-5 py-4 text-right"><span className={`px-2 py-1 rounded-full border text-[10px] font-medium ${c.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : c.status === 'Completed' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{c.status}</span></td>
-                  <td className="px-5 py-4 text-right whitespace-nowrap"><button onClick={() => { setEditing(c); setShowForm(true); }} className="text-xs font-medium text-blue-600 mr-3">Edit</button><button onClick={() => onDelete(c.id)} className="text-xs font-medium text-red-500">Delete</button></td>
+      {/* MATCHED TRANSACTIONS LEDGER */}
+      <div className="bg-white border border-slate-200/90 rounded-xl overflow-hidden shadow-2xs">
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
+          <div>
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Linked Ad Spend Ledger Entries</h4>
+            <p className="text-[11px] text-slate-400">Transactions matched automatically by campaign name.</p>
+          </div>
+          <span className="px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200 text-[10px] font-bold text-purple-700">
+            {matchingTxs.length} Records
+          </span>
+        </div>
+
+        <div className="overflow-x-auto max-h-[40vh]">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 sticky top-0 text-[10px] uppercase">
+              <tr>
+                <th className="px-4 py-2.5">Date</th>
+                <th className="px-4 py-2.5">Ad Account</th>
+                <th className="px-4 py-2.5">Card / Source</th>
+                <th className="px-4 py-2.5 text-right">Ad Spend (USD)</th>
+                <th className="px-4 py-2.5 text-right">15% VAT</th>
+                <th className="px-4 py-2.5 text-right">Total BDT</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {matchingTxs.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-8 text-slate-400">No ad spend transactions currently tagged with "{campaign.name}".</td>
                 </tr>
-              )) : <tr><td colSpan="9" className="py-14 text-center text-slate-400">No campaigns yet. Add your first campaign to start tracking performance.</td></tr>}
+              ) : (
+                matchingTxs.map(tx => {
+                  const grossUSD = parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0);
+                  const grossBDT = grossUSD * (metrics.avgUSDEffectiveRate || 0);
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50/70">
+                      <td className="px-4 py-2.5 text-slate-600 font-medium">{formatDate(tx.date)}</td>
+                      <td className="px-4 py-2.5 font-bold text-slate-800">{tx.adAccount || 'Default Account'}</td>
+                      <td className="px-4 py-2.5 text-slate-500">{tx.notes || '—'}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-purple-700">{formatUSD(tx.amountUSD)}</td>
+                      <td className="px-4 py-2.5 text-right text-slate-500">{formatUSD(tx.taxUSD)}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-slate-800">{formatBDT(grossBDT)}</td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {showForm && <CampaignForm initialData={editing} clients={clients} onCancel={() => setShowForm(false)} onSubmit={data => { onSave(data); setShowForm(false); }} />}
+      {/* STRATEGY & NOTES */}
+      {campaign.notes && (
+        <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Strategy & Campaign Notes</span>
+          <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{campaign.notes}</p>
+        </div>
+      )}
     </div>
   );
 }
 
 function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
-  const [data, setData] = useState(initialData || { name: '', clientId: clients[0]?.id || '', platform: 'Meta', budget: '', budgetType: 'USD', status: 'Active', startDate: new Date().toISOString().slice(0, 10), endDate: '', goal: '', resultValue: '', resultLabel: 'Leads', revenueBDT: '', notes: '' });
-  const set = (key, value) => setData(prev => ({ ...prev, [key]: value }));
-  const input = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const [formData, setFormData] = useState(() => {
+    if (initialData) {
+      return {
+        ...initialData,
+        platform: initialData.platform || 'Meta',
+        budgetType: initialData.budgetType || 'USD',
+        status: initialData.status || 'Active',
+        resultLabel: initialData.resultLabel || 'Leads',
+        currentlyWorking: initialData.currentlyWorking !== undefined ? initialData.currentlyWorking : !initialData.endDate,
+      };
+    }
+    return {
+      name: '', clientId: clients[0]?.id || '', platform: 'Meta',
+      goal: 'Lead Generation', status: 'Active',
+      budget: '', budgetType: 'USD',
+      startDate: new Date().toISOString().split('T')[0], endDate: '', currentlyWorking: true,
+      resultValue: '', resultLabel: 'Leads', revenueBDT: '', notes: ''
+    };
+  });
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+    onSubmit({
+      ...formData,
+      budget: parseFloat(formData.budget) || 0,
+      resultValue: parseFloat(formData.resultValue) || 0,
+      revenueBDT: parseFloat(formData.revenueBDT) || 0,
+      endDate: formData.currentlyWorking ? '' : formData.endDate
+    });
+  };
+
+  const inputClass = "w-full mt-0.5 px-2.5 py-1.5 border border-slate-200/90 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal h-[34px]";
+  const labelClass = "block text-[9.5px] font-bold text-slate-500 uppercase tracking-wider";
+
   return (
-    <div className="fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between"><div><h2 className="text-lg font-bold text-slate-900">{initialData ? 'Edit Campaign' : 'Add Campaign'}</h2><p className="text-xs text-slate-500 mt-1">Create a campaign record; ad spend will be linked from matching ledger entries.</p></div><button onClick={onCancel} className="text-slate-400"><X size={20} /></button></div>
-        <form onSubmit={e => { e.preventDefault(); if (!data.name.trim()) return; onSubmit(data); }} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Campaign Name"><input required value={data.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Ramadan Lead Campaign" className={input} /></Field>
-            <Field label="Client"><select value={data.clientId} onChange={e => set('clientId', e.target.value)} className={input}><option value="">Unassigned</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
-            <Field label="Platform"><select value={data.platform} onChange={e => set('platform', e.target.value)} className={input}><option>Meta</option><option>Google</option><option>TikTok</option><option>Other</option></select></Field>
-            <Field label="Status"><select value={data.status} onChange={e => set('status', e.target.value)} className={input}><option>Active</option><option>Paused</option><option>Completed</option></select></Field>
-            <Field label="Budget"><input type="number" min="0" step="0.01" value={data.budget} onChange={e => set('budget', e.target.value)} placeholder="Enter budget" className={input} /></Field>
-            <Field label="Budget Currency"><select value={data.budgetType} onChange={e => set('budgetType', e.target.value)} className={input}><option value="USD">USD</option><option value="BDT">BDT</option></select></Field>
-            <Field label="Start Date"><input type="date" value={data.startDate} onChange={e => set('startDate', e.target.value)} className={input} /></Field>
-            <Field label="End Date"><input type="date" value={data.endDate} onChange={e => set('endDate', e.target.value)} className={input} /></Field>
-            <Field label="Campaign Goal"><input value={data.goal} onChange={e => set('goal', e.target.value)} placeholder="Leads, Sales, Traffic..." className={input} /></Field>
-            <Field label="Results"><div className="grid grid-cols-2 gap-2"><input type="number" min="0" step="1" value={data.resultValue} onChange={e => set('resultValue', e.target.value)} placeholder="0" className={input} /><select value={data.resultLabel} onChange={e => set('resultLabel', e.target.value)} className={input}><option>Leads</option><option>Sales</option><option>Messages</option><option>Clicks</option><option>Conversions</option></select></div></Field>
-            <Field label="Revenue Attributed (BDT)"><input type="number" min="0" step="0.01" value={data.revenueBDT} onChange={e => set('revenueBDT', e.target.value)} placeholder="Optional" className={input} /></Field>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-200/90">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-slate-200/80 bg-slate-50/80 shrink-0">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">{initialData ? 'Edit Campaign' : 'Create Master Campaign'}</h3>
+            <p className="text-[10px] text-slate-400">Ad spend & VAT are synced automatically from matching ledger entries.</p>
           </div>
-          <Field label="Notes"><textarea value={data.notes} onChange={e => set('notes', e.target.value)} rows="3" placeholder="Campaign notes..." className={input} /></Field>
-          <div className="flex gap-3 pt-4 border-t border-slate-100"><button type="button" onClick={onCancel} className="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium">Cancel</button><button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold">Save Campaign</button></div>
+          <button onClick={onCancel} className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X size={18} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 overflow-y-auto space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-3 gap-y-2.5">
+            {/* ROW 1 */}
+            <div>
+              <label className={labelClass}>Campaign Name *</label>
+              <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. Ramadan Lead Gen 2026" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Client Account *</label>
+              <select name="clientId" value={formData.clientId} onChange={handleChange} className={inputClass}>
+                <option value="">Unassigned Account</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name} {c.company ? `(${c.company})` : ''}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Platform</label>
+              <select name="platform" value={formData.platform} onChange={handleChange} className={inputClass}>
+                <option>Meta</option><option>Google</option><option>TikTok</option><option>YouTube</option><option>Instagram</option><option>Other</option>
+              </select>
+            </div>
+
+            {/* ROW 2 */}
+            <div>
+              <label className={labelClass}>Objective / Goal</label>
+              <select name="goal" value={formData.goal} onChange={handleChange} className={inputClass}>
+                <option>Lead Generation</option><option>E-Commerce Sales</option><option>Messages / WhatsApp</option><option>Website Traffic</option><option>Brand Awareness</option><option>App Installs</option><option>Engagement</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Status</label>
+              <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
+                <option>Active</option><option>Paused</option><option>Completed</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Result Metric</label>
+              <select name="resultLabel" value={formData.resultLabel} onChange={handleChange} className={inputClass}>
+                <option>Leads</option><option>Sales / Orders</option><option>Messages</option><option>Clicks</option><option>Conversions</option><option>Video Views</option>
+              </select>
+            </div>
+
+            {/* ROW 3 */}
+            <div>
+              <label className={labelClass}>Target Budget</label>
+              <input type="number" min="0" step="0.01" name="budget" value={formData.budget} onChange={handleChange} placeholder="e.g. 500" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Budget Currency</label>
+              <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
+                <option value="USD">USD ($)</option><option value="BDT">BDT (৳)</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Delivered Results</label>
+              <input type="number" min="0" step="1" name="resultValue" value={formData.resultValue} onChange={handleChange} placeholder="e.g. 450" className={inputClass} />
+            </div>
+
+            {/* ROW 4 */}
+            <div>
+              <label className={labelClass}>Start Date *</label>
+              <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <label className={labelClass}>End Date</label>
+                <label className="flex items-center gap-1.5 text-[10px] font-bold text-sky-700 select-none cursor-pointer">
+                  <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked })} className="w-3 h-3 text-sky-600 rounded border-slate-300 focus:ring-sky-500" />
+                  Ongoing
+                </label>
+              </div>
+              {!formData.currentlyWorking ? (
+                <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} />
+              ) : (
+                <div className="h-[34px] px-2.5 flex items-center bg-slate-50 border border-slate-200/70 rounded-lg text-[11px] font-semibold text-slate-500">Ongoing Campaign</div>
+              )}
+            </div>
+            <div>
+              <label className={labelClass}>Attributed Revenue (BDT)</label>
+              <input type="number" min="0" step="0.01" name="revenueBDT" value={formData.revenueBDT} onChange={handleChange} placeholder="e.g. 75000" className={inputClass} />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Target Audience, Angles & Notes</label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              rows={2}
+              placeholder="Target demographics, creative copy, pixel IDs, campaign objectives..."
+              className="w-full mt-0.5 px-2.5 py-1.5 border border-slate-200/90 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal min-h-[50px] max-h-[85px] overflow-y-auto leading-relaxed resize-y"
+            />
+          </div>
+
+          <div className="flex gap-2.5 pt-2 border-t border-slate-100">
+            <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-200/90 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all shadow-2xs">Cancel</button>
+            <button type="submit" className="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]">Save Campaign</button>
+          </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDelete }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [inspecting, setInspecting] = useState(null);
+  const [search, setSearch] = useState('');
+  const [platformFilter, setPlatformFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [clientFilter, setClientFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('newest');
+
+  const rows = useMemo(() => campaigns.map(c => {
+    const matching = transactions.filter(t =>
+      t.type === 'AD_SPEND' &&
+      String(t.campaign || '').trim().toLowerCase() === String(c.name || '').trim().toLowerCase()
+    );
+    const spendUSD = matching.reduce((sum, t) => sum + parseFloat(t.amountUSD || 0), 0);
+    const taxUSD = matching.reduce((sum, t) => sum + parseFloat(t.taxUSD || 0), 0);
+    const grossSpendUSD = spendUSD + taxUSD;
+    const spendBDT = grossSpendUSD * (metrics.avgUSDEffectiveRate || 0);
+    const revenueBDT = parseFloat(c.revenueBDT || 0);
+    const profitBDT = revenueBDT - spendBDT;
+    const roas = spendBDT > 0 ? revenueBDT / spendBDT : 0;
+    const client = clients.find(x => x.id === c.clientId);
+    const resultCount = parseFloat(c.resultValue || 0);
+    const cpr = resultCount > 0 ? (grossSpendUSD / resultCount) : 0;
+
+    const budgetNum = parseFloat(c.budget || 0);
+    const budgetUSD = c.budgetType === 'BDT' ? (budgetNum / (metrics.avgUSDEffectiveRate || 130)) : budgetNum;
+    const pacingPercent = budgetUSD > 0 ? Math.min(100, Math.round((grossSpendUSD / budgetUSD) * 100)) : 0;
+
+    return {
+      ...c,
+      clientName: client?.name || 'Unassigned',
+      clientCompany: client?.company || 'Direct',
+      spendUSD: grossSpendUSD,
+      taxUSD,
+      spendBDT,
+      revenueBDT,
+      profitBDT,
+      roas,
+      resultCount,
+      cpr,
+      budgetUSD,
+      pacingPercent,
+      txCount: matching.length
+    };
+  }), [campaigns, clients, transactions, metrics.avgUSDEffectiveRate]);
+
+  const summary = useMemo(() => {
+    const totalCount = rows.length;
+    const activeCount = rows.filter(c => c.status === 'Active').length;
+    const totalSpendUSD = rows.reduce((s, c) => s + c.spendUSD, 0);
+    const totalSpendBDT = rows.reduce((s, c) => s + c.spendBDT, 0);
+    const totalRevenueBDT = rows.reduce((s, c) => s + c.revenueBDT, 0);
+    const totalProfitBDT = totalRevenueBDT - totalSpendBDT;
+    const blendedROAS = totalSpendBDT > 0 ? (totalRevenueBDT / totalSpendBDT) : 0;
+    return { totalCount, activeCount, totalSpendUSD, totalSpendBDT, totalRevenueBDT, totalProfitBDT, blendedROAS };
+  }, [rows]);
+
+  const filtered = useMemo(() => {
+    let list = rows.filter(c => {
+      const q = search.trim().toLowerCase();
+      const matchesSearch = !q || [c.name, c.clientName, c.clientCompany, c.platform, c.goal, c.notes].some(v => String(v || '').toLowerCase().includes(q));
+      const matchesPlatform = platformFilter === 'All' || String(c.platform || '').toLowerCase().includes(platformFilter.toLowerCase());
+      const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
+      const matchesClient = clientFilter === 'All' || c.clientId === clientFilter;
+      return matchesSearch && matchesPlatform && matchesStatus && matchesClient;
+    });
+
+    if (sortBy === 'spend') list.sort((a, b) => b.spendUSD - a.spendUSD);
+    else if (sortBy === 'revenue') list.sort((a, b) => b.revenueBDT - a.revenueBDT);
+    else if (sortBy === 'roas') list.sort((a, b) => b.roas - a.roas);
+    else list.sort((a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0));
+
+    return list;
+  }, [rows, search, platformFilter, statusFilter, clientFilter, sortBy]);
+
+  const handleToggleStatus = (id, newStatus) => {
+    const target = campaigns.find(c => c.id === id);
+    if (target) onSave({ ...target, status: newStatus });
+  };
+
+  const handleExportCSV = () => {
+    if (!rows.length) return;
+    const headers = ['Campaign Name', 'Client', 'Platform', 'Goal', 'Status', 'Budget', 'Spend USD', 'Revenue BDT', 'ROAS', 'Results', 'Start Date', 'End Date'];
+    const csvRows = [headers.join(',')];
+    rows.forEach(r => {
+      csvRows.push([
+        `"${r.name.replace(/"/g, '""')}"`,
+        `"${r.clientName.replace(/"/g, '""')}"`,
+        `"${r.platform || 'Meta'}"`,
+        `"${r.goal || 'General'}"`,
+        `"${r.status || 'Active'}"`,
+        `"${r.budget || 0}"`,
+        `"${r.spendUSD.toFixed(2)}"`,
+        `"${r.revenueBDT.toFixed(2)}"`,
+        `"${r.roas.toFixed(2)}x"`,
+        `"${r.resultCount} ${r.resultLabel || ''}"`,
+        `"${r.startDate || ''}"`,
+        `"${r.endDate || 'Ongoing'}"`
+      ].join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `adlytic_campaigns_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-4 max-w-7xl mx-auto animate-in fade-in duration-300">
+      {/* SEAMLESS CANVAS HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+        <div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">Campaigns Command Center</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {summary.activeCount} Active • {summary.totalCount} Tracked
+            </span>
+          </div>
+          <p className="text-xs font-semibold text-slate-500 mt-1">
+            Track multi-channel ad budgets, live USD spend, conversion results, and campaign ROAS.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all"
+          >
+            <Download size={14} className="text-slate-500" /> Export CSV
+          </button>
+          <button
+            onClick={() => { setEditing(null); setShowForm(true); }}
+            className="inline-flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
+          >
+            <Plus size={15} /> Add Campaign
+          </button>
+        </div>
+      </div>
+
+      {/* 4 LUXURY FROSTED KPI TAG CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Card 1: Total Campaigns */}
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
+            <Target size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Total Campaigns</span>
+            <span className="text-[11px] font-bold text-sky-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              {summary.activeCount} Active ({summary.totalCount} Total)
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Total Ad Spend */}
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
+            <Activity size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Tracked Ad Spend</span>
+            <span className="text-[11px] font-bold text-purple-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
+              {formatUSD(summary.totalSpendUSD)} ({formatBDT(summary.totalSpendBDT)})
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Attributed Revenue */}
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-emerald-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-emerald-100/90 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
+            <ArrowDownRight size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Attributed Revenue</span>
+            <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+              {formatBDT(summary.totalRevenueBDT)} Generated
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Blended ROAS & Profit */}
+        <div className="bg-gradient-to-br from-blue-50/80 via-white to-sky-50/40 border border-blue-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-blue-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-blue-100/90 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
+            <TrendingUp size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Blended ROAS</span>
+            <span className="text-[11px] font-bold text-blue-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+              {summary.blendedROAS.toFixed(2)}x ROAS ({formatBDT(summary.totalProfitBDT)} Profit)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* QUICK PLATFORM FILTER CHIPS */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        {['All', 'Meta', 'Google', 'TikTok', 'Other'].map(p => (
+          <button
+            key={p}
+            onClick={() => setPlatformFilter(p)}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shadow-2xs ${
+              platformFilter === p
+                ? 'bg-sky-600 text-white'
+                : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {p === 'All' ? 'All Channels' : `${p} Ads`}
+          </button>
+        ))}
+      </div>
+
+      {/* SEARCH AND MULTI-DIMENSION FILTERS */}
+      <div className="flex flex-col sm:flex-row gap-2.5">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search campaigns, clients, objectives, or keywords..."
+            className="w-full pl-9 pr-4 py-2 border border-slate-200/90 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none bg-white shadow-2xs"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+
+        <select
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[150px] shadow-2xs text-slate-700"
+          value={clientFilter}
+          onChange={e => setClientFilter(e.target.value)}
+        >
+          <option value="All">All Clients</option>
+          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+
+        <select
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[130px] shadow-2xs text-slate-700"
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+        >
+          <option value="All">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Paused">Paused</option>
+          <option value="Completed">Completed</option>
+        </select>
+
+        <select
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[140px] shadow-2xs text-slate-700"
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value)}
+        >
+          <option value="newest">Sort: Newest</option>
+          <option value="spend">Sort: Highest Spend</option>
+          <option value="revenue">Sort: Highest Revenue</option>
+          <option value="roas">Sort: Best ROAS</option>
+        </select>
+      </div>
+
+      {/* MASTER CAMPAIGN PERFORMANCE TABLE */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-50/90 text-slate-500 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[10.5px]">
+              <tr>
+                <th className="px-5 py-3.5">Campaign Name</th>
+                <th className="px-4 py-3.5">Client</th>
+                <th className="px-3 py-3.5">Platform</th>
+                <th className="px-4 py-3.5 text-right">Budget & Pace</th>
+                <th className="px-4 py-3.5 text-right">Ad Spend (USD)</th>
+                <th className="px-4 py-3.5 text-right">Revenue (BDT)</th>
+                <th className="px-4 py-3.5 text-right">Results & CPA</th>
+                <th className="px-4 py-3.5 text-right">ROAS</th>
+                <th className="px-4 py-3.5 text-center">Status</th>
+                <th className="px-4 py-3.5 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan="10" className="text-center py-14 text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Target size={28} className="text-slate-300" />
+                      <span className="text-xs font-semibold text-slate-500">No campaigns found matching your filter.</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(c => {
+                  const initial = (c.clientName || 'C').charAt(0).toUpperCase();
+                  const isHighROAS = c.roas >= 2.5;
+
+                  return (
+                    <tr key={c.id} className="hover:bg-slate-50/70 transition-colors group">
+                      <td className="px-5 py-3.5">
+                        <div
+                          onClick={() => setInspecting(c)}
+                          className="font-bold text-slate-900 text-xs cursor-pointer hover:text-sky-600 transition-colors flex items-center gap-1.5"
+                        >
+                          <span>{c.name}</span>
+                          <span className="opacity-0 group-hover:opacity-100 text-sky-500 transition-opacity">
+                            <Eye size={12} />
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-slate-400">
+                          <span className="font-semibold text-slate-500">{c.goal || 'General'}</span>
+                          <span>•</span>
+                          <span>{formatDate(c.startDate)} – {c.endDate ? formatDate(c.endDate) : 'Ongoing'}</span>
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 font-black text-[10px] flex items-center justify-center shrink-0">
+                            {initial}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-800 text-xs">{c.clientName}</div>
+                            <div className="text-[10px] text-slate-400">{c.clientCompany}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-3.5">
+                        <PlatformBadge platform={c.platform} />
+                      </td>
+
+                      <td className="px-4 py-3.5 text-right">
+                        <div className="font-bold text-slate-700 text-xs">
+                          {c.budget ? `${c.budgetType === 'BDT' ? '৳' : '$'}${Number(c.budget).toLocaleString()}` : 'Flexible'}
+                        </div>
+                        {c.budgetUSD > 0 && (
+                          <div className="w-20 ml-auto mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${c.pacingPercent > 90 ? 'bg-rose-500' : 'bg-sky-500'}`}
+                              style={{ width: `${c.pacingPercent}%` }}
+                            />
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-right font-black text-purple-700 text-xs">
+                        {formatUSD(c.spendUSD)}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-right font-black text-emerald-600 text-xs">
+                        {formatBDT(c.revenueBDT)}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-right">
+                        <div className="font-bold text-slate-800 text-xs">
+                          {c.resultCount ? `${c.resultCount.toLocaleString()} ${c.resultLabel || ''}` : '—'}
+                        </div>
+                        {c.cpr > 0 && (
+                          <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                            ${c.cpr.toFixed(2)} / {c.resultLabel?.slice(0, -1) || 'result'}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3.5 text-right">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-black ${
+                          c.roas === 0
+                            ? 'bg-slate-100 text-slate-500'
+                            : isHighROAS
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                              : c.roas >= 1.5
+                                ? 'bg-sky-50 text-sky-700 border border-sky-200/80'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200/80'
+                        }`}>
+                          {c.roas ? `${c.roas.toFixed(2)}x` : '—'}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3.5 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                          c.status === 'Active'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                            : c.status === 'Completed'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200/60'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                        }`}>
+                          {c.status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                          {c.status || 'Active'}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => setInspecting(c)}
+                            title="Deep-Dive Inspector"
+                            className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                          >
+                            <Eye size={15} />
+                          </button>
+                          <CampaignActionsMenu
+                            campaign={c}
+                            onInspect={(camp) => setInspecting(camp)}
+                            onEdit={(camp) => { setEditing(camp); setShowForm(true); }}
+                            onToggleStatus={handleToggleStatus}
+                            onDelete={onDelete}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* INSPECTOR MODAL */}
+      {inspecting && (
+        <Modal title={`Campaign Deep-Dive: ${inspecting.name}`} onClose={() => setInspecting(null)} width="max-w-4xl">
+          <CampaignDetailsModal
+            campaign={inspecting}
+            clients={clients}
+            transactions={transactions}
+            metrics={metrics}
+            onClose={() => setInspecting(null)}
+            onEdit={(camp) => { setInspecting(null); setEditing(camp); setShowForm(true); }}
+          />
+        </Modal>
+      )}
+
+      {/* ADD / EDIT FORM MODAL */}
+      {showForm && (
+        <CampaignForm
+          initialData={editing}
+          clients={clients}
+          onCancel={() => { setShowForm(false); setEditing(null); }}
+          onSubmit={data => { onSave(data); setShowForm(false); setEditing(null); }}
+        />
+      )}
     </div>
   );
 }
