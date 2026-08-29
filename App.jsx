@@ -2307,6 +2307,19 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
     });
   }, [clients, transactions, metrics.avgUSDEffectiveRate]);
 
+  const overallSummary = useMemo(() => {
+    const totalCount = clientStats.length;
+    const activeCount = clientStats.filter(c => {
+      const s = getClientDisplayStatus(c);
+      return s.includes('Active') || s.includes('Currently Working') || s.includes('Working');
+    }).length;
+    const totalRevenue = clientStats.reduce((sum, c) => sum + (c.revenue || 0), 0);
+    const totalAdSpendUSD = clientStats.reduce((sum, c) => sum + (c.adSpendUSD || 0), 0);
+    const totalProfitBDT = clientStats.reduce((sum, c) => sum + (c.profitBDT || 0), 0);
+    const avgMargin = totalRevenue > 0 ? (totalProfitBDT / totalRevenue) * 100 : 0;
+    return { totalCount, activeCount, totalRevenue, totalAdSpendUSD, totalProfitBDT, avgMargin };
+  }, [clientStats]);
+
   const filteredClients = useMemo(() => {
     return clientStats.filter(c => {
       const matchSearch = (c.name.toLowerCase().includes(searchTerm.toLowerCase()) || (c.company || '').toLowerCase().includes(searchTerm.toLowerCase()));
@@ -2317,27 +2330,104 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
   }, [clientStats, searchTerm, statusFilter]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-slate-900">Client Management</h1>
-        <button onClick={onAddClient} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
-          <Plus size={16} /> Add Client
+    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500 pb-16">
+      {/* TOP HEADER (SEAMLESS CANVAS) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Client Management</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {overallSummary.activeCount} Active Client{overallSummary.activeCount === 1 ? '' : 's'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage client accounts, marketing budgets, advance payments, and profit margins.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onAddClient}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.01] shrink-0"
+        >
+          <Plus size={15} /> Add Client
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
-        <div className="relative flex-1 max-w-md">
-          <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+      {/* COMPACT KPI METRIC CARDS (PREMIUM FROSTED GLASS & LUXURY TAGS) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Card 1: Active Portfolios */}
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
+            <UsersRound size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Client Accounts</span>
+            <span className="text-[11px] font-bold text-sky-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-600 shrink-0" />
+              {overallSummary.activeCount} Active / {overallSummary.totalCount} Total
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Total Revenue */}
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-emerald-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-emerald-100/90 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
+            <ArrowDownRight size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Total Revenue</span>
+            <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+              {formatBDT(overallSummary.totalRevenue)} Received
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Total Ad Spend */}
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
+            <Activity size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Total Ad Spend</span>
+            <span className="text-[11px] font-bold text-purple-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
+              {formatUSD(overallSummary.totalAdSpendUSD)} Spend
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Net Agency Profit */}
+        <div className="bg-gradient-to-br from-blue-50/80 via-white to-sky-50/40 border border-blue-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-blue-300 hover:shadow-sm transition-all">
+          <div className="w-8 h-8 rounded-md bg-blue-100/90 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
+            <TrendingUp size={16} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Net Agency Profit</span>
+            <span className="text-[11px] font-bold text-blue-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+              {formatBDT(overallSummary.totalProfitBDT)} ({overallSummary.avgMargin.toFixed(1)}%)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* SEARCH AND FILTER CONTROLS */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search clients, business..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Search clients, business name, or brand..."
+            className="w-full pl-9 pr-4 py-2 border border-slate-200/90 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none bg-white shadow-2xs"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
         <select
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none bg-white min-w-[150px]"
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[180px] shadow-2xs text-slate-700"
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
@@ -2349,52 +2439,83 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* CLIENTS DATA TABLE */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+          <table className="w-full text-xs text-left whitespace-nowrap">
+            <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="px-5 py-4">Client & Business</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4 text-right">Budget</th>
-                <th className="px-5 py-4 text-right">Revenue (BDT)</th>
-                <th className="px-5 py-4 text-right">Ad Spend (USD)</th>
-                <th className="px-5 py-4 text-right">Profit (BDT)</th>
-                <th className="px-5 py-4 text-center">Actions</th>
+                <th className="px-5 py-3.5">Client & Business</th>
+                <th className="px-5 py-3.5">Service & Status</th>
+                <th className="px-5 py-3.5 text-right">Budget Plan</th>
+                <th className="px-5 py-3.5 text-right">Revenue (BDT)</th>
+                <th className="px-5 py-3.5 text-right">Ad Spend (USD)</th>
+                <th className="px-5 py-3.5 text-right">Profit (BDT)</th>
+                <th className="px-5 py-3.5 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredClients.length === 0 && <tr><td colSpan="7" className="text-center py-8 text-slate-500">No clients yet.</td></tr>}
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {filteredClients.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="text-center py-12 text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <UsersRound size={28} className="text-slate-300" />
+                      <span className="text-xs font-semibold text-slate-500">No client accounts found matching your search filter.</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
               {filteredClients.map(c => {
                 const displayStatus = getClientDisplayStatus(c);
-                const isWorking = displayStatus.includes('Active') || displayStatus.includes('Currently Working');
+                const isWorking = displayStatus.includes('Active') || displayStatus.includes('Currently Working') || displayStatus.includes('Working');
+                const initial = (c.name || 'C').charAt(0).toUpperCase();
+
                 return (
-                  <tr key={c.id} className="hover:bg-slate-50 group">
-                    <td className="px-5 py-4">
-                      <div className="font-semibold text-slate-900">{c.name}</div>
-                      <div className="text-xs text-slate-500">{c.company}</div>
+                  <tr key={c.id} className="hover:bg-slate-50/70 transition-colors group">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 border border-sky-200/80 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          {initial}
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900 text-xs">{c.name}</div>
+                          <div className="text-[11px] text-slate-500 font-medium">{c.company || 'Direct Client'}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium 
-                      ${isWorking ? 'bg-green-100 text-green-700' :
-                          displayStatus.includes('Completed') ? 'bg-blue-100 text-blue-700' :
-                            displayStatus === 'Inactive' ? 'bg-orange-100 text-orange-700' :
-                              'bg-slate-100 text-slate-600'}`}>
-                        {displayStatus}
-                      </span>
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold w-fit
+                          ${isWorking ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' :
+                            displayStatus.includes('Completed') ? 'bg-blue-50 text-blue-700 border border-blue-200/60' :
+                              displayStatus === 'Inactive' ? 'bg-orange-50 text-orange-700 border border-orange-200/60' :
+                                'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                          {isWorking && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                          {displayStatus}
+                        </span>
+                        {c.serviceType && (
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {c.serviceType}
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-5 py-4 text-right text-slate-600 font-medium">
+                    <td className="px-5 py-3.5 text-right text-slate-700 font-semibold">
                       {getBudgetDisplay(c.budgetType, c.budgetAmount || c.budget)}
                     </td>
-                    <td className="px-5 py-4 text-right font-medium text-green-600">{formatBDT(c.revenue)}</td>
-                    <td className="px-5 py-4 text-right font-medium text-slate-800">{formatUSD(c.adSpendUSD)}</td>
-                    <td className="px-5 py-4 text-right">
-                      <div className={`font-bold ${c.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
-                      <div className={`text-[10px] font-medium ${c.profitMargin > 50 ? 'text-green-600' : c.profitMargin < 0 ? 'text-red-600' : 'text-slate-500'}`}>
+                    <td className="px-5 py-3.5 text-right font-bold text-emerald-600">
+                      {formatBDT(c.revenue)}
+                    </td>
+                    <td className="px-5 py-3.5 text-right font-bold text-slate-800">
+                      {formatUSD(c.adSpendUSD)}
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <div className={`font-black ${c.profitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
+                      <div className={`text-[10px] font-bold inline-block px-1.5 py-0.2 rounded mt-0.5 ${c.profitMargin > 50 ? 'bg-emerald-50 text-emerald-700' : c.profitMargin < 0 ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
                         Margin: {c.profitMargin.toFixed(1)}%
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-center">
+                    <td className="px-5 py-3.5 text-center">
                       <ClientActionsMenu
                         client={c}
                         onViewDetails={() => onViewDetails(c)}
@@ -2406,7 +2527,7 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                       />
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
@@ -7298,7 +7419,7 @@ function ClientActionsMenu({
     ? createPortal(
       <div
         ref={menuRef}
-        className="fixed bg-white border border-slate-200 rounded-xl shadow-2xl z-[99999] p-1.5"
+        className="fixed bg-white border border-slate-200/90 rounded-xl shadow-2xl z-[99999] p-1.5"
         style={{
           top: menuPosition.top,
           left: menuPosition.left,
@@ -7310,87 +7431,99 @@ function ClientActionsMenu({
         <button
           type="button"
           onClick={() => closeAndRun(onViewDetails)}
-          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2.5 transition-colors"
         >
-          View Details
+          <Eye size={15} className="text-sky-600 shrink-0" />
+          <span>View Details</span>
         </button>
 
         <button
           type="button"
           onClick={() => closeAndRun(onHistory)}
-          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-slate-50 hover:text-indigo-600 flex items-center gap-2.5 transition-colors"
         >
-          Transaction History
+          <Receipt size={15} className="text-indigo-600 shrink-0" />
+          <span>Transaction History</span>
         </button>
 
         <button
           type="button"
           onClick={() => closeAndRun(onEdit)}
-          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 hover:text-blue-600"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2.5 transition-colors"
         >
-          Edit Client
+          <Edit size={15} className="text-slate-500 shrink-0" />
+          <span>Edit Client Profile</span>
         </button>
 
         <button
           type="button"
           onClick={() => closeAndRun(onReceivePayment)}
-          className="w-full text-left px-4 py-3 text-sm text-green-700 rounded-lg hover:bg-green-50"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-emerald-700 rounded-lg hover:bg-emerald-50 flex items-center gap-2.5 transition-colors"
         >
-          Receive Payment
+          <Coins size={15} className="text-emerald-600 shrink-0" />
+          <span>Receive Payment</span>
         </button>
 
-        <div className="h-px bg-slate-100 my-1.5" />
+        <div className="h-px bg-slate-100 my-1" />
 
         <button
           type="button"
           onClick={() => setShowStatusMenu(prev => !prev)}
-          className="w-full text-left px-4 py-3 text-sm text-slate-700 rounded-lg hover:bg-slate-50 flex items-center justify-between"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-slate-50 flex items-center justify-between transition-colors"
           aria-expanded={showStatusMenu}
         >
-          <span>Change Status</span>
+          <span className="flex items-center gap-2.5">
+            <RefreshCw size={15} className="text-blue-600 shrink-0" />
+            <span>Change Status</span>
+          </span>
           <ChevronDown
-            size={15}
-            className={`transition-transform ${showStatusMenu ? 'rotate-180' : ''}`}
+            size={14}
+            className={`transition-transform duration-200 text-slate-400 ${showStatusMenu ? 'rotate-180' : ''}`}
           />
         </button>
 
         {showStatusMenu && (
-          <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 border border-slate-100 p-1">
+          <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 border border-slate-100/90 p-1 space-y-0.5">
             <button
               type="button"
               onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
-              className="w-full text-left px-3 py-2.5 text-sm text-green-700 rounded-md hover:bg-green-100"
+              className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 rounded-md hover:bg-emerald-100/70 flex items-center gap-2"
             >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Mark Active
             </button>
 
             <button
               type="button"
               onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
-              className="w-full text-left px-3 py-2.5 text-sm text-orange-700 rounded-md hover:bg-orange-100"
+              className="w-full text-left px-3 py-2 text-xs font-bold text-orange-700 rounded-md hover:bg-orange-100/70 flex items-center gap-2"
             >
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
               Mark Inactive
             </button>
 
             <button
               type="button"
               onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
-              className="w-full text-left px-3 py-2.5 text-sm text-blue-700 rounded-md hover:bg-blue-100"
+              className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 rounded-md hover:bg-blue-100/70 flex items-center gap-2"
             >
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               Mark Completed
             </button>
           </div>
         )}
 
-        <div className="h-px bg-slate-100 my-1.5" />
+        <div className="h-px bg-slate-100 my-1" />
 
         <button
           type="button"
           onClick={() => closeAndRun(onDelete)}
-          className="w-full text-left px-4 py-3 text-sm text-red-600 rounded-lg hover:bg-red-50 flex items-center justify-between"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-rose-600 rounded-lg hover:bg-rose-50 flex items-center justify-between transition-colors"
         >
-          <span>Delete Client</span>
-          <Trash2 size={15} />
+          <span className="flex items-center gap-2.5">
+            <Trash2 size={15} className="text-rose-500 shrink-0" />
+            <span>Delete Client</span>
+          </span>
         </button>
       </div>,
       document.body
@@ -7403,11 +7536,11 @@ function ClientActionsMenu({
         ref={buttonRef}
         type="button"
         onClick={openMenu}
-        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
         aria-label={`Actions for ${client?.name || 'client'}`}
         aria-expanded={isOpen}
       >
-        <MoreVertical size={20} />
+        <MoreVertical size={17} />
       </button>
       {menu}
     </>
@@ -7439,46 +7572,49 @@ function ClientTransactionHistoryModal({ client, transactions, metrics }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-          <p className="text-xs text-green-700">Payments Received</p>
-          <p className="text-lg font-bold text-green-700 mt-1">{formatBDT(totalReceived)}</p>
+      {/* 4 COMPACT KPI TAGS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Payments Received</span>
+          <span className="text-sm font-black text-emerald-700 mt-0.5 block">{formatBDT(totalReceived)}</span>
         </div>
-        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-          <p className="text-xs text-purple-700">Ad Spend</p>
-          <p className="text-lg font-bold text-purple-700 mt-1">{formatUSD(totalAdSpend)}</p>
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Ad Spend</span>
+          <span className="text-sm font-black text-purple-700 mt-0.5 block">{formatUSD(totalAdSpend)}</span>
         </div>
-        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-          <p className="text-xs text-red-700">Tax</p>
-          <p className="text-lg font-bold text-red-700 mt-1">{formatUSD(totalTax)}</p>
+        <div className="bg-gradient-to-br from-rose-50/80 via-white to-orange-50/40 border border-rose-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Ad VAT (15%)</span>
+          <span className="text-sm font-black text-rose-700 mt-0.5 block">{formatUSD(totalTax)}</span>
         </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-          <p className="text-xs text-slate-500">Transactions</p>
-          <p className="text-lg font-bold text-slate-900 mt-1">{clientTx.length}</p>
+        <div className="bg-gradient-to-br from-slate-50 via-white to-slate-100/50 border border-slate-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Ledger Entries</span>
+          <span className="text-sm font-black text-slate-900 mt-0.5 block">{clientTx.length} Entries</span>
         </div>
       </div>
 
-      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-          <h3 className="font-semibold text-slate-800">Client Transaction History</h3>
-          <p className="text-xs text-slate-500 mt-1">All transactions linked to {client.name}</p>
+      <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
+        <div className="px-4 py-3 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-xs text-slate-800">Client Transaction History</h3>
+            <p className="text-[11px] text-slate-400">All ledger records linked to {client.name}</p>
+          </div>
         </div>
 
         <div className="overflow-x-auto max-h-[55vh]">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-white text-slate-500 font-medium border-b border-slate-200 sticky top-0">
+          <table className="w-full text-xs text-left whitespace-nowrap">
+            <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Details</th>
-                <th className="px-5 py-3 text-right">BDT</th>
-                <th className="px-5 py-3 text-right">USD</th>
+                <th className="px-4 py-2.5">Date</th>
+                <th className="px-4 py-2.5">Type</th>
+                <th className="px-4 py-2.5">Details</th>
+                <th className="px-4 py-2.5 text-right">BDT</th>
+                <th className="px-4 py-2.5 text-right">USD</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 font-medium">
               {clientTx.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="text-center py-10 text-slate-500">No transactions for this client yet.</td>
+                  <td colSpan="5" className="text-center py-10 text-slate-400">No transactions recorded for this client yet.</td>
                 </tr>
               )}
 
@@ -7490,24 +7626,24 @@ function ClientTransactionHistoryModal({ client, transactions, metrics }) {
                   : 0;
 
                 return (
-                  <tr key={tx.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
-                    <td className="px-5 py-4"><TransactionTypeBadge type={tx.type} /></td>
-                    <td className="px-5 py-4 min-w-[260px]">
-                      <div className="font-medium text-slate-800">
+                  <tr key={tx.id} className="hover:bg-slate-50/70">
+                    <td className="px-4 py-3 text-slate-600 font-medium">{formatDate(tx.date)}</td>
+                    <td className="px-4 py-3"><TransactionTypeBadge type={tx.type} /></td>
+                    <td className="px-4 py-3 min-w-[240px]">
+                      <div className="font-bold text-slate-800">
                         {tx.notes || tx.campaign || tx.adAccount || tx.type.replaceAll('_', ' ')}
                       </div>
                       {tx.adAccount && (
-                        <div className="text-xs text-slate-500 mt-0.5">
+                        <div className="text-[11px] text-slate-400 mt-0.5">
                           {tx.adAccount}{tx.campaign ? ` • ${tx.campaign}` : ''}
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-right font-semibold">
-                      {isPayment ? <span className="text-green-600">+{formatBDT(tx.amountBDT)}</span> : '—'}
+                    <td className="px-4 py-3 text-right font-bold">
+                      {isPayment ? <span className="text-emerald-600">+{formatBDT(tx.amountBDT)}</span> : '—'}
                     </td>
-                    <td className="px-5 py-4 text-right font-semibold">
-                      {isAdSpend ? <span className="text-red-600">-{formatUSD(usdAmount)}</span> : '—'}
+                    <td className="px-4 py-3 text-right font-bold">
+                      {isAdSpend ? <span className="text-rose-600">-{formatUSD(usdAmount)}</span> : '—'}
                     </td>
                   </tr>
                 );
@@ -7517,8 +7653,8 @@ function ClientTransactionHistoryModal({ client, transactions, metrics }) {
         </div>
       </div>
 
-      <div className="text-xs text-slate-400">
-        BDT conversion uses the app's current average USD effective rate of ৳{metrics.avgUSDEffectiveRate.toFixed(2)}.
+      <div className="text-[11px] text-slate-400 font-medium">
+        BDT conversion uses the app's current average USD effective buy rate of ৳{metrics.avgUSDEffectiveRate.toFixed(2)}.
       </div>
     </div>
   );
@@ -7713,91 +7849,190 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
   const displayStatus = getClientDisplayStatus(client);
 
   return (
-    <div className="flex flex-col h-full space-y-6">
-      <div className="bg-slate-900 rounded-xl p-6 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="w-full">
-          <div className="flex items-center gap-3 mb-1">
-            <h2 className="text-2xl font-bold">{client.name}</h2>
-            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${displayStatus.includes('Active') || displayStatus.includes('Working') ? 'bg-green-500/20 text-green-300' : 'bg-slate-700 text-slate-300'}`}>{displayStatus}</span>
+    <div className="flex flex-col h-full space-y-5">
+      {/* VIP CLIENT OBSIDIAN HEADER CARD */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-5 border border-slate-800 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="w-full min-w-0">
+          <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+            <h2 className="text-xl font-black text-white tracking-tight">{client.name}</h2>
+            <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold flex items-center gap-1.5 ${
+              displayStatus.includes('Active') || displayStatus.includes('Working')
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                : displayStatus.includes('Completed')
+                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  : 'bg-slate-700/60 text-slate-300 border border-slate-600'
+            }`}>
+              {(displayStatus.includes('Active') || displayStatus.includes('Working')) && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              )}
+              {displayStatus}
+            </span>
           </div>
-          <p className="text-slate-400 font-medium">{client.company} • {client.serviceType}</p>
+          <p className="text-slate-300 text-xs font-semibold">
+            {client.company || 'Direct Account'} {client.serviceType ? `• ${client.serviceType}` : ''}
+          </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-800 text-sm">
-            <div className="text-slate-300"><span className="text-slate-500 block text-xs">Budget Setting</span> <span className="font-medium text-blue-300">{getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</span></div>
-            <div className="text-slate-300"><span className="text-slate-500 block text-xs">Campaign Duration</span> {getCampaignDurationDisplay(client)}</div>
-            <div className="text-slate-300"><span className="text-slate-500 block text-xs">Dates</span> {formatDate(client.startDate)} - {client.currentlyWorking ? 'Present' : formatDate(client.endDate)}</div>
-            {client.phone && <div className="text-slate-300"><span className="text-slate-500 block text-xs">Phone</span> {client.phone}</div>}
-            {client.email && <div className="text-slate-300"><span className="text-slate-500 block text-xs">Email</span> {client.email}</div>}
-            {client.fb && <div className="text-slate-300"><span className="text-slate-500 block text-xs">Facebook</span> {client.fb}</div>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-3.5 pt-3.5 border-t border-slate-800/80 text-xs">
+            <div className="text-slate-300">
+              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Budget Plan</span>
+              <span className="font-bold text-sky-400">{getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</span>
+            </div>
+            <div className="text-slate-300">
+              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Duration</span>
+              <span className="font-semibold text-slate-200">{getCampaignDurationDisplay(client)}</span>
+            </div>
+            <div className="text-slate-300">
+              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Campaign Timeline</span>
+              <span className="font-semibold text-slate-200">{formatDate(client.startDate)} – {client.currentlyWorking ? 'Ongoing' : formatDate(client.endDate)}</span>
+            </div>
+            {client.phone && (
+              <div className="text-slate-300">
+                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Phone</span>
+                <a href={`tel:${client.phone}`} className="font-semibold text-sky-300 hover:underline">{client.phone}</a>
+              </div>
+            )}
+            {client.email && (
+              <div className="text-slate-300">
+                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Email</span>
+                <a href={`mailto:${client.email}`} className="font-semibold text-sky-300 hover:underline truncate block">{client.email}</a>
+              </div>
+            )}
+            {client.fb && (
+              <div className="text-slate-300">
+                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Facebook</span>
+                <a href={client.fb.startsWith('http') ? client.fb : `https://${client.fb}`} target="_blank" rel="noreferrer" className="font-semibold text-blue-400 hover:underline truncate block">
+                  {client.fb}
+                </a>
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex flex-row md:flex-col gap-2 shrink-0 self-start md:self-stretch justify-center">
-          <button onClick={onReceivePayment} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Payment</button>
-          <button onClick={onAdSpend} className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors">+ Ad Spend</button>
+
+        <div className="flex flex-row md:flex-col gap-2 shrink-0 self-start md:self-center justify-center">
+          <button
+            type="button"
+            onClick={onReceivePayment}
+            className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+          >
+            <Coins size={14} /> + Receive Payment
+          </button>
+          <button
+            type="button"
+            onClick={onAdSpend}
+            className="inline-flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+          >
+            <Activity size={14} /> + Log Ad Spend
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard title="Total Revenue" value={formatBDT(stats.revenue)} icon={<ArrowDownRight size={18} className="text-green-600" />} bgColor="bg-green-50" />
-        <MetricCard title="Total Ad Spend" value={formatUSD(stats.adSpendUSD)} subtitle={`Tax: ${formatUSD(stats.taxUSD)}`} icon={<Activity size={18} className="text-purple-600" />} bgColor="bg-purple-50" />
-        <MetricCard title="Total Cost (BDT)" value={formatBDT(stats.totalCostBDT)} icon={<Wallet size={18} className="text-orange-600" />} bgColor="bg-orange-50" />
-        <MetricCard title="Net Profit" value={formatBDT(stats.profitBDT)} subtitle={`Margin: ${stats.margin.toFixed(1)}%`} icon={<TrendingUp size={18} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={stats.profitBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
+      {/* 4 COMPACT LUXURY FROSTED TAG CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Received</span>
+            <ArrowDownRight size={14} className="text-emerald-600" />
+          </div>
+          <span className="text-sm font-black text-emerald-700 mt-1 block">{formatBDT(stats.revenue)}</span>
+          <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 block">100% Collected</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Ad Spend</span>
+            <Activity size={14} className="text-purple-600" />
+          </div>
+          <span className="text-sm font-black text-purple-700 mt-1 block">{formatUSD(stats.adSpendUSD)}</span>
+          <span className="text-[10px] text-purple-600 font-semibold mt-0.5 block">Tax: {formatUSD(stats.taxUSD)}</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Cost (BDT)</span>
+            <Wallet size={14} className="text-amber-600" />
+          </div>
+          <span className="text-sm font-black text-slate-900 mt-1 block">{formatBDT(stats.totalCostBDT)}</span>
+          <span className="text-[10px] text-slate-400 font-medium mt-0.5 block">Live FX Converted</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg p-3 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Agency Profit</span>
+            <TrendingUp size={14} className="text-sky-600" />
+          </div>
+          <span className={`text-sm font-black mt-1 block ${stats.profitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{formatBDT(stats.profitBDT)}</span>
+          <span className={`text-[10px] font-bold mt-0.5 block ${stats.margin > 50 ? 'text-emerald-600' : stats.margin < 0 ? 'text-rose-600' : 'text-slate-500'}`}>Margin: {stats.margin.toFixed(1)}%</span>
+        </div>
       </div>
 
+      {/* BUDGET PROGRESS & PERFORMANCE CHART */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h4 className="font-semibold text-slate-800 mb-4">Contract / Budget Tracking</h4>
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-slate-500">Target Budget (Scaled): {formatBDT(stats.targetBudgetBDT)}</span>
-            <span className="font-medium text-slate-800">Received: {formatBDT(stats.revenue)}</span>
+        <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-bold text-xs text-slate-800">Contract & Advance Budget Tracking</h4>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${stats.outstanding > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+              {stats.outstanding > 0 ? 'Payment Due' : 'Fully Funded'}
+            </span>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2.5 mb-2 overflow-hidden">
-            <div className="bg-green-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (stats.revenue / (stats.targetBudgetBDT || 1)) * 100)}%` }}></div>
+          <div className="flex justify-between text-xs mb-1.5 font-medium">
+            <span className="text-slate-500 text-[11px]">Target: {formatBDT(stats.targetBudgetBDT)}</span>
+            <span className="font-bold text-slate-900 text-[11px]">Received: {formatBDT(stats.revenue)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-500">Outstanding Expected:</span>
-            <span className={`font-bold ${stats.outstanding > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+          <div className="w-full bg-slate-100 rounded-full h-2 mb-2.5 overflow-hidden">
+            <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (stats.revenue / (stats.targetBudgetBDT || 1)) * 100)}%` }}></div>
+          </div>
+          <div className="flex justify-between text-xs font-semibold">
+            <span className="text-slate-500 text-[11px]">Outstanding Expected:</span>
+            <span className={`text-[11px] font-bold ${stats.outstanding > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
               {stats.outstanding > 0 ? formatBDT(stats.outstanding) : 'Fully Paid / Exceeded'}
             </span>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <h4 className="font-semibold text-slate-800 mb-4">Performance Overview</h4>
-          <div className="h-32 w-full">
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs">
+          <h4 className="font-bold text-xs text-slate-800 mb-3">Performance Overview</h4>
+          <div className="h-28 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(val) => `৳${val / 1000}k`} />
                 <Tooltip />
-                <Bar dataKey="revenue" name="Revenue (BDT)" fill="#22c55e" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="cost" name="Cost (BDT)" fill="#f97316" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="revenue" name="Revenue (BDT)" fill="#10b981" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="cost" name="Cost (BDT)" fill="#8b5cf6" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-50">
-            <h4 className="font-bold text-slate-800">Campaign Summary</h4>
+      {/* CAMPAIGN SUMMARY & CLIENT LEDGER TABLES */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white border border-slate-200/90 rounded-xl flex flex-col overflow-hidden shadow-2xs">
+          <div className="p-3.5 border-b border-slate-200/80 bg-slate-50/80">
+            <h4 className="font-bold text-xs text-slate-800">Campaign Ad Breakdown</h4>
           </div>
-          <div className="overflow-y-auto max-h-80">
-            <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="bg-white text-slate-500 sticky top-0 border-b border-slate-100 shadow-sm">
-                <tr><th className="px-4 py-2">Campaign & Account</th><th className="px-4 py-2 text-right">Spend</th><th className="px-4 py-2 text-right">Tax</th></tr>
+          <div className="overflow-y-auto max-h-60">
+            <table className="w-full text-xs text-left whitespace-nowrap">
+              <thead className="bg-white text-slate-400 font-bold sticky top-0 border-b border-slate-100 uppercase tracking-wider text-[9px]">
+                <tr>
+                  <th className="px-3.5 py-2">Campaign & Account</th>
+                  <th className="px-3.5 py-2 text-right">Spend</th>
+                  <th className="px-3.5 py-2 text-right">Tax (15%)</th>
+                </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {campaigns.length === 0 && <tr><td colSpan="3" className="text-center py-6 text-slate-500">No campaigns recorded yet.</td></tr>}
+              <tbody className="divide-y divide-slate-50 font-medium">
+                {campaigns.length === 0 && (
+                  <tr><td colSpan="3" className="text-center py-6 text-slate-400">No ad campaigns logged yet.</td></tr>
+                )}
                 {campaigns.map((camp, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-slate-800">{camp.campaign}</div>
-                      <div className="text-xs text-slate-500">{camp.account}</div>
+                  <tr key={idx} className="hover:bg-slate-50/70">
+                    <td className="px-3.5 py-2.5">
+                      <div className="font-bold text-slate-800">{camp.campaign}</div>
+                      <div className="text-[11px] text-slate-400">{camp.account}</div>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-slate-800">{formatUSD(camp.spend)}</td>
-                    <td className="px-4 py-3 text-right text-slate-600">{formatUSD(camp.tax)}</td>
+                    <td className="px-3.5 py-2.5 text-right font-bold text-slate-800">{formatUSD(camp.spend)}</td>
+                    <td className="px-3.5 py-2.5 text-right text-rose-600 font-semibold">{formatUSD(camp.tax)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -7805,30 +8040,35 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-            <h4 className="font-bold text-slate-800">Client Ledger</h4>
+        <div className="bg-white border border-slate-200/90 rounded-xl flex flex-col overflow-hidden shadow-2xs">
+          <div className="p-3.5 border-b border-slate-200/80 bg-slate-50/80 flex justify-between items-center">
+            <h4 className="font-bold text-xs text-slate-800">Client Ledger</h4>
           </div>
-          <div className="overflow-y-auto max-h-80">
-            <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="bg-white text-slate-500 sticky top-0 border-b border-slate-100 shadow-sm">
-                <tr><th className="px-4 py-2">Date / Type</th><th className="px-4 py-2 text-right">Amount</th></tr>
+          <div className="overflow-y-auto max-h-60">
+            <table className="w-full text-xs text-left whitespace-nowrap">
+              <thead className="bg-white text-slate-400 font-bold sticky top-0 border-b border-slate-100 uppercase tracking-wider text-[9px]">
+                <tr>
+                  <th className="px-3.5 py-2">Date / Type</th>
+                  <th className="px-3.5 py-2 text-right">Amount</th>
+                </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {clientTx.length === 0 && <tr><td colSpan="2" className="text-center py-6 text-slate-500">No transactions yet.</td></tr>}
+              <tbody className="divide-y divide-slate-50 font-medium">
+                {clientTx.length === 0 && (
+                  <tr><td colSpan="2" className="text-center py-6 text-slate-400">No transactions recorded yet.</td></tr>
+                )}
                 {clientTx.map(tx => (
-                  <tr key={tx.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="text-xs text-slate-500">{formatDate(tx.date)}</div>
-                      <div className="font-medium text-slate-800">{tx.type.replace('_', ' ')}</div>
-                      <div className="text-xs text-slate-500 truncate max-w-[150px]">{tx.notes || tx.campaign}</div>
+                  <tr key={tx.id} className="hover:bg-slate-50/70">
+                    <td className="px-3.5 py-2.5">
+                      <div className="text-[11px] text-slate-400">{formatDate(tx.date)}</div>
+                      <div className="font-bold text-slate-800">{tx.type.replaceAll('_', ' ')}</div>
+                      <div className="text-[11px] text-slate-400 truncate max-w-[160px]">{tx.notes || tx.campaign}</div>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3.5 py-2.5 text-right">
                       {tx.type === 'PAYMENT_RECEIVED' ? (
-                        <span className="font-bold text-green-600">+{formatBDT(tx.amountBDT)}</span>
+                        <span className="font-black text-emerald-600">+{formatBDT(tx.amountBDT)}</span>
                       ) : (
                         <div>
-                          <span className="font-bold text-slate-800">{formatUSD(parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0))}</span>
+                          <span className="font-black text-slate-900">{formatUSD(parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0))}</span>
                           <span className="block text-[10px] text-slate-400">({formatBDT((parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) * metrics.avgUSDEffectiveRate)})</span>
                         </div>
                       )}
