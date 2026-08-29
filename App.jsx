@@ -980,7 +980,7 @@ export default function AdLedgerApp() {
           </Modal>
         )}
         {(activeModal === 'add-client' || activeModal === 'edit-client') && (
-          <Modal title={activeModal === 'add-client' ? 'Add New Client' : 'Edit Client'} onClose={() => setActiveModal(null)} width="max-w-2xl">
+          <Modal title={activeModal === 'add-client' ? 'Add New Client' : 'Edit Client'} onClose={() => setActiveModal(null)} width="max-w-lg">
             <ClientForm initialData={activeModal === 'edit-client' ? selectedClient : null} onSubmit={handleSaveClient} onCancel={() => setActiveModal(null)} />
           </Modal>
         )}
