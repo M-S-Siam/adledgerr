@@ -798,10 +798,30 @@ export default function AdLedgerApp() {
       defaultReportRange: 'This Month'
     });
   };
+  const handleDeleteTransaction = (txId) => {
+    if (window.confirm('Are you sure you want to delete this transaction record? This will adjust all financial balances.')) {
+      setTransactions(prev => prev.filter(t => t.id !== txId));
+    }
+  };
 
-  const renderContent = () => {
+  const renderCurrentView = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
+      case 'dashboard':
+        return <DashboardView
+          metrics={metrics}
+          cards={cards}
+          clients={clients}
+          transactions={transactions}
+          onAddCard={() => { setSelectedCard(null); setActiveModal('add-card'); }}
+          onAddClient={() => { setSelectedClient(null); setActiveModal('add-client'); }}
+          onAddUSD={() => { setSelectedCard(null); setActiveModal('usd'); }}
+          onReceivePayment={() => { setSelectedClient(null); setActiveModal('payment'); }}
+          onAddSpend={() => { setSelectedClient(null); setActiveModal('spend'); }}
+          onAddFee={() => { setSelectedCard(null); setActiveModal('fee'); }}
+          onViewClient={(c) => { setSelectedClient(c); setActiveModal('client-details'); }}
+          onViewCard={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
+          onNavigate={(view) => setCurrentView(view)}
+        />;
       case 'clients':
         return <ClientsView
           clients={clients}
@@ -816,7 +836,18 @@ export default function AdLedgerApp() {
           onViewHistory={(c) => { setSelectedClient(c); setActiveModal('client-history'); }}
           onToggleStatus={handleToggleClientStatus}
         />;
-      case 'ledger': return <LedgerView transactions={transactions} clients={clients} cards={cards} />;
+      case 'ledger':
+        return <LedgerView
+          transactions={transactions}
+          clients={clients}
+          cards={cards}
+          metrics={metrics}
+          onDeleteTransaction={handleDeleteTransaction}
+          onAddPayment={() => { setSelectedClient(null); setActiveModal('payment'); }}
+          onAddUSD={() => { setSelectedCard(null); setActiveModal('usd'); }}
+          onAddSpend={() => { setSelectedCard(null); setActiveModal('spend'); }}
+          onAddFee={() => { setSelectedCard(null); setActiveModal('fee'); }}
+        />;
       case 'cards':
         return <CardsView
           cards={cards}
@@ -1967,10 +1998,280 @@ function DashboardView({ metrics, chartData, transactions, clients, cards }) {
 }
 
 
-function LedgerView({ transactions, clients, cards }) {
+function MasterLedgerBadge({ type }) {
+  if (type === 'PAYMENT_RECEIVED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-bold shadow-2xs">
+        <ArrowDownLeft size={13} className="text-emerald-600" />
+        Payment In
+      </span>
+    );
+  }
+  if (type === 'USD_PURCHASE') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 text-[11px] font-bold shadow-2xs">
+        <RefreshCw size={12} className="text-sky-600" />
+        Buy USD
+      </span>
+    );
+  }
+  if (type === 'AD_SPEND') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 text-[11px] font-bold shadow-2xs">
+        <svg className="w-3 h-3 fill-current text-purple-600" viewBox="0 0 24 24">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z" />
+        </svg>
+        Meta Ads
+      </span>
+    );
+  }
+  if (type === 'FEE') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 text-[11px] font-bold shadow-2xs">
+        <Shield size={12} className="text-amber-600" />
+        Card Fee
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
+      <DollarSign size={12} className="text-slate-500" />
+      {type}
+    </span>
+  );
+}
+
+function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete }) {
+  const client = clients.find(c => c.id === tx.clientId);
+  const card = cards.find(c => c.id === tx.cardId);
+
+  const isPayment = tx.type === 'PAYMENT_RECEIVED';
+  const isPurchase = tx.type === 'USD_PURCHASE';
+  const isAdSpend = tx.type === 'AD_SPEND';
+  const isFee = tx.type === 'FEE';
+
+  const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
+  const bdtOut = isPurchase ? (parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) : 0;
+  const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
+  const usdOut = isAdSpend ? (parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) : (isFee ? parseFloat(tx.amountUSD || 0) : 0);
+
+  const effectiveRate = isPurchase && usdIn > 0 ? (bdtOut / usdIn) : (metrics?.avgUSDEffectiveRate || 0);
+
+  const handlePrintVoucher = () => {
+    const printWindow = window.open('', '_blank', 'width=850,height=700');
+    if (!printWindow) return;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Financial Audit Voucher - ${tx.id}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 32px; margin: 0; background: #fff; line-height: 1.5; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
+          .brand { font-size: 22px; font-weight: 900; color: #0284c7; }
+          .voucher-title { font-size: 14px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+          .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 13px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+          .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+          .kpi-card { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; text-align: center; }
+          .kpi-title { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #475569; }
+          .kpi-val { font-size: 18px; font-weight: 900; margin-top: 4px; color: #0f172a; }
+          .green { color: #16a34a !important; }
+          .red { color: #dc2626 !important; }
+          .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Financial Command</div>
+            <div class="voucher-title">Accounting Transaction Voucher</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 13px;">Ref: ${tx.id}</div>
+            <div style="font-size: 12px; color: #64748b;">Date: ${formatDate(tx.date)}</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-title">BDT In</div><div class="kpi-val ${bdtIn > 0 ? 'green' : ''}">${bdtIn > 0 ? formatBDT(bdtIn) : '—'}</div></div>
+          <div class="kpi-card"><div class="kpi-title">BDT Out</div><div class="kpi-val ${bdtOut > 0 ? 'red' : ''}">${bdtOut > 0 ? formatBDT(bdtOut) : '—'}</div></div>
+          <div class="kpi-card"><div class="kpi-title">USD In</div><div class="kpi-val ${usdIn > 0 ? 'green' : ''}">${usdIn > 0 ? formatUSD(usdIn) : '—'}</div></div>
+          <div class="kpi-card"><div class="kpi-title">USD Out</div><div class="kpi-val ${usdOut > 0 ? 'red' : ''}">${usdOut > 0 ? formatUSD(usdOut) : '—'}</div></div>
+        </div>
+
+        <div class="box">
+          <div><strong>Transaction Category:</strong><br/>${tx.type}</div>
+          <div><strong>Linked Client:</strong><br/>${client ? `${client.name} (${client.company || 'Direct'})` : 'N/A (Agency Internal)'}</div>
+          <div><strong>Payment Card / Account:</strong><br/>${card ? `${card.name} (${card.provider || 'Bank Card'})` : 'N/A'}</div>
+          <div><strong>Ad Account / Campaign:</strong><br/>${tx.adAccount || tx.campaign || 'N/A'}</div>
+          ${tx.taxUSD ? `<div><strong>15% Meta VAT:</strong><br/>${formatUSD(tx.taxUSD)}</div>` : ''}
+          ${effectiveRate > 0 ? `<div><strong>Exchange Rate Applied:</strong><br/>৳${effectiveRate.toFixed(2)} / USD</div>` : ''}
+        </div>
+
+        <div style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 12px; margin-bottom: 24px;">
+          <strong>Narrative & Ledger Memo:</strong><br/>
+          <p style="margin: 4px 0 0 0; color: #334155;">${tx.notes || 'Standard accounting entry verified by AdLytic Engine.'}</p>
+        </div>
+
+        <div class="footer">
+          <div>Authorized Accounting Record • AdLytic Double-Entry System</div>
+          <div>Generated on ${new Date().toLocaleString()}</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 300);
+  };
+
+  return (
+    <div className="flex flex-col space-y-4">
+      {/* OBSIDIAN VOUCHER HEADER */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-4.5 border border-slate-800 shadow-md flex justify-between items-center gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <MasterLedgerBadge type={tx.type} />
+            <span className="font-mono text-xs font-black text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800/80">
+              #{String(tx.id).slice(-8)}
+            </span>
+          </div>
+          <p className="text-slate-300 text-xs font-semibold">
+            Timestamp: <span className="text-white font-bold">{formatDate(tx.date)}</span>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handlePrintVoucher}
+            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all hover:text-white"
+          >
+            <Printer size={13} /> Print Voucher
+          </button>
+        </div>
+      </div>
+
+      {/* 4 DUAL-CURRENCY BREAKDOWN PILLARS */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT Inflow</span>
+          <span className="text-sm font-black text-emerald-700 mt-0.5 block">{bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Client Deposit</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-rose-50/80 via-white to-red-50/40 border border-rose-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT Outflow</span>
+          <span className="text-sm font-black text-rose-700 mt-0.5 block">{bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">USD Purchase Cost</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD Funded</span>
+          <span className="text-sm font-black text-sky-700 mt-0.5 block">{usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Card Inflow</span>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD Outflow</span>
+          <span className="text-sm font-black text-purple-700 mt-0.5 block">{usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}</span>
+          <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Ad Spend + Tax</span>
+        </div>
+      </div>
+
+      {/* COUNTERPARTY & LEDGER CONTEXT */}
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs space-y-3">
+        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
+          Counterparty & Financial Narrative
+        </h4>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Linked Client Account</span>
+            <span className="font-bold text-slate-800 mt-0.5 block">
+              {client ? `${client.name} (${client.company || 'Direct'})` : 'N/A (Agency Internal)'}
+            </span>
+          </div>
+
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Linked Card / Source</span>
+            <span className="font-bold text-slate-800 mt-0.5 block">
+              {card ? `${card.name} • ${card.provider || 'Bank Card'}` : 'N/A'}
+            </span>
+          </div>
+
+          {tx.adAccount && (
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">Ad Account Reference</span>
+              <span className="font-bold text-slate-800 mt-0.5 block">{tx.adAccount}</span>
+            </div>
+          )}
+
+          {tx.campaign && (
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">Campaign Tag</span>
+              <span className="font-bold text-sky-700 mt-0.5 block">{tx.campaign}</span>
+            </div>
+          )}
+
+          {tx.taxUSD && (
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">15% Meta Tax (USD)</span>
+              <span className="font-bold text-purple-700 mt-0.5 block">{formatUSD(tx.taxUSD)}</span>
+            </div>
+          )}
+
+          {effectiveRate > 0 && (
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase block">Effective FX Rate</span>
+              <span className="font-bold text-emerald-700 mt-0.5 block">৳{effectiveRate.toFixed(2)} / USD</span>
+            </div>
+          )}
+        </div>
+
+        {tx.notes && (
+          <div className="pt-2 border-t border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Ledger Notes</span>
+            <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 whitespace-pre-wrap">
+              {tx.notes}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* FOOTER ACTIONS */}
+      <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={() => { onClose(); onDelete(tx.id); }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all"
+        >
+          <Trash2 size={13} /> Delete Record
+        </button>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction, onAddPayment, onAddUSD, onAddSpend, onAddFee }) {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('ALL');
+  const [clientFilter, setClientFilter] = useState('ALL');
+  const [cardFilter, setCardFilter] = useState('ALL');
+  const [inspectingTx, setInspectingTx] = useState(null);
 
   const filtered = useMemo(() => {
     const today = new Date();
@@ -1979,12 +2280,15 @@ function LedgerView({ transactions, clients, cards }) {
     return [...transactions]
       .filter(tx => {
         const matchesType = typeFilter === 'ALL' || tx.type === typeFilter;
+        const matchesClient = clientFilter === 'ALL' || tx.clientId === clientFilter;
+        const matchesCard = cardFilter === 'ALL' || tx.cardId === cardFilter;
 
         const search = searchTerm.trim().toLowerCase();
         const client = clients.find(c => c.id === tx.clientId);
         const card = cards.find(c => c.id === tx.cardId);
 
         const searchableText = [
+          tx.id,
           tx.notes,
           tx.adAccount,
           tx.campaign,
@@ -2013,14 +2317,14 @@ function LedgerView({ transactions, clients, cards }) {
           matchesDate = txDate >= monthStart && txDate <= today;
         }
 
-        return matchesType && matchesSearch && matchesDate;
+        return matchesType && matchesClient && matchesCard && matchesSearch && matchesDate;
       })
       .sort((a, b) => {
         const timeA = a.timestamp || new Date(a.date).getTime();
         const timeB = b.timestamp || new Date(b.date).getTime();
         return timeB - timeA;
       });
-  }, [transactions, clients, cards, typeFilter, searchTerm, dateFilter]);
+  }, [transactions, clients, cards, typeFilter, clientFilter, cardFilter, searchTerm, dateFilter]);
 
   const ledgerSummary = useMemo(() => {
     let bdtIn = 0;
@@ -2032,257 +2336,477 @@ function LedgerView({ transactions, clients, cards }) {
       if (tx.type === 'PAYMENT_RECEIVED') {
         bdtIn += parseFloat(tx.amountBDT || 0);
       }
-
       if (tx.type === 'USD_PURCHASE') {
         bdtOut += parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0);
         usdIn += parseFloat(tx.amountUSD || 0);
       }
-
       if (tx.type === 'AD_SPEND') {
         usdOut += parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0);
       }
-
       if (tx.type === 'FEE') {
         usdOut += parseFloat(tx.amountUSD || 0);
       }
     });
 
-    return {
-      bdtIn,
-      bdtOut,
-      netBDT: bdtIn - bdtOut,
-      usdIn,
-      usdOut,
-      netUSD: usdIn - usdOut,
-      count: filtered.length
-    };
+    const netBDT = bdtIn - bdtOut;
+    const netUSD = usdIn - usdOut;
+    const count = filtered.length;
+
+    return { bdtIn, bdtOut, netBDT, usdIn, usdOut, netUSD, count };
   }, [filtered]);
 
   const clearFilters = () => {
     setTypeFilter('ALL');
     setDateFilter('ALL');
+    setClientFilter('ALL');
+    setCardFilter('ALL');
     setSearchTerm('');
   };
 
-  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || searchTerm.trim() !== '';
+  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || clientFilter !== 'ALL' || cardFilter !== 'ALL' || searchTerm.trim() !== '';
+
+  const handleExportCSV = () => {
+    if (!filtered.length) return;
+    const headers = ['Date', 'Type', 'Entity / Client', 'Card / Source', 'Details / Campaign', 'BDT In', 'BDT Out', 'USD In', 'USD Out', 'Notes'];
+    const csvRows = [headers.join(',')];
+    filtered.forEach(tx => {
+      const client = clients.find(c => c.id === tx.clientId);
+      const card = cards.find(c => c.id === tx.cardId);
+      const bdtIn = tx.type === 'PAYMENT_RECEIVED' ? parseFloat(tx.amountBDT || 0) : 0;
+      const bdtOut = tx.type === 'USD_PURCHASE' ? (parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) : 0;
+      const usdIn = tx.type === 'USD_PURCHASE' ? parseFloat(tx.amountUSD || 0) : 0;
+      const usdOut = tx.type === 'AD_SPEND' ? (parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) : (tx.type === 'FEE' ? parseFloat(tx.amountUSD || 0) : 0);
+
+      csvRows.push([
+        `"${formatDate(tx.date)}"`,
+        `"${tx.type}"`,
+        `"${(client?.name || '').replace(/"/g, '""')}"`,
+        `"${(card?.name || '').replace(/"/g, '""')}"`,
+        `"${(tx.campaign || tx.adAccount || '').replace(/"/g, '""')}"`,
+        `"${bdtIn.toFixed(2)}"`,
+        `"${bdtOut.toFixed(2)}"`,
+        `"${usdIn.toFixed(2)}"`,
+        `"${usdOut.toFixed(2)}"`,
+        `"${(tx.notes || '').replace(/"/g, '""')}"`
+      ].join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `adlytic_ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
+    <div className="space-y-4 max-w-7xl mx-auto animate-in fade-in duration-300">
+      {/* BESPOKE FLAGSHIP FINANCIAL HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Transaction Ledger</h1>
-          <p className="text-sm text-slate-500 mt-1">A clear view of every BDT and USD movement.</p>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">Transaction Ledger</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-slate-900 text-sky-400 border border-slate-800 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Double-Entry Financial Engine
+            </span>
+          </div>
+          <p className="text-xs font-semibold text-slate-500 mt-1">
+            High-precision real-time audit of every BDT cashflow and USD foreign exchange movement.
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleExportCSV}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all"
           >
-            <option value="ALL">All Transactions</option>
-            <option value="PAYMENT_RECEIVED">Payments Received</option>
-            <option value="USD_PURCHASE">USD Purchases</option>
-            <option value="AD_SPEND">Meta Ad Spend</option>
-            <option value="FEE">Fees</option>
-          </select>
+            <Download size={14} className="text-slate-500" /> Export CSV
+          </button>
 
-          <select
-            className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-          >
-            <option value="ALL">All Dates</option>
-            <option value="TODAY">Today</option>
-            <option value="THIS_WEEK">This Week</option>
-            <option value="THIS_MONTH">This Month</option>
-          </select>
+          {onAddPayment && (
+            <button
+              onClick={onAddPayment}
+              className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
+            >
+              <Plus size={14} /> Receive BDT
+            </button>
+          )}
+
+          {onAddUSD && (
+            <button
+              onClick={onAddUSD}
+              className="inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
+            >
+              <Plus size={14} /> Buy USD
+            </button>
+          )}
+
+          {onAddSpend && (
+            <button
+              onClick={onAddSpend}
+              className="inline-flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
+            >
+              <Plus size={14} /> Meta Spend
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* DUAL-CHAMBER FINANCIAL LIQUIDITY CONSOLE (UNIQUE FLAGSHIP DESIGN) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+        {/* CHAMBER 1: BDT CASHFLOW ENGINE */}
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 border border-slate-800 rounded-xl p-4 shadow-md text-white">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <ArrowDownLeft size={14} />
+              </div>
+              <span className="text-xs font-black tracking-wider text-emerald-300 uppercase">
+                BDT Operating Cashflow
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400">Domestic Ledger</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 text-left">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT In (Received)</span>
+              <span className="text-sm sm:text-base font-black text-emerald-400 mt-1 block">
+                {formatBDT(ledgerSummary.bdtIn)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT Out (Purchases)</span>
+              <span className="text-sm sm:text-base font-black text-rose-400 mt-1 block">
+                {formatBDT(ledgerSummary.bdtOut)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Operating Surplus</span>
+              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netBDT < 0 ? 'text-rose-400' : 'text-sky-300'}`}>
+                {formatBDT(ledgerSummary.netBDT)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* CHAMBER 2: USD FOREIGN EXCHANGE & AD BURN */}
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-xl p-4 shadow-md text-white">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                <RefreshCw size={14} />
+              </div>
+              <span className="text-xs font-black tracking-wider text-sky-300 uppercase">
+                USD Foreign Liquidity & Ad Burn
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400">FX & Meta Spend</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 text-left">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD In (Funded)</span>
+              <span className="text-sm sm:text-base font-black text-sky-400 mt-1 block">
+                {formatUSD(ledgerSummary.usdIn)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD Out (Burned)</span>
+              <span className="text-sm sm:text-base font-black text-purple-400 mt-1 block">
+                {formatUSD(ledgerSummary.usdOut)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Entries</span>
+              <span className="text-sm sm:text-base font-black text-white mt-1 block">
+                {ledgerSummary.count} Records
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* STREAM SEGMENTED FILTER CHIPS */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        {[
+          { id: 'ALL', label: 'All Streams', count: transactions.length },
+          { id: 'PAYMENT_RECEIVED', label: '📥 Payments In (BDT)', count: transactions.filter(t => t.type === 'PAYMENT_RECEIVED').length },
+          { id: 'USD_PURCHASE', label: '💳 USD Purchases', count: transactions.filter(t => t.type === 'USD_PURCHASE').length },
+          { id: 'AD_SPEND', label: '📢 Meta Ad Spend', count: transactions.filter(t => t.type === 'AD_SPEND').length },
+          { id: 'FEE', label: '⚡ Card Fees', count: transactions.filter(t => t.type === 'FEE').length }
+        ].map(chip => (
+          <button
+            key={chip.id}
+            onClick={() => setTypeFilter(chip.id)}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shadow-2xs whitespace-nowrap flex items-center gap-1.5 ${
+              typeFilter === chip.id
+                ? 'bg-slate-900 text-white'
+                : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <span>{chip.label}</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+              typeFilter === chip.id ? 'bg-slate-800 text-sky-300' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {chip.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* MULTI-DIMENSION SEARCH AND FILTERS */}
+      <div className="flex flex-col sm:flex-row gap-2.5 flex-wrap">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search size={15} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
+            placeholder="Search client, card, campaign, ad account, ID, notes..."
+            className="w-full pl-9 pr-4 py-2 border border-slate-200/90 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none bg-white shadow-2xs"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search client, card, campaign, source..."
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+            onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
+
+        <select
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[140px] shadow-2xs text-slate-700"
+          value={clientFilter}
+          onChange={e => setClientFilter(e.target.value)}
+        >
+          <option value="ALL">All Clients</option>
+          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+
+        <select
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[130px] shadow-2xs text-slate-700"
+          value={cardFilter}
+          onChange={e => setCardFilter(e.target.value)}
+        >
+          <option value="ALL">All Cards</option>
+          {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+
+        <select
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[120px] shadow-2xs text-slate-700"
+          value={dateFilter}
+          onChange={e => setDateFilter(e.target.value)}
+        >
+          <option value="ALL">All Dates</option>
+          <option value="TODAY">Today</option>
+          <option value="THIS_WEEK">This Week</option>
+          <option value="THIS_MONTH">This Month</option>
+        </select>
 
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-sm font-medium text-red-600 hover:bg-red-50"
+            className="px-3.5 py-2 rounded-lg border border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
           >
-            Clear Filters
+            Reset Filters
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">BDT In</p>
-          <p className="text-lg font-bold text-green-600 mt-1">{formatBDT(ledgerSummary.bdtIn)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">BDT Out</p>
-          <p className="text-lg font-bold text-red-600 mt-1">{formatBDT(ledgerSummary.bdtOut)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">Net BDT</p>
-          <p className={`text-lg font-bold mt-1 ${ledgerSummary.netBDT < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-            {formatBDT(ledgerSummary.netBDT)}
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">USD In</p>
-          <p className="text-lg font-bold text-green-600 mt-1">{formatUSD(ledgerSummary.usdIn)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">USD Out</p>
-          <p className="text-lg font-bold text-red-600 mt-1">{formatUSD(ledgerSummary.usdOut)}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p className="text-xs text-slate-500">Transactions</p>
-          <p className="text-lg font-bold text-slate-900 mt-1">{ledgerSummary.count}</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+      {/* FLAGSHIP DOUBLE-ENTRY FINANCIAL MATRIX TABLE */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-slate-800">All Transactions</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Buy USD = BDT out + USD in • Meta Ads = USD out
-            </p>
+            <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Accounting Flow Stream</h3>
+            <p className="text-[11px] text-slate-400">Buy USD = BDT Out + USD In • Meta Ads = USD Out (with 15% VAT)</p>
           </div>
-          <span className="text-xs font-medium text-slate-500">
-            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
+          <span className="px-2 py-0.5 rounded-full bg-slate-200/60 text-[10px] font-bold text-slate-700">
+            {filtered.length} {filtered.length === 1 ? 'Entry' : 'Entries'}
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-slate-50/90 text-slate-500 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[10.5px]">
               <tr>
-                <th className="px-5 py-3">Date</th>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Entity / Details</th>
-                <th className="px-5 py-3 text-right">BDT In</th>
-                <th className="px-5 py-3 text-right">BDT Out</th>
-                <th className="px-5 py-3 text-right">USD In</th>
-                <th className="px-5 py-3 text-right">USD Out</th>
+                <th className="px-4 py-3.5">Date & Ref</th>
+                <th className="px-3 py-3.5">Stream Type</th>
+                <th className="px-4 py-3.5">Counterparty & Narrative</th>
+                <th className="px-4 py-3.5 text-right text-emerald-700">BDT In</th>
+                <th className="px-4 py-3.5 text-right text-rose-700">BDT Out</th>
+                <th className="px-4 py-3.5 text-right text-sky-700">USD In</th>
+                <th className="px-4 py-3.5 text-right text-purple-700">USD Out</th>
+                <th className="px-4 py-3.5 text-center">Audit</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 && (
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-10 text-slate-500">
-                    No transactions found.
+                  <td colSpan="8" className="text-center py-14 text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <DollarSign size={28} className="text-slate-300" />
+                      <span className="text-xs font-semibold text-slate-500">No transaction records found matching your filters.</span>
+                    </div>
                   </td>
                 </tr>
+              ) : (
+                filtered.map(tx => {
+                  const client = clients.find(c => c.id === tx.clientId);
+                  const card = cards.find(c => c.id === tx.cardId);
+
+                  const isPayment = tx.type === 'PAYMENT_RECEIVED';
+                  const isPurchase = tx.type === 'USD_PURCHASE';
+                  const isAdSpend = tx.type === 'AD_SPEND';
+                  const isFee = tx.type === 'FEE';
+
+                  const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
+                  const bdtOut = isPurchase ? (parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) : 0;
+                  const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
+                  const usdOut = isAdSpend ? (parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) : (isFee ? parseFloat(tx.amountUSD || 0) : 0);
+
+                  const borderAccent = isPayment
+                    ? 'border-l-4 border-l-emerald-500'
+                    : isPurchase
+                      ? 'border-l-4 border-l-sky-500'
+                      : isAdSpend
+                        ? 'border-l-4 border-l-purple-500'
+                        : 'border-l-4 border-l-amber-500';
+
+                  return (
+                    <tr
+                      key={tx.id}
+                      className={`hover:bg-slate-50/80 transition-colors group cursor-pointer ${borderAccent}`}
+                      onClick={() => setInspectingTx(tx)}
+                    >
+                      {/* Date & Ref */}
+                      <td className="px-4 py-3.5">
+                        <div className="font-bold text-slate-900 text-xs">{formatDate(tx.date)}</div>
+                        <div className="font-mono text-[10px] text-slate-400 mt-0.5">#{String(tx.id).slice(-6)}</div>
+                      </td>
+
+                      {/* Type Badge */}
+                      <td className="px-3 py-3.5">
+                        <MasterLedgerBadge type={tx.type} />
+                      </td>
+
+                      {/* Entity & Details */}
+                      <td className="px-4 py-3.5 min-w-[240px]">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {client && (
+                            <span className="inline-flex items-center gap-1 font-bold text-slate-900 text-xs">
+                              <span className="w-5 h-5 rounded bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-black flex items-center justify-center">
+                                {client.name.charAt(0).toUpperCase()}
+                              </span>
+                              {client.name}
+                            </span>
+                          )}
+
+                          {card && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10.5px] font-semibold">
+                              <CreditCard size={11} className="text-slate-500" />
+                              {card.name}
+                            </span>
+                          )}
+
+                          {tx.type === 'USD_PURCHASE' && (
+                            <span className="text-[10.5px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">
+                              @ ৳{usdIn > 0 ? (bdtOut / usdIn).toFixed(2) : '0.00'}/$
+                            </span>
+                          )}
+                        </div>
+
+                        {tx.type === 'AD_SPEND' && (
+                          <div className="text-[11px] text-slate-500 font-medium mt-1">
+                            <span className="font-semibold text-slate-700">{tx.adAccount || 'Ad Account'}</span>
+                            {tx.campaign && <span className="text-purple-700 font-bold"> • {tx.campaign}</span>}
+                          </div>
+                        )}
+
+                        {tx.notes && (
+                          <div className="text-[10.5px] text-slate-400 mt-0.5 truncate max-w-sm">
+                            {tx.notes}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* BDT In */}
+                      <td className="px-4 py-3.5 text-right">
+                        {bdtIn > 0 ? (
+                          <span className="font-black text-emerald-600 text-xs">+{formatBDT(bdtIn)}</span>
+                        ) : (
+                          <span className="text-slate-300 font-bold">—</span>
+                        )}
+                      </td>
+
+                      {/* BDT Out */}
+                      <td className="px-4 py-3.5 text-right">
+                        {bdtOut > 0 ? (
+                          <span className="font-black text-rose-600 text-xs">-{formatBDT(bdtOut)}</span>
+                        ) : (
+                          <span className="text-slate-300 font-bold">—</span>
+                        )}
+                      </td>
+
+                      {/* USD In */}
+                      <td className="px-4 py-3.5 text-right">
+                        {usdIn > 0 ? (
+                          <span className="font-black text-sky-700 text-xs">+{formatUSD(usdIn)}</span>
+                        ) : (
+                          <span className="text-slate-300 font-bold">—</span>
+                        )}
+                      </td>
+
+                      {/* USD Out */}
+                      <td className="px-4 py-3.5 text-right">
+                        {usdOut > 0 ? (
+                          <span className="font-black text-purple-700 text-xs">-{formatUSD(usdOut)}</span>
+                        ) : (
+                          <span className="text-slate-300 font-bold">—</span>
+                        )}
+                      </td>
+
+                      {/* Action / Inspect */}
+                      <td className="px-4 py-3.5 text-center" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => setInspectingTx(tx)}
+                            title="Audit Voucher"
+                            className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                          >
+                            <Eye size={15} />
+                          </button>
+                          {onDeleteTransaction && (
+                            <button
+                              onClick={() => onDeleteTransaction(tx.id)}
+                              title="Delete Record"
+                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
-
-              {filtered.map(tx => {
-                const client = clients.find(c => c.id === tx.clientId);
-                const card = cards.find(c => c.id === tx.cardId);
-
-                const isPayment = tx.type === 'PAYMENT_RECEIVED';
-                const isPurchase = tx.type === 'USD_PURCHASE';
-                const isAdSpend = tx.type === 'AD_SPEND';
-                const isFee = tx.type === 'FEE';
-
-                const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
-                const bdtOut = isPurchase
-                  ? parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)
-                  : 0;
-                const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
-                const usdOut = isAdSpend
-                  ? parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)
-                  : isFee
-                    ? parseFloat(tx.amountUSD || 0)
-                    : 0;
-
-                return (
-                  <tr key={tx.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-4 text-slate-600">{formatDate(tx.date)}</td>
-
-                    <td className="px-5 py-4">
-                      <TransactionTypeBadge type={tx.type} />
-                    </td>
-
-                    <td className="px-5 py-4 min-w-[260px]">
-                      {client && (
-                        <div className="font-semibold text-slate-800">{client.name}</div>
-                      )}
-
-                      {card && (
-                        <div className="text-xs text-slate-500">Card: {card.name}</div>
-                      )}
-
-                      {tx.type === 'USD_PURCHASE' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'USD Purchase'} • Effective Rate: ৳
-                          {usdIn > 0
-                            ? ((parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) / usdIn).toFixed(2)
-                            : '0.00'}
-                        </div>
-                      )}
-
-                      {tx.type === 'AD_SPEND' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.adAccount || 'Ad Account'}{tx.campaign ? ` • ${tx.campaign}` : ''}
-                        </div>
-                      )}
-
-                      {tx.type === 'PAYMENT_RECEIVED' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'Client payment received'}
-                        </div>
-                      )}
-
-                      {tx.type === 'FEE' && (
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {tx.notes || 'Card fee'}
-                        </div>
-                      )}
-
-                      {!client && !card && !isPurchase && !isAdSpend && !isPayment && !isFee && (
-                        <div className="text-xs text-slate-500">{tx.notes || '—'}</div>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-green-600">
-                      {bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-red-600">
-                      {bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-green-600">
-                      {usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}
-                    </td>
-
-                    <td className="px-5 py-4 text-right font-semibold text-red-600">
-                      {usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* VIP AUDIT VOUCHER MODAL */}
+      {inspectingTx && (
+        <Modal title={`Transaction Audit Voucher: #${String(inspectingTx.id).slice(-8)}`} onClose={() => setInspectingTx(null)} width="max-w-2xl">
+          <TransactionAuditModal
+            tx={inspectingTx}
+            clients={clients}
+            cards={cards}
+            metrics={metrics}
+            onClose={() => setInspectingTx(null)}
+            onDelete={(id) => {
+              if (onDeleteTransaction) onDeleteTransaction(id);
+              setInspectingTx(null);
+            }}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
