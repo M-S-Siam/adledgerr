@@ -2478,7 +2478,20 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                           {initial}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900 text-xs">{c.name}</div>
+                          <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                            <span>{c.name}</span>
+                            {c.phone && (
+                              <a
+                                href={`https://wa.me/${(c.phone || '').replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={`Chat on WhatsApp (${c.phone})`}
+                                className="text-emerald-500 hover:text-emerald-600 transition-colors inline-flex items-center"
+                              >
+                                <MessageCircle size={12} />
+                              </a>
+                            )}
+                          </div>
                           <div className="text-[11px] text-slate-500 font-medium">{c.company || 'Direct Client'}</div>
                         </div>
                       </div>
@@ -7922,6 +7935,101 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
 
   const displayStatus = getClientDisplayStatus(client);
 
+  const handlePrintStatement = () => {
+    const printWindow = window.open('', '_blank', 'width=900,height=750');
+    if (!printWindow) return;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Client Statement - ${client.name}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; padding: 32px; margin: 0; background: #fff; line-height: 1.5; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 16px; margin-bottom: 24px; }
+          .brand { font-size: 24px; font-weight: 900; color: #0284c7; letter-spacing: -0.5px; }
+          .subtitle { font-size: 12px; color: #64748b; font-weight: 600; margin-top: 2px; }
+          .statement-badge { background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+          .client-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 12.5px; }
+          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+          .kpi-card { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; text-align: center; }
+          .kpi-title { font-size: 10.5px; text-transform: uppercase; font-weight: 800; color: #0369a1; letter-spacing: 0.5px; }
+          .kpi-val { font-size: 17px; font-weight: 900; color: #0c4a6e; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+          th { background: #f1f5f9; text-align: left; padding: 10px 12px; border-bottom: 1px solid #cbd5e1; font-weight: 800; color: #475569; font-size: 10.5px; text-transform: uppercase; }
+          td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; }
+          .green { color: #16a34a; font-weight: bold; }
+          .red { color: #dc2626; font-weight: bold; }
+          .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 11px; color: #94a3b8; text-align: center; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Platform</div>
+            <div class="subtitle">Client Account Statement & Ledger</div>
+          </div>
+          <div style="text-align: right;">
+            <span class="statement-badge">CONFIDENTIAL STATEMENT</span>
+            <div style="font-size: 12px; color: #64748b; margin-top: 6px;">Date: ${new Date().toLocaleDateString('en-GB')}</div>
+          </div>
+        </div>
+
+        <div class="client-box">
+          <div><strong>Client Name:</strong><br/>${client.name}</div>
+          <div><strong>Business / Brand:</strong><br/>${client.company || 'Direct Account'}</div>
+          <div><strong>Service Type:</strong><br/>${client.serviceType || 'Digital Marketing'}</div>
+          <div><strong>Budget Plan:</strong><br/>${getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</div>
+          <div><strong>Campaign Timeline:</strong><br/>${formatDate(client.startDate)} – ${client.currentlyWorking ? 'Present (Ongoing)' : formatDate(client.endDate)}</div>
+          <div><strong>Contact Info:</strong><br/>${client.phone || client.email || '—'}</div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-title">Total Payments In</div><div class="kpi-val">${formatBDT(stats.revenue)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Total Ad Spend</div><div class="kpi-val">${formatUSD(stats.adSpendUSD)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Total Cost (BDT)</div><div class="kpi-val">${formatBDT(stats.totalCostBDT)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Net Agency Margin</div><div class="kpi-val">${stats.margin.toFixed(1)}%</div></div>
+        </div>
+
+        <h3 style="font-size: 13px; font-weight: 800; margin-bottom: 8px; text-transform: uppercase; color: #334155;">Detailed Transaction Ledger</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Transaction Type</th>
+              <th>Details / Campaign</th>
+              <th style="text-align: right;">BDT Amount</th>
+              <th style="text-align: right;">USD Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${clientTx.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#94a3b8;">No transaction records found.</td></tr>' : ''}
+            ${clientTx.map(tx => `
+              <tr>
+                <td>${formatDate(tx.date)}</td>
+                <td style="font-weight: 600;">${tx.type.replaceAll('_', ' ')}</td>
+                <td>${tx.notes || tx.campaign || tx.adAccount || '—'}</td>
+                <td style="text-align: right;">${tx.type === 'PAYMENT_RECEIVED' ? `<span class="green">+${formatBDT(tx.amountBDT)}</span>` : '—'}</td>
+                <td style="text-align: right;">${tx.type === 'AD_SPEND' ? `<span class="red">-${formatUSD(parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0))}</span>` : '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          Generated automatically by AdLytic Agency Intelligence Platform • www.adlytic.app
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
+  };
+
   return (
     <div className="flex flex-col h-full space-y-5">
       {/* VIP CLIENT OBSIDIAN HEADER CARD */}
@@ -7961,8 +8069,19 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
             </div>
             {client.phone && (
               <div className="text-slate-300">
-                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Phone</span>
-                <a href={`tel:${client.phone}`} className="font-semibold text-sky-300 hover:underline">{client.phone}</a>
+                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Phone & WhatsApp</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <a href={`tel:${client.phone}`} className="font-semibold text-sky-300 hover:underline">{client.phone}</a>
+                  <a
+                    href={`https://wa.me/${(client.phone || '').replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Direct WhatsApp Chat"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/40 text-[10px] font-bold transition-all"
+                  >
+                    <MessageCircle size={11} /> WhatsApp
+                  </a>
+                </div>
               </div>
             )}
             {client.email && (
@@ -7986,16 +8105,23 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
           <button
             type="button"
             onClick={onReceivePayment}
-            className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
           >
-            <Coins size={14} /> + Receive Payment
+            <Coins size={14} /> + Payment
           </button>
           <button
             type="button"
             onClick={onAdSpend}
-            className="inline-flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
           >
-            <Activity size={14} /> + Log Ad Spend
+            <Activity size={14} /> + Ad Spend
+          </button>
+          <button
+            type="button"
+            onClick={handlePrintStatement}
+            className="inline-flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap hover:text-white"
+          >
+            <Printer size={13} /> Statement / PDF
           </button>
         </div>
       </div>
