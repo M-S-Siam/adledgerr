@@ -2406,13 +2406,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
       {/* BESPOKE FLAGSHIP FINANCIAL HEADER */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">Transaction Ledger</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold bg-slate-900 text-sky-400 border border-slate-800 shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Double-Entry Financial Engine
-            </span>
-          </div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900">Transaction Ledger</h1>
           <p className="text-xs font-semibold text-slate-500 mt-1">
             High-precision real-time audit of every BDT cashflow and USD foreign exchange movement.
           </p>
@@ -2521,9 +2515,9 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Entries</span>
-              <span className="text-sm sm:text-base font-black text-white mt-1 block">
-                {ledgerSummary.count} Records
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Net USD Liquidity</span>
+              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netUSD < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                {formatUSD(ledgerSummary.netUSD)}
               </span>
             </div>
           </div>
