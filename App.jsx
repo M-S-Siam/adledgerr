@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, CreditCard, DollarSign,
   Activity, FileText, Settings, Plus, Search,
-  ArrowUpRight, ArrowDownRight, Wallet, PieChart,
+  ArrowUpRight, ArrowDownRight, ArrowDownLeft, Wallet, PieChart,
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
   AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
@@ -804,7 +804,7 @@ export default function AdLedgerApp() {
     }
   };
 
-  const renderCurrentView = () => {
+  const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
         return <DashboardView
