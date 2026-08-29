@@ -7688,25 +7688,25 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     });
   };
 
-  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm";
-  const labelClass = "block text-xs font-medium text-slate-700 uppercase tracking-wide";
+  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-200/90 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal";
+  const labelClass = "block text-[10px] font-bold text-slate-500 uppercase tracking-wider";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Enter client name" className={inputClass} /></div>
-        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="Enter company name" className={inputClass} /></div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. John Doe" className={inputClass} /></div>
+        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="e.g. Apex Media Ltd" className={inputClass} /></div>
 
-        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
-        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Optional" className={inputClass} /></div>
+        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="e.g. +8801700000000" className={inputClass} /></div>
+        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="e.g. client@company.com" className={inputClass} /></div>
 
-        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="fb.com/..." className={inputClass} /></div>
-        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://" className={inputClass} /></div>
+        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="facebook.com/..." className={inputClass} /></div>
+        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://company.com" className={inputClass} /></div>
 
         <div>
           <label className={labelClass}>Service Type</label>
           <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
-            <option>Meta Ads</option><option>Facebook Marketing</option><option>Instagram Marketing</option><option>Google Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
+            <option>Meta Ads</option><option>Facebook Marketing</option><option>Instagram Marketing</option><option>Google Ads</option><option>TikTok Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
           </select>
         </div>
         <div>
@@ -7722,15 +7722,15 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
             <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
           </select>
         </div>
-        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="Enter BDT amount" className={inputClass} /></div>
+        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="e.g. 50000" className={inputClass} /></div>
 
         <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
         <div>
           <label className={labelClass}>End Date</label>
-          <div className="flex flex-col gap-2 mt-1">
-            <label className="flex items-center gap-2 text-sm text-slate-700 select-none cursor-pointer">
-              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked })} className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
-              Currently Working
+          <div className="flex flex-col gap-1.5 mt-1">
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 select-none cursor-pointer">
+              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked })} className="w-3.5 h-3.5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" />
+              Currently Working (Ongoing)
             </label>
             {!formData.currentlyWorking && (
               <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{ marginTop: 0 }} />
@@ -7738,10 +7738,10 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
           </div>
         </div>
       </div>
-      <div><label className={labelClass}>Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional details..." rows="2" className={inputClass}></textarea></div>
-      <div className="flex gap-3 pt-4 border-t border-slate-100">
-        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50">Cancel</button>
-        <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">Save Client</button>
+      <div><label className={labelClass}>Notes & Campaign Objectives</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional client notes, target ROAS, KPI requirements..." rows="2" className={inputClass}></textarea></div>
+      <div className="flex gap-3 pt-3 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-200/90 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all shadow-2xs">Cancel</button>
+        <button type="submit" className="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]">Save Client</button>
       </div>
     </form>
   );
