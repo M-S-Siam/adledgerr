@@ -7187,12 +7187,12 @@ function TransactionTypeBadge({ type }) {
 function Modal({ title, onClose, children, width = "max-w-md" }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
-      <div className={`bg-white rounded-xl shadow-xl w-full ${width} overflow-hidden flex flex-col max-h-[95vh]`}>
-        <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50 shrink-0">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+      <div className={`bg-white rounded-xl shadow-2xl w-full ${width} overflow-hidden flex flex-col max-h-[92vh] border border-slate-200/90`}>
+        <div className="flex justify-between items-center px-5 py-3 border-b border-slate-200/80 bg-slate-50/80 shrink-0">
+          <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X size={18} /></button>
         </div>
-        <div className="p-5 overflow-y-auto">
+        <div className="p-4 sm:p-4.5 overflow-y-auto">
           {children}
         </div>
       </div>
@@ -7677,10 +7677,36 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     };
   });
 
+  const [touched, setTouched] = useState({ phone: false, email: false });
+
+  const phoneError = useMemo(() => {
+    if (!formData.phone || !formData.phone.trim()) return null;
+    const clean = formData.phone.replace(/[\s\-()]/g, '');
+    const phoneRegex = /^(\+?[0-9]{8,15})$/;
+    if (!phoneRegex.test(clean)) {
+      return 'Enter valid 8-15 digit phone number';
+    }
+    return null;
+  }, [formData.phone]);
+
+  const emailError = useMemo(() => {
+    if (!formData.email || !formData.email.trim()) return null;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      return 'Enter a valid email format';
+    }
+    return null;
+  }, [formData.email]);
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleBlur = (e) => setTouched(prev => ({ ...prev, [e.target.name]: true }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (phoneError || emailError) {
+      setTouched({ phone: true, email: true });
+      return;
+    }
     onSubmit({
       ...formData,
       budgetAmount: parseFloat(formData.budgetAmount) || 0,
@@ -7688,60 +7714,99 @@ function ClientForm({ initialData, onSubmit, onCancel }) {
     });
   };
 
-  const inputClass = "w-full mt-1 px-3 py-2 border border-slate-200/90 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal";
-  const labelClass = "block text-[10px] font-bold text-slate-500 uppercase tracking-wider";
+  const inputClass = "w-full mt-0.5 px-3 py-1.5 border rounded-lg shadow-2xs focus:outline-none focus:ring-2 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal h-[34px]";
+  const normalInputBorder = "border-slate-200/90 focus:ring-sky-500/20 focus:border-sky-500";
+  const errorInputBorder = "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500 bg-rose-50/20";
+  const labelClass = "block text-[9.5px] font-bold text-slate-500 uppercase tracking-wider";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label className={labelClass}>Client Name *</label><input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. John Doe" className={inputClass} /></div>
-        <div><label className={labelClass}>Business / Company Name *</label><input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="e.g. Apex Media Ltd" className={inputClass} /></div>
+    <form onSubmit={handleSubmit} className="space-y-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3.5 gap-y-2">
+        <div>
+          <label className={labelClass}>Client Name *</label>
+          <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. John Doe" className={`${inputClass} ${normalInputBorder}`} />
+        </div>
+        <div>
+          <label className={labelClass}>Business / Company Name *</label>
+          <input type="text" name="company" value={formData.company} onChange={handleChange} required placeholder="e.g. Apex Media Ltd" className={`${inputClass} ${normalInputBorder}`} />
+        </div>
 
-        <div><label className={labelClass}>Phone Number</label><input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="e.g. +8801700000000" className={inputClass} /></div>
-        <div><label className={labelClass}>Email Address</label><input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="e.g. client@company.com" className={inputClass} /></div>
+        <div>
+          <div className="flex items-center justify-between">
+            <label className={labelClass}>Phone Number</label>
+            {phoneError && touched.phone && <span className="text-[9px] text-rose-500 font-bold truncate max-w-[150px]">{phoneError}</span>}
+          </div>
+          <input type="text" name="phone" value={formData.phone} onChange={handleChange} onBlur={handleBlur} placeholder="e.g. +8801700000000" className={`${inputClass} ${phoneError && touched.phone ? errorInputBorder : normalInputBorder}`} />
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <label className={labelClass}>Email Address</label>
+            {emailError && touched.email && <span className="text-[9px] text-rose-500 font-bold truncate max-w-[150px]">{emailError}</span>}
+          </div>
+          <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlur} placeholder="e.g. client@company.com" className={`${inputClass} ${emailError && touched.email ? errorInputBorder : normalInputBorder}`} />
+        </div>
 
-        <div><label className={labelClass}>Facebook Page URL</label><input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="facebook.com/..." className={inputClass} /></div>
-        <div><label className={labelClass}>Website URL</label><input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://company.com" className={inputClass} /></div>
+        <div>
+          <label className={labelClass}>Facebook Page URL</label>
+          <input type="text" name="fb" value={formData.fb} onChange={handleChange} placeholder="facebook.com/..." className={`${inputClass} ${normalInputBorder}`} />
+        </div>
+        <div>
+          <label className={labelClass}>Website URL</label>
+          <input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="https://company.com" className={`${inputClass} ${normalInputBorder}`} />
+        </div>
 
         <div>
           <label className={labelClass}>Service Type</label>
-          <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={inputClass}>
+          <select name="serviceType" value={formData.serviceType} onChange={handleChange} className={`${inputClass} ${normalInputBorder}`}>
             <option>Meta Ads</option><option>Facebook Marketing</option><option>Instagram Marketing</option><option>Google Ads</option><option>TikTok Ads</option><option>Social Media Management</option><option>Content Marketing</option><option>Other</option>
           </select>
         </div>
         <div>
           <label className={labelClass}>Status</label>
-          <select name="status" value={formData.status} onChange={handleChange} className={inputClass}>
+          <select name="status" value={formData.status} onChange={handleChange} className={`${inputClass} ${normalInputBorder}`}>
             <option>Active</option><option>Paused</option><option>Completed</option><option>Inactive</option>
           </select>
         </div>
 
         <div>
           <label className={labelClass}>Budget Period</label>
-          <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={inputClass}>
+          <select name="budgetType" value={formData.budgetType} onChange={handleChange} className={`${inputClass} ${normalInputBorder}`}>
             <option>Daily</option><option>Weekly</option><option>Monthly</option><option>Custom / Total</option>
           </select>
         </div>
-        <div><label className={labelClass}>Budget Amount (BDT)</label><input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="e.g. 50000" className={inputClass} /></div>
-
-        <div><label className={labelClass}>Start Date</label><input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={inputClass} /></div>
         <div>
-          <label className={labelClass}>End Date</label>
-          <div className="flex flex-col gap-1.5 mt-1">
-            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 select-none cursor-pointer">
-              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked })} className="w-3.5 h-3.5 text-sky-600 rounded border-slate-300 focus:ring-sky-500" />
-              Currently Working (Ongoing)
+          <label className={labelClass}>Budget Amount (BDT)</label>
+          <input type="number" min="0" step="0.01" name="budgetAmount" value={formData.budgetAmount} onChange={handleChange} placeholder="e.g. 50000" className={`${inputClass} ${normalInputBorder}`} />
+        </div>
+
+        <div>
+          <label className={labelClass}>Start Date</label>
+          <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className={`${inputClass} ${normalInputBorder}`} />
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-0.5">
+            <label className={labelClass}>End Date</label>
+            <label className="flex items-center gap-1.5 text-[10px] font-bold text-sky-700 select-none cursor-pointer">
+              <input type="checkbox" name="currentlyWorking" checked={formData.currentlyWorking} onChange={(e) => setFormData({ ...formData, currentlyWorking: e.target.checked })} className="w-3 h-3 text-sky-600 rounded border-slate-300 focus:ring-sky-500" />
+              Ongoing
             </label>
-            {!formData.currentlyWorking && (
-              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={inputClass} style={{ marginTop: 0 }} />
-            )}
           </div>
+          {!formData.currentlyWorking ? (
+            <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required={!formData.currentlyWorking} className={`${inputClass} ${normalInputBorder}`} />
+          ) : (
+            <div className="h-[34px] px-2.5 flex items-center bg-slate-50 border border-slate-200/70 rounded-lg text-[11px] font-semibold text-slate-500">Ongoing</div>
+          )}
         </div>
       </div>
-      <div><label className={labelClass}>Notes & Campaign Objectives</label><textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional client notes, target ROAS, KPI requirements..." rows="2" className={inputClass}></textarea></div>
-      <div className="flex gap-3 pt-3 border-t border-slate-100">
+
+      <div>
+        <label className={labelClass}>Notes & Campaign Objectives</label>
+        <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Optional client notes..." rows="1" className="w-full mt-0.5 px-3 py-1.5 border border-slate-200/90 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs font-semibold text-slate-800 bg-white transition-all placeholder:text-slate-400 placeholder:font-normal resize-none" />
+      </div>
+
+      <div className="flex gap-2.5 pt-2 border-t border-slate-100">
         <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 bg-white border border-slate-200/90 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all shadow-2xs">Cancel</button>
-        <button type="submit" className="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]">Save Client</button>
+        <button type="submit" disabled={Boolean(phoneError && touched.phone) || Boolean(emailError && touched.email)} className="flex-1 px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]">Save Client</button>
       </div>
     </form>
   );
