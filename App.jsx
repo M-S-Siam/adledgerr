@@ -3007,26 +3007,15 @@ function DashboardView({
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Card Liquidity & Burn</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">USD funded, burned, and live spendable balances.</p>
             </div>
-            <div className="flex items-center gap-2">
-              {onAddUSD && (
-                <button
-                  onClick={onAddUSD}
-                  className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
-                >
-                  <Plus size={13} className="stroke-[2.5]" />
-                  <span>Top Up</span>
-                </button>
-              )}
-              {onNavigate && (
-                <button
-                  onClick={() => onNavigate('cards')}
-                  className="text-[11px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-0.5 transition-colors ml-2 pl-2 border-l border-slate-200"
-                >
-                  <span>All Cards</span>
-                  <ChevronRight size={14} />
-                </button>
-              )}
-            </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('cards')}
+                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+              >
+                <span>All Cards</span>
+                <ChevronRight size={14} />
+              </button>
+            )}
           </div>
 
           <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
@@ -3226,16 +3215,6 @@ function DashboardView({
                 <span className="text-[10px] opacity-75 font-semibold">Virtual Card Reserves</span>
               </div>
             </div>
-
-            {totalCardBalance < 0 && onAddUSD && (
-              <button
-                onClick={onAddUSD}
-                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shrink-0 shadow-xs hover:shadow transition-all flex items-center gap-1"
-              >
-                <Plus size={13} className="stroke-[2.5]" />
-                <span>Top Up</span>
-              </button>
-            )}
           </div>
 
           <p className={`text-xs font-medium mt-3 ${
