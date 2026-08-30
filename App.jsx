@@ -880,8 +880,11 @@ export default function AdLedgerApp() {
           transactions={transactions}
           onAddCard={() => { setSelectedCard(null); setActiveModal('add-card'); }}
           onEditCard={(c) => { setSelectedCard(c); setActiveModal('edit-card'); }}
+          onFundCard={(c) => { setSelectedCard(c); setActiveModal('usd'); }}
           onDeleteCard={handleDeleteCard}
           onViewDetails={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
+          onEditTransaction={handleEditTransaction}
+          onDeleteTransaction={handleDeleteTransaction}
         />;
       case 'reports':
         return <ReportsView clients={clients} cards={cards} transactions={transactions} />;
@@ -3235,11 +3238,108 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
   );
 }
 
-function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDeleteCard, onViewDetails }) {
+function CardActionsMenu({ card, onFund, onDetails, onEdit, onDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false);
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+        title="Card Actions"
+      >
+        <MoreVertical size={16} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-20 cursor-default" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 z-30 py-1.5 animate-in fade-in duration-150">
+            {onFund && (
+              <button
+                type="button"
+                onClick={() => { setIsOpen(false); onFund(); }}
+                className="w-full text-left px-3.5 py-2 text-xs font-bold text-sky-700 hover:bg-sky-50 flex items-center gap-2"
+              >
+                <Plus size={14} className="text-sky-600" /> Fund Card (Buy USD)
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => { setIsOpen(false); onDetails(); }}
+              className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+            >
+              <FileText size={14} className="text-slate-400" /> Statement & History
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsOpen(false); onEdit(); }}
+              className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+            >
+              <Edit size={14} className="text-slate-400" /> Edit Card Info
+            </button>
+            <div className="my-1 border-t border-slate-100" />
+            <button
+              type="button"
+              onClick={() => { setIsOpen(false); onDelete(); }}
+              className="w-full text-left px-3.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+            >
+              <Trash2 size={14} className="text-rose-500" /> Delete Card
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFundCard, onDeleteCard, onViewDetails, onEditTransaction, onDeleteTransaction }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [globalDateRange, setGlobalDateRange] = useState({ label: 'Lifetime', start: null, end: null });
   const [selectedCardFilter, setSelectedCardFilter] = useState('ALL');
   const [selectedTxForModal, setSelectedTxForModal] = useState(null);
+  const [showExportPurchases, setShowExportPurchases] = useState(false);
+  const exportPurchasesRef = useRef(null);
+
+  useEffect(() => {
+    if (!showExportPurchases) return;
+    const handleClickOutside = (e) => {
+      if (exportPurchasesRef.current && !exportPurchasesRef.current.contains(e.target)) {
+        setShowExportPurchases(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowExportPurchases(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showExportPurchases]);
 
   const activeCards = cards;
 
@@ -3262,15 +3362,230 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
     return { count, totalUSD, totalBDTPaid, totalCOCharge, totalCost, avgEffectiveRate };
   }, [filteredUSDPurchases]);
 
+  const handleExportPurchasesCSV = () => {
+    if (!filteredUSDPurchases.length) return;
+    const headers = ['Date', 'Ref ID', 'Source / Seller', 'BDT Paid', 'C.O Rate', 'Total BDT Cost', 'USD Received', 'Destination Card', 'Base Rate', 'Effective Rate'];
+    const csvRows = [headers.join(',')];
+    filteredUSDPurchases.forEach(tx => {
+      const bdtPaid = parseFloat(tx.amountBDT || 0);
+      const coRate = parseFloat(tx.cashOutCharge || 0);
+      const usdRcv = parseFloat(tx.amountUSD || 1);
+      const totalCost = bdtPaid + coRate;
+      const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : '0.00';
+      const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : '0.00';
+      const targetCard = cards.find(c => c.id === tx.cardId);
+
+      csvRows.push([
+        `"${formatDate(tx.date)}"`,
+        `"${tx.id}"`,
+        `"${(tx.notes || '').replace(/"/g, '""')}"`,
+        `"${bdtPaid.toFixed(2)}"`,
+        `"${coRate.toFixed(2)}"`,
+        `"${totalCost.toFixed(2)}"`,
+        `"${usdRcv.toFixed(2)}"`,
+        `"${(targetCard?.name || 'Unknown').replace(/"/g, '""')}"`,
+        `"${baseRate}"`,
+        `"${effectiveRate}"`
+      ].join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `usd_purchases_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrintPurchasesPDF = () => {
+    if (!filteredUSDPurchases.length) return;
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>USD Procurement Ledger Statement - ${new Date().toLocaleDateString()}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 32px; margin: 0; background: #fff; line-height: 1.4; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px; }
+          .brand { font-size: 24px; font-weight: 900; color: #0284c7; }
+          .title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+          .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 24px; }
+          .kpi-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 8px; text-align: center; }
+          .kpi-title { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
+          .kpi-val { font-size: 13px; font-weight: 900; margin-top: 4px; color: #0f172a; }
+          .green { color: #16a34a !important; }
+          .blue { color: #0284c7 !important; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px; }
+          th { background: #f1f5f9; text-align: left; padding: 8px 10px; font-weight: 800; border-bottom: 1.5px solid #cbd5e1; color: #334155; text-transform: uppercase; font-size: 9px; }
+          td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+          .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 10.5px; color: #64748b; display: flex; justify-content: space-between; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Financial Command</div>
+            <div class="title">USD Foreign Exchange & Procurement Statement</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 12px;">Period: ${globalDateRange.label}</div>
+            <div style="font-size: 11px; color: #64748b;">Generated: ${new Date().toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-title">Total BDT Paid</div><div class="kpi-val">${formatBDT(periodSummary.totalBDTPaid)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Total C.O Rate</div><div class="kpi-val" style="color:#dc2626;">${formatBDT(periodSummary.totalCOCharge)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Total BDT Cost</div><div class="kpi-val">${formatBDT(periodSummary.totalCost)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">USD Purchased</div><div class="kpi-val green">${formatUSD(periodSummary.totalUSD)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Avg Effective Rate</div><div class="kpi-val blue">৳${periodSummary.avgEffectiveRate.toFixed(2)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Purchases</div><div class="kpi-val">${periodSummary.count}</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ref</th>
+              <th>Source / Seller</th>
+              <th>Destination Card</th>
+              <th style="text-align: right;">BDT Paid</th>
+              <th style="text-align: right;">C.O Rate</th>
+              <th style="text-align: right;">Total Cost</th>
+              <th style="text-align: right;">USD Received</th>
+              <th style="text-align: right;">Base Rate</th>
+              <th style="text-align: right;">Effective Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredUSDPurchases.map(tx => {
+              const bdtPaid = parseFloat(tx.amountBDT || 0);
+              const coRate = parseFloat(tx.cashOutCharge || 0);
+              const usdRcv = parseFloat(tx.amountUSD || 1);
+              const totalCost = bdtPaid + coRate;
+              const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : '0.00';
+              const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : '0.00';
+              const targetCard = cards.find(c => c.id === tx.cardId);
+
+              return `
+                <tr>
+                  <td>${formatDate(tx.date)}</td>
+                  <td style="font-family: monospace; font-weight: bold;">#${String(tx.id).slice(-6)}</td>
+                  <td>${tx.notes || 'Direct Purchase'}</td>
+                  <td><strong>${targetCard?.name || 'Unknown'}</strong></td>
+                  <td style="text-align: right;">${formatBDT(bdtPaid)}</td>
+                  <td style="text-align: right; color: #dc2626;">${formatBDT(coRate)}</td>
+                  <td style="text-align: right; font-weight: bold;">${formatBDT(totalCost)}</td>
+                  <td style="text-align: right; font-weight: bold; color: #16a34a;">${formatUSD(usdRcv)}</td>
+                  <td style="text-align: right;">৳${baseRate}</td>
+                  <td style="text-align: right; font-weight: bold; color: #0284c7;">৳${effectiveRate}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div>Authorized Foreign Exchange Procurement Ledger • AdLytic Double-Entry System</div>
+          <div>Total Records: ${filteredUSDPurchases.length} entries verified</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
+  };
+
   return (
     <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
 
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
-        <h1 className="text-2xl font-bold text-slate-900">Cards & USD Ledger</h1>
-        <button onClick={onAddCard} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 shadow-sm">
-          <Plus size={16} /> Add Card
-        </button>
+      {/* TOP HEADER (SEAMLESS CANVAS) */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Cards & USD Ledger</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {activeCards.length} Active Card{activeCards.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Real-time multi-card balance tracking, foreign currency procurement rates, and Meta Ads burn rates.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onAddCard}
+            className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
+          >
+            <Plus size={15} /> Add Card
+          </button>
+        </div>
+      </div>
+
+      {/* EXECUTIVE CARD LIQUIDITY OVERVIEW RIBBON */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Card 1: Total Card Liquidity */}
+        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-xl px-4 py-3.5 shadow-sm text-white flex items-center gap-3.5">
+          <div className="w-9 h-9 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+            <CreditCard size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Available Liquidity</span>
+            <span className={`text-base font-black truncate block mt-0.5 ${metrics.totalCardBalance < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+              {formatUSD(metrics.totalCardBalance)}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Total USD Purchased */}
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
+          <div className="w-9 h-9 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+            <ArrowDownRight size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Funded (All-Time)</span>
+            <span className="text-base font-black text-emerald-700 truncate block mt-0.5">
+              {formatUSD(metrics.totalUSDPurchased)}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Total USD Burned */}
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
+          <div className="w-9 h-9 rounded-lg bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-700 shrink-0">
+            <Activity size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Burned (Spend+Tax)</span>
+            <span className="text-base font-black text-purple-700 truncate block mt-0.5">
+              {formatUSD(metrics.totalAdSpendUSD + metrics.totalTaxUSD)}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Weighted Average FX Rate */}
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
+          <div className="w-9 h-9 rounded-lg bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 shrink-0">
+            <RefreshCw size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">Effective FX Rate</span>
+            <span className="text-base font-black text-sky-700 truncate block mt-0.5">
+              ৳{metrics.avgUSDEffectiveRate.toFixed(2)} / USD
+            </span>
+          </div>
+        </div>
       </div>
 
       {isFilterOpen && (
@@ -3286,13 +3601,26 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
           tx={selectedTxForModal}
           cardName={cards.find(c => c.id === selectedTxForModal.cardId)?.name || 'Unknown Card'}
           onClose={() => setSelectedTxForModal(null)}
+          onEdit={() => {
+            const t = selectedTxForModal;
+            setSelectedTxForModal(null);
+            if (onEditTransaction) onEditTransaction(t);
+          }}
+          onDelete={(id) => {
+            setSelectedTxForModal(null);
+            if (onDeleteTransaction) onDeleteTransaction(id);
+          }}
         />
       )}
 
-      {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+      {/* CARDS GRID (ULTRA-LUXURY VIRTUAL CARD WIDGETS) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
         {activeCards.length === 0 && (
-          <div className="col-span-full text-center py-12 text-slate-500 bg-white border border-slate-200 rounded-xl">No cards added yet.</div>
+          <div className="col-span-full text-center py-14 text-slate-400 bg-white border border-slate-200/90 rounded-2xl shadow-2xs">
+            <CreditCard size={32} className="mx-auto mb-2 text-slate-300" />
+            <h4 className="font-bold text-slate-800 text-sm">No Cards Added Yet</h4>
+            <p className="text-xs text-slate-400 mt-1">Add your first virtual or bank card using the button above.</p>
+          </div>
         )}
 
         {activeCards.map(card => {
@@ -3305,176 +3633,297 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
             });
           const lastTx = sortedTxs[0];
           const bal = metrics.cardBalances[card.id] || 0;
+          const stats = metrics.cardStats?.[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
 
           return (
-            <div key={card.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between group">
+            <div
+              key={card.id}
+              className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition-all p-5 flex flex-col justify-between group relative overflow-hidden"
+            >
               <div>
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
-                      {card.name}
-                      {card.last4 && <span className="text-xs font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">*{card.last4}</span>}
-                    </h3>
-                    <p className="text-sm text-slate-500">{card.provider} • {card.cardType}</p>
+                {/* TOP ROW: CHIP, BRAND & ACTION MENU */}
+                <div className="flex justify-between items-start mb-3.5">
+                  <div className="flex items-center gap-2.5">
+                    {/* Visual Gold EMV Chip */}
+                    <div className="w-8 h-6 rounded bg-gradient-to-br from-amber-200 via-amber-300 to-yellow-400 border border-amber-400/60 shadow-xs flex items-center justify-center">
+                      <div className="w-5 h-3.5 border border-amber-500/40 rounded-xs grid grid-cols-2 gap-0.5 p-0.5">
+                        <div className="bg-amber-400/60 rounded-2xs" />
+                        <div className="bg-amber-400/60 rounded-2xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5 leading-tight">
+                        <span>{card.name}</span>
+                        {card.last4 && (
+                          <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded">
+                            *{card.last4}
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                        {card.provider || 'Bank Card'} • {card.cardType || 'Virtual'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="bg-blue-50 p-2 rounded-lg text-blue-600 mr-1"><CreditCard size={20} /></div>
-                    <CardDropdownMenu
-                      onEdit={() => onEditCard(card)}
-                      onDetails={() => onViewDetails(card)}
-                      onDelete={() => onDeleteCard(card.id)}
-                    />
-                  </div>
+
+                  <CardActionsMenu
+                    card={card}
+                    onFund={() => onFundCard && onFundCard(card)}
+                    onDetails={() => onViewDetails(card)}
+                    onEdit={() => onEditCard(card)}
+                    onDelete={() => onDeleteCard(card.id)}
+                  />
                 </div>
 
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Current Balance</p>
-                <div className="flex flex-col items-start gap-1">
-                  <h2 className={`text-3xl font-bold ${bal < 0 ? 'text-red-600' : 'text-slate-800'}`}>{formatUSD(bal)}</h2>
-                  {bal < 0 && (
-                    <span className="inline-flex items-center text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                      <AlertCircle size={12} className="mr-1" /> Negative Balance
+                {/* CURRENT BALANCE */}
+                <div className="mt-2 bg-slate-50/90 rounded-xl p-3.5 border border-slate-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                      Current Available Balance
                     </span>
-                  )}
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h2 className={`text-2xl font-black tracking-tight ${bal < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                      {formatUSD(bal)}
+                    </h2>
+                    {bal < 0 && (
+                      <span className="inline-flex items-center text-[10px] font-black text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded border border-rose-200">
+                        Negative Balance
+                      </span>
+                    )}
+                  </div>
+
+                  {/* SPEND VS FUNDED PILL */}
+                  <div className="flex items-center justify-between text-[11px] font-bold pt-2 mt-2 border-t border-slate-200/60">
+                    <span className="text-emerald-700">Funded: +{formatUSD(stats.purchased)}</span>
+                    <span className="text-purple-700">Spent: -{formatUSD(stats.adSpend + stats.tax)}</span>
+                  </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 text-xs">
-                  <span className="text-slate-400 block font-medium mb-1">Last Transaction</span>
+                {/* LAST TRANSACTION ROW */}
+                <div className="mt-3.5 text-xs">
+                  <span className="text-slate-400 block font-bold text-[10px] uppercase tracking-wider mb-1">
+                    Last Transaction
+                  </span>
                   {lastTx ? (
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-700 font-medium truncate max-w-[150px]">
+                    <div className="flex justify-between items-center bg-white rounded-lg border border-slate-100 px-2.5 py-1.5">
+                      <span className="text-slate-700 font-semibold truncate max-w-[150px] text-[11px]">
                         {formatDate(lastTx.date)} • {lastTx.type === 'USD_PURCHASE' ? 'USD Purchase' : 'Meta Ads'}
                       </span>
-                      <span className={`font-bold ${lastTx.type === 'USD_PURCHASE' ? 'text-green-600' : 'text-slate-800'}`}>
+                      <span className={`font-black text-xs ${lastTx.type === 'USD_PURCHASE' ? 'text-emerald-600' : 'text-slate-800'}`}>
                         {lastTx.type === 'USD_PURCHASE' ? '+' : '-'}{formatUSD(lastTx.amountUSD)}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-slate-400 italic">No transactions yet</span>
+                    <span className="text-slate-400 italic text-[11px]">No transactions yet</span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-5 flex gap-2">
-                <button onClick={() => onViewDetails(card)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 rounded-lg text-sm font-medium transition-colors">Details & History</button>
+              {/* ACTION BUTTONS */}
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onFundCard && onFundCard(card)}
+                  className="flex-1 inline-flex items-center justify-center gap-1 bg-sky-600 hover:bg-sky-700 text-white py-2 rounded-lg text-xs font-bold transition-all shadow-2xs hover:scale-[1.01]"
+                >
+                  <Plus size={13} /> Fund Card
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewDetails(card)}
+                  className="flex-1 inline-flex items-center justify-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 py-2 rounded-lg text-xs font-bold transition-colors"
+                >
+                  <FileText size={13} /> Statement
+                </button>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* History Header & Filters Row */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-8 mb-4 gap-3">
-        <h3 className="text-lg font-bold text-slate-800">USD Purchase History</h3>
+      {/* USD PURCHASE HISTORY SECTION */}
+      <div className="pt-4 border-t border-slate-200">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3.5 gap-3">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 tracking-tight">USD Purchase History</h3>
+            <p className="text-xs text-slate-500 font-semibold">
+              Itemized audit of foreign exchange procurement with effective BDT rates and C.O charges.
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
-          {globalDateRange.label !== 'Lifetime' && (
-            <button onClick={() => setGlobalDateRange({ label: 'Lifetime', start: null, end: null })} className="text-xs text-red-600 font-medium hover:underline mr-1">
-              Clear Filter
+          <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+            {globalDateRange.label !== 'Lifetime' && (
+              <button
+                onClick={() => setGlobalDateRange({ label: 'Lifetime', start: null, end: null })}
+                className="text-xs text-rose-600 font-bold hover:underline mr-1"
+              >
+                Clear Filter
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsFilterOpen(true)}
+              className="flex items-center gap-1.5 bg-white border border-slate-200/90 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 shadow-2xs transition-colors"
+            >
+              <CalendarDays size={14} className="text-sky-600" />
+              {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `History: ${globalDateRange.label}`}
             </button>
-          )}
 
-          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
-            <CalendarDays size={14} className="text-blue-600" />
-            {globalDateRange.label === 'Lifetime' ? 'History: Lifetime' : `History: ${globalDateRange.label}`}
-          </button>
+            <select
+              value={selectedCardFilter}
+              onChange={(e) => setSelectedCardFilter(e.target.value)}
+              className="bg-white border border-slate-200/90 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-50 shadow-2xs outline-none cursor-pointer"
+            >
+              <option value="ALL">All Cards ▼</option>
+              {activeCards.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
 
-          <select
-            value={selectedCardFilter}
-            onChange={(e) => setSelectedCardFilter(e.target.value)}
-            className="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 shadow-2xs outline-none cursor-pointer"
-          >
-            <option value="ALL">All Cards ▼</option>
-            {activeCards.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            {/* EXPORT DROPDOWN (CSV & A4 PDF) */}
+            <div className="relative" ref={exportPurchasesRef}>
+              <button
+                type="button"
+                onClick={() => setShowExportPurchases(prev => !prev)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold shadow-2xs transition-all ${
+                  showExportPurchases
+                    ? 'bg-slate-100 border-slate-300 text-slate-900 ring-2 ring-sky-500/20'
+                    : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <Download size={13} className="text-slate-500" /> Export <ChevronDown size={11} className={`text-slate-400 transition-transform duration-150 ${showExportPurchases ? 'rotate-180' : ''}`} />
+              </button>
+              {showExportPurchases && (
+                <>
+                  <div className="fixed inset-0 z-20 cursor-default" onClick={() => setShowExportPurchases(false)} />
+                  <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in duration-150">
+                    <button
+                      type="button"
+                      onClick={() => { setShowExportPurchases(false); handleExportPurchasesCSV(); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors"
+                    >
+                      <FileSpreadsheet size={15} className="text-emerald-600" />
+                      <span>Export Excel / CSV (.csv)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowExportPurchases(false); handlePrintPurchasesPDF(); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800"
+                    >
+                      <Printer size={15} className="text-sky-600" />
+                      <span>Print / PDF Statement (A4)</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* NEW PERIOD SUMMARY */}
-      <div className="bg-slate-100 p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
-        <div className="text-sm font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200">
-          Selected Period: {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label}
+        {/* 6-KPI PERIOD SUMMARY RIBBON */}
+        <div className="bg-slate-50/90 p-4 rounded-xl border border-slate-200/90 mb-4 shadow-2xs">
+          <div className="text-xs font-black text-slate-800 mb-3 pb-2 border-b border-slate-200 flex items-center justify-between">
+            <span>Procurement Period: {globalDateRange.label === 'Lifetime' && !globalDateRange.start ? 'Lifetime' : globalDateRange.label}</span>
+            <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200/80">
+              {periodSummary.count} Total Purchase{periodSummary.count === 1 ? '' : 's'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div>
+              <span className="text-slate-400 block text-[10px] font-extrabold uppercase tracking-wider mb-0.5">Total BDT Paid</span>
+              <span className="font-black text-slate-900 text-sm">{formatBDT(periodSummary.totalBDTPaid)}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[10px] font-extrabold uppercase tracking-wider mb-0.5">Total C.O Rate</span>
+              <span className="font-black text-rose-600 text-sm">{formatBDT(periodSummary.totalCOCharge)}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[10px] font-extrabold uppercase tracking-wider mb-0.5">Total BDT Cost</span>
+              <span className="font-black text-slate-900 text-sm">{formatBDT(periodSummary.totalCost)}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[10px] font-extrabold uppercase tracking-wider mb-0.5">USD Purchased</span>
+              <span className="font-black text-emerald-600 text-sm">{formatUSD(periodSummary.totalUSD)}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[10px] font-extrabold uppercase tracking-wider mb-0.5">Avg Effective Rate</span>
+              <span className="font-black text-sky-700 text-sm">৳{periodSummary.avgEffectiveRate.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[10px] font-extrabold uppercase tracking-wider mb-0.5">Base Rate Avg</span>
+              <span className="font-black text-slate-700 text-sm">৳{periodSummary.totalUSD > 0 ? (periodSummary.totalBDTPaid / periodSummary.totalUSD).toFixed(2) : '0.00'}</span>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-6">
-          <div>
-            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total BDT Paid</span>
-            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalBDTPaid)}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total C.O Charge</span>
-            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalCOCharge)}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Total Cost</span>
-            <span className="font-bold text-slate-800 text-base">{formatBDT(periodSummary.totalCost)}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">USD Purchased</span>
-            <span className="font-bold text-green-600 text-base">{formatUSD(periodSummary.totalUSD)}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Avg Effective Rate</span>
-            <span className="font-bold text-blue-600 text-base">৳{periodSummary.avgEffectiveRate.toFixed(2)}</span>
-          </div>
-          <div>
-            <span className="text-slate-500 block text-xs font-medium uppercase tracking-wider mb-1">Purchases</span>
-            <span className="font-bold text-slate-800 text-base">{periodSummary.count}</span>
-          </div>
-        </div>
-      </div>
 
-      {/* USD Purchase History Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
-              <tr>
-                <th className="px-5 py-3 whitespace-normal align-middle">Date</th>
-                <th className="px-5 py-3 whitespace-normal align-middle">Source</th>
-                <th className="px-5 py-3 text-right whitespace-normal align-middle">BDT Paid</th>
-                <th className="px-5 py-3 text-right text-red-600 whitespace-normal align-middle">C.O Rate</th>
-                <th className="px-5 py-3 text-right font-bold text-slate-800 whitespace-normal align-middle">Total Cost</th>
-                <th className="px-5 py-3 text-right whitespace-normal align-middle">USD Received</th>
-                <th className="px-5 py-3 whitespace-normal align-middle">Card / Destination</th>
-                <th className="px-5 py-3 text-right whitespace-normal align-middle">Base Rate</th>
-                <th className="px-5 py-3 text-right text-blue-600 whitespace-normal align-middle">Effective Rate</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredUSDPurchases.length === 0 && <tr><td colSpan="9" className="text-center py-8 text-slate-500">No USD purchases yet.</td></tr>}
-              {filteredUSDPurchases.map(tx => {
-                const bdtPaid = parseFloat(tx.amountBDT || 0);
-                const coRate = parseFloat(tx.cashOutCharge || 0);
-                const usdRcv = parseFloat(tx.amountUSD || 1);
-                const totalCost = bdtPaid + coRate;
-                const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
-                const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
-                const targetCard = cards.find(c => c.id === tx.cardId);
-                const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
-
-                return (
-                  <tr
-                    key={tx.id}
-                    onClick={() => setSelectedTxForModal(tx)}
-                    className="hover:bg-blue-50/50 cursor-pointer transition-colors group"
-                  >
-                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">{formatDate(tx.date)}</td>
-                    <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">{tx.notes}</td>
-                    <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{formatBDT(bdtPaid)}</td>
-                    <td className="px-5 py-3 text-right text-red-500 whitespace-nowrap">{coRate ? formatBDT(coRate) : formatBDT(0)}</td>
-                    <td className="px-5 py-3 text-right font-bold text-slate-800 whitespace-nowrap">{formatBDT(totalCost)}</td>
-                    <td className="px-5 py-3 text-right font-bold text-green-600 whitespace-nowrap">{formatUSD(tx.amountUSD)}</td>
-                    <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
-                      <span className="bg-slate-100 group-hover:bg-white border border-slate-200 px-2 py-0.5 rounded text-xs">{cardLabel}</span>
+        {/* USD PURCHASE HISTORY DOUBLE-ENTRY TABLE */}
+        <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left whitespace-nowrap">
+              <thead className="bg-slate-50/90 text-slate-500 font-black border-b border-slate-200/80 uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="px-4 py-3">Date & Ref</th>
+                  <th className="px-4 py-3">Source / Seller</th>
+                  <th className="px-4 py-3 text-right">BDT Paid</th>
+                  <th className="px-4 py-3 text-right text-rose-600">C.O Rate</th>
+                  <th className="px-4 py-3 text-right font-bold text-slate-800">Total BDT Cost</th>
+                  <th className="px-4 py-3 text-right text-emerald-700">USD Received</th>
+                  <th className="px-4 py-3">Card / Destination</th>
+                  <th className="px-4 py-3 text-right">Base Rate</th>
+                  <th className="px-4 py-3 text-right text-sky-700">Effective Rate</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredUSDPurchases.length === 0 && (
+                  <tr>
+                    <td colSpan="9" className="text-center py-12 text-slate-400">
+                      <RefreshCw size={24} className="mx-auto mb-2 text-slate-300" />
+                      <span className="font-bold text-xs">No USD purchases found for this period.</span>
                     </td>
-                    <td className="px-5 py-3 text-right text-slate-500 whitespace-nowrap">৳{baseRate}</td>
-                    <td className="px-5 py-3 text-right font-medium text-blue-600 whitespace-nowrap">৳{effectiveRate}</td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                )}
+                {filteredUSDPurchases.map(tx => {
+                  const bdtPaid = parseFloat(tx.amountBDT || 0);
+                  const coRate = parseFloat(tx.cashOutCharge || 0);
+                  const usdRcv = parseFloat(tx.amountUSD || 1);
+                  const totalCost = bdtPaid + coRate;
+                  const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
+                  const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
+                  const targetCard = cards.find(c => c.id === tx.cardId);
+                  const cardLabel = targetCard ? targetCard.name : 'Unknown Card';
+
+                  return (
+                    <tr
+                      key={tx.id}
+                      onClick={() => setSelectedTxForModal(tx)}
+                      className="hover:bg-slate-50/80 cursor-pointer transition-colors group border-l-4 border-l-sky-500"
+                    >
+                      <td className="px-4 py-3 text-slate-700">
+                        <div className="font-bold text-slate-900 text-xs">{formatDate(tx.date)}</div>
+                        <div className="font-mono text-[10px] text-slate-400 mt-0.5">#{String(tx.id).slice(-6)}</div>
+                      </td>
+                      <td className="px-4 py-3 font-bold text-slate-800">{tx.notes || 'Direct Seller'}</td>
+                      <td className="px-4 py-3 text-right text-slate-600 font-semibold">{formatBDT(bdtPaid)}</td>
+                      <td className="px-4 py-3 text-right text-rose-500 font-bold">{coRate ? formatBDT(coRate) : formatBDT(0)}</td>
+                      <td className="px-4 py-3 text-right font-black text-slate-900">{formatBDT(totalCost)}</td>
+                      <td className="px-4 py-3 text-right font-black text-emerald-600">+{formatUSD(tx.amountUSD)}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-bold">
+                          <CreditCard size={11} className="text-slate-500" />
+                          {cardLabel}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500 font-semibold">৳{baseRate}</td>
+                      <td className="px-4 py-3 text-right font-black text-sky-700">৳{effectiveRate}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -3486,7 +3935,6 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const { historyWithBalance, openingBalance, expectedBalance, isMatch, diff } = useMemo(() => {
-    // 1. Get ALL txs for card, sorted Oldest to Newest for true chronological running balance
     const allCardTxsAsc = [...transactions]
       .filter(t => t.cardId === card.id)
       .sort((a, b) => {
@@ -3496,7 +3944,6 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         return tA - tB;
       });
 
-    // 2. Compute exact historical running balances (Balance After)
     const initialBal = parseFloat(card.initialBalance || 0);
     let currentRunningBal = initialBal;
     const fullHistory = allCardTxsAsc.map(t => {
@@ -3507,7 +3954,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       if (t.type === 'AD_SPEND') {
         const spend = parseFloat(t.amountUSD || 0);
         const tax = parseFloat(t.taxUSD || 0);
-        changeUSD = -(spend + tax); // Deducts both from balance
+        changeUSD = -(spend + tax);
       }
       if (t.type === 'FEE') {
         changeUSD = -parseFloat(t.amountUSD || 0);
@@ -3516,19 +3963,16 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       return { ...t, changeUSD, runningBal: currentRunningBal };
     });
 
-    // 3. Reverse for UI (Newest first)
     fullHistory.reverse();
 
-    // 4. Apply history date filter solely for visual isolation
     let displayedHistory = fullHistory;
     if (filterRange.start && filterRange.end) {
       displayedHistory = fullHistory.filter(t => t.date >= filterRange.start && t.date <= filterRange.end);
     }
 
-    // Diagnostics / Breakdown Verification
-    const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+    const stats = metrics.cardStats?.[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
     const expBal = initialBal + stats.purchased - stats.adSpend - stats.tax - stats.fees;
-    const curBal = metrics.cardBalances[card.id] || 0;
+    const curBal = metrics.cardBalances?.[card.id] || 0;
     const difference = Math.abs(expBal - curBal);
 
     return {
@@ -3540,104 +3984,189 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
     };
   }, [transactions, card.id, card.initialBalance, filterRange, metrics]);
 
-  const stats = metrics.cardStats[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
-  const currentBal = metrics.cardBalances[card.id] || 0;
+  const stats = metrics.cardStats?.[card.id] || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+  const currentBal = metrics.cardBalances?.[card.id] || 0;
+
+  const handlePrintCardStatement = () => {
+    const printWindow = window.open('', '_blank', 'width=900,height=800');
+    if (!printWindow) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Card Ledger Statement - ${card.name}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 32px; margin: 0; background: #fff; line-height: 1.4; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px; }
+          .brand { font-size: 24px; font-weight: 900; color: #0284c7; }
+          .title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+          .card-badge { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; display: flex; justify-content: space-between; }
+          .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
+          .kpi-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 8px; text-align: center; }
+          .kpi-title { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
+          .kpi-val { font-size: 13px; font-weight: 900; margin-top: 4px; color: #0f172a; }
+          .green { color: #16a34a !important; }
+          .red { color: #dc2626 !important; }
+          .blue { color: #0284c7 !important; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px; }
+          th { background: #f1f5f9; text-align: left; padding: 8px 10px; font-weight: 800; border-bottom: 1.5px solid #cbd5e1; color: #334155; text-transform: uppercase; font-size: 9px; }
+          td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+          .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 10.5px; color: #64748b; display: flex; justify-content: space-between; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Financial Command</div>
+            <div class="title">Official Card Account Statement</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 12px;">Period: ${filterRange.label}</div>
+            <div style="font-size: 11px; color: #64748b;">Generated: ${new Date().toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="card-badge">
+          <div><strong>Card Account:</strong> ${card.name} ${card.last4 ? `(*${card.last4})` : ''}</div>
+          <div><strong>Bank Provider:</strong> ${card.provider || 'Bank Card'}</div>
+          <div><strong>Type:</strong> ${card.cardType || 'Virtual Card'}</div>
+          <div><strong>Status:</strong> Verified Active</div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-title">Opening Balance</div><div class="kpi-val">${formatUSD(openingBalance)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Total USD Funded</div><div class="kpi-val green">+${formatUSD(stats.purchased)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Meta Ad Spend</div><div class="kpi-val red">-${formatUSD(stats.adSpend)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">15% Meta Tax</div><div class="kpi-val red">-${formatUSD(stats.tax)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Closing Balance</div><div class="kpi-val ${currentBal < 0 ? 'red' : 'blue'}">${formatUSD(currentBal)}</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Transaction Category</th>
+              <th>Details & Notes</th>
+              <th style="text-align: right;">Amount (USD)</th>
+              <th style="text-align: right;">Balance After</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${historyWithBalance.length === 0 ? '<tr><td colspan="5" style="text-align:center; padding: 18px;">No transactions recorded for this period.</td></tr>' : ''}
+            ${historyWithBalance.map(tx => {
+              const isAdSpend = tx.type === 'AD_SPEND';
+              const displayAmount = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
+              const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
+              return `
+                <tr>
+                  <td>${formatDate(tx.date)}</td>
+                  <td style="font-weight: bold;">${tx.type.replaceAll('_', ' ')}</td>
+                  <td>${tx.notes || tx.campaign || tx.adAccount || '—'}</td>
+                  <td style="text-align: right; font-weight: bold; color: ${displayAmount > 0 ? '#16a34a' : '#dc2626'};">
+                    ${displayAmount > 0 ? '+' : ''}${formatUSD(displayAmount)}
+                    ${displayTax > 0 ? `<div style="font-size:9px; color:#ef4444; font-weight:normal;">+ tax ${formatUSD(displayTax)}</div>` : ''}
+                  </td>
+                  <td style="text-align: right; font-weight: bold; color: ${tx.runningBal < 0 ? '#dc2626' : '#0f172a'};">
+                    ${formatUSD(tx.runningBal)}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div>Authorized Card Ledger Statement • AdLytic Double-Entry System</div>
+          <div>Balance Verification: ${isMatch ? 'PASSED (Zero Discrepancy)' : 'AUDIT WARNING'}</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
+  };
 
   return (
-    <div className="flex flex-col h-full max-h-[80vh]">
+    <div className="flex flex-col h-full max-h-[85vh] space-y-4">
 
-      {/* Global Card Stats summary - Unchanged by date filters */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6 shrink-0">
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-[11px] text-slate-500 mb-0.5">Total USD Purchased</p>
-          <p className="text-base font-bold text-green-600">
-            {stats.purchased > 0 ? '+' : ''}{formatUSD(stats.purchased)}
-          </p>
+      {/* GLOBAL CARD STATS SUMMARY */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 shrink-0">
+        <div className="bg-emerald-50/80 border border-emerald-200/70 p-3 rounded-xl shadow-2xs">
+          <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">USD Funded</p>
+          <p className="text-sm font-black text-emerald-700">+{formatUSD(stats.purchased)}</p>
         </div>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-[11px] text-slate-500 mb-0.5">Total Meta Ad Spend</p>
-          <p className="text-base font-bold text-red-600">
-            {stats.adSpend > 0 ? '-' : ''}{formatUSD(stats.adSpend)}
-          </p>
+        <div className="bg-rose-50/80 border border-rose-200/70 p-3 rounded-xl shadow-2xs">
+          <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">Meta Ad Spend</p>
+          <p className="text-sm font-black text-rose-700">-{formatUSD(stats.adSpend)}</p>
         </div>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-[11px] text-slate-500 mb-0.5">Total Tax</p>
-          <p className="text-base font-bold text-slate-700">
-            {stats.tax > 0 ? '-' : ''}{formatUSD(stats.tax)}
-          </p>
+        <div className="bg-purple-50/80 border border-purple-200/70 p-3 rounded-xl shadow-2xs">
+          <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">15% Meta Tax</p>
+          <p className="text-sm font-black text-purple-700">-{formatUSD(stats.tax)}</p>
         </div>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-[11px] text-slate-500 mb-0.5">Total Fees</p>
-          <p className="text-base font-bold text-slate-700">
-            {stats.fees > 0 ? '-' : ''}{formatUSD(stats.fees)}
-          </p>
+        <div className="bg-amber-50/80 border border-amber-200/70 p-3 rounded-xl shadow-2xs">
+          <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">Bank Fees</p>
+          <p className="text-sm font-black text-amber-700">-{formatUSD(stats.fees)}</p>
         </div>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-          <p className="text-[11px] text-slate-500 mb-0.5">Current Balance</p>
-          <p className={`text-base font-bold ${currentBal < 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatUSD(currentBal)}</p>
+        <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-sm text-white">
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Live Balance</p>
+          <p className={`text-sm font-black ${currentBal < 0 ? 'text-rose-400' : 'text-sky-300'}`}>{formatUSD(currentBal)}</p>
         </div>
       </div>
 
-      <div className="text-xs text-slate-600 mb-4 bg-blue-50 p-3 rounded border border-blue-100 flex justify-between shrink-0">
-        <span><strong>Provider:</strong> {card.provider}</span>
-        <span><strong>Type:</strong> {card.cardType}</span>
-        {card.last4 && <span><strong>Last 4 Digits:</strong> {card.last4}</span>}
-      </div>
-
-      {/* BALANCE BREAKDOWN & INTEGRITY CHECK */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 shrink-0">
-        <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">Balance Breakdown</h4>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-slate-600">Opening Balance</span>
-            <span className="font-medium text-slate-800">+{formatUSD(openingBalance)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">USD Purchased</span>
-            <span className="font-medium text-green-600">+{formatUSD(stats.purchased)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Meta Ad Spend</span>
-            <span className="font-medium text-red-600">-{formatUSD(stats.adSpend)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Tax</span>
-            <span className="font-medium text-red-600">-{formatUSD(stats.tax)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-600">Fees</span>
-            <span className="font-medium text-red-600">-{formatUSD(stats.fees)}</span>
-          </div>
-          <div className="pt-2 mt-2 border-t border-slate-200 flex justify-between font-bold">
-            <span className="text-slate-800">Current Balance</span>
-            <span className={currentBal < 0 ? 'text-red-600' : 'text-slate-900'}>{formatUSD(currentBal)}</span>
-          </div>
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-slate-200">
-          {isMatch ? (
-            <span className="inline-flex items-center text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded">
-              <CheckCircle2 size={14} className="mr-1" /> Balance Verified
-            </span>
-          ) : (
-            <div className="text-xs text-red-700 bg-red-50 p-2 rounded border border-red-100">
-              <div className="font-bold flex items-center mb-1">
-                <AlertCircle size={14} className="mr-1" /> Balance Mismatch
-              </div>
-              <div className="flex justify-between"><span>Expected Balance:</span> <span>{formatUSD(expectedBalance)}</span></div>
-              <div className="flex justify-between"><span>Current Balance:</span> <span>{formatUSD(currentBal)}</span></div>
-              <div className="flex justify-between font-medium border-t border-red-200 mt-1 pt-1"><span>Difference:</span> <span>{formatUSD(diff)}</span></div>
-            </div>
+      {/* CARD CONTEXT & INTEGRITY CHECK */}
+      <div className="text-xs text-slate-700 bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span><strong>Bank:</strong> {card.provider || 'Bank Card'}</span>
+          <span>•</span>
+          <span><strong>Type:</strong> {card.cardType || 'Virtual Card'}</span>
+          {card.last4 && (
+            <>
+              <span>•</span>
+              <span className="font-mono bg-slate-100 px-1.5 py-0.2 rounded font-bold">*{card.last4}</span>
+            </>
           )}
         </div>
+        <div className="flex items-center gap-2">
+          {isMatch ? (
+            <span className="inline-flex items-center text-[10.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+              <CheckCircle2 size={13} className="mr-1 text-emerald-600" /> Balance Verified
+            </span>
+          ) : (
+            <span className="inline-flex items-center text-[10.5px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+              <AlertCircle size={13} className="mr-1 text-rose-600" /> Diff: {formatUSD(diff)}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handlePrintCardStatement}
+            className="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-1 rounded-md text-[11px] font-bold shadow-2xs transition-all"
+          >
+            <Printer size={12} /> Print Statement
+          </button>
+        </div>
       </div>
 
-      <div className="flex justify-between items-end mb-3 border-b pb-2 shrink-0">
-        <h4 className="font-bold text-slate-800">Transaction History</h4>
-        <div className="flex items-center gap-3">
-          {filterRange.label !== 'Lifetime' && <button onClick={() => setFilterRange({ label: 'Lifetime', start: null, end: null })} className="text-xs text-red-600 hover:underline font-medium">Clear Filter</button>}
-          <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 px-3 py-1 rounded text-xs font-medium hover:bg-slate-50 shadow-2xs transition-colors">
-            <CalendarDays size={14} className="text-blue-600" />
+      {/* TRANSACTION HISTORY HEADER */}
+      <div className="flex justify-between items-center border-b border-slate-200 pb-2 shrink-0">
+        <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider">Chronological Ledger Flow</h4>
+        <div className="flex items-center gap-2">
+          {filterRange.label !== 'Lifetime' && (
+            <button onClick={() => setFilterRange({ label: 'Lifetime', start: null, end: null })} className="text-[11px] text-rose-600 hover:underline font-bold">
+              Clear Filter
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsFilterOpen(true)}
+            className="flex items-center gap-1 bg-white border border-slate-200/90 text-slate-700 px-2.5 py-1 rounded-md text-[11px] font-bold hover:bg-slate-50 shadow-2xs transition-colors"
+          >
+            <CalendarDays size={12} className="text-sky-600" />
             {filterRange.label === 'Lifetime' ? 'Filter History' : `Showing: ${filterRange.label}`}
           </button>
         </div>
@@ -3651,40 +4180,44 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         />
       )}
 
-      <div className="overflow-y-auto flex-1 border border-slate-200 rounded-lg">
-        <table className="w-full text-sm text-left whitespace-nowrap">
-          <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b border-slate-200">
+      {/* TRANSACTION HISTORY TABLE */}
+      <div className="overflow-y-auto flex-1 border border-slate-200/90 rounded-xl shadow-2xs">
+        <table className="w-full text-xs text-left whitespace-nowrap">
+          <thead className="bg-slate-50 text-slate-500 font-bold sticky top-0 border-b border-slate-200 text-[10.5px] uppercase">
             <tr>
-              <th className="px-4 py-2.5">Type</th>
-              <th className="px-4 py-2.5">USD</th>
-              <th className="px-4 py-2.5">Balance After</th>
+              <th className="px-4 py-2.5">Date & Details</th>
+              <th className="px-4 py-2.5">Category</th>
+              <th className="px-4 py-2.5 text-right">Amount (USD)</th>
+              <th className="px-4 py-2.5 text-right">Running Balance</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
             {historyWithBalance.length === 0 && (
-              <tr><td colSpan="3" className="text-center py-6 text-slate-500">No transactions found for this period.</td></tr>
+              <tr><td colSpan="4" className="text-center py-8 text-slate-400">No transactions found for this period.</td></tr>
             )}
             {historyWithBalance.map(tx => {
-              // Ensure we strictly format to negative/positive correctly
               const isAdSpend = tx.type === 'AD_SPEND';
               const displayAmount = isAdSpend ? -Math.abs(parseFloat(tx.amountUSD)) : parseFloat(tx.amountUSD);
               const displayTax = isAdSpend ? parseFloat(tx.taxUSD || 0) : 0;
 
               return (
-                <tr key={tx.id} className="hover:bg-slate-50">
+                <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-4 py-2.5 font-medium text-slate-800">
-                    <div className="mb-0.5">{tx.type === 'USD_PURCHASE' ? 'USD Purchase' : tx.type === 'AD_SPEND' ? 'Meta Ads' : tx.type}</div>
-                    <div className="text-[10px] text-slate-400 font-normal">{formatDate(tx.date)} {tx.notes && `• ${tx.notes}`}</div>
+                    <div className="font-bold text-slate-900">{formatDate(tx.date)}</div>
+                    <div className="text-[10px] text-slate-400 truncate max-w-[200px]">{tx.notes || tx.campaign || tx.adAccount || '—'}</div>
                   </td>
-                  <td className={`px-4 py-2.5 font-medium ${displayAmount > 0 ? 'text-green-600' : 'text-slate-800'}`}>
+                  <td className="px-4 py-2.5">
+                    <span className="font-bold text-slate-700">{tx.type.replaceAll('_', ' ')}</span>
+                  </td>
+                  <td className={`px-4 py-2.5 text-right font-black ${displayAmount > 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
                     {displayAmount > 0 ? '+' : ''}{formatUSD(displayAmount)}
-                    {displayTax > 0 && <span className="block text-[10px] text-red-500 font-normal mt-0.5">+ tax {formatUSD(displayTax)}</span>}
+                    {displayTax > 0 && <span className="block text-[10px] text-rose-500 font-semibold mt-0.5">+ tax {formatUSD(displayTax)}</span>}
                   </td>
-                  <td className={`px-4 py-2.5 font-bold ${tx.runningBal < 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                  <td className={`px-4 py-2.5 text-right font-black ${tx.runningBal < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                     {formatUSD(tx.runningBal)}
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -3693,46 +4226,163 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
   );
 }
 
-function TransactionDetailsModal({ tx, cardName, onClose }) {
+function TransactionDetailsModal({ tx, cardName, onClose, onEdit, onDelete }) {
   const bdtPaid = parseFloat(tx.amountBDT || 0);
   const coRate = parseFloat(tx.cashOutCharge || 0);
   const usdRcv = parseFloat(tx.amountUSD || 1);
 
-  const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : 0;
+  const baseRate = usdRcv > 0 ? (bdtPaid / usdRcv).toFixed(2) : '0.00';
   const totalCost = bdtPaid + coRate;
-  const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : 0;
+  const effectiveRate = usdRcv > 0 ? (totalCost / usdRcv).toFixed(2) : '0.00';
+
+  const handlePrintVoucher = () => {
+    const printWindow = window.open('', '_blank', 'width=800,height=650');
+    if (!printWindow) return;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>USD Purchase Voucher - ${tx.id}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 28px; margin: 0; background: #fff; line-height: 1.5; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 14px; margin-bottom: 20px; }
+          .brand { font-size: 22px; font-weight: 900; color: #0284c7; }
+          .title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+          .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+          .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+          .kpi-card { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; text-align: center; }
+          .kpi-title { font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: #475569; }
+          .kpi-val { font-size: 16px; font-weight: 900; margin-top: 4px; color: #0f172a; }
+          .green { color: #16a34a !important; }
+          .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 10.5px; color: #64748b; display: flex; justify-content: space-between; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Financial Command</div>
+            <div class="title">USD Purchase Voucher</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 12px;">Ref: #${String(tx.id).slice(-8)}</div>
+            <div style="font-size: 11px; color: #64748b;">Date: ${formatDate(tx.date)}</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-title">USD Received</div><div class="kpi-val green">+${formatUSD(tx.amountUSD)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Total BDT Cost</div><div class="kpi-val">${formatBDT(totalCost)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Base Rate</div><div class="kpi-val">৳${baseRate}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Effective Rate</div><div class="kpi-val" style="color:#0284c7;">৳${effectiveRate}</div></div>
+        </div>
+
+        <div class="box">
+          <div><strong>Source / Seller:</strong><br/>${tx.notes || 'Binance P2P / Direct Seller'}</div>
+          <div><strong>Destination Card:</strong><br/>${cardName}</div>
+          <div><strong>Base BDT Paid:</strong><br/>${formatBDT(bdtPaid)}</div>
+          <div><strong>Cash-out Charge (C.O):</strong><br/>${formatBDT(coRate)}</div>
+        </div>
+
+        <div class="footer">
+          <div>Authorized Foreign Exchange Procurement • AdLytic Engine</div>
+          <div>Verified on ${new Date().toLocaleString()}</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 300);
+  };
 
   return (
-    <Modal title="Transaction Details" onClose={onClose} width="max-w-lg">
-      <div className="space-y-4 text-sm">
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
+    <Modal title={`USD Purchase Voucher: #${String(tx.id).slice(-8)}`} onClose={onClose} width="max-w-xl">
+      <div className="space-y-4 text-xs">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white p-4 rounded-xl border border-slate-800 flex justify-between items-center shadow-sm">
           <div>
-            <span className="text-xs text-slate-400 uppercase font-medium block">Reference ID</span>
-            <span className="font-mono text-xs font-bold text-slate-800">{tx.id}</span>
+            <span className="font-mono text-xs font-black text-sky-400 block">#{tx.id}</span>
+            <span className="text-[11px] text-slate-300 font-semibold mt-0.5 block">{formatDate(tx.date)}</span>
           </div>
-          <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">USD Purchase</span>
+          <button
+            type="button"
+            onClick={handlePrintVoucher}
+            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:text-white"
+          >
+            <Printer size={13} /> Print Voucher
+          </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Date</span><span className="font-bold text-slate-800">{formatDate(tx.date)}</span></div>
-          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Source</span><span className="font-bold text-slate-800">{tx.notes || 'N/A'}</span></div>
-          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">Destination Card</span><span className="font-bold text-blue-600">{cardName}</span></div>
-          <div className="p-2.5 bg-white border border-slate-200 rounded"><span className="text-slate-400 block">USD Received</span><span className="font-bold text-green-600">{formatUSD(tx.amountUSD)}</span></div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase block">USD Received</span>
+            <span className="font-black text-emerald-700 text-base mt-0.5 block">+{formatUSD(tx.amountUSD)}</span>
+          </div>
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Total Cost</span>
+            <span className="font-black text-slate-900 text-base mt-0.5 block">{formatBDT(totalCost)}</span>
+          </div>
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Base Rate</span>
+            <span className="font-black text-slate-700 text-base mt-0.5 block">৳{baseRate}</span>
+          </div>
+          <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl">
+            <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Effective Rate</span>
+            <span className="font-black text-sky-700 text-base mt-0.5 block">৳{effectiveRate}</span>
+          </div>
         </div>
 
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 text-xs">
-          <div className="flex justify-between"><span>Base BDT Paid:</span><span className="font-medium text-slate-800">{formatBDT(bdtPaid)}</span></div>
-          <div className="flex justify-between"><span>C.O Rate:</span><span className="font-medium text-red-600">{formatBDT(coRate)}</span></div>
-          <div className="flex justify-between font-bold border-t border-slate-200 pt-1.5 text-sm"><span>Total BDT Cost:</span><span className="text-slate-900">{formatBDT(totalCost)}</span></div>
+        <div className="bg-white border border-slate-200/90 rounded-xl p-3.5 space-y-2 shadow-2xs">
+          <div className="flex justify-between">
+            <span className="text-slate-500 font-semibold">Source / Seller:</span>
+            <span className="font-bold text-slate-900">{tx.notes || 'N/A'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500 font-semibold">Destination Card:</span>
+            <span className="font-bold text-sky-700">{cardName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500 font-semibold">Base BDT Paid:</span>
+            <span className="font-bold text-slate-900">{formatBDT(bdtPaid)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500 font-semibold">Cash-Out (C.O Rate):</span>
+            <span className="font-bold text-rose-600">{formatBDT(coRate)}</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className="p-2.5 bg-slate-50 border border-slate-200 rounded"><span className="text-slate-500 block">Base Rate</span><span className="font-bold text-slate-800">৳{baseRate} / USD</span></div>
-          <div className="p-2.5 bg-blue-50 border border-blue-200 rounded"><span className="text-blue-600 block font-medium">Effective Rate</span><span className="font-bold text-blue-700">৳{effectiveRate} / USD</span></div>
-        </div>
+        <div className="pt-2 flex justify-between items-center flex-wrap gap-2 border-t border-slate-100">
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(tx.id)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all"
+            >
+              <Trash2 size={13} /> Delete Record
+            </button>
+          )}
 
-        <div className="pt-2 flex justify-end">
-          <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white rounded-md text-xs font-medium hover:bg-slate-800">Close</button>
+          <div className="flex items-center gap-2 ml-auto">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg text-xs font-bold transition-all"
+              >
+                <Edit size={13} /> Edit Entry
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </Modal>
