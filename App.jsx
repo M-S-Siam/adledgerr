@@ -9206,9 +9206,9 @@ function UserGuideView({ onNavigate }) {
   const tabs = [
     { id: 'concepts', label: '১. মূল সমস্যা ও গাণিতিক সূত্র', icon: <Sparkles size={16} /> },
     { id: 'workflow', label: '২. ৫-ধাপে দৈনন্দিন কাজ (SOP)', icon: <Layers size={16} /> },
-    { id: 'modules', label: '৩. পেজ ও মডিউল পরিচিতি', icon: <LayoutDashboard size={16} /> },
+    { id: 'modules', label: '৩. প্রতিটি পেজের পূর্ণাঙ্গ ব্যবহারবিধি', icon: <LayoutDashboard size={16} /> },
     { id: 'troubleshoot', label: '৪. সমস্যা ও সমাধান (FAQs)', icon: <HelpCircle size={16} /> },
-    { id: 'protips', label: '৫. এজেন্সির প্রো-টিপস', icon: <Crown size={16} /> },
+    { id: 'protips', label: '৫. এজেন্সির প্রো-টিপস ও চেকলিস্ট', icon: <Crown size={16} /> },
   ];
 
   return (
@@ -9221,13 +9221,13 @@ function UserGuideView({ onNavigate }) {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-white/20">
               <BookOpen size={13} className="stroke-[2.5]" />
-              <span>Official Standard Operating Procedure (SOP)</span>
+              <span>Official Standard Operating Procedure (SOP) Manual</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              AdLytic — Agency Financial Manual
+              AdLytic — Digital Agency Financial Manual
             </h1>
             <p className="text-sm text-sky-100 max-w-2xl font-medium leading-relaxed">
-              ডিজিটাল মার্কেটিং এজেন্সির ডুয়েল-কারেন্সি লেজার (BDT & USD), মেটা অ্যাড স্পেন্ড, ১৫% ভ্যাট ক্যালকুলেশন এবং প্রকৃত নিট লাভ নির্ণয়ের পূর্ণাঙ্গ ইউজার গাইড।
+              ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।
             </p>
           </div>
 
@@ -9246,7 +9246,7 @@ function UserGuideView({ onNavigate }) {
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none" />
             <input
               type="text"
-              placeholder="গাইড বা সমস্যা সার্চ করুন (যেমন: ভ্যাট, কার্ড ব্যালেন্স, ডলার রেট)..."
+              placeholder="গাইড বা সমস্যা সার্চ করুন (যেমন: ভ্যাট, কার্ড ব্যালেন্স, ড্যাশবোর্ড, রিসিট)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/15 hover:bg-white/20 focus:bg-white text-xs text-white focus:text-slate-900 placeholder-white/60 focus:placeholder-slate-400 font-medium border border-white/20 focus:border-white outline-none transition-all"
@@ -9255,7 +9255,7 @@ function UserGuideView({ onNavigate }) {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-xs text-white/80 hover:text-white underline font-semibold"
+              className="text-xs text-white/80 hover:text-white underline font-semibold cursor-pointer"
             >
               Clear Search
             </button>
@@ -9434,64 +9434,160 @@ function UserGuideView({ onNavigate }) {
         </div>
       )}
 
-      {/* TAB 3: MODULE-BY-MODULE GUIDE */}
+      {/* TAB 3: COMPLETE MODULE-BY-MODULE GUIDE */}
       {(activeTab === 'modules' || searchQuery) && (
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-6 animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
-            <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">৩</span>
-            <h2 className="text-base font-extrabold text-slate-900">প্ল্যাটফর্মের প্রতিটি পেজ ও মডিউলের কার্যকারিতা</h2>
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+              <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">৩</span>
+              <h2 className="text-base font-extrabold text-slate-900">প্ল্যাটফর্মের প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড</h2>
+            </div>
+            <p className="text-xs text-slate-600">
+              নিচে প্রতিটি পেজের বিস্তারিত ফিচার এবং কীভাবে ব্যবহার করবেন তা পুঙ্খানুপুঙ্খভাবে দেওয়া হলো:
+            </p>
           </div>
 
-          <div className="space-y-4">
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
-                <span className="flex items-center gap-2">📊 Dashboard (Command Center)</span>
-                <button onClick={() => onNavigate?.('dashboard')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Dashboard &gt;</button>
+          {/* 1. Dashboard */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs">১</span>
+                <h3 className="font-extrabold text-sm text-slate-900">📊 Dashboard (Agency Command Center)</h3>
               </div>
-              <p className="text-xs text-slate-600">
-                পুরো এজেন্সির ৪টি কোর মেট্রিক্স (Total Revenue, Total USD Spent, Net Profit, Card Balance), ইন্টারঅ্যাক্টিভ স্প্লাইন গ্রাফ, কনসেন্ট্রিক সাইবারনেটিক গেজ এবং পাশাপাশি ক্লায়েন্ট ও কার্ড ব্যালেন্স টেবিল প্রদর্শন করে।
-              </p>
+              <button onClick={() => onNavigate?.('dashboard')} className="text-sky-600 hover:underline text-xs font-bold cursor-pointer">Open Page &gt;</button>
             </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              ড্যাশবোর্ড হলো আপনার এজেন্সির কেন্দ্রীয় নিয়ন্ত্রণ কক্ষ। এখানে যা যা রয়েছে:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <strong>৪টি কোর ম্যাট্রিক্স কার্ড:</strong> Total Revenue (মোট টাকা), Total USD Spent (অ্যাড+ভ্যাট+ফি), Net Agency Profit (আসল লাভ ও মার্জিন %), Total Card Balance (অবশিষ্ট ডলার)।
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <strong>Spline Flow Chart:</strong> সময়ের সাথে রেভিনিউ বনাম মেটা অ্যাড খরচের ইন্টারঅ্যাক্টিভ ট্রেন্ড গ্রাফ।
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <strong>Concentric Cybernetic HUD:</strong> মেটা অ্যাড খরচ (ভায়োলেট), ১৫% ভ্যাট (গোলাপি) ও ব্যাংক ফি (অ্যাম্বার)-এর ৩-রিং সাইবারনেটিক ডায়াল।
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <strong>৫০% : ৫০% সিমেট্রিক্যাল টেবিল:</strong> ক্লায়েন্ট পিঅ্যান্ডএল (লাভজনকতা) এবং কার্ড লিকুইডিটি (ডলার বার্ন) পাশাপাশি পর্যবেক্ষণ।
+              </div>
+            </div>
+          </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
-                <span className="flex items-center gap-2">👥 Clients (CRM & Profitability)</span>
-                <button onClick={() => onNavigate?.('clients')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Clients &gt;</button>
+          {/* 2. Clients */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">২</span>
+                <h3 className="font-extrabold text-sm text-slate-900">👥 Clients Hub (CRM & Profitability)</h3>
               </div>
-              <p className="text-xs text-slate-600">
-                সব ক্লায়েন্টের তালিকা, প্রতি ক্লায়েন্টের মোট রেভিনিউ, মেটা অ্যাড খরচ ও নিট লাভ মার্জিন %। এখান থেকে ১-ক্লিকে ক্লায়েন্টের লেনদেন হিস্ট্রি ও স্টেটমেন্ট দেখা যায়।
-              </p>
+              <button onClick={() => onNavigate?.('clients')} className="text-sky-600 hover:underline text-xs font-bold cursor-pointer">Open Page &gt;</button>
             </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              ক্লায়েন্টদের সাথে আর্থিক সম্পর্ক ও ক্লায়েন্ট-ভিত্তিক লাভজনকতা পরিমাপের জন্য:
+            </p>
+            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-5">
+              <li><strong>ক্লায়েন্ট অনবোর্ডিং ও কান্ট্রি ট্যাগ:</strong> ক্লায়েন্টের নাম, কোম্পানি, কান্ট্রি ফ্ল্যাগ (🇧🇩, 🇺🇸, 🇦🇪) ও কন্টাক্ট ইনফো।</li>
+              <li><strong>ক্লায়েন্ট-ভিত্তিক নিট লাভ:</strong> কোন ক্লায়েন্ট থেকে কত টাকা আসল এবং কত টাকা খরচ হলো তার ভিত্তিতে পৃথক প্রফিট মার্জিন % নির্ণয়।</li>
+              <li><strong>১-ক্লিকে ক্লায়েন্ট স্টেটমেন্ট:</strong> ক্লায়েন্টের প্রোফাইলে ক্লিক করলেই তার যাবতীয় ট্রানজ্যাকশন হিস্ট্রি চলে আসে যা ক্লায়েন্টকে শেয়ার করা যায়।</li>
+            </ul>
+          </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
-                <span className="flex items-center gap-2">🧾 Transactions (Double-Ledger)</span>
-                <button onClick={() => onNavigate?.('ledger')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Transactions &gt;</button>
+          {/* 3. Campaigns */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">৩</span>
+                <h3 className="font-extrabold text-sm text-slate-900">📢 Campaigns (Performance & ROAS)</h3>
               </div>
-              <p className="text-xs text-slate-600">
-                সম্পূর্ণ অডিট লেজার। প্রতিটি লেনদেনের মানি রিসিট ডাউনলোড, Excel/CSV এক্সপোর্ট এবং ভুল এন্ট্রি হলে এডিট বা ডিলিট করার পূর্ণ সুবিধা।
-              </p>
+              <button onClick={() => onNavigate?.('campaigns')} className="text-sky-600 hover:underline text-xs font-bold cursor-pointer">Open Page &gt;</button>
             </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              মেটা অ্যাড ক্যাম্পেইনের বাজেট, স্পেন্ড এবং আরওএএস (ROAS) ট্র্যাকিং:
+            </p>
+            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-5">
+              <li><strong>ক্যাম্পেইন মনিটরিং:</strong> ফেসবুক ক্যাম্পেইনের নাম, প্ল্যাটফর্ম, বাজেট ও স্ট্যাটাস (Active/Paused)।</li>
+              <li><strong>ROI ও আরওএএস বিশ্লেষণ:</strong> ডলার স্পেন্ডের বিপরীতে ক্লায়েন্টের অর্জিত রেভিনিউ দেখে ক্যাম্পেইনের রিটার্ন যাচাই।</li>
+            </ul>
+          </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
-                <span className="flex items-center gap-2">💳 Cards & USD (Liquidity Hub)</span>
-                <button onClick={() => onNavigate?.('cards')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Cards &gt;</button>
+          {/* 4. Transactions */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">৪</span>
+                <h3 className="font-extrabold text-sm text-slate-900">🧾 Transactions (Double-Ledger Engine)</h3>
               </div>
-              <p className="text-xs text-slate-600">
-                ভার্চুয়াল কার্ডের ভিজ্যুয়াল ইন্টারফেস, লাইভ ডলার ব্যালেন্স, ডলার লোড হিস্ট্রি এবং ব্যালেন্স নেগেটিভ হওয়ার আগেই ডেফিসিট ওয়ার্নিং অ্যালার্ট।
-              </p>
+              <button onClick={() => onNavigate?.('ledger')} className="text-sky-600 hover:underline text-xs font-bold cursor-pointer">Open Page &gt;</button>
             </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              এজেন্সির সমস্ত লেনদেনের ডিজিটাল খতিয়ান ও মানি রিসিট জেনারেটর:
+            </p>
+            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-5">
+              <li><strong>৪ ধরনের ট্রানজ্যাকশন:</strong> <code>Payment Received</code>, <code>USD Purchase</code>, <code>Ad Spend</code>, <code>Fee</code>।</li>
+              <li><strong>১-ক্লিক মানি রিসিট ও ভাউচার:</strong> যেকোনো ট্রানজ্যাকশনের রিসিট আইকনে ক্লিক করলেই প্রফেশনাল মানি রিসিট ওপেন হয়, যা ১-ক্লিকে PDF হিসেবে ক্লায়েন্টকে পাঠানো যায়।</li>
+              <li><strong>Excel & CSV এক্সপোর্ট:</strong> অডিট ও অ্যাকাউন্টিং ফাইলের জন্য সম্পূর্ণ লেজার স্প্রেডশিটে ডাউনলোড করা যায়।</li>
+              <li><strong>এডিট ও ডিলিট:</strong> যেকোনো ভুল এন্ট্রি সাথে সাথে সংশোধন বা মুছে ফেলার পূর্ণ নিয়ন্ত্রণ।</li>
+            </ul>
+          </div>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
-              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
-                <span className="flex items-center gap-2">📈 Reports (P&L Statements)</span>
-                <button onClick={() => onNavigate?.('reports')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Reports &gt;</button>
+          {/* 5. Cards & USD */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">৫</span>
+                <h3 className="font-extrabold text-sm text-slate-900">💳 Cards & USD (Virtual Card Liquidity Hub)</h3>
               </div>
-              <p className="text-xs text-slate-600">
-                কাস্টম ডেট রেঞ্জ (আজ, এই সপ্তাহ, এই মাস, এই বছর) সিলেক্ট করে প্রফেশনাল P&L অডিট স্টেটমেন্ট প্রিন্ট বা PDF ডাউনলোড করার সুবিধা।
-              </p>
+              <button onClick={() => onNavigate?.('cards')} className="text-sky-600 hover:underline text-xs font-bold cursor-pointer">Open Page &gt;</button>
             </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              সব ভার্চুয়াল কার্ডের ডলার ব্যালেন্স, লোড এবং লাইভ বার্ন রেট পর্যবেক্ষণ:
+            </p>
+            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-5">
+              <li><strong>ভিজ্যুয়াল EMV কার্ড উপস্থাপন:</strong> কার্ডের নাম, ব্যাংক/প্রোভাইডার, লাস্ট ৪ ডিজিট এবং হোল্ডার নেম।</li>
+              <li><strong>লাইভ ব্যালেন্স ও হিস্ট্রি:</strong> প্রতিটি কার্ডে কত ডলার লোড হলো, কত ডলার মেটায় খরচ হলো এবং বর্তমানে কত ডলার অবশিষ্ট আছে তার রিয়েল-টাইম ব্যালেন্স।</li>
+              <li><strong>১-ক্লিকে কার্ড ফান্ডিং:</strong> <code>+ Fund Card</code> বাটনে ক্লিক করে যেকোনো নির্দিষ্ট কার্ডে সরাসরি ডলার লোড এন্ট্রি দেওয়ার সুবিধা।</li>
+              <li><strong>ডেফিসিট প্রিভেনশন শিল্ড:</strong> কার্ড ব্যালেন্স নেগেটিভ হলে তাৎক্ষণিক সতর্কতা দেওয়া।</li>
+            </ul>
+          </div>
+
+          {/* 6. Reports */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">৬</span>
+                <h3 className="font-extrabold text-sm text-slate-900">📈 Reports & P&L (Financial & Tax Statements)</h3>
+              </div>
+              <button onClick={() => onNavigate?.('reports')} className="text-sky-600 hover:underline text-xs font-bold cursor-pointer">Open Page &gt;</button>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              নির্দিষ্ট সময়সীমার লাভ-ক্ষতির অডিট স্টেটমেন্ট তৈরি ও প্রিন্ট করা:
+            </p>
+            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-5">
+              <li><strong>পিরিয়ড ফিল্টারিং:</strong> All Time, Today, This Week, This Month, This Quarter, This Year অথবা কাস্টম ডেট রেঞ্জ।</li>
+              <li><strong>P&L ফিন্যান্সিয়াল স্টেটমেন্ট:</strong> মোট আয়, মোট মেটা খরচ, ডলার রেট এবং নিট মার্জিনের সুদৃশ্য চার্ট ও টেবিল।</li>
+              <li><strong>১-ক্লিক প্রিন্ট ও PDF জেনারেটর:</strong> অংশীদারদের মিটিং বা ট্যাক্স অডিটের জন্য এক ক্লিকে সম্পূর্ণ রিপোর্ট A4 সাইজে প্রিন্ট/PDF সেভ করা যায়।</li>
+            </ul>
+          </div>
+
+          {/* 7. Settings & Team */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs">৭</span>
+                <h3 className="font-extrabold text-sm text-slate-900">⚙️ Settings & Team (Workspace Management)</h3>
+              </div>
+              <button onClick={() => onNavigate?.('settings')} className="text-sky-600 hover:underline text-xs font-bold cursor-pointer">Open Page &gt;</button>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              এজেন্সির ব্র্যান্ডিং, টিম পারমিশন এবং ডাটা ব্যাকআপ নিয়ন্ত্রণ:
+            </p>
+            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-5">
+              <li><strong>লোগো ও ব্র্যান্ডিং:</strong> এজেন্সির নিজস্ব লোগো আপলোড, নাম এবং কারেন্সি কনফিগারেশন।</li>
+              <li><strong>টিম পারমিশন:</strong> Owner, Manager, Media Buyer এবং Accountant রোল ম্যানেজমেন্ট।</li>
+              <li><strong>ক্লাউড ডাটা ব্যাকআপ ও রিস্টোর:</strong> ১-ক্লিকে সমস্ত ডাটার অফলাইন JSON ব্যাকআপ ডাউনলোড এবং প্রয়োজনে তা রিস্টোর করা।</li>
+            </ul>
           </div>
         </div>
       )}
@@ -9533,6 +9629,16 @@ function UserGuideView({ onNavigate }) {
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
                 <code>Transactions</code> পেজে গিয়ে যেকোনো এন্ট্রির রিসিট আইকনে ক্লিক করলেই ব্র্যান্ডেড রিসিট ওপেন হবে। সেখান থেকে ১-ক্লিকে প্রিন্ট বা PDF হিসেবে সেভ করে ক্লায়েন্টকে পাঠিয়ে দিন।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                <Edit size={15} className="text-amber-500" />
+                কোনো এন্ট্রিতে টাকার পরিমাণ বা ক্লায়েন্টের নাম ভুল হলে কীভাবে ঠিক করব?
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                <code>Transactions</code> পেজে গিয়ে ওই ট্রানজ্যাকশনের ডানপাশের এডিট (পেন্সিল) আইকনে ক্লিক করে সংশোধন করুন অথবা ডিলিট করে দিন।
               </p>
             </div>
 
