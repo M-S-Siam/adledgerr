@@ -9222,145 +9222,708 @@ function UserGuideView({ onNavigate }) {
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
-  <title>AdLytic — Master User Manual & SOP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdLytic — Master User Manual & Standard Operating Procedure (SOP) Guide</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Hind Siliguri', 'Inter', -apple-system, sans-serif; color: #1e293b; background: #fff; line-height: 1.65; font-size: 14px; padding: 36px 40px; }
-    .print-bar { background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; padding: 14px 20px; border-radius: 12px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
-    .print-btn { background: #fff; color: #0284c7; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 800; font-size: 13px; cursor: pointer; }
-    .header { text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 25px; margin-bottom: 30px; }
-    .badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 14px; border-radius: 99px; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; }
-    h1 { font-size: 26px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
-    .subtitle { font-size: 14px; color: #64748b; max-width: 680px; margin: 0 auto 12px; }
-    .section { margin-bottom: 32px; page-break-inside: avoid; }
-    .sec-title { font-size: 17px; font-weight: 800; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-    .num { background: #0284c7; color: #fff; width: 24px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 14px; }
-    .formula { background: #0f172a; color: #f8fafc; padding: 16px 20px; border-radius: 12px; margin: 12px 0; font-family: 'Fira Code', monospace; font-size: 12.5px; }
-    .formula-title { color: #38bdf8; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; }
-    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 14px 0; }
-    .grid-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #fff; }
-    .faq { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 10px; background: #fff; }
-    .faq-q { font-weight: 800; color: #0f172a; margin-bottom: 6px; font-size: 13.5px; }
-    .faq-a { color: #475569; font-size: 13px; }
-    code { font-family: monospace; background: #f1f5f9; color: #0284c7; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --emerald: #059669;
+      --emerald-dark: #047857;
+      --emerald-light: #ecfdf5;
+      --rose: #e11d48;
+      --rose-light: #fff1f2;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --purple: #7c3aed;
+      --purple-light: #f5f3ff;
+      --indigo: #4f46e5;
+      --indigo-light: #eef2ff;
+      --slate-950: #020617;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Hind Siliguri', 'Inter', -apple-system, sans-serif;
+      background-color: #ffffff;
+      color: var(--slate-700);
+      line-height: 1.7;
+      font-size: 14.5px;
+      padding: 30px 40px;
+    }
+
+    .document-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 20px 10px;
+      position: relative;
+    }
+
+    /* Print Floating Toolbar */
+    .print-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #0284c7, #2563eb 60%, #4f46e5);
+      color: #fff;
+      padding: 16px 24px;
+      border-radius: 14px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 25px rgba(2, 132, 199, 0.35);
+    }
+    .print-bar h3 {
+      font-size: 15px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #ffffff;
+    }
+    .print-btn {
+      background: #ffffff;
+      color: #0284c7;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    h1, h2, h3, h4, h5 {
+      color: var(--slate-900);
+      font-family: 'Inter', 'Hind Siliguri', sans-serif;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .cover-header {
+      text-align: center;
+      padding-bottom: 35px;
+      border-bottom: 2px solid var(--slate-200);
+      margin-bottom: 35px;
+    }
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 6px 18px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+      border: 1px solid rgba(2, 132, 199, 0.2);
+    }
+    .cover-title {
+      font-size: 30px;
+      font-weight: 900;
+      color: var(--slate-900);
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+    }
+    .cover-subtitle {
+      font-size: 15px;
+      color: var(--slate-600);
+      font-weight: 500;
+      max-width: 760px;
+      margin: 0 auto 16px;
+      line-height: 1.6;
+    }
+    .meta-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--slate-500);
+    }
+
+    .section-block {
+      margin-bottom: 45px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 850;
+      color: var(--slate-900);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--slate-100);
+      margin-bottom: 20px;
+    }
+    .section-title .num-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 850;
+      flex-shrink: 0;
+    }
+
+    p {
+      margin-bottom: 14px;
+      color: var(--slate-700);
+    }
+
+    .info-card {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    .alert-box {
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 18px 0;
+      display: flex;
+      gap: 14px;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+    .alert-box.tip {
+      background: var(--emerald-light);
+      border-left: 4px solid var(--emerald);
+      color: #065f46;
+    }
+
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .step-item {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-size: 12px;
+      font-weight: 850;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .formula-card {
+      background: linear-gradient(135deg, #091224, #142342);
+      color: #f8fafc;
+      padding: 20px 24px;
+      border-radius: 14px;
+      margin: 18px 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .formula-title {
+      color: #38bdf8;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .feature-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--slate-100);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    .feature-badge {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+    .feature-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .feature-list li {
+      position: relative;
+      padding-left: 22px;
+      margin-bottom: 8px;
+      color: var(--slate-600);
+      font-size: 13.5px;
+    }
+    .feature-list li::before {
+      content: '✔';
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: 900;
+    }
+
+    .faq-item {
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+    .faq-q {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+    }
+    .faq-a {
+      font-size: 13.5px;
+      color: var(--slate-600);
+      line-height: 1.65;
+    }
+
+    .doc-footer {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid var(--slate-200);
+      color: var(--slate-400);
+      font-size: 12px;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+      background: var(--slate-100);
+      color: #0369a1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
     @media print {
-      body { padding: 0 !important; }
-      .print-bar { display: none !important; }
-      @page { size: A4; margin: 15mm; }
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+      }
+      .print-bar {
+        display: none !important;
+      }
+      .document-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .section-block {
+        page-break-inside: avoid;
+      }
+      @page {
+        margin: 15mm 12mm;
+        size: A4 portrait;
+      }
     }
   </style>
 </head>
 <body>
+
   <div class="print-bar">
-    <div><strong>AdLytic — Agency Financial Manual & SOP</strong> (Official Complete Document)</div>
-    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <div>
+      <h3>📄 AdLytic — Agency Operating System (Official Master Manual & SOP)</h3>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+      Print / Save as PDF
+    </button>
   </div>
 
-  <div class="header">
-    <div class="badge">Official Standard Operating Procedure (SOP)</div>
-    <h1>AdLytic — Digital Agency Financial Operating System</h1>
-    <p class="subtitle">ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং প্রকৃত নিট লাভ নির্ণয়ের অফিসিয়াল হ্যান্ডবুক।</p>
-  </div>
-
-  <div class="section">
-    <div class="sec-title"><span class="num">১</span> এজেন্সির মূল সমস্যা ও ডুয়েল-কারেন্সি সমাধান</div>
-    <div class="card">
-      <ul style="padding-left: 18px; line-height: 1.75;">
-        <li><strong>টাকায় আয় কিন্তু ডলারে খরচ:</strong> ক্লায়েন্ট দেয় BDT, কিন্তু মেটায় অ্যাড চালাতে হয় কার্ডের মাধ্যমে USD-তে।</li>
-        <li><strong>কার্যকর ডলার রেট ও ক্যাশআউট চার্জ:</strong> ডলার কেনার ক্যাশআউট ফি হিসাবে না নিলে বড় আর্থিক ক্ষতি হয়।</li>
-        <li><strong>মেটা ১৫% সরকারি ভ্যাট:</strong> ফেসবুক প্রতি $১০০ স্পেন্ডে $১১৫ কাটে ($১৫ ভ্যাট)।</li>
-      </ul>
-    </div>
-
-    <div class="formula">
-      <div class="formula-title">সূত্র ১: কার্যকর ডলার ক্রয় রেট (Effective USD Buy Rate)</div>
-      Effective Rate = (মোট BDT খরচ + ক্যাশআউট চার্জ) ÷ মোট ক্রয়কৃত USD<br>
-      <em>উদাহরণ:</em> ৳১৩,১২৫ দিয়ে $১০০ কিনলে প্রতি ডলারের কার্যকর খরচ = ৳১৩১.২৫
-    </div>
-
-    <div class="formula">
-      <div class="formula-title">সূত্র ২: মেটা স্পেন্ড ও মোট কার্ড বার্ন (Total Card Deduction)</div>
-      মোট কার্ড কর্তন = অ্যাড স্পেন্ড (USD) + মেটা ১৫% ভ্যাট (USD)<br>
-      <em>উদাহরণ:</em> $১০০ মেটা অ্যাড চালালে কার্ড থেকে কাটা যাবে = $১১৫.০০ ($১০০ অ্যাড + $১৫ ভ্যাট)
-    </div>
-
-    <div class="formula">
-      <div class="formula-title">সূত্র ৩: এজেন্সির প্রকৃত নিট লাভ (Net Agency Profit)</div>
-      Net Profit (BDT) = ক্লায়েন্ট পেমেন্ট (BDT) - [মোট স্পেন্ড USD × Effective Buy Rate]<br>
-      <em>উদাহরণ:</em> ক্লায়েন্ট দিল ৳১০,০০০। মোট মেটা স্পেন্ড $৫৫ × ৳১৩১.২৫ = ৳৭,২১৮.৭৫।<br>
-      <strong>প্রকৃত এজেন্সির লাভ (Net Profit) = ৳১০,০০০ - ৳৭,২১৮.৭৫ = ৳২,৭৮১.২৫ (মার্জিন: ২৭.৮%)</strong>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="sec-title"><span class="num">২</span> ৫-ধাপে এজেন্সির দৈনন্দিন কাজের এসওপি (Daily 5-Step SOP)</div>
-    <div class="grid">
-      <div class="grid-item">
-        <strong>১. নতুন ক্লায়েন্ট যোগ:</strong> <code>+ New Entry ➔ Add New Client</code> দিয়ে নাম, কোম্পানি ও বাজেট দিন।
-      </div>
-      <div class="grid-item">
-        <strong>২. ক্লায়েন্ট পেমেন্ট গ্রহণ:</strong> <code>+ New Entry ➔ Receive Client Payment</code> দিয়ে ক্লায়েন্ট ও প্রাপ্ত BDT দিন।
-      </div>
-      <div class="grid-item">
-        <strong>৩. ডলার ক্রয় ও কার্ড টপ-আপ:</strong> <code>+ New Entry ➔ Buy / Top Up USD</code> দিয়ে BDT ও USD লোড রেকর্ড করুন।
-      </div>
-      <div class="grid-item">
-        <strong>৪. মেটা অ্যাড স্পেন্ড রেকর্ড:</strong> <code>+ New Entry ➔ Record Meta Ad Spend</code> দিয়ে ফেসবুক স্পেন্ড দিন।
+  <div class="document-container">
+    
+    <!-- Cover Header -->
+    <div class="cover-header">
+      <div class="brand-badge">Official Master Standard Operating Procedure (SOP)</div>
+      <h1 class="cover-title">AdLytic — Digital Agency Financial Manual</h1>
+      <p class="cover-subtitle">ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।</p>
+      <div class="meta-pills">
+        <span>📅 ভার্সন: ২.০ (মাস্টার লেভেল)</span>
+        <span>•</span>
+        <span>🏢 টার্গেট: Agency Owners, Media Buyers & Accountants</span>
+        <span>•</span>
+        <span>🔒 ক্লাউড সিকিউরিটি: Supabase PostgreSQL Backed</span>
       </div>
     </div>
+
+    <!-- অধ্যায় ১: ডিজিটাল এজেন্সির ফিন্যান্সিয়াল ব্যাকগ্রাউন্ড -->
+    <div class="section-block">
+      <h2 class="section-title"><span class="num-badge">১</span> ডিজিটাল এজেন্সির ডুয়েল-কারেন্সি সমস্যা ও সমাধান</h2>
+      <p>সাধারণ ব্যবসা ও অ্যাকাউন্টিং সফটওয়্যারগুলোর সাথে ডিজিটাল মার্কেটিং এজেন্সির আর্থিক হিসাবের একটি বিশাল মৌলিক পার্থক্য রয়েছে। ডিজিটাল এজেন্সির হিসাব জটিল হওয়ার ৪টি মূল কারণ:</p>
+      
+      <div class="info-card">
+        <ul style="padding-left: 20px; line-height: 1.85;">
+          <li><strong>১. ডুয়েল-কারেন্সি প্রবাহ (BDT vs USD):</strong> ক্লায়েন্ট আপনাকে সার্ভিস ফি ও অ্যাড বাজেট প্রদান করে বাংলাদেশি টাকায় (BDT)। কিন্তু মেটা (Facebook/Instagram), গুগল বা টিকটকে অ্যাড চালাতে ভার্চুয়াল মাস্টারকার্ড/ভিসা কার্ড দিয়ে ডলারে (USD) পেমেন্ট করতে হয়।</li>
+          <li><strong>২. ডলারের ক্রয় রেট ও ক্যাশআউট স্প্রেড:</strong> প্রতিবার ডলার কেনার সময় লোকাল সেলার বা বাইনান্স পিটুপি থেকে কেনার জন্য বিকাশ/নগদ/ব্যাংক ক্যাশআউট ফি দিতে হয়। ফলে ডলারের বেস রেট যদি ৳১২৯ হয়, ক্যাশআউট চার্জ যোগ হয়ে প্রকৃত <strong>Effective Buy Rate</strong> হয়ে যায় ৳১৩১.২৫। এই চার্জ হিসাবে না নিলে এজেন্সি প্রতিনিয়ত লোকসানে পড়বে।</li>
+          <li><strong>৩. মেটা ১৫% সরকারি ভ্যাট কর্তন:</strong> বাংলাদেশ সরকারের নিয়ম অনুযায়ী ফেসবুক বাংলাদেশ থেকে চালানো প্রতি $১০০ ডলার স্পেন্ডে স্বয়ংক্রিয়ভাবে $১৫ ডলার ভ্যাট কেটে নেয়। অর্থাৎ ক্লায়েন্ট $১০০ অ্যাড বাজেট দিলে কার্ড থেকে $১১৫ ডলার খরচ হয়।</li>
+          <li><strong>৪. কার্ড লিকুইডিটি ও ক্যাম্পেইন স্টপ রিস্ক:</strong> ভার্চুয়াল কার্ডে ব্যালেন্স শেষ হয়ে গেলে রানিং মেটা ক্যাম্পেইন বন্ধ হয়ে যায়, যার ফলে ক্লায়েন্টের সেলস ড্রপ করে এবং এজেন্সির সুনামের ক্ষতি হয়।</li>
+        </ul>
+      </div>
+
+      <div class="alert-box tip">
+        <div>
+          <strong>AdLytic কীভাবে পুরো সমস্যার সমাধান করে:</strong> আপনি শুধু দৈনন্দিন ট্রানজ্যাকশনগুলো এন্ট্রি করবেন—বাকি সব <strong>Effective Dollar Buy Rate</strong>, <strong>15% Meta Tax Deduction</strong>, <strong>Card Liquidity Balance</strong> এবং <strong>Net Agency Profit (প্রকৃত নিট লাভ)</strong> AdLytic মিলি-সেকেন্ডের মধ্যে নিখুঁতভাবে নির্ধারণ করে দেয়।
+        </div>
+      </div>
+    </div>
+
+    <!-- অধ্যায় ২: গাণিতিক সূত্রাবলী ও প্র্যাকটিক্যাল কেস স্টাডি -->
+    <div class="section-block">
+      <h2 class="section-title"><span class="num-badge">২</span> গাণিতিক সূত্রাবলী ও বাস্তব কেস স্টাডি (Financial Mathematics)</h2>
+      <p>সফটওয়্যারটির প্রতিটি সংখ্যা কীভাবে তৈরি হয় তা পরিষ্কার বুঝতে নিচের ৩টি মূল ফিন্যান্সিয়াল সূত্র ও বাস্তব উদাহরণটি লক্ষ্য করুন:</p>
+
+      <div class="formula-card">
+        <div class="formula-title">সূত্র ১: কার্যকর ডলার কেনা রেট (Effective USD Buy Rate)</div>
+        Effective USD Rate = (ডলার ক্রয়ে মোট BDT খরচ + ক্যাশআউট চার্জ) ÷ মোট ক্রয়কৃত USD<br><br>
+        <em>বাস্তব উদাহরণ:</em> আপনি ৳১৩,০০০ দিয়ে $১০০ ডলার কিনলেন এবং ক্যাশআউট চার্জ গেল ৳১২৫।<br>
+        Effective Buy Rate = (৳১৩,০০০ + ৳১২৫) ÷ $১০০ = <strong>৳১৩১.২৫ / USD</strong>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-title">সূত্র ২: মেটা অ্যাড স্পেন্ড ও মোট কার্ড বার্ন (Total Card Deduction)</div>
+        মোট কার্ড কর্তন = অ্যাড স্পেন্ড (USD) + মেটা ১৫% ভ্যাট (USD) + কার্ড ফি (যদি থাকে)<br><br>
+        <em>বাস্তব উদাহরণ:</em> ফেসবুক অ্যাড ম্যানেজারে স্পেন্ড দেখাচ্ছে $৪৭.৮৩ ডলার।<br>
+        ১৫% ভ্যাট = $৪৭.৮৩ × ০.১৫ = $৭.১৭ ডলার।<br>
+        <strong>মোট কার্ড থেকে কাটা যাবে = $৪৭.৮৩ + $৭.১৭ = $৫৫.০০ ডলার</strong>
+      </div>
+
+      <div class="formula-card">
+        <div class="formula-title">সূত্র ৩: এজেন্সির প্রকৃত নিট লাভ ও মার্জিন (Net Agency Profit & Margin)</div>
+        মোট BDT খরচ = [মোট স্পেন্ড (USD) + ভ্যাট (USD)] × Effective Buy Rate<br>
+        Net Agency Profit (BDT) = ক্লায়েন্টের প্রদত্ত মোট পেমেন্ট (BDT) - মোট BDT খরচ<br>
+        Profit Margin (%) = (Net Agency Profit ÷ মোট পেমেন্ট) × ১০০<br><br>
+        <em>বাস্তব উদাহরণ:</em> ক্লায়েন্ট 'Apex Footwear' আপনাকে দিল ৳১০,০০০ টাকা। মোট মেটা খরচ হলো $৫৫ ডলার।<br>
+        আপনার BDT খরচ = $৫৫ × ৳১৩১.২৫ = ৳৭,২১৮.৭৫ টাকা।<br>
+        <strong>এজেন্সির প্রকৃত নিট লাভ (Net Profit) = ৳১০,০০০ - ৳৭,২১৮.৭৫ = ৳২,৭৮১.২৫ টাকা (মার্জিন: ২৭.৮১%)</strong>
+      </div>
+    </div>
+
+    <!-- অধ্যায় ৩: দৈনন্দিন কাজের ৫-ধাপের মাস্টার এসওপি -->
+    <div class="section-block">
+      <h2 class="section-title"><span class="num-badge">৩</span> দৈনন্দিন কাজের ৫-ধাপের স্ট্যান্ডার্ড প্রসিডিউর (Daily 5-Step SOP)</h2>
+      <p>আপনার এজেন্সির টিম মেম্বার বা অ্যাকাউন্ট্যান্ট প্রতিদিন কীভাবে সফটওয়্যারটিতে কাজ করবে তার স্ট্যান্ডার্ড গাইড:</p>
+
+      <div class="step-grid">
+        <div class="step-item">
+          <div class="step-header">
+            <span class="step-num">১</span>
+            <span class="step-title">নতুন ক্লায়েন্ট অনবোর্ডিং</span>
+          </div>
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+            টপ হেডারের <code>+ New Entry ➔ Add New Client</code>-এ ক্লিক করুন।
+          </p>
+          <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
+            <li>ক্লায়েন্টের নাম ও ব্র্যান্ড নেম দিন।</li>
+            <li>কান্ট্রি ট্যাগ (যেমন: 🇧🇩 Bangladesh) সিলেক্ট করুন।</li>
+            <li>মাসিক প্রজেক্টেড অ্যাড বাজেট দিন।</li>
+          </ul>
+        </div>
+
+        <div class="step-item">
+          <div class="step-header">
+            <span class="step-num">২</span>
+            <span class="step-title">ক্লায়েন্ট পেমেন্ট রিসিভ</span>
+          </div>
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+            ক্লায়েন্ট টাকা পাঠালে <code>+ New Entry ➔ Receive Client Payment</code> এ যান।
+          </p>
+          <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
+            <li>ক্লায়েন্ট সিলেক্ট করুন।</li>
+            <li>প্রাপ্ত টাকার পরিমাণ (BDT) ও তারিখ দিন।</li>
+            <li>পেমেন্ট মেথড (Bank/bKash) নোট করুন।</li>
+          </ul>
+        </div>
+
+        <div class="step-item">
+          <div class="step-header">
+            <span class="step-num">৩</span>
+            <span class="step-title">ডলার ক্রয় ও কার্ড টপ-আপ</span>
+          </div>
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+            সেলার থেকে ডলার কিনলে <code>+ New Entry ➔ Buy / Top Up USD</code> এ যান।
+          </p>
+          <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
+            <li>কত টাকা (BDT) দিলেন ও ক্যাশআউট চার্জ দিন।</li>
+            <li>কত USD কার্ডে জমা হলো তা লিখুন।</li>
+            <li>ডেস্টিনেশন কার্ড সিলেক্ট করুন।</li>
+          </ul>
+        </div>
+
+        <div class="step-item">
+          <div class="step-header">
+            <span class="step-num">৪</span>
+            <span class="step-title">মেটা অ্যাড স্পেন্ড রেকর্ড</span>
+          </div>
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+            ফেসবুক স্পেন্ড হলে <code>+ New Entry ➔ Record Meta Ad Spend</code> এ যান।
+          </p>
+          <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
+            <li>কোন ক্লায়েন্ট ও কোন কার্ড তা বাছুন।</li>
+            <li>অ্যাড স্পেন্ড (USD) বসান।</li>
+            <li>১৫% ভ্যাট সিস্টেম অটো হিসাব করে নিবে।</li>
+          </ul>
+        </div>
+
+        <div class="step-item">
+          <div class="step-header">
+            <span class="step-num">৫</span>
+            <span class="step-title">লাইভ ড্যাশবোর্ড ও প্রফিট অডিট</span>
+          </div>
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+            এন্ট্রি দেওয়ার সাথে সাথে ড্যাশবোর্ডে গিয়ে অডিট করুন।
+          </p>
+          <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
+            <li>মোট নিট লাভ (Net Profit) ও মার্জিন চেক করুন।</li>
+            <li>কার্ড ব্যালেন্স পজিটিভ আছে কি না দেখুন।</li>
+            <li>ক্লায়েন্ট স্টেটমেন্ট যাচাই করুন।</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- অধ্যায় ৪: প্রতিটি পেজের পূর্ণাঙ্গ ব্যবহারবিধি গাইড -->
+    <div class="section-block">
+      <h2 class="section-title"><span class="num-badge">৪</span> প্ল্যাটফর্মের প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড</h2>
+      <p>নিচে AdLytic-এর প্রতিটি পেজ, তার ভিতরের ফিচার এবং কীভাবে নিখুঁতভাবে ব্যবহার করতে হবে তা বিস্তারিত বর্ণনা করা হলো:</p>
+
+      <!-- পেজ ১: Dashboard -->
+      <div class="feature-card">
+        <div class="feature-header">
+          <h3 style="font-size: 17px; color: #0284c7;">📊 ১. Dashboard (Agency Command Center)</h3>
+          <span class="feature-badge">কেন্দ্রীয় পর্যবেক্ষণ হাব</span>
+        </div>
+        <p><strong>মূল উদ্দেশ্য:</strong> এজেন্সির পুরো ফিন্যান্সিয়াল স্বাস্থ্য এক নজরে দেখা।</p>
+        <ul class="feature-list">
+          <li><strong>৪টি কোর ম্যাট্রিক্স কার্ড (KPIs):</strong>
+            <br>• <code>Total Revenue:</code> ক্লায়েন্টদের থেকে সংগৃহীত মোট BDT ক্যাশফ্লো।
+            <br>• <code>Total USD Spent:</code> মোট মেটা অ্যাড খরচ + ১৫% ভ্যাট + ব্যাংক ফি (USD)।
+            <br>• <code>Net Agency Profit:</code> সমস্ত খরচ বাদ দিয়ে এজেন্সির আসল লাভ (BDT) ও লাভজনকতার মার্জিন %।
+            <br>• <code>Total Card Balance:</code> সব ভার্চুয়াল কার্ড মিলিয়ে ব্যবহারের জন্য অবশিষ্ট মোট ডলার (USD)।
+          </li>
+          <li><strong>Spline Glow Flow Chart:</strong> রেভিনিউ বনাম মেটা অ্যাড খরচের ইন্টারঅ্যাক্টিভ সময়ের গ্রাফ। এর মাধ্যমে বোঝা যায় কোন সপ্তাহে আয় ও খরচ কেমন ছিল।</li>
+          <li><strong>Cybernetic Concentric Radial Burn HUD:</strong> মেটা অ্যাড খরচ, ১৫% ভ্যাট এবং কার্ড ট্রানজ্যাকশন ফির ৩-রিং সাইবারনেটিক ডায়াল।</li>
+          <li><strong>৫০% : ৫০% সিমেট্রিক্যাল টেবিল:</strong> বামে <em>Client P&L Performance</em> (কোন ক্লায়েন্ট কত লাভ দিচ্ছে) এবং ডানে <em>Card Liquidity & Burn</em> (কার্ডে কত ডলার বাকি আছে)।</li>
+          <li><strong>৩-পিলার হেলথ শিল্ড:</strong> কার্ড ব্যালেন্স নেগেটিভ হলে নিচে লাল সতর্কতা অ্যালার্ট দেখায় যাতে আপনি দ্রুত ডলার লোড করতে পারেন।</li>
+        </ul>
+      </div>
+
+      <!-- পেজ ২: Clients -->
+      <div class="feature-card">
+        <div class="feature-header">
+          <h3 style="font-size: 17px; color: #059669;">👥 ২. Clients Hub (CRM & Client Financials)</h3>
+          <span class="feature-badge" style="background:#ecfdf5; color:#047857;">ক্লায়েন্ট ও বিলিং হাব</span>
+        </div>
+        <p><strong>মূল উদ্দেশ্য:</strong> প্রতিটি ক্লায়েন্টের সাথে আর্থিক সম্পর্ক এবং পৃথক ক্লায়েন্ট লাভজনকতা ট্র্যাক করা।</p>
+        <ul class="feature-list">
+          <li><strong>ক্লায়েন্ট কার্ড ও ট্যাগ:</strong> প্রতিটি ক্লায়েন্টের কান্ট্রি ব্যাজ (🇧🇩, 🇺🇸, 🇦🇪), industry এবং কন্টাক্ট ইনফরমেশন।</li>
+          <li><strong>ক্লায়েন্ট-ভিত্তিক লাভ মার্জিন:</strong> প্রতি ক্লায়েন্টের মোট রেভিনিউ, মেটা অ্যাড খরচ এবং নিট লাভের অনুপাত।</li>
+          <li><strong>১-ক্লিকে ক্লায়েন্ট স্টেটমেন্ট:</strong> ক্লায়েন্টের প্রোফাইলে ক্লিক করলেই তার সম্পূর্ণ লেনদেন হিস্ট্রি চলে আসে, যা সরাসরি ক্লায়েন্টের সাথে শেয়ার করা যায়।</li>
+        </ul>
+      </div>
+
+      <!-- পেজ ৩: Campaigns -->
+      <div class="feature-card">
+        <div class="feature-header">
+          <h3 style="font-size: 17px; color: #7c3aed;">📢 ৩. Campaigns (Ad Performance & ROI)</h3>
+          <span class="feature-badge" style="background:#f5f3ff; color:#6d28d9;">ক্যাম্পেইন ও আরওএএস</span>
+        </div>
+        <p><strong>মূল উদ্দেশ্য:</strong> ক্লায়েন্টদের মেটা অ্যাড ক্যাম্পেইনের পারফরম্যান্স ও আরওএএস ট্র্যাক করা।</p>
+        <ul class="feature-list">
+          <li><strong>ক্যাম্পেইন বাজেট ও স্পেন্ড:</strong> ফেসবুক ক্যাম্পেইনের নাম, প্ল্যাটফর্ম (Facebook, Instagram, Google), স্ট্যাটাস (Active/Paused)।</li>
+          <li><strong>ROAS & Revenue Attribution:</strong> ক্যাম্পেইনের ডলার স্পেন্ডের বিপরীতে ক্লায়েন্টের মোট সেলস/রেভিনিউ এবং আরওএএস পর্যবেক্ষণ।</li>
+        </ul>
+      </div>
+
+      <!-- পেজ ৪: Transactions -->
+      <div class="feature-card">
+        <div class="feature-header">
+          <h3 style="font-size: 17px; color: #0284c7;">🧾 ৪. Transactions (Double-Ledger Financial Engine)</h3>
+          <span class="feature-badge">পূর্ণাঙ্গ অডিট লেজার</span>
+        </div>
+        <p><strong>মূল উদ্দেশ্য:</strong> এজেন্সির প্রতিটি টাকার ও ডলারের নিখুঁত অডিট ট্রেইল ও ভাউচার জেনারেট করা।</p>
+        <ul class="feature-list">
+          <li><strong>৪ ধরনের ট্রানজ্যাকশন সাপোর্ট:</strong> <code>PAYMENT_RECEIVED</code>, <code>USD_PURCHASE</code>, <code>AD_SPEND</code>, <code>FEE</code>।</li>
+          <li><strong>১-ক্লিক মানি রিসিট ও ভাউচার:</strong> যেকোনো ট্রানজ্যাকশনের রিসিট আইকনে ক্লিক করলেই মানি রিসিট প্রস্তুত হয়, যা ১-ক্লিকে PDF হিসেবে ক্লায়েন্টকে পাঠানো যায়।</li>
+          <li><strong>মাল্টি-ফরমেট এক্সপোর্ট:</strong> সম্পূর্ণ লেজার Excel, CSV অথবা A4 প্রিন্টেবল ফর্মে ডাউনলোড করা যায়।</li>
+          <li><strong>এডিট ও ডিলিট ক্ষমতা:</strong> যেকোনো ভুল এন্ট্রি সাথে সাথে সংশোধন বা মুছে ফেলার সুবিধা।</li>
+        </ul>
+      </div>
+
+      <!-- পেজ ৫: Cards & USD -->
+      <div class="feature-card">
+        <div class="feature-header">
+          <h3 style="font-size: 17px; color: #d97706;">💳 ৫. Cards & USD (Virtual Card Liquidity Hub)</h3>
+          <span class="feature-badge" style="background:#fffbeb; color:#b45309;">ভার্চুয়াল কার্ড ব্যাংক</span>
+        </div>
+        <p><strong>মূল উদ্দেশ্য:</strong> সব ভার্চুয়াল কার্ডের ডলার ব্যালেন্স, লোড এবং লাইভ বার্ন রেট পর্যবেক্ষণ।</p>
+        <ul class="feature-list">
+          <li><strong>ভিজ্যুয়াল EMV কার্ড উপস্থাপনা:</strong> কার্ডের নাম, ব্যাংক/প্রোভাইডার, লাস্ট ৪ ডিজিট এবং হোল্ডার নেম।</li>
+          <li><strong>লাইভ ব্যালেন্স ও হিস্ট্রি:</strong> প্রতিটি কার্ডে কত ডলার লোড হলো, কত ডলার মেটায় খরচ হলো এবং বর্তমানে কত ডলার অবশিষ্ট আছে তার রিয়েল-টাইম ব্যালেন্স।</li>
+          <li><strong>১-ক্লিকে কার্ড ফান্ডিং:</strong> <code>+ Fund Card</code> বাটনে ক্লিক করে যেকোনো নির্দিষ্ট কার্ডে সরাসরি ডলার লোড এন্ট্রি দেওয়ার সুবিধা।</li>
+          <li><strong>ডেফিসিট প্রিভেনশন শিল্ড:</strong> কার্ড ব্যালেন্স নেগেটিভ হলে তাৎক্ষণিক ওয়ার্নিং দেওয়া।</li>
+        </ul>
+      </div>
+
+      <!-- পেজ ৬: Reports -->
+      <div class="feature-card">
+        <div class="feature-header">
+          <h3 style="font-size: 17px; color: #4f46e5;">📈 ৬. Reports & P&L (Financial & Tax Statements)</h3>
+          <span class="feature-badge" style="background:#eef2ff; color:#4338ca;">অডিট ও ট্যাক্স রিপোর্ট</span>
+        </div>
+        <p><strong>মূল উদ্দেশ্য:</strong> নির্দিষ্ট সময়সীমার লাভ-ক্ষতির অডিট স্টেটমেন্ট তৈরি ও প্রিন্ট করা।</p>
+        <ul class="feature-list">
+          <li><strong>পিরিয়ড ফিল্টারিং:</strong> All Time, Today, This Week, This Month, This Quarter, This Year অথবা কাস্টম ডেট রেঞ্জ।</li>
+          <li><strong>P&L ফিন্যান্সিয়াল স্টেটমেন্ট:</strong> মোট আয়, মোট মেটা খরচ, ডলার রেট এবং নিট মার্জিনের সুদৃশ্য চার্ট ও টেবিল।</li>
+          <li><strong>১-ক্লিক প্রিন্ট ও PDF জেনারেটর:</strong> অংশীদারদের মিটিং বা ট্যাক্স অডিটের জন্য এক ক্লিকে সম্পূর্ণ রিপোর্ট A4 সাইজে প্রিন্ট/PDF সেভ করা যায়।</li>
+        </ul>
+      </div>
+
+      <!-- পেজ ৭: Settings & Team -->
+      <div class="feature-card">
+        <div class="feature-header">
+          <h3 style="font-size: 17px; color: #334155;">⚙️ ৭. Settings & Team (Workspace Management)</h3>
+          <span class="feature-badge" style="background:#f1f5f9; color:#334155;">ওয়ার্কস্পেস সেটিংস</span>
+        </div>
+        <p><strong>মূল উদ্দেশ্য:</strong> এজেন্সির ব্র্যান্ডিং, টিম পারমিশন এবং ডাটা ব্যাকআপ নিয়ন্ত্রণ।</p>
+        <ul class="feature-list">
+          <li><strong>লোগো ও ব্র্যান্ডিং:</strong> এজেন্সির নিজস্ব লোগো আপলোড, নাম এবং কারেন্সি কনফিগারেশন।</li>
+          <li><strong>টিম পারমিশন:</strong> Owner, Manager, Media Buyer এবং Accountant রোল ম্যানেজমেন্ট।</li>
+          <li><strong>ক্লাউড ডাটা ব্যাকআপ ও রিস্টোর:</strong> ১-ক্লিকে সমস্ত ডাটার অফলাইন JSON ব্যাকআপ ডাউনলোড এবং প্রয়োজনে তা রিস্টোর করা।</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- অধ্যায় ৫: মানুষ যেখানে আটকে যেতে পারে & সমাধান (Detailed FAQs) -->
+    <div class="section-block">
+      <h2 class="section-title"><span class="num-badge">৫</span> মানুষ যেখানে আটকে যেতে পারে: সমাধান ও FAQs</h2>
+
+      <div class="faq-item">
+        <div class="faq-q">১. কার্ড ব্যালেন্স নেগেটিভ (যেমন: -$১৫.০০) দেখাচ্ছে কেন এবং কীভাবে সমাধান করব?</div>
+        <div class="faq-a">
+          <strong>কারণ:</strong> আপনি হয়তো ভার্চুয়াল কার্ডে $১০০ ডলার লোড হিসেবে এন্ট্রি দিয়েছিলেন, কিন্তু মেটা অ্যাড স্পেন্ড এন্ট্রি দিয়েছেন $১১৫ ডলার ($১০০ স্পেন্ড + $১৫ ভ্যাট)। অর্থাৎ কার্ডের চেয়ে স্পেন্ড বেশি এন্ট্রি হয়েছে।<br>
+          <strong>সমাধান:</strong> হেডারের <code>+ New Entry ➔ Buy / Top Up USD</code>-এ যান এবং যে ডলারটি নতুন করে লোড করেছেন তা এন্ট্রি দিন। সাথে সাথে ব্যালেন্স স্বয়ংক্রিয়ভাবে পজিটিভ ও সঠিক হয়ে যাবে।
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">২. মেটা ভ্যাট (15% Tax) কি আমাকে আলাদা যোগ করে স্পেন্ড এন্ট্রি দিতে হবে?</div>
+        <div class="faq-a">
+          <strong>না!</strong> আপনি শুধুমাত্র মেটা অ্যাড ম্যানেজারের আসল স্পেন্ডটি ইনপুট দেবেন। AdLytic এর ব্যাকএন্ড অ্যালগরিদম স্বয়ংক্রিয়ভাবে তার সাথে ১৫% ভ্যাট যুক্ত করে আপনার কার্ড ব্যালেন্স ও প্রফিট মার্জিন থেকে অ্যাডজাস্ট করে নিবে। আপনাকে কোনো ম্যানুয়াল ক্যালকুলেশন করতে হবে না।
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">৩. আমি ডলারে খরচ করেছি কিন্তু ক্লায়েন্ট থেকে টাকায় নিয়েছি—আমার আসল লাভ কীভাবে বের করব?</div>
+        <div class="faq-a">
+          ড্যাশবোর্ডের <strong>Net Agency Profit</strong> কার্ডটি দেখুন। এটি ক্লায়েন্টের দেওয়া মোট টাকার থেকে আপনার কার্যকর ডলার রেটে কনভার্ট করা আসল মেটা খরচ ($ স্পেন্ড + ভ্যাট) বিয়োগ করে আপনার পকেটের আসল নিট লাভ বের করে দেখায়।
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">৪. ক্লায়েন্টকে অফিশিয়াল মানি রিসিট বা স্পেন্ড স্টেটমেন্ট কীভাবে পাঠাব?</div>
+        <div class="faq-a">
+          <code>Transactions</code> পেজে যান। যে লেনদেনের রিসিট প্রয়োজন তার ডানে থাকা রিসিট আইকনে ক্লিক করুন। এজেন্সির লোগো ও রেফারেন্স আইডি সহ একটি মানি রিসিট আসবে। সেখান থেকে সরাসরি <strong>'Print / Save PDF'</strong> দিয়ে ক্লায়েন্টকে পাঠিয়ে দিন।
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">৫. কোনো এন্ট্রিতে টাকার পরিমাণ বা ক্লায়েন্টের নাম ভুল হলে কীভাবে ঠিক করব?</div>
+        <div class="faq-a">
+          <code>Transactions</code> পেজে গিয়ে ওই ট্রানজ্যাকশনের ডানপাশের <strong>এডিট (পেন্সিল)</strong> আইকনে ক্লিক করে যেকোনো তথ্য পরিবর্তন করুন। অথবা <strong>ডিলিট (ট্র্যাশ)</strong> আইকনে ক্লিক করে ডিলিট করে দিন। সিস্টেম স্বয়ংক্রিয়ভাবে সব হিসাব রিক্যালকুলেট করে নিবে।
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">৬. কম্পিউটার নষ্ট হলে বা ব্রাউজার হিস্ট্রি ডিলিট হলে আমার ডাটা কি হারিয়ে যাবে?</div>
+        <div class="faq-a">
+          <strong>কখনোই না!</strong> AdLytic-এর সমস্ত ডাটা রিয়েল-টাইমে <strong>Supabase Cloud PostgreSQL Database</strong>-এ নিরাপদ থাকে। নতুন যেকোনো পিসি বা মোবাইলে লগইন করলেই সব ডাটা সাথে সাথে পেয়ে যাবেন। অতিরিক্ত সতর্কতার জন্য <code>Settings ➔ Export JSON Backup</code> থেকে অফলাইন ফাইল সংরক্ষণ করতে পারেন।
+        </div>
+      </div>
+    </div>
+
+    <!-- অধ্যায় ৬: এজেন্সির সাফল্যের জন্য প্রো-টিপস ও চেকলিস্ট -->
+    <div class="section-block">
+      <h2 class="section-title"><span class="num-badge">৬</span> এজেন্সির সাফল্যের জন্য প্রো-টিপস ও স্ট্যান্ডার্ড চেকলিস্ট</h2>
+      <div class="info-card" style="background: #fdfefe; border: 1px solid #bae6fd;">
+        <ol style="padding-left: 20px; line-height: 2;">
+          <li><strong>দৈনিক ৫ মিনিটের অডিট রুটিন:</strong> প্রতিদিন রাত ১০টায় মেটা অ্যাড ম্যানেজার থেকে সারাদিনের মোট স্পেন্ড দেখে AdLytic-এ এন্ট্রি দিন। এটি দৈনিক অভ্যাসে পরিণত করলে কোনো আর্থিক গড়মিল থাকবে না।</li>
+          <li><strong>ডলার ক্রয়ের সাথে সাথে এন্ট্রি:</strong> সেলারের থেকে ভার্চুয়াল কার্ডে ডলার জমা হওয়ার সাথে সাথে ক্যাশআউট ফি সহ এন্ট্রি দিন, যাতে লাইভ বাই রেট সবসময় ১০০% নিখুঁত থাকে।</li>
+          <li><strong>ক্লায়েন্ট পেমেন্ট ফলো-আপ:</strong> ক্লায়েন্টের অবশিষ্ট বাজেট শেষ হওয়ার ২ দিন আগেই ড্যাশবোর্ডের Client P&L দেখে পরবর্তী পেমেন্টের রিমাইন্ডার পাঠান।</li>
+          <li><strong>মাসিক অফলাইন ব্যাকআপ:</strong> প্রতি মাসের ১ তারিখে সেটিংস পেজ থেকে 'Export Backup' ফাইলটি ডাউনলোড করে গুগল ড্রাইভে ক্লাউড ব্যাকআপ রাখুন।</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Document Footer -->
+    <div class="doc-footer">
+      <p>© 2026 AdLytic Inc. সর্বস্বত্ব সংরক্ষিত। Enterprise Digital Agency Financial Engineering Platform.</p>
+    </div>
+
   </div>
 
-  <div class="section">
-    <div class="sec-title"><span class="num">৩</span> প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড</div>
-    <div class="card">
-      <p><strong>📊 Dashboard:</strong> ৪টি কোর মেট্রিক্স (Revenue, Spend USD, Net Profit, Card Balance), Spline Flow Chart, Concentric Radial HUD, ক্লায়েন্ট প্রফিট ও কার্ড লিকুইডিটি টেবিল এবং ৩-পিলার হেলথ শিল্ড।</p>
-      <p style="margin-top:8px;"><strong>👥 Clients:</strong> ক্লায়েন্ট প্রোফাইল, কান্ট্রি ট্যাগ, ক্লায়েন্ট-ভিত্তিক লাভ মার্জিন % ও ১-ক্লিকে ফুল ক্লায়েন্ট হিস্ট্রি স্টেটমেন্ট।</p>
-      <p style="margin-top:8px;"><strong>📢 Campaigns:</strong> ফেসবুক ক্যাম্পেইন পারফরম্যান্স, বাজেট, স্পেন্ড ও আরওএএস (ROAS) ট্র্যাকিং।</p>
-      <p style="margin-top:8px;"><strong>🧾 Transactions:</strong> সম্পূর্ণ অডিট লেজার। ১-ক্লিক মানি রিসিট ডাউনলোড, Excel/CSV এক্সপোর্ট এবং লেনদেন এডিট/ডিলিট করার সুবিধা।</p>
-      <p style="margin-top:8px;"><strong>💳 Cards & USD:</strong> ভার্চুয়াল কার্ড ব্যালেন্স, লোড হিস্ট্রি এবং নেগেটিভ ব্যালেন্স ডেফিসিট ওয়ার্নিং।</p>
-      <p style="margin-top:8px;"><strong>📈 Reports:</strong> কাস্টম ডেট রেঞ্জ অনুযায়ী পূর্ণাঙ্গ P&L ট্যাক্স অডিট স্টেটমেন্ট ১-ক্লিকে প্রিন্ট ও PDF ডাউনলোড।</p>
-      <p style="margin-top:8px;"><strong>⚙️ Settings & Team:</strong> এজেন্সির লোগো, ব্র্যান্ডিং, টিম পারমিশন এবং অফলাইন JSON ব্যাকআপ এক্সপোর্ট/রিস্টোর।</p>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="sec-title"><span class="num">৪</span> মানুষ যেখানে আটকে যেতে পারে: সমাধান ও FAQs</div>
-    <div class="faq">
-      <div class="faq-q">❓ কার্ড ব্যালেন্স নেগেটিভ (যেমন: -$১৫.০০) দেখাচ্ছে কেন?</div>
-      <div class="faq-a"><strong>সমাধান:</strong> কার্ডে যে ডলার লোড করেছিলেন তার চেয়ে বেশি অ্যাড স্পেন্ড হয়ে গেছে। অবিলম্বে <code>+ New Entry ➔ Buy / Top Up USD</code> দিয়ে নতুন ডলার লোড এন্ট্রি দিন। সাথে সাথে ব্যালেন্স পজিটিভ হয়ে যাবে।</div>
-    </div>
-    <div class="faq">
-      <div class="faq-q">❓ মেটা ভ্যাট (15% Tax) কি আমাকে আলাদা ইনপুট দিতে হবে?</div>
-      <div class="faq-a"><strong>না!</strong> আপনি শুধু ফেসবুকের আসল স্পেন্ড বসাবেন, সিস্টেম স্বয়ংক্রিয়ভাবে ১৫% ভ্যাট হিসাব করে কার্ড ব্যালেন্স ও প্রফিট থেকে কেটে নিবে।</div>
-    </div>
-    <div class="faq">
-      <div class="faq-q">❓ ক্লায়েন্টকে মানি রিসিট বা স্টেটমেন্ট কীভাবে পাঠাব?</div>
-      <div class="faq-a"><code>Transactions</code> পেজে গিয়ে রিসিট আইকনে ক্লিক করলেই ব্র্যান্ডেড রিসিট ওপেন হবে। সেখান থেকে সরাসরি ১-ক্লিকে প্রিন্ট বা PDF করে ক্লায়েন্টকে পাঠিয়ে দিন।</div>
-    </div>
-    <div class="faq">
-      <div class="faq-q">❓ ডাটা কি হারিয়ে যাওয়ার কোনো ঝুঁকি আছে?</div>
-      <div class="faq-a">আপনার ডাটা <strong>Supabase Cloud PostgreSQL Database</strong>-এ নিরাপদ। এছাড়াও <code>Settings ➔ Export JSON Backup</code> থেকে অফলাইন ব্যাকআপ ডাউনলোড করে রাখতে পারেন।</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="sec-title"><span class="num">৫</span> এজেন্সির সাফল্যের জন্য প্রো-টিপস</div>
-    <div class="card" style="background:#f0fdf4; border-color:#bbf7d0; color:#14532d;">
-      <ul style="padding-left:18px; line-height:1.8;">
-        <li><strong>দৈনিক ৫ মিনিটের রুটিন:</strong> প্রতিদিন রাত ১০টায় ফেসবুকের দিনের স্পেন্ড AdLytic-এ রেকর্ড করে ফেলুন।</li>
-        <li><strong>ডলার কেনার সাথে সাথে এন্ট্রি:</strong> সেলার থেকে ডলার আসা মাত্রই ক্যাশআউট চার্জ সহ এন্ট্রি দিন যাতে রেট নিখুঁত থাকে।</li>
-        <li><strong>মাসিক ব্যাকআপ:</strong> প্রতি মাসের ১ তারিখে সেটিংস পেজ থেকে 'Export Backup' ফাইল সংরক্ষণ করুন।</li>
-      </ul>
-    </div>
-  </div>
-
-  <div style="text-align:center; color:#94a3b8; font-size:11px; margin-top:30px; border-top:1px solid #e2e8f0; padding-top:15px;">
-    © 2026 AdLytic Inc. সর্বস্বত্ব সংরক্ষিত। Digital Agency Operating System.
-  </div>
 </body>
 </html>`;
 
@@ -9371,7 +9934,7 @@ function UserGuideView({ onNavigate }) {
     setTimeout(() => {
       printWin.focus();
       printWin.print();
-    }, 450);
+    }, 500);
   };
 
   return (
