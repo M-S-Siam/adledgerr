@@ -1043,7 +1043,10 @@ export default function AdLedgerApp() {
 
                 {/* SOLID HIGH-CONTRAST DROPDOWN MENU */}
                 {isNewEntryOpen && (
-                  <div className="absolute right-0 mt-2.5 w-64 sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div
+                    style={{ right: 0 }}
+                    className="absolute right-0 mt-2.5 w-64 sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                  >
                     <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
                       Quick Record Actions
                     </div>
