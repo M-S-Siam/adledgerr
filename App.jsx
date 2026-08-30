@@ -1320,7 +1320,7 @@ function ReportsView({ clients, cards, transactions }) {
     : datePreset;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
       <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
@@ -1769,7 +1769,7 @@ function DashboardView({ metrics, chartData = [], transactions = [], clients = [
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
@@ -1781,7 +1781,7 @@ function DashboardView({ metrics, chartData = [], transactions = [], clients = [
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-4">
         <MetricCard title="Total Revenue" value={formatBDT(metrics.totalRevenueBDT)} subtitle="BDT received from clients" icon={<ArrowDownRight size={20} className="text-emerald-600" />} bgColor="bg-emerald-50" textColorClass="text-slate-900" />
         <MetricCard title="Total BDT Cost" value={formatBDT(dashboardData.totalBDTCost)} subtitle="USD purchase + C.O charges" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass="text-slate-900" />
         <MetricCard title="Net BDT" value={formatBDT(dashboardData.netBDT)} subtitle="Revenue minus USD cost" icon={<TrendingUp size={20} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={dashboardData.netBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
@@ -2402,7 +2402,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
   };
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto animate-in fade-in duration-300">
+    <div className="space-y-4 w-full max-w-[1720px] mx-auto animate-in fade-in duration-300 pb-16">
       {/* BESPOKE FLAGSHIP FINANCIAL HEADER */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
@@ -2850,7 +2850,7 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
   }, [clientStats, searchTerm, statusFilter]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500 pb-16">
+    <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
       {/* TOP HEADER (SEAMLESS CANVAS) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -3098,7 +3098,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
   }, [filteredUSDPurchases]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
 
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
@@ -3125,7 +3125,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onDele
       )}
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
         {activeCards.length === 0 && (
           <div className="col-span-full text-center py-12 text-slate-500 bg-white border border-slate-200 rounded-xl">No cards added yet.</div>
         )}
@@ -4282,7 +4282,7 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
   };
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto animate-in fade-in duration-300">
+    <div className="space-y-4 w-full max-w-[1720px] mx-auto animate-in fade-in duration-300 pb-16">
       {/* SEAMLESS CANVAS HEADER */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
@@ -5063,7 +5063,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
+    <div className="w-full max-w-[1720px] mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
       {/* TOAST FEEDBACK */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-2xl flex items-center gap-2.5 border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
@@ -5223,7 +5223,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
       </div>
 
       {/* INTEGRATIONS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
         {filteredIntegrations.map((item) => {
           const isConnected = item.status === 'connected';
           const isSyncing = syncingId === item.id || isSyncingAll;
@@ -6138,7 +6138,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
+    <div className="w-full max-w-[1720px] mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
       {/* TOAST FEEDBACK */}
       {feedbackToast && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-2xl flex items-center gap-2.5 border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
@@ -7511,7 +7511,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
   const selectedCurrencySymbol = currencyList.find(c => c[0] === data.currency)?.[2] || '৳';
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
+    <div className="w-full max-w-[1720px] mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
       {/* TOP HEADER (SEAMLESS CANVAS) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
