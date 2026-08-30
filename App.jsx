@@ -2601,10 +2601,6 @@ function DashboardView({
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               Agency Command Center
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px] font-extrabold uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Sync
-            </span>
           </div>
           <p className="text-xs text-slate-400 font-medium">
             Live financial telemetry, liquidity distribution & client performance overview.
