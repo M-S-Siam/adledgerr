@@ -2405,10 +2405,12 @@ function DashboardView({
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
                 <ArrowDownRight size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Total Revenue</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+                Total<br />Revenue
+              </span>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
               BDT In
@@ -2445,10 +2447,12 @@ function DashboardView({
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold shrink-0">
                 <Activity size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Total USD Spent</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+                Total USD<br />Spent
+              </span>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
               USD Out
@@ -2479,14 +2483,16 @@ function DashboardView({
           </div>
         </div>
 
-        {/* CARD 3: NET AGENCY PROFIT (UNIFIED WHITE CARD) */}
+        {/* CARD 3: NET AGENCY PROFIT */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
                 <TrendingUp size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Net Agency Profit</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+                Net Agency<br />Profit
+              </span>
             </div>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               metrics.profitMargin >= 50 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
@@ -2525,12 +2531,14 @@ function DashboardView({
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
                 totalCardBalance < 0 ? 'bg-rose-50 text-rose-600' : 'bg-sky-50 text-sky-600'
               }`}>
                 <CreditCard size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Total Card Balance</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+                Total Card<br />Balance
+              </span>
             </div>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               totalCardBalance < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-sky-50 text-sky-700 border-sky-200'
