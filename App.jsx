@@ -2989,11 +2989,11 @@ function DashboardView({
         </div>
       </div>
 
-      {/* 5. LIVE MOVEMENT STREAM & SMART HEALTH AUDIT */}
+      {/* 5. LIVE MOVEMENT STREAM & COMPACT STATS */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
-        {/* REAL-TIME MOVEMENT STREAM (6 Cols) */}
-        <div className="xl:col-span-6 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+        {/* REAL-TIME MOVEMENT STREAM (7 Cols) */}
+        <div className="xl:col-span-7 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Live Movement Stream</h3>
@@ -3067,76 +3067,128 @@ function DashboardView({
           </div>
         </div>
 
-        {/* SMART OPERATIONAL SAFETY & HEALTH FEED (6 Cols) */}
-        <div className="xl:col-span-6 space-y-4">
-          
-          {/* Card Balance Alert & Safety Card */}
-          <div className={`rounded-2xl border p-4 sm:p-5 transition-all shadow-2xs ${
-            totalCardBalance < 0
-              ? 'bg-rose-50/90 border-rose-200/90 text-rose-950'
-              : 'bg-emerald-50/80 border-emerald-200/90 text-emerald-950'
-          }`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-2xs ${
-                  totalCardBalance < 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+        {/* QUICK STATS SNAPSHOT (5 Cols) */}
+        <div className="xl:col-span-5 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Quick Operational Stats</h3>
+              <p className="text-[10.5px] text-slate-400 font-medium">A compact snapshot of your operations.</p>
+            </div>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          </div>
+
+          <div className="divide-y divide-slate-100/80 my-2 text-xs">
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-slate-500 font-medium">Active Clients</span>
+              <span className="font-bold text-slate-900">{dashboardData.activeClients.length} of {clients.length}</span>
+            </div>
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-slate-500 font-medium">Total Virtual Cards</span>
+              <span className="font-bold text-slate-900">{cards.length} Cards</span>
+            </div>
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-slate-500 font-medium">Avg Effective FX Rate</span>
+              <span className="font-bold text-sky-600 font-mono">৳{metrics.avgUSDEffectiveRate.toFixed(2)} / USD</span>
+            </div>
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-slate-500 font-medium">Total BDT Spent on USD</span>
+              <span className="font-bold text-rose-600">{formatBDT(dashboardData.totalBDTCost)}</span>
+            </div>
+            <div className="py-2.5 flex items-center justify-between">
+              <span className="text-slate-500 font-medium">Total Meta 15% VAT</span>
+              <span className="font-bold text-rose-600">{formatUSD(metrics.totalTaxUSD)}</span>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+            <span className="text-slate-400">Ledger Health</span>
+            <span className="font-bold text-emerald-600 flex items-center gap-1">
+              <CheckCircle2 size={13} /> 100% Balanced
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. FULL-WIDTH 3-PILLAR OPERATIONAL HEALTH STATUS CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        
+        {/* CARD 1: CARD LIQUIDITY SAFETY SHIELD */}
+        <div className={`rounded-2xl border p-5 transition-all shadow-2xs flex flex-col justify-between ${
+          totalCardBalance < 0
+            ? 'bg-rose-50/90 border-rose-200/90 text-rose-950'
+            : 'bg-emerald-50/80 border-emerald-200/90 text-emerald-950'
+        }`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-2xs ${
+                totalCardBalance < 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {totalCardBalance < 0 ? <AlertCircle size={19} /> : <ShieldCheck size={19} />}
+              </div>
+              <div>
+                <h4 className={`font-black text-xs uppercase tracking-wider ${
+                  totalCardBalance < 0 ? 'text-rose-900' : 'text-emerald-900'
                 }`}>
-                  {totalCardBalance < 0 ? <AlertCircle size={19} /> : <ShieldCheck size={19} />}
-                </div>
-                <div className="min-w-0">
-                  <h4 className={`font-black text-xs uppercase tracking-wider ${
-                    totalCardBalance < 0 ? 'text-rose-900' : 'text-emerald-900'
-                  }`}>
-                    {totalCardBalance < 0 ? 'Card Liquidity Warning' : 'Healthy Card Liquidity'}
-                  </h4>
-                  <p className={`text-[11.5px] font-medium mt-0.5 ${
-                    totalCardBalance < 0 ? 'text-rose-800/90' : 'text-emerald-800/90'
-                  }`}>
-                    {totalCardBalance < 0
-                      ? `Virtual card balance is in deficit by ${formatUSD(Math.abs(totalCardBalance))}. Top up immediately to prevent Meta ad pauses.`
-                      : `Total spendable balance across all active cards is ${formatUSD(totalCardBalance)}.`}
-                  </p>
-                </div>
+                  {totalCardBalance < 0 ? 'Card Liquidity Warning' : 'Healthy Card Liquidity'}
+                </h4>
+                <span className="text-[10px] opacity-75 font-semibold">Virtual Card Reserves</span>
               </div>
-              {totalCardBalance < 0 && onAddUSD && (
-                <button
-                  onClick={onAddUSD}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shrink-0 shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 self-start sm:self-center"
-                >
-                  <Plus size={14} className="stroke-[2.5]" />
-                  <span>Top Up</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Revenue & Margin Snapshot */}
-          <div className="bg-white border border-slate-200/90 rounded-2xl p-4.5 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
-                  <Coins size={15} />
-                </div>
-                <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Operational Health Snapshot</span>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400">Real-Time Metrics</span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-slate-400 text-[10.5px] font-semibold block mb-0.5">Active Clients</span>
-                <span className="font-black text-slate-900 text-sm">{dashboardData.activeClients.length} of {clients.length}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-slate-400 text-[10.5px] font-semibold block mb-0.5">FX Purchase Base</span>
-                <span className="font-black text-slate-900 text-sm">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
-              </div>
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
-                <span className="text-slate-400 text-[10.5px] font-semibold block mb-0.5">Meta 15% VAT Total</span>
-                <span className="font-black text-rose-600 text-sm">{formatUSD(metrics.totalTaxUSD)}</span>
-              </div>
+            {totalCardBalance < 0 && onAddUSD && (
+              <button
+                onClick={onAddUSD}
+                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shrink-0 shadow-xs hover:shadow transition-all flex items-center gap-1"
+              >
+                <Plus size={13} className="stroke-[2.5]" />
+                <span>Top Up</span>
+              </button>
+            )}
+          </div>
+
+          <p className={`text-xs font-medium mt-3 ${
+            totalCardBalance < 0 ? 'text-rose-800/90' : 'text-emerald-800/90'
+          }`}>
+            {totalCardBalance < 0
+              ? `Virtual card balance is in deficit by ${formatUSD(Math.abs(totalCardBalance))}. Top up immediately to prevent Meta ad pauses.`
+              : `Total spendable balance across all active cards is ${formatUSD(totalCardBalance)}.`}
+          </p>
+        </div>
+
+        {/* CARD 2: REVENUE INFLOW HEALTH */}
+        <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+              <CheckCircle2 size={19} />
+            </div>
+            <div>
+              <h4 className="font-black text-xs uppercase tracking-wider text-emerald-900">
+                Healthy Revenue Flow
+              </h4>
+              <span className="text-[10px] text-emerald-700/80 font-semibold">Client Inflow Status</span>
             </div>
           </div>
+          <p className="text-xs text-emerald-800/90 font-medium mt-3">
+            {formatBDT(metrics.totalRevenueBDT)} received across active client accounts with positive cashflow surplus.
+          </p>
+        </div>
+
+        {/* CARD 3: PROFIT & MARGIN SNAPSHOT */}
+        <div className="rounded-2xl border border-blue-200/80 bg-blue-50/70 p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+              <TrendingUp size={19} />
+            </div>
+            <div>
+              <h4 className="font-black text-xs uppercase tracking-wider text-blue-900">
+                Net Profit Snapshot
+              </h4>
+              <span className="text-[10px] text-blue-700/80 font-semibold">Bottom Line Performance</span>
+            </div>
+          </div>
+          <p className="text-xs text-blue-800/90 font-medium mt-3">
+            {formatBDT(metrics.netProfitBDT)} net agency profit achieved with a healthy {metrics.profitMargin.toFixed(1)}% margin.
+          </p>
         </div>
       </div>
     </div>
