@@ -3536,13 +3536,13 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
       {/* EXECUTIVE CARD LIQUIDITY OVERVIEW RIBBON */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Total Card Liquidity */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-xl px-4 py-3.5 shadow-sm text-white flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/40 border border-sky-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
+          <div className="w-9 h-9 rounded-lg bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 shrink-0">
             <CreditCard size={18} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider block">Available Liquidity</span>
-            <span className={`text-base font-black truncate block mt-0.5 ${metrics.totalCardBalance < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">Available Liquidity</span>
+            <span className={`text-base font-black truncate block mt-0.5 ${metrics.totalCardBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
               {formatUSD(metrics.totalCardBalance)}
             </span>
           </div>
