@@ -1030,20 +1030,20 @@ export default function AdLedgerApp() {
                 <span className="text-xs font-black text-slate-900 font-mono">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
               </div>
 
-              {/* GLOBAL + NEW ENTRY DROPDOWN (Master Level UX) */}
+              {/* GLOBAL NEW ENTRY DROPDOWN (Master Level UX) */}
               <div className="relative" ref={newEntryRef}>
                 <button
                   onClick={() => setIsNewEntryOpen(prev => !prev)}
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm hover:shadow transition-all tracking-wide"
+                  className="inline-flex items-center gap-1.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm hover:shadow transition-all tracking-wide"
                 >
                   <Plus size={15} className="stroke-[2.5]" />
-                  <span>+ New Entry</span>
+                  <span>New Entry</span>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${isNewEntryOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* DROPDOWN MENU */}
+                {/* SOLID HIGH-CONTRAST DROPDOWN MENU */}
                 {isNewEntryOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="absolute right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 mt-2.5 w-64 sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
                       Quick Record Actions
                     </div>
