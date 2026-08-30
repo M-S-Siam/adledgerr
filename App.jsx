@@ -931,7 +931,7 @@ export default function AdLedgerApp() {
 
   return (
     <>
-      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell aside nav{scrollbar-width:none;-ms-overflow-style:none;} .adl-shell aside nav::-webkit-scrollbar{display:none;} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
+      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell aside nav{scrollbar-width:none;-ms-overflow-style:none;} .adl-shell aside nav::-webkit-scrollbar{display:none;} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell header input:focus{box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
       <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
 
         {/* SIDEBAR */}
@@ -1012,24 +1012,18 @@ export default function AdLedgerApp() {
               <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu size={24} />
               </button>
-              <div className="hidden sm:flex items-center bg-slate-100/90 hover:bg-slate-100 focus-within:bg-white rounded-xl px-3.5 py-1.5 border border-transparent focus-within:border-sky-300 focus-within:ring-2 focus-within:ring-sky-100 transition-all">
-                <Search size={16} className="text-slate-400" />
+              {/* Single Seamless Search Input (No Dual Box) */}
+              <div className="relative hidden sm:flex items-center">
+                <Search size={15} className="absolute left-3.5 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search clients, campaigns, cards..."
-                  className="bg-transparent border-none focus:outline-none text-xs ml-2 w-56 lg:w-72 text-slate-800 placeholder-slate-400 font-medium"
+                  className="pl-9 pr-4 py-2 rounded-xl bg-slate-100/90 hover:bg-slate-100 focus:bg-white text-xs text-slate-800 placeholder-slate-400 font-medium border border-transparent focus:border-sky-300 outline-none transition-all w-60 lg:w-80 shadow-2xs"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4 pr-3 sm:pr-5">
-              {/* Live Effective Exchange Rate Pill */}
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg USD Rate:</span>
-                <span className="text-xs font-black text-slate-900 font-mono">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
-              </div>
-
+            <div className="flex items-center gap-3 pr-3 sm:pr-5">
               {/* GLOBAL NEW ENTRY DROPDOWN (Master Level UX) */}
               <div className="relative" ref={newEntryRef}>
                 <button
