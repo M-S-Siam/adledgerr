@@ -9261,17 +9261,20 @@ function UserGuideView({ onNavigate }) {
       padding: 0;
     }
 
-    body {
-      font-family: 'Hind Siliguri', 'Inter', -apple-system, sans-serif;
+    html, body {
       background-color: #ffffff;
       color: var(--slate-700);
+      font-family: 'Hind Siliguri', 'Inter', -apple-system, sans-serif;
       line-height: 1.7;
       font-size: 14.5px;
+    }
+
+    body {
       padding: 30px 40px;
     }
 
     .document-container {
-      max-width: 1000px;
+      max-width: 960px;
       margin: 0 auto;
       background: #ffffff;
       border-radius: 20px;
@@ -9369,8 +9372,7 @@ function UserGuideView({ onNavigate }) {
     }
 
     .section-block {
-      margin-bottom: 45px;
-      page-break-inside: avoid;
+      margin-bottom: 40px;
     }
     .section-title {
       font-size: 20px;
@@ -9381,7 +9383,7 @@ function UserGuideView({ onNavigate }) {
       gap: 12px;
       padding-bottom: 10px;
       border-bottom: 2px solid var(--slate-100);
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .section-title .num-badge {
       width: 32px;
@@ -9426,9 +9428,9 @@ function UserGuideView({ onNavigate }) {
 
     .step-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
-      margin: 20px 0;
+      margin: 18px 0;
     }
     .step-item {
       background: #fff;
@@ -9560,24 +9562,55 @@ function UserGuideView({ onNavigate }) {
       font-weight: 600;
     }
 
+    /* Robust Multi-Page Print Layout */
+    @page {
+      margin: 15mm 12mm 15mm 12mm;
+      size: A4 portrait;
+    }
+
     @media print {
-      body {
+      html, body {
         background: #ffffff !important;
+        color: #0f172a !important;
         padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        font-size: 11pt !important;
       }
       .print-bar {
         display: none !important;
       }
       .document-container {
         padding: 0 !important;
+        margin: 0 !important;
         max-width: 100% !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        border: none !important;
       }
       .section-block {
-        page-break-inside: avoid;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+        margin-bottom: 25px !important;
       }
-      @page {
-        margin: 15mm 12mm;
-        size: A4 portrait;
+      .section-title, h1, h2, h3 {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      .feature-card, .info-card, .faq-item, .formula-card, .step-item, .alert-box {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        border-color: #cbd5e1 !important;
+        margin-bottom: 14px !important;
+      }
+      .step-grid {
+        display: block !important;
+      }
+      .step-item {
+        margin-bottom: 10px !important;
       }
     }
   </style>

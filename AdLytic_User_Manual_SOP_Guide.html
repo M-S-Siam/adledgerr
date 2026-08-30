@@ -41,22 +41,25 @@
       padding: 0;
     }
 
-    body {
-      font-family: 'Hind Siliguri', 'Inter', -apple-system, sans-serif;
+    html, body {
       background-color: #081226;
       color: var(--slate-700);
+      font-family: 'Hind Siliguri', 'Inter', -apple-system, sans-serif;
       line-height: 1.7;
       font-size: 14.5px;
+    }
+
+    body {
       padding: 40px 15px;
     }
 
     .document-container {
-      max-width: 1000px;
+      max-width: 960px;
       margin: 0 auto;
       background: #ffffff;
       border-radius: 24px;
       box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
-      padding: 60px 70px;
+      padding: 50px 60px;
       position: relative;
     }
 
@@ -72,7 +75,7 @@
       color: #fff;
       padding: 16px 28px;
       border-radius: 16px;
-      margin-bottom: 40px;
+      margin-bottom: 35px;
       box-shadow: 0 12px 30px rgba(2, 132, 199, 0.45);
     }
     .print-bar h3 {
@@ -82,6 +85,7 @@
       align-items: center;
       gap: 10px;
       letter-spacing: -0.2px;
+      color: #fff;
     }
     .print-btn {
       background: #ffffff;
@@ -113,9 +117,9 @@
 
     .cover-header {
       text-align: center;
-      padding-bottom: 45px;
+      padding-bottom: 35px;
       border-bottom: 2px solid var(--slate-200);
-      margin-bottom: 45px;
+      margin-bottom: 35px;
     }
     .brand-badge {
       display: inline-flex;
@@ -129,22 +133,22 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       border: 1px solid rgba(2, 132, 199, 0.2);
     }
     .cover-title {
-      font-size: 34px;
+      font-size: 32px;
       font-weight: 900;
       color: var(--slate-900);
       letter-spacing: -0.6px;
       margin-bottom: 10px;
     }
     .cover-subtitle {
-      font-size: 16.5px;
+      font-size: 15.5px;
       color: var(--slate-600);
       font-weight: 500;
       max-width: 760px;
-      margin: 0 auto 20px;
+      margin: 0 auto 18px;
       line-height: 1.6;
     }
     .meta-pills {
@@ -159,47 +163,36 @@
 
     /* Section Styling */
     .section-block {
-      margin-bottom: 55px;
-      page-break-inside: avoid;
+      margin-bottom: 40px;
     }
     .section-title {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 850;
       color: var(--slate-900);
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding-bottom: 12px;
+      gap: 12px;
+      padding-bottom: 10px;
       border-bottom: 2px solid var(--slate-100);
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }
     .section-title .num-badge {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 850;
       box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
       flex-shrink: 0;
     }
 
-    .sub-title {
-      font-size: 17px;
-      font-weight: 800;
-      color: var(--slate-800);
-      margin: 24px 0 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
     p {
-      margin-bottom: 15px;
+      margin-bottom: 14px;
       color: var(--slate-700);
     }
 
@@ -207,17 +200,17 @@
     .info-card {
       background: var(--slate-50);
       border: 1px solid var(--slate-200);
-      border-radius: 16px;
-      padding: 22px 26px;
-      margin-bottom: 24px;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
     }
     .alert-box {
-      border-radius: 14px;
-      padding: 18px 22px;
-      margin: 20px 0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 18px 0;
       display: flex;
-      gap: 16px;
-      font-size: 14px;
+      gap: 14px;
+      font-size: 13.5px;
       line-height: 1.6;
     }
     .alert-box.tip {
@@ -225,61 +218,45 @@
       border-left: 4px solid var(--emerald);
       color: #065f46;
     }
-    .alert-box.warning {
-      background: var(--rose-light);
-      border-left: 4px solid var(--rose);
-      color: #9f1239;
-    }
-    .alert-box.important {
-      background: var(--amber-light);
-      border-left: 4px solid var(--amber);
-      color: #92400e;
-    }
-    .alert-box.info {
-      background: var(--primary-light);
-      border-left: 4px solid var(--primary);
-      color: #075985;
-    }
     .alert-icon {
-      font-size: 20px;
+      font-size: 18px;
       flex-shrink: 0;
     }
 
     /* Workflow Step Cards */
     .step-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 18px;
-      margin: 22px 0;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin: 18px 0;
     }
     .step-item {
       background: #fff;
       border: 1px solid var(--slate-200);
       border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-      transition: all 0.2s ease;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
     .step-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
+      gap: 10px;
+      margin-bottom: 10px;
     }
     .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
       background: var(--primary-light);
       color: var(--primary-dark);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 850;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .step-title {
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 800;
       color: var(--slate-900);
     }
@@ -288,75 +265,49 @@
     .formula-card {
       background: linear-gradient(135deg, #091224, #142342);
       color: #f8fafc;
-      padding: 22px 28px;
-      border-radius: 16px;
-      margin: 20px 0;
+      padding: 20px 24px;
+      border-radius: 14px;
+      margin: 18px 0;
       font-family: 'Fira Code', monospace;
-      font-size: 13.5px;
+      font-size: 13px;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     }
     .formula-title {
       color: #38bdf8;
-      font-size: 12px;
+      font-size: 11.5px;
       text-transform: uppercase;
       letter-spacing: 1px;
       font-weight: 800;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-family: 'Inter', sans-serif;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    /* Tables */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 22px 0;
-      font-size: 13.5px;
-    }
-    th {
-      background: #f8fafc;
-      color: var(--slate-900);
-      text-align: left;
-      padding: 12px 16px;
-      font-weight: 800;
-      border: 1px solid var(--slate-200);
-    }
-    td {
-      padding: 12px 16px;
-      border: 1px solid var(--slate-200);
-      color: var(--slate-700);
-      line-height: 1.55;
-    }
-    tr:nth-child(even) td {
-      background: #fbfcfe;
-    }
-
-    /* Page Feature Breakdown Cards */
+    /* Feature Breakdown Cards */
     .feature-card {
       background: #ffffff;
       border: 1px solid var(--slate-200);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 22px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
     .feature-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--slate-100);
-      padding-bottom: 14px;
-      margin-bottom: 16px;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
     }
     .feature-badge {
       background: var(--primary-light);
       color: var(--primary-dark);
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 800;
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 99px;
       text-transform: uppercase;
     }
@@ -366,9 +317,10 @@
     }
     .feature-list li {
       position: relative;
-      padding-left: 24px;
-      margin-bottom: 10px;
+      padding-left: 22px;
+      margin-bottom: 8px;
       color: var(--slate-600);
+      font-size: 13.5px;
     }
     .feature-list li::before {
       content: '✔';
@@ -381,26 +333,22 @@
     /* FAQ Q&A */
     .faq-item {
       border: 1px solid var(--slate-200);
-      border-radius: 14px;
-      padding: 20px 24px;
-      margin-bottom: 16px;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 14px;
       background: #fff;
     }
     .faq-q {
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 800;
       color: var(--slate-900);
-      margin-bottom: 10px;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
-      gap: 10px;
-    }
-    .faq-q::before {
-      content: '❓';
-      font-size: 16px;
+      gap: 8px;
     }
     .faq-a {
-      font-size: 14px;
+      font-size: 13.5px;
       color: var(--slate-600);
       line-height: 1.65;
     }
@@ -408,10 +356,11 @@
     /* Footer */
     .doc-footer {
       text-align: center;
-      padding-top: 35px;
+      padding-top: 30px;
       border-top: 1px solid var(--slate-200);
       color: var(--slate-400);
-      font-size: 12.5px;
+      font-size: 12px;
+      margin-top: 30px;
     }
 
     code {
@@ -419,17 +368,27 @@
       background: var(--slate-100);
       color: #0369a1;
       padding: 2px 6px;
-      border-radius: 6px;
-      font-size: 12.5px;
+      border-radius: 4px;
+      font-size: 12px;
       font-weight: 600;
     }
 
-    /* Print Specific Media Styles */
+    /* Robust Professional Multi-Page Print Stylesheet */
+    @page {
+      size: A4 portrait;
+      margin: 15mm 12mm 15mm 12mm;
+    }
+
     @media print {
-      body {
+      html, body {
         background: #ffffff !important;
+        color: #0f172a !important;
         padding: 0 !important;
-        color: #000000 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        font-size: 11pt !important;
       }
       .print-bar {
         display: none !important;
@@ -437,17 +396,32 @@
       .document-container {
         box-shadow: none !important;
         padding: 0 !important;
+        margin: 0 !important;
         max-width: 100% !important;
+        width: 100% !important;
+        border-radius: 0 !important;
+        border: none !important;
       }
       .section-block {
-        page-break-inside: avoid;
+        page-break-inside: auto !important;
+        break-inside: auto !important;
+        margin-bottom: 25px !important;
       }
-      .info-card, .faq-item, .step-item, .feature-card {
+      .section-title, h1, h2, h3 {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      .feature-card, .info-card, .faq-item, .formula-card, .step-item, .alert-box {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
         border-color: #cbd5e1 !important;
+        margin-bottom: 14px !important;
       }
-      @page {
-        margin: 20mm 15mm 20mm 15mm;
-        size: A4 portrait;
+      .step-grid {
+        display: block !important;
+      }
+      .step-item {
+        margin-bottom: 10px !important;
       }
     }
   </style>
@@ -457,11 +431,9 @@
   <!-- Floating Print/PDF Bar -->
   <div class="print-bar">
     <div>
-      <h3>📄 AdLytic — Complete Agency Operating System (SOP & Manual)</h3>
-      <span style="font-size: 12px; opacity: 0.9;">এই পেজটি থেকে সরাসরি ১-ক্লিকে সম্পূর্ণ বিস্তারিত A4 সাইজ অফিসিয়াল PDF সেভ বা প্রিন্ট করুন।</span>
+      <h3>📄 AdLytic — Agency Operating System (Official Master Manual & SOP)</h3>
     </div>
     <button class="print-btn" onclick="window.print()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg>
       Print / Save as PDF
     </button>
   </div>
@@ -472,7 +444,7 @@
     <div class="cover-header">
       <div class="brand-badge">Official Master Standard Operating Procedure (SOP)</div>
       <h1 class="cover-title">AdLytic — Digital Agency Financial Manual</h1>
-      <p class="cover-subtitle">ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।</p>
+      <p class="cover-subtitle">ডিজিタル মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।</p>
       <div class="meta-pills">
         <span>📅 ভার্সন: ২.০ (মাস্টার লেভেল)</span>
         <span>•</span>
@@ -510,20 +482,14 @@
       <p>সফটওয়্যারটির প্রতিটি সংখ্যা কীভাবে তৈরি হয় তা পরিষ্কার বুঝতে নিচের ৩টি মূল ফিন্যান্সিয়াল সূত্র ও বাস্তব উদাহরণটি লক্ষ্য করুন:</p>
 
       <div class="formula-card">
-        <div class="formula-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
-          সূত্র ১: কার্যকর ডলার কেনা রেট (Effective USD Buy Rate)
-        </div>
+        <div class="formula-title">সূত্র ১: কার্যকর ডলার কেনা রেট (Effective USD Buy Rate)</div>
         Effective USD Rate = (ডলার ক্রয়ে মোট BDT খরচ + ক্যাশআউট চার্জ) ÷ মোট ক্রয়কৃত USD<br><br>
         <em>বাস্তব উদাহরণ:</em> আপনি ৳১৩,০০০ দিয়ে $১০০ ডলার কিনলেন এবং ক্যাশআউট চার্জ গেল ৳১২৫।<br>
         Effective Buy Rate = (৳১৩,০০০ + ৳১২৫) ÷ $১০০ = <strong>৳১৩১.২৫ / USD</strong>
       </div>
 
       <div class="formula-card">
-        <div class="formula-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-          সূত্র ২: মেটা অ্যাড স্পেন্ড ও মোট কার্ড বার্ন (Total Card Deduction)
-        </div>
+        <div class="formula-title">সূত্র ২: মেটা অ্যাড স্পেন্ড ও মোট কার্ড বার্ন (Total Card Deduction)</div>
         মোট কার্ড কর্তন = অ্যাড স্পেন্ড (USD) + মেটা ১৫% ভ্যাট (USD) + কার্ড ফি (যদি থাকে)<br><br>
         <em>বাস্তব উদাহরণ:</em> ফেসবুক অ্যাড ম্যানেজারে স্পেন্ড দেখাচ্ছে $৪৭.৮৩ ডলার।<br>
         ১৫% ভ্যাট = $৪৭.৮৩ × ০.১৫ = $৭.১৭ ডলার।<br>
@@ -531,10 +497,7 @@
       </div>
 
       <div class="formula-card">
-        <div class="formula-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-          সূত্র ৩: এজেন্সির প্রকৃত নিট লাভ ও মার্জিন (Net Agency Profit & Margin)
-        </div>
+        <div class="formula-title">সূত্র ৩: এজেন্সির প্রকৃত নিট লাভ ও মার্জিন (Net Agency Profit & Margin)</div>
         মোট BDT খরচ = [মোট স্পেন্ড (USD) + ভ্যাট (USD)] × Effective Buy Rate<br>
         Net Agency Profit (BDT) = ক্লায়েন্টের প্রদত্ত মোট পেমেন্ট (BDT) - মোট BDT খরচ<br>
         Profit Margin (%) = (Net Agency Profit ÷ মোট পেমেন্ট) × ১০০<br><br>
@@ -555,7 +518,7 @@
             <span class="step-num">১</span>
             <span class="step-title">নতুন ক্লায়েন্ট অনবোর্ডিং</span>
           </div>
-          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 6px;">
             টপ হেডারের <code>+ New Entry ➔ Add New Client</code>-এ ক্লিক করুন।
           </p>
           <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
@@ -570,7 +533,7 @@
             <span class="step-num">২</span>
             <span class="step-title">ক্লায়েন্ট পেমেন্ট রিসিভ</span>
           </div>
-          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 6px;">
             ক্লায়েন্ট টাকা পাঠালে <code>+ New Entry ➔ Receive Client Payment</code> এ যান।
           </p>
           <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
@@ -585,7 +548,7 @@
             <span class="step-num">৩</span>
             <span class="step-title">ডলার ক্রয় ও কার্ড টপ-আপ</span>
           </div>
-          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 6px;">
             সেলার থেকে ডলার কিনলে <code>+ New Entry ➔ Buy / Top Up USD</code> এ যান।
           </p>
           <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
@@ -600,7 +563,7 @@
             <span class="step-num">৪</span>
             <span class="step-title">মেটা অ্যাড স্পেন্ড রেকর্ড</span>
           </div>
-          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
+          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 6px;">
             ফেসবুক স্পেন্ড হলে <code>+ New Entry ➔ Record Meta Ad Spend</code> এ যান।
           </p>
           <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
@@ -609,21 +572,21 @@
             <li>১৫% ভ্যাট সিস্টেম অটো হিসাব করে নিবে।</li>
           </ul>
         </div>
+      </div>
 
-        <div class="step-item">
-          <div class="step-header">
-            <span class="step-num">৫</span>
-            <span class="step-title">লাইভ ড্যাশবোর্ড ও প্রফিট অডিট</span>
-          </div>
-          <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 8px;">
-            এন্ট্রি দেওয়ার সাথে সাথে ড্যাশবোর্ডে গিয়ে অডিট করুন।
-          </p>
-          <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
-            <li>মোট নিট লাভ (Net Profit) ও মার্জিন চেক করুন।</li>
-            <li>কার্ড ব্যালেন্স পজিটিভ আছে কি না দেখুন।</li>
-            <li>ক্লায়েন্ট স্টেটমেন্ট যাচাই করুন।</li>
-          </ul>
+      <div class="step-item" style="margin-top: 14px;">
+        <div class="step-header">
+          <span class="step-num">৫</span>
+          <span class="step-title">লাইভ ড্যাশবোর্ড ও প্রফিট অডিট</span>
         </div>
+        <p style="font-size: 13px; color: var(--slate-600); margin-bottom: 6px;">
+          এন্ট্রি দেওয়ার সাথে সাথে ড্যাশবোর্ডে গিয়ে অডিট করুন:
+        </p>
+        <ul style="font-size: 12px; color: var(--slate-500); padding-left: 16px; line-height: 1.6;">
+          <li>মোট নিট লাভ (Net Profit) ও মার্জিন চেক করুন।</li>
+          <li>কার্ড ব্যালেন্স পজিটিভ আছে কি না দেখুন।</li>
+          <li>ক্লায়েন্ট স্টেটমেন্ট যাচাই করুন।</li>
+        </ul>
       </div>
     </div>
 
@@ -635,7 +598,7 @@
       <!-- পেজ ১: Dashboard -->
       <div class="feature-card">
         <div class="feature-header">
-          <h3 style="font-size: 18px; color: #0284c7;">📊 ১. Dashboard (Agency Command Center)</h3>
+          <h3 style="font-size: 17px; color: #0284c7;">📊 ১. Dashboard (Agency Command Center)</h3>
           <span class="feature-badge">কেন্দ্রীয় পর্যবেক্ষণ হাব</span>
         </div>
         <p><strong>মূল উদ্দেশ্য:</strong> এজেন্সির পুরো ফিন্যান্সিয়াল স্বাস্থ্য এক নজরে দেখা।</p>
@@ -656,13 +619,13 @@
       <!-- পেজ ২: Clients -->
       <div class="feature-card">
         <div class="feature-header">
-          <h3 style="font-size: 18px; color: #059669;">👥 ২. Clients Hub (CRM & Client Financials)</h3>
+          <h3 style="font-size: 17px; color: #059669;">👥 ২. Clients Hub (CRM & Client Financials)</h3>
           <span class="feature-badge" style="background:#ecfdf5; color:#047857;">ক্লায়েন্ট ও বিলিং হাব</span>
         </div>
         <p><strong>মূল উদ্দেশ্য:</strong> প্রতিটি ক্লায়েন্টের সাথে আর্থিক সম্পর্ক এবং পৃথক ক্লায়েন্ট লাভজনকতা ট্র্যাক করা।</p>
         <ul class="feature-list">
-          <li><strong>ক্লায়েন্ট কার্ড ও ট্যাগ:</strong> প্রতিটি ক্লায়েন্টের কান্ট্রি ব্যাজ (🇧🇩, 🇺🇸, 🇦🇪), ইন্ডাস্ট্রি এবং কন্টাক্ট ইনফরমেশন।</li>
-          <li><strong>ক্লায়েন্ট-ভিত্তিক লাভ মার্জিন:</strong> প্রতি ক্লায়েন্টের মোট রেভিনিউ, মেটা অ্যাড খরচ এবং নিট লাভের অনুপাত। যদি কোনো ক্লায়েন্টের মার্জিন কমে যায়, আপনি সাথে সাথে সার্ভিস ফি বাড়ানোর সিদ্ধান্ত নিতে পারবেন।</li>
+          <li><strong>ক্লায়েন্ট কার্ড ও ট্যাগ:</strong> প্রতিটি ক্লায়েন্টের কান্ট্রি ব্যাজ (🇧🇩, 🇺🇸, 🇦🇪), industry এবং কন্টাক্ট ইনফরমেশন।</li>
+          <li><strong>ক্লায়েন্ট-ভিত্তিক লাভ মার্জিন:</strong> প্রতি ক্লায়েন্টের মোট রেভিনিউ, মেটা অ্যাড খরচ এবং নিট লাভের অনুপাত।</li>
           <li><strong>১-ক্লিকে ক্লায়েন্ট স্টেটমেন্ট:</strong> ক্লায়েন্টের প্রোফাইলে ক্লিক করলেই তার সম্পূর্ণ লেনদেন হিস্ট্রি চলে আসে, যা সরাসরি ক্লায়েন্টের সাথে শেয়ার করা যায়।</li>
         </ul>
       </div>
@@ -670,32 +633,26 @@
       <!-- পেজ ৩: Campaigns -->
       <div class="feature-card">
         <div class="feature-header">
-          <h3 style="font-size: 18px; color: #7c3aed;">📢 ৩. Campaigns (Ad Performance & ROI)</h3>
+          <h3 style="font-size: 17px; color: #7c3aed;">📢 ৩. Campaigns (Ad Performance & ROI)</h3>
           <span class="feature-badge" style="background:#f5f3ff; color:#6d28d9;">ক্যাম্পেইন ও আরওএএস</span>
         </div>
         <p><strong>মূল উদ্দেশ্য:</strong> ক্লায়েন্টদের মেটা অ্যাড ক্যাম্পেইনের পারফরম্যান্স ও আরওএএস ট্র্যাক করা।</p>
         <ul class="feature-list">
           <li><strong>ক্যাম্পেইন বাজেট ও স্পেন্ড:</strong> ফেসবুক ক্যাম্পেইনের নাম, প্ল্যাটফর্ম (Facebook, Instagram, Google), স্ট্যাটাস (Active/Paused)।</li>
-          <li><strong>ROAS & Revenue Attribution:</strong> ক্যাম্পেইনের ডলার স্পেন্ডের বিপরীতে ক্লায়েন্টের মোট সেলস/রেভিনিউ এবং আরওএএস (Return on Ad Spend) পর্যবেক্ষণ।</li>
+          <li><strong>ROAS & Revenue Attribution:</strong> ক্যাম্পেইনের ডলার স্পেন্ডের বিপরীতে ক্লায়েন্টের মোট সেলস/রেভিনিউ এবং আরওএএস পর্যবেক্ষণ।</li>
         </ul>
       </div>
 
       <!-- পেজ ৪: Transactions -->
       <div class="feature-card">
         <div class="feature-header">
-          <h3 style="font-size: 18px; color: #0284c7;">🧾 ৪. Transactions (Double-Ledger Financial Engine)</h3>
+          <h3 style="font-size: 17px; color: #0284c7;">🧾 ৪. Transactions (Double-Ledger Financial Engine)</h3>
           <span class="feature-badge">পূর্ণাঙ্গ অডিট লেজার</span>
         </div>
         <p><strong>মূল উদ্দেশ্য:</strong> এজেন্সির প্রতিটি টাকার ও ডলারের নিখুঁত অডিট ট্রেইল ও ভাউচার জেনারেট করা।</p>
         <ul class="feature-list">
-          <li><strong>৪ ধরনের ট্রানজ্যাকশন সাপোর্ট:</strong>
-            <br>• <code>PAYMENT_RECEIVED:</code> ক্লায়েন্ট পেমেন্ট ইনপুট।
-            <br>• <code>USD_PURCHASE:</code> ডলার ক্রয় ও কার্ড ফান্ডিং।
-            <br>• <code>AD_SPEND:</code> মেটা অ্যাড স্পেন্ড।
-            <br>• <code>FEE:</code> ব্যাংক বা ট্রানজ্যাকশন ফি।
-          </li>
-          <li><strong>স্মার্ট ফিল্টারিং ও সার্চ:</strong> তারিখ, ক্লায়েন্ট, কার্ড অথবা ট্রানজ্যাকশন টাইপ অনুযায়ী মুহূর্তেই ফিল্টার করা যায়।</li>
-          <li><strong>১-ক্লিক মানি রিসিট ও ভাউচার:</strong> যেকোনো ট্রানজ্যাকশনের রিসিট আইকনে ক্লিক করলেই এজেন্সির লোগো ও টার্মস সহ মানি রিসিট প্রস্তুত হয়, যা ১-ক্লিকে PDF হিসেবে ক্লায়েন্টকে পাঠানো যায়।</li>
+          <li><strong>৪ ধরনের ট্রানজ্যাকশন সাপোর্ট:</strong> <code>PAYMENT_RECEIVED</code>, <code>USD_PURCHASE</code>, <code>AD_SPEND</code>, <code>FEE</code>।</li>
+          <li><strong>১-ক্লিক মানি রিসিট ও ভাউচার:</strong> যেকোনো ট্রানজ্যাকশনের রিসিট আইকনে ক্লিক করলেই মানি রিসিট প্রস্তুত হয়, যা ১-ক্লিকে PDF হিসেবে ক্লায়েন্টকে পাঠানো যায়।</li>
           <li><strong>মাল্টি-ফরমেট এক্সপোর্ট:</strong> সম্পূর্ণ লেজার Excel, CSV অথবা A4 প্রিন্টেবল ফর্মে ডাউনলোড করা যায়।</li>
           <li><strong>এডিট ও ডিলিট ক্ষমতা:</strong> যেকোনো ভুল এন্ট্রি সাথে সাথে সংশোধন বা মুছে ফেলার সুবিধা।</li>
         </ul>
@@ -704,7 +661,7 @@
       <!-- পেজ ৫: Cards & USD -->
       <div class="feature-card">
         <div class="feature-header">
-          <h3 style="font-size: 18px; color: #d97706;">💳 ৫. Cards & USD (Virtual Card Liquidity Hub)</h3>
+          <h3 style="font-size: 17px; color: #d97706;">💳 ৫. Cards & USD (Virtual Card Liquidity Hub)</h3>
           <span class="feature-badge" style="background:#fffbeb; color:#b45309;">ভার্চুয়াল কার্ড ব্যাংক</span>
         </div>
         <p><strong>মূল উদ্দেশ্য:</strong> সব ভার্চুয়াল কার্ডের ডলার ব্যালেন্স, লোড এবং লাইভ বার্ন রেট পর্যবেক্ষণ।</p>
@@ -719,7 +676,7 @@
       <!-- পেজ ৬: Reports -->
       <div class="feature-card">
         <div class="feature-header">
-          <h3 style="font-size: 18px; color: #4f46e5;">📈 ৬. Reports & P&L (Financial & Tax Statements)</h3>
+          <h3 style="font-size: 17px; color: #4f46e5;">📈 ৬. Reports & P&L (Financial & Tax Statements)</h3>
           <span class="feature-badge" style="background:#eef2ff; color:#4338ca;">অডিট ও ট্যাক্স রিপোর্ট</span>
         </div>
         <p><strong>মূল উদ্দেশ্য:</strong> নির্দিষ্ট সময়সীমার লাভ-ক্ষতির অডিট স্টেটমেন্ট তৈরি ও প্রিন্ট করা।</p>
@@ -733,7 +690,7 @@
       <!-- পেজ ৭: Settings & Team -->
       <div class="feature-card">
         <div class="feature-header">
-          <h3 style="font-size: 18px; color: #334155;">⚙️ ৭. Settings & Team (Workspace Management)</h3>
+          <h3 style="font-size: 17px; color: #334155;">⚙️ ৭. Settings & Team (Workspace Management)</h3>
           <span class="feature-badge" style="background:#f1f5f9; color:#334155;">ওয়ার্কস্পেস সেটিংস</span>
         </div>
         <p><strong>মূল উদ্দেশ্য:</strong> এজেন্সির ব্র্যান্ডিং, টিম পারমিশন এবং ডাটা ব্যাকআপ নিয়ন্ত্রণ।</p>
