@@ -10,7 +10,7 @@ import {
   UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw,
   Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock, LogOut, Laptop,
   FileSpreadsheet, Printer, Crown, UserCheck, UserX, Shield, Mail, Phone, Edit, Filter, UserCog, MessageCircle, Share2,
-  RefreshCw, Radio, Terminal, Cpu, Clock, Zap, Play, Pause, Layers
+  RefreshCw, Radio, Terminal, Cpu, Clock, Zap, Play, Pause, Layers, BookOpen, HelpCircle
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import {
@@ -922,6 +922,8 @@ export default function AdLedgerApp() {
         return <IntegrationsView clients={clients} transactions={transactions} workspaceSettings={workspaceSettings} />;
       case 'team':
         return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onUpdate={handleUpdateTeamMember} onRemove={handleRemoveTeamMember} clients={clients} workspaceSettings={workspaceSettings} />;
+      case 'guide':
+        return <UserGuideView onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
         return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} clients={clients} cards={cards} transactions={transactions} campaigns={campaigns} metrics={metrics} />;
       default: return (
@@ -992,9 +994,10 @@ export default function AdLedgerApp() {
 
             <div className="pt-3 mt-3 border-t border-slate-800/70 space-y-1">
               <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Workspace</p>
-              <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<PlugZap size={18} />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<UsersRound size={18} />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<BookOpen size={18} />} label="User Guide & SOP" isActive={currentView === 'guide'} onClick={() => { setCurrentView('guide'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<Settings size={18} />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
             </div>
           </nav>
 
@@ -1230,6 +1233,24 @@ export default function AdLedgerApp() {
                           Audit & Reports
                         </div>
                         <div className="text-[10px] text-slate-400 font-medium">Financial & P&L statements</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setCurrentView('guide');
+                        setIsQuickSettingsOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-50/80 text-left transition-colors group text-emerald-800"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <BookOpen size={14} className="stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-emerald-900 group-hover:text-emerald-950">
+                          User Guide & SOP
+                        </div>
+                        <div className="text-[10px] text-emerald-600 font-medium">Complete manual & PDF</div>
                       </div>
                     </button>
 
@@ -9168,6 +9189,413 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
               >
                 Yes, Remove Access
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// --- OFFICIAL MASTER USER GUIDE & STANDARD OPERATING PROCEDURE (SOP) VIEW ---
+function UserGuideView({ onNavigate }) {
+  const [activeTab, setActiveTab] = useState('concepts');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const tabs = [
+    { id: 'concepts', label: '১. মূল সমস্যা ও গাণিতিক সূত্র', icon: <Sparkles size={16} /> },
+    { id: 'workflow', label: '২. ৫-ধাপে দৈনন্দিন কাজ (SOP)', icon: <Layers size={16} /> },
+    { id: 'modules', label: '৩. পেজ ও মডিউল পরিচিতি', icon: <LayoutDashboard size={16} /> },
+    { id: 'troubleshoot', label: '৪. সমস্যা ও সমাধান (FAQs)', icon: <HelpCircle size={16} /> },
+    { id: 'protips', label: '৫. এজেন্সির প্রো-টিপস', icon: <Crown size={16} /> },
+  ];
+
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto pb-16">
+      {/* Top Banner & PDF Print Header */}
+      <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-white/20">
+              <BookOpen size={13} className="stroke-[2.5]" />
+              <span>Official Standard Operating Procedure (SOP)</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              AdLytic — Agency Financial Manual
+            </h1>
+            <p className="text-sm text-sky-100 max-w-2xl font-medium leading-relaxed">
+              ডিজিটাল মার্কেটিং এজেন্সির ডুয়েল-কারেন্সি লেজার (BDT & USD), মেটা অ্যাড স্পেন্ড, ১৫% ভ্যাট ক্যালকুলেশন এবং প্রকৃত নিট লাভ নির্ণয়ের পূর্ণাঙ্গ ইউজার গাইড।
+            </p>
+          </div>
+
+          <button
+            onClick={() => window.print()}
+            className="self-start md:self-auto inline-flex items-center gap-2.5 bg-white text-sky-700 hover:bg-sky-50 active:scale-95 px-5 py-3 rounded-2xl text-xs font-black shadow-lg hover:shadow-xl transition-all cursor-pointer shrink-0"
+          >
+            <Printer size={16} className="stroke-[2.5]" />
+            <span>Print / Save as PDF</span>
+          </button>
+        </div>
+
+        {/* Quick Search */}
+        <div className="mt-6 pt-6 border-t border-white/15 flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="গাইড বা সমস্যা সার্চ করুন (যেমন: ভ্যাট, কার্ড ব্যালেন্স, ডলার রেট)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/15 hover:bg-white/20 focus:bg-white text-xs text-white focus:text-slate-900 placeholder-white/60 focus:placeholder-slate-400 font-medium border border-white/20 focus:border-white outline-none transition-all"
+            />
+          </div>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="text-xs text-white/80 hover:text-white underline font-semibold"
+            >
+              Clear Search
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Category Navigation Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              activeTab === tab.id
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80 shadow-2xs'
+            }`}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* TAB 1: CORE CONCEPTS & FORMULAS */}
+      {(activeTab === 'concepts' || searchQuery) && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-sm">১</span>
+              <h2 className="text-base font-extrabold text-slate-900">ডিজিটাল এজেন্সির মূল সমস্যা ও ডুয়েল-কারেন্সি সমাধান</h2>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              ডিজিটাল মার্কেটিং এজেন্সির আর্থিক হিসাব সাধারণ ব্যবসা থেকে আলাদা। কারণ এখানে ক্লায়েন্ট পেমেন্ট করে টাকায় (BDT), কিন্তু ফেসবুক/গুগল-এ অ্যাড খরচ হয় ভার্চুয়াল কার্ডের মাধ্যমে ডলারে (USD)। ডলার কেনার সময় ক্যাশআউট চার্জ এবং মেটার ১৫% সরকারি ভ্যাটের কারণে প্রকৃত লাভ বের করা অসম্ভব হয়ে পড়ে। AdLytic এই পুরো প্রক্রিয়াকে স্বয়ংক্রিয় করে।
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                  <Coins size={15} className="text-amber-500" />
+                  কার্যকর ডলার রেট (Effective Rate)
+                </div>
+                <p className="text-[11.5px] text-slate-500 leading-relaxed">
+                  ডলার কেনার মূল টাকার সাথে বিকাশ/ব্যাংক ক্যাশআউট চার্জ যুক্ত হয়ে প্রতি ডলারের আসল খরচ স্বয়ংক্রিয়ভাবে বের হয়।
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                  <Receipt size={15} className="text-purple-500" />
+                  মেটা ১৫% ভ্যাট (15% Tax Guard)
+                </div>
+                <p className="text-[11.5px] text-slate-500 leading-relaxed">
+                  ফেসবুক প্রতি $১০০ স্পেন্ডে কার্ড থেকে $১১৫ কাটে। AdLytic এই $১৫ ভ্যাট স্বয়ংক্রিয়ভাবে কার্ড ব্যালেন্স থেকে কর্তন করে।
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                  <TrendingUp size={15} className="text-emerald-600" />
+                  প্রকৃত নিট এজেন্সি লাভ (Net Profit)
+                </div>
+                <p className="text-[11.5px] text-slate-500 leading-relaxed">
+                  ক্লায়েন্টের দেওয়া BDT থেকে লাইভ ডলার রেটে কনভার্ট করা মোট খরচের পার্থক্যই আপনার আসল এজেন্সি মুনাফা।
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mathematical Formulas Card */}
+          <div className="bg-slate-950 text-slate-200 rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="text-sky-400 font-sans font-black text-xs uppercase tracking-wider flex items-center gap-2">
+                <Terminal size={15} />
+                Financial Mathematics & Logic Behind AdLytic
+              </span>
+              <span className="text-[10px] text-slate-500 uppercase font-sans font-bold">100% Automated</span>
+            </div>
+
+            <div className="space-y-4 font-sans text-xs">
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800/80">
+                <div className="font-bold text-sky-300 mb-1">১. কার্যকর ডলার কেনা রেট (Effective USD Buy Rate):</div>
+                <div className="font-mono text-emerald-400 bg-black/40 p-2 rounded-lg text-[11px]">
+                  Effective Rate = (মোট BDT খরচ + ক্যাশআউট চার্জ) ÷ ক্রয়কৃত USD
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1.5">
+                  উদাহরণ: ৳১৩,১২৫ দিয়ে $১০০ কিনলে প্রতি ডলারের প্রকৃত খরচ = ৳১৩১.২৫
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800/80">
+                <div className="font-bold text-purple-300 mb-1">২. মেটা স্পেন্ড ও মোট কার্ড কর্তন (Total Card Deduction):</div>
+                <div className="font-mono text-purple-400 bg-black/40 p-2 rounded-lg text-[11px]">
+                  মোট কার্ড কর্তন = অ্যাড স্পেন্ড (USD) + মেটা ১৫% ভ্যাট (USD)
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1.5">
+                  উদাহরণ: $১০০ মেটা অ্যাড চালালে কার্ড থেকে কাটা যাবে $১১৫.০০ ($১০০ অ্যাড + $১৫ ভ্যাট)
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800/80">
+                <div className="font-bold text-emerald-300 mb-1">৩. এজেন্সির প্রকৃত নিট লাভ (Net Agency Profit):</div>
+                <div className="font-mono text-emerald-400 bg-black/40 p-2 rounded-lg text-[11px]">
+                  Net Profit (BDT) = ক্লায়েন্ট রেভিনিউ (BDT) - [মোট স্পেন্ড (USD) × Effective Buy Rate]
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1.5">
+                  উদাহরণ: ক্লায়েন্ট দিল ৳১০,০০০। মোট খরচ $৫৫ × ৳১৩১.২৫ = ৳৭,২১৮.৭৫।<br />
+                  <strong className="text-white">প্রকৃত লাভ = ৳১০,০০০ - ৳৭,২১৮.৭৫ = ৳২,৭৮১.২৫ (মার্জিন: ২৭.৮%)</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: 5-STEP DAILY WORKFLOW */}
+      {(activeTab === 'workflow' || searchQuery) && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-6 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">২</span>
+            <div>
+              <h2 className="text-base font-extrabold text-slate-900">৫-ধাপে এজেন্সির দৈনন্দিন কাজের স্ট্যান্ডার্ড প্রসিডিউর (SOP)</h2>
+              <p className="text-xs text-slate-500">হেডারের <strong>+ New Entry</strong> বাটন ব্যবহার করে দৈনিক যেভাবে কাজ করবেন:</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl border border-slate-200 hover:border-sky-300 transition-colors space-y-2 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-sky-600 text-white font-bold text-xs flex items-center justify-center">১</span>
+                <span className="font-bold text-xs text-slate-900">নতুন ক্লায়েন্ট অনবোর্ডিং (Add Client)</span>
+              </div>
+              <p className="text-xs text-slate-600">
+                হেডারের <code>+ New Entry ➔ Add New Client</code>-এ গিয়ে ক্লায়েন্টের নাম, কোম্পানি, কান্ট্রি ও মাসিক বাজেট দিয়ে প্রোফাইল তৈরি করুন।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors space-y-2 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">২</span>
+                <span className="font-bold text-xs text-slate-900">ক্লায়েন্টের থেকে টাকা গ্রহণ (BDT Inflow)</span>
+              </div>
+              <p className="text-xs text-slate-600">
+                ক্লায়েন্ট ব্যাংক বা বিকাশে টাকা পাঠালে <code>+ New Entry ➔ Receive Client Payment</code> দিয়ে ক্লায়েন্ট ও টাকার পরিমাণ (BDT) এন্ট্রি দিন।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 hover:border-blue-300 transition-colors space-y-2 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-blue-600 text-white font-bold text-xs flex items-center justify-center">৩</span>
+                <span className="font-bold text-xs text-slate-900">ডলার ক্রয় ও কার্ড লোড (USD Top Up)</span>
+              </div>
+              <p className="text-xs text-slate-600">
+                সেলার থেকে কার্ডে ডলার লোড দিলে <code>+ New Entry ➔ Buy / Top Up USD</code> দিয়ে কত টাকা খরচ হলো ও কত USD কার্ডে আসল তা ইনপুট দিন।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 hover:border-purple-300 transition-colors space-y-2 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-purple-600 text-white font-bold text-xs flex items-center justify-center">৪</span>
+                <span className="font-bold text-xs text-slate-900">মেটা অ্যাড স্পেন্ড রেকর্ড (Meta Ad Spend)</span>
+              </div>
+              <p className="text-xs text-slate-600">
+                মেটায় যে ডলার খরচ হয়েছে তা <code>+ New Entry ➔ Record Meta Ad Spend</code> দিয়ে দিন। ১৫% ভ্যাট সিস্টেম নিজে যুক্ত করে ব্যালেন্স কেটে নিবে।
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-3">
+            <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
+            <div>
+              <strong>ফলাফল:</strong> এই ৪টি এন্ট্রি দেওয়ার সাথে সাথে ড্যাশবোর্ডে লাইভ রেভিনিউ, মেটা স্পেন্ড, কার্ডের অবশিষ্ট ব্যালেন্স এবং নিট প্রফিট আপডেট হয়ে যাবে!
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: MODULE-BY-MODULE GUIDE */}
+      {(activeTab === 'modules' || searchQuery) && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-6 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">৩</span>
+            <h2 className="text-base font-extrabold text-slate-900">প্ল্যাটফর্মের প্রতিটি পেজ ও মডিউলের কার্যকারিতা</h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
+                <span className="flex items-center gap-2">📊 Dashboard (Command Center)</span>
+                <button onClick={() => onNavigate?.('dashboard')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Dashboard &gt;</button>
+              </div>
+              <p className="text-xs text-slate-600">
+                পুরো এজেন্সির ৪টি কোর মেট্রিক্স (Total Revenue, Total USD Spent, Net Profit, Card Balance), ইন্টারঅ্যাক্টিভ স্প্লাইন গ্রাফ, কনসেন্ট্রিক সাইবারনেটিক গেজ এবং পাশাপাশি ক্লায়েন্ট ও কার্ড ব্যালেন্স টেবিল প্রদর্শন করে।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
+                <span className="flex items-center gap-2">👥 Clients (CRM & Profitability)</span>
+                <button onClick={() => onNavigate?.('clients')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Clients &gt;</button>
+              </div>
+              <p className="text-xs text-slate-600">
+                সব ক্লায়েন্টের তালিকা, প্রতি ক্লায়েন্টের মোট রেভিনিউ, মেটা অ্যাড খরচ ও নিট লাভ মার্জিন %। এখান থেকে ১-ক্লিকে ক্লায়েন্টের লেনদেন হিস্ট্রি ও স্টেটমেন্ট দেখা যায়।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
+                <span className="flex items-center gap-2">🧾 Transactions (Double-Ledger)</span>
+                <button onClick={() => onNavigate?.('ledger')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Transactions &gt;</button>
+              </div>
+              <p className="text-xs text-slate-600">
+                সম্পূর্ণ অডিট লেজার। প্রতিটি লেনদেনের মানি রিসিট ডাউনলোড, Excel/CSV এক্সপোর্ট এবং ভুল এন্ট্রি হলে এডিট বা ডিলিট করার পূর্ণ সুবিধা।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
+                <span className="flex items-center gap-2">💳 Cards & USD (Liquidity Hub)</span>
+                <button onClick={() => onNavigate?.('cards')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Cards &gt;</button>
+              </div>
+              <p className="text-xs text-slate-600">
+                ভার্চুয়াল কার্ডের ভিজ্যুয়াল ইন্টারফেস, লাইভ ডলার ব্যালেন্স, ডলার লোড হিস্ট্রি এবং ব্যালেন্স নেগেটিভ হওয়ার আগেই ডেফিসিট ওয়ার্নিং অ্যালার্ট।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center justify-between">
+                <span className="flex items-center gap-2">📈 Reports (P&L Statements)</span>
+                <button onClick={() => onNavigate?.('reports')} className="text-sky-600 hover:underline text-[11px] font-bold">Open Reports &gt;</button>
+              </div>
+              <p className="text-xs text-slate-600">
+                কাস্টম ডেট রেঞ্জ (আজ, এই সপ্তাহ, এই মাস, এই বছর) সিলেক্ট করে প্রফেশনাল P&L অডিট স্টেটমেন্ট প্রিন্ট বা PDF ডাউনলোড করার সুবিধা।
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: TROUBLESHOOTING & FAQS */}
+      {(activeTab === 'troubleshoot' || searchQuery) && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm">৪</span>
+            <h2 className="text-base font-extrabold text-slate-900">যেসব জায়গায় মানুষ আটকে যেতে পারে (Troubleshooting & FAQs)</h2>
+          </div>
+
+          <div className="space-y-3">
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                <AlertCircle size={15} className="text-rose-500" />
+                কার্ড ব্যালেন্স নেগেটিভ (যেমন: -$১৫.০০) দেখাচ্ছে কেন?
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                <strong>কারণ:</strong> কার্ডে যে ডলার লোড করেছিলেন তার চেয়ে বেশি ডলারের মেটা অ্যাড খরচ হয়ে গেছে।<br />
+                <strong>সমাধান:</strong> অবিলম্বে <code>+ New Entry ➔ Buy / Top Up USD</code> দিয়ে নতুন ডলার লোড এন্ট্রি দিন। ব্যালেন্স সাথে সাথে পজিটিভ হয়ে যাবে।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                <Receipt size={15} className="text-purple-500" />
+                মেটা ভ্যাট (15% Tax) কি আমাকে আলাদা ইনপুট দিতে হবে?
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                <strong>না!</strong> আপনি শুধু ফেসবুকের আসল স্পেন্ড বসাবেন, সিস্টেম স্বয়ংক্রিয়ভাবে ১৫% ভ্যাট হিসাব করে কার্ড ব্যালেন্স ও প্রফিট থেকে কেটে নিবে।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                <FileText size={15} className="text-sky-500" />
+                ক্লায়েন্টকে মানি রিসিট বা স্টেটমেন্ট কীভাবে পাঠাব?
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                <code>Transactions</code> পেজে গিয়ে যেকোনো এন্ট্রির রিসিট আইকনে ক্লিক করলেই ব্র্যান্ডেড রিসিট ওপেন হবে। সেখান থেকে ১-ক্লিকে প্রিন্ট বা PDF হিসেবে সেভ করে ক্লায়েন্টকে পাঠিয়ে দিন।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                <ShieldCheck size={15} className="text-emerald-500" />
+                আমার ডাটা কি হারিয়ে যাওয়ার কোনো ঝুঁকি আছে?
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                আপনার প্রতিটি ডাটা <strong>Supabase Cloud Database</strong>-এ নিরাপদ। এছাড়াও অতিরিক্ত সুরক্ষার জন্য <code>Settings ➔ Export JSON Backup</code> বাটনে ক্লিক করে অফলাইন ব্যাকআপ ডাউনলোড করে রাখতে পারেন।
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: AGENCY PRO-TIPS */}
+      {(activeTab === 'protips' || searchQuery) && (
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <span className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">৫</span>
+            <h2 className="text-base font-extrabold text-slate-900">এজেন্সির সাফল্যের জন্য প্রো-টিপস ও চেকলিস্ট</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200/80 space-y-1.5">
+              <div className="font-bold text-xs text-amber-950 flex items-center gap-2">
+                <Clock size={15} className="text-amber-600" />
+                দৈনিক ৫ মিনিটের রুটিন
+              </div>
+              <p className="text-xs text-amber-900 leading-relaxed">
+                প্রতিদিন কাজের শেষে মেটা অ্যাড ম্যানেজার থেকে সারাদিনের স্পেন্ড AdLytic-এ রেকর্ড করে ফেলুন। এতে মাসের শেষে কোনো অসামঞ্জস্য থাকবে না।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-200/80 space-y-1.5">
+              <div className="font-bold text-xs text-sky-950 flex items-center gap-2">
+                <CreditCard size={15} className="text-sky-600" />
+                ডলার কেনার সাথে সাথে এন্ট্রি
+              </div>
+              <p className="text-xs text-sky-900 leading-relaxed">
+                সেলার থেকে কার্ডে ডলার আসা মাত্রই রেট ও ক্যাশআউট চার্জ সহ এন্ট্রি দিন, যাতে লাইভ কার্যকরী ডলার রেট ১০০% নিখুঁত থাকে।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-1.5">
+              <div className="font-bold text-xs text-emerald-950 flex items-center gap-2">
+                <Users size={15} className="text-emerald-600" />
+                ক্লায়েন্ট পেমেন্ট ট্র্যাকিং
+              </div>
+              <p className="text-xs text-emerald-900 leading-relaxed">
+                ক্লায়েন্টের বাজেট শেষ হওয়ার আগেই ড্যাশবোর্ডের Client P&L টেবিল দেখে পরবর্তী পেমেন্ট নেওয়ার আগাম তাগাদা দিন।
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200/80 space-y-1.5">
+              <div className="font-bold text-xs text-purple-950 flex items-center gap-2">
+                <Database size={15} className="text-purple-600" />
+                মাসিক ডাটা ব্যাকআপ
+              </div>
+              <p className="text-xs text-purple-900 leading-relaxed">
+                প্রতি মাসের ১ তারিখে সেটিংস পেজ থেকে 'Export Backup' ফাইলটি ডাউনলোড করে গুগল ড্রাইভে সংরক্ষণ করুন।
+              </p>
             </div>
           </div>
         </div>
