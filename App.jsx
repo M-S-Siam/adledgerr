@@ -2926,14 +2926,14 @@ function DashboardView({
         </div>
       </div>
 
-      {/* 4. LIVE OPERATIONAL COCKPIT: CLIENT LEADERBOARD & EMV VIRTUAL CARDS */}
+      {/* 4. LIVE OPERATIONAL COCKPIT: DUAL COMPARATIVE TABLES (6:6 SIDE-BY-SIDE) */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
-        {/* CLIENT PERFORMANCE & MARGIN MATRIX (8 Cols) */}
-        <div className="xl:col-span-8 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
+        {/* TABLE 1: CLIENT P&L PERFORMANCE (6 Cols) */}
+        <div className="xl:col-span-6 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
           <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
             <div>
-              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client Profit & Margins</h3>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client P&L Performance</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">Top client accounts, revenue collected & net margin.</p>
             </div>
             {onNavigate && (
@@ -2941,13 +2941,13 @@ function DashboardView({
                 onClick={() => onNavigate('clients')}
                 className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
               >
-                <span>View All Clients</span>
+                <span>All Clients</span>
                 <ChevronRight size={14} />
               </button>
             )}
           </div>
 
-          <div className="overflow-y-auto overflow-x-hidden flex-1 no-scrollbar">
+          <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
               <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
@@ -3000,78 +3000,84 @@ function DashboardView({
           </div>
         </div>
 
-        {/* ACTIVE EMV VIRTUAL CARDS (4 Cols) */}
-        <div className="xl:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        {/* TABLE 2: CARD LIQUIDITY & BURN (6 Cols) */}
+        <div className="xl:col-span-6 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
+          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
             <div>
-              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Active Virtual Cards</h3>
-              <p className="text-[10.5px] text-slate-400 font-medium">Funded balances & card burn limits.</p>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Card Liquidity & Burn</h3>
+              <p className="text-[10.5px] text-slate-400 font-medium">USD funded, burned, and live spendable balances.</p>
             </div>
-            {onNavigate && (
-              <button
-                onClick={() => onNavigate('cards')}
-                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
-              >
-                <span>All Cards</span>
-                <ChevronRight size={14} />
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {onAddUSD && (
+                <button
+                  onClick={onAddUSD}
+                  className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+                >
+                  <Plus size={13} className="stroke-[2.5]" />
+                  <span>Top Up</span>
+                </button>
+              )}
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('cards')}
+                  className="text-[11px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-0.5 transition-colors ml-2 pl-2 border-l border-slate-200"
+                >
+                  <span>All Cards</span>
+                  <ChevronRight size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-3 my-3">
-            {dashboardData.allCards.length === 0 && (
-              <div className="py-8 text-center text-slate-400 text-xs">No active cards found.</div>
-            )}
-            {dashboardData.allCards.slice(0, 3).map(card => (
-              <div
-                key={card.id}
-                onClick={() => onViewCard && onViewCard(card)}
-                className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer group"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[7px] font-black text-white shadow-2xs">
-                      EMV
-                    </div>
-                    <div>
-                      <span className="font-bold text-xs text-slate-900 group-hover:text-sky-700 transition-colors">
-                        {card.name}
-                      </span>
-                      {card.last4 && <span className="ml-1 text-[10px] font-mono text-slate-400">*{card.last4}</span>}
-                    </div>
-                  </div>
-                  <span className={`font-black text-xs ${card.balance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
-                    {formatUSD(card.balance)}
-                  </span>
-                </div>
-
-                <div className="space-y-1 text-[10.5px]">
-                  <div className="flex items-center justify-between text-slate-400 font-semibold">
-                    <span>Funded: {formatUSD(card.purchased)}</span>
-                    <span>Burned: {formatUSD(card.spent)}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        card.balance < 0 ? 'bg-rose-500' : card.utilPercent > 85 ? 'bg-amber-500' : 'bg-emerald-500'
-                      }`}
-                      style={{ width: `${Math.min(100, Math.max(0, card.utilPercent))}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
+            <table className="table-fixed w-full text-xs text-left">
+              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
+                <tr>
+                  <th className="w-[32%] pl-5 pr-2 py-3 text-left">Card & Provider</th>
+                  <th className="w-[23%] px-3 py-3 text-right">USD Funded</th>
+                  <th className="w-[23%] px-3 py-3 text-right">Total Burned</th>
+                  <th className="w-[22%] pl-2 pr-5 py-3 text-right">Live Balance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {dashboardData.allCards.length === 0 && (
+                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400 font-semibold">No active cards found.</td></tr>
+                )}
+                {dashboardData.allCards.slice(0, 5).map(card => (
+                  <tr
+                    key={card.id}
+                    onClick={() => onViewCard && onViewCard(card)}
+                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  >
+                    <td className="w-[32%] pl-5 pr-2 py-3 text-left">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[7px] font-black text-white shadow-2xs shrink-0">
+                          EMV
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 truncate group-hover:text-sky-700 transition-colors">
+                            {card.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate">
+                            {card.provider || 'Virtual Card'} {card.last4 && `· *${card.last4}`}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="w-[23%] px-3 py-3 text-right font-bold text-emerald-700">
+                      +{formatUSD(card.purchased)}
+                    </td>
+                    <td className="w-[23%] px-3 py-3 text-right font-bold text-purple-700">
+                      -{formatUSD(card.spent)}
+                    </td>
+                    <td className={`w-[22%] pl-2 pr-5 py-3 text-right font-black ${card.balance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                      {formatUSD(card.balance)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          {onAddUSD && (
-            <button
-              onClick={onAddUSD}
-              className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Plus size={14} />
-              <span>Top Up USD to Card</span>
-            </button>
-          )}
         </div>
       </div>
 
