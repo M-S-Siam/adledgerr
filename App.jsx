@@ -1022,7 +1022,7 @@ export default function AdLedgerApp() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 pr-3 sm:pr-5">
               {/* Live Effective Exchange Rate Pill */}
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
@@ -1045,7 +1045,7 @@ export default function AdLedgerApp() {
                 {isNewEntryOpen && (
                   <div
                     style={{ right: 0 }}
-                    className="absolute right-0 mt-2.5 w-64 sm:w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                    className="absolute right-0 mt-2.5 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                   >
                     <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
                       Quick Record Actions
