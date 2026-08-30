@@ -1975,7 +1975,7 @@ function ReportsView({ clients, cards, transactions }) {
 
         {/* TABLE 1: CLIENT P&L PERFORMANCE */}
         <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-          <div className="px-4 sm:px-5 py-3 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client P&L Performance</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">Revenue, USD ad cost, and profit margin per client.</p>
@@ -1988,11 +1988,11 @@ function ReportsView({ clients, cards, transactions }) {
             <table className="table-fixed w-full text-xs text-left">
               <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
-                  <th className="w-[32%] pl-4 pr-2 py-2.5">Client & Brand</th>
-                  <th className="w-[22%] px-2 py-2.5 text-right">Revenue</th>
-                  <th className="w-[20%] px-2 py-2.5 text-right">Ad Cost</th>
-                  <th className="w-[16%] px-2 py-2.5 text-right">Profit</th>
-                  <th className="w-[10%] pl-1 pr-4 py-2.5 text-center">Margin</th>
+                  <th className="w-[26%] pl-5 pr-2 py-3 text-left">Client & Brand</th>
+                  <th className="w-[21%] px-3 py-3 text-right">Revenue</th>
+                  <th className="w-[20%] px-3 py-3 text-right">Ad Cost</th>
+                  <th className="w-[19%] px-3 py-3 text-right">Net Profit</th>
+                  <th className="w-[14%] pl-2 pr-5 py-3 text-right">Margin</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -2001,22 +2001,22 @@ function ReportsView({ clients, cards, transactions }) {
                 )}
                 {clientRows.map(row => (
                   <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="w-[32%] pl-4 pr-2 py-2.5">
+                    <td className="w-[26%] pl-5 pr-2 py-3 text-left">
                       <div className="font-bold text-slate-900 truncate">{row.name}</div>
                       <div className="text-[10px] text-slate-400 truncate">{row.company}</div>
                     </td>
-                    <td className="w-[22%] px-2 py-2.5 text-right font-bold text-emerald-700">{formatBDT(row.revenue)}</td>
-                    <td className="w-[20%] px-2 py-2.5 text-right text-slate-600 font-semibold">{formatBDT(row.costBDT)}</td>
-                    <td className={`w-[16%] px-2 py-2.5 text-right font-black ${row.profit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    <td className="w-[21%] px-3 py-3 text-right font-bold text-emerald-700">{formatBDT(row.revenue)}</td>
+                    <td className="w-[20%] px-3 py-3 text-right text-slate-600 font-semibold">{formatBDT(row.costBDT)}</td>
+                    <td className={`w-[19%] px-3 py-3 text-right font-black ${row.profit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                       {formatBDT(row.profit)}
                     </td>
-                    <td className="w-[10%] pl-1 pr-4 py-2.5 text-center">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9.5px] font-bold ${
+                    <td className="w-[14%] pl-2 pr-5 py-3 text-right">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                         row.margin > 50 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                         row.margin < 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
                         'bg-slate-100 text-slate-700'
                       }`}>
-                        {row.margin.toFixed(0)}%
+                        {row.margin.toFixed(1)}%
                       </span>
                     </td>
                   </tr>
@@ -2028,7 +2028,7 @@ function ReportsView({ clients, cards, transactions }) {
 
         {/* TABLE 2: CARD LIQUIDITY & UTILIZATION */}
         <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-          <div className="px-4 sm:px-5 py-3 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Card Liquidity & Burn</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">USD funded, spent, and period-end live balance.</p>
@@ -2041,10 +2041,10 @@ function ReportsView({ clients, cards, transactions }) {
             <table className="table-fixed w-full text-xs text-left">
               <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
-                  <th className="w-[36%] pl-4 pr-2 py-2.5">Card Name</th>
-                  <th className="w-[22%] px-2 py-2.5 text-right">USD Funded</th>
-                  <th className="w-[22%] px-2 py-2.5 text-right">Total Burned</th>
-                  <th className="w-[20%] pl-2 pr-4 py-2.5 text-right">Balance</th>
+                  <th className="w-[31%] pl-5 pr-2 py-3 text-left">Card Name</th>
+                  <th className="w-[23%] px-3 py-3 text-right">USD Funded</th>
+                  <th className="w-[23%] px-3 py-3 text-right">Total Burned</th>
+                  <th className="w-[23%] pl-2 pr-5 py-3 text-right">Balance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -2053,16 +2053,16 @@ function ReportsView({ clients, cards, transactions }) {
                 )}
                 {cardRows.map(row => (
                   <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="w-[36%] pl-4 pr-2 py-2.5">
+                    <td className="w-[31%] pl-5 pr-2 py-3 text-left">
                       <div className="font-bold text-slate-900 flex items-center gap-1.5 truncate">
                         <span className="truncate">{row.name}</span>
                         {row.last4 && <span className="text-[9.5px] font-mono text-slate-400 shrink-0">*{row.last4}</span>}
                       </div>
                       <div className="text-[10px] text-slate-400 truncate">{row.provider}</div>
                     </td>
-                    <td className="w-[22%] px-2 py-2.5 text-right font-bold text-emerald-700">{formatUSD(row.purchased)}</td>
-                    <td className="w-[22%] px-2 py-2.5 text-right text-purple-700 font-bold">-{formatUSD(row.adSpend + row.tax + row.fees)}</td>
-                    <td className={`w-[20%] pl-2 pr-4 py-2.5 text-right font-black ${row.current < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    <td className="w-[23%] px-3 py-3 text-right font-bold text-emerald-700">+{formatUSD(row.purchased)}</td>
+                    <td className="w-[23%] px-3 py-3 text-right text-purple-700 font-bold">-{formatUSD(row.adSpend + row.tax + row.fees)}</td>
+                    <td className={`w-[23%] pl-2 pr-5 py-3 text-right font-black ${row.current < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                       {formatUSD(row.current)}
                     </td>
                   </tr>
