@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, CreditCard, DollarSign,
   Activity, FileText, Settings, Plus, Search,
-  ArrowUpRight, ArrowDownRight, ArrowDownLeft, Wallet, PieChart,
+  ArrowUpRight, ArrowDownRight, ArrowDownLeft, ArrowRight, ChevronRight, Wallet, PieChart,
   TrendingUp, Building, Calendar, Hash, CheckCircle2,
   AlertCircle, ChevronDown, Menu, X, Download, MoreVertical, Trash2, CalendarDays,
   BriefcaseBusiness, PlugZap, UsersRound, Database, Upload, ShieldCheck, SlidersHorizontal,
@@ -896,7 +896,23 @@ export default function AdLedgerApp() {
         return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onUpdate={handleUpdateTeamMember} onRemove={handleRemoveTeamMember} clients={clients} workspaceSettings={workspaceSettings} />;
       case 'settings':
         return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} clients={clients} cards={cards} transactions={transactions} campaigns={campaigns} metrics={metrics} />;
-      default: return <DashboardView metrics={metrics} chartData={revenueChartData} transactions={transactions} clients={clients} cards={cards} />;
+      default: return (
+        <DashboardView
+          metrics={metrics}
+          chartData={revenueChartData}
+          transactions={transactions}
+          clients={clients}
+          cards={cards}
+          onAddPayment={() => { setSelectedClient(null); setActiveModal('payment'); }}
+          onAddUSD={() => { setSelectedCard(null); setActiveModal('usd'); }}
+          onAddSpend={() => { setSelectedCard(null); setActiveModal('spend'); }}
+          onAddClient={() => { setSelectedClient(null); setActiveModal('add-client'); }}
+          onViewClient={(c) => { setSelectedClient(c); setActiveModal('client-details'); }}
+          onViewCard={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
+          onFundCard={(c) => { setSelectedCard(c); setActiveModal('usd'); }}
+          onNavigate={(tab) => setCurrentView(tab)}
+        />
+      );
     }
   };
 
@@ -2154,7 +2170,21 @@ function ReportEmptyState() {
   );
 }
 
-function DashboardView({ metrics, chartData = [], transactions = [], clients = [], cards = [] }) {
+function DashboardView({
+  metrics,
+  chartData = [],
+  transactions = [],
+  clients = [],
+  cards = [],
+  onAddPayment,
+  onAddUSD,
+  onAddSpend,
+  onAddClient,
+  onViewClient,
+  onViewCard,
+  onFundCard,
+  onNavigate
+}) {
   const dashboardData = useMemo(() => {
     let totalBDTSpentOnUSD = 0;
     let totalCashOutCharges = 0;
@@ -2178,11 +2208,14 @@ function DashboardView({ metrics, chartData = [], transactions = [], clients = [
     clients.forEach(client => {
       clientMap[client.id] = {
         id: client.id,
+        rawClient: client,
         name: client.name || 'Unnamed Client',
+        company: client.company || client.brand || 'Personal Account',
         revenue: 0,
         adSpendUSD: 0,
         adCostBDT: 0,
         profit: 0,
+        margin: 0,
         status: client.status || (client.currentlyWorking ? 'Active' : 'Inactive')
       };
     });
@@ -2210,20 +2243,41 @@ function DashboardView({ metrics, chartData = [], transactions = [], clients = [
         row.revenue += parseFloat(t.amountBDT || 0);
       }
       if (t.type === 'AD_SPEND') {
-        row.adSpendUSD += parseFloat(t.amountUSD || 0);
-        row.adCostBDT += (
-          parseFloat(t.amountUSD || 0) + parseFloat(t.taxUSD || 0)
-        ) * (metrics.avgUSDEffectiveRate || 0);
+        const spendUSD = parseFloat(t.amountUSD || 0);
+        const taxUSD = parseFloat(t.taxUSD || 0);
+        row.adSpendUSD += spendUSD;
+        row.adCostBDT += (spendUSD + taxUSD) * (metrics.avgUSDEffectiveRate || 0);
       }
     });
 
     Object.values(clientMap).forEach(row => {
       row.profit = row.revenue - row.adCostBDT;
+      row.margin = row.revenue > 0 ? (row.profit / row.revenue) * 100 : 0;
     });
 
     const clientRows = Object.values(clientMap)
       .filter(row => row.revenue || row.adSpendUSD || clients.length === 1)
       .sort((a, b) => b.revenue - a.revenue);
+
+    // Cards with real-time liquidity
+    const cardRows = cards.map(c => {
+      const stats = (metrics.cardStats && metrics.cardStats[c.id]) || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
+      const opening = parseFloat(c.initialBalance || 0);
+      const balance = opening + stats.purchased - stats.adSpend - stats.tax - stats.fees;
+      const spent = stats.adSpend + stats.tax + stats.fees;
+      const totalFunded = opening + stats.purchased;
+      const utilPercent = totalFunded > 0 ? Math.min(100, (spent / totalFunded) * 100) : (spent > 0 ? 100 : 0);
+      return {
+        ...c,
+        purchased: stats.purchased,
+        adSpend: stats.adSpend,
+        tax: stats.tax,
+        fees: stats.fees,
+        spent,
+        balance,
+        utilPercent
+      };
+    });
 
     const recentTransactions = [...transactions]
       .sort((a, b) => {
@@ -2235,272 +2289,849 @@ function DashboardView({ metrics, chartData = [], transactions = [], clients = [
 
     const flowData = (chartData || []).map(row => ({
       ...row,
+      revenue: parseFloat(row.revenue || 0),
       adCostBDT: (parseFloat(row.spendUSD || 0) * (metrics.avgUSDEffectiveRate || 0))
     }));
 
-    const expenseData = [
-      { name: 'Meta Ads', value: metrics.totalAdSpendUSD },
-      { name: 'Tax', value: metrics.totalTaxUSD },
-      { name: 'Fees', value: Object.values(metrics.cardStats || {}).reduce((sum, item) => sum + (item.fees || 0), 0) }
+    const totalFees = Object.values(metrics.cardStats || {}).reduce((sum, item) => sum + (item.fees || 0), 0);
+    const totalBurnUSD = (metrics.totalAdSpendUSD || 0) + (metrics.totalTaxUSD || 0) + totalFees;
+
+    const expenseBreakdown = [
+      {
+        name: 'Meta Ads Spend',
+        value: metrics.totalAdSpendUSD || 0,
+        color: '#8b5cf6',
+        percentage: totalBurnUSD > 0 ? (((metrics.totalAdSpendUSD || 0) / totalBurnUSD) * 100).toFixed(1) : '0.0'
+      },
+      {
+        name: '15% Meta Tax (VAT)',
+        value: metrics.totalTaxUSD || 0,
+        color: '#ec4899',
+        percentage: totalBurnUSD > 0 ? (((metrics.totalTaxUSD || 0) / totalBurnUSD) * 100).toFixed(1) : '0.0'
+      },
+      {
+        name: 'Bank / Card Fees',
+        value: totalFees,
+        color: '#f59e0b',
+        percentage: totalBurnUSD > 0 ? ((totalFees / totalBurnUSD) * 100).toFixed(1) : '0.0'
+      }
     ];
 
     return {
       totalBDTCost,
       netBDT,
       totalUSDOut,
+      totalBurnUSD,
+      totalFees,
       activeClients,
-      allCards: cards,
+      allCards: cardRows,
       clientRows,
       recentTransactions,
       flowData,
-      expenseData
+      expenseBreakdown
     };
   }, [metrics, chartData, transactions, clients, cards]);
 
-  const getTransactionLabel = (tx) => {
-    if (tx.type === 'PAYMENT_RECEIVED') return 'Payment Received';
-    if (tx.type === 'USD_PURCHASE') return 'Buy USD';
-    if (tx.type === 'AD_SPEND') return 'Meta Ads';
-    if (tx.type === 'FEE') return 'Fee';
-    return String(tx.type || 'Transaction').replace(/_/g, ' ');
-  };
-
-  const getTransactionEntity = (tx) => {
-    const client = clients.find(c => c.id === tx.clientId);
-    return client?.name || tx.clientName || tx.client || tx.sourceClient || tx.adAccount || '—';
-  };
-
-  const getStatusClasses = (status) => {
-    const normalized = String(status || '').toLowerCase();
-    if (normalized.includes('active')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    if (normalized.includes('complete')) return 'bg-blue-50 text-blue-700 border-blue-200';
-    return 'bg-orange-50 text-orange-700 border-orange-200';
-  };
+  const totalCardBalance = metrics.totalCardBalance || 0;
 
   return (
     <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      
+      {/* 1. EXECUTIVE OPERATIONAL HERO STRIP & FAST SHORTCUTS */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
-          <p className="text-slate-500 text-sm">Your complete BDT, USD, client and card snapshot.</p>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-black">
+              <LayoutDashboard size={18} />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Agency Command Center
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px] font-extrabold uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Sync
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 font-medium">
+            Live financial telemetry, liquidity distribution & client performance overview.
+          </p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1.5 shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          Live from your ledger
+
+        {/* 4 Instant Action Shortcuts */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+          {onAddPayment && (
+            <button
+              onClick={onAddPayment}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm hover:shadow transition-all"
+            >
+              <ArrowDownLeft size={14} className="stroke-[2.5]" />
+              <span>+ Payment In</span>
+            </button>
+          )}
+          {onAddUSD && (
+            <button
+              onClick={onAddUSD}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm hover:shadow transition-all"
+            >
+              <DollarSign size={14} className="stroke-[2.5]" />
+              <span>+ Buy USD</span>
+            </button>
+          )}
+          {onAddSpend && (
+            <button
+              onClick={onAddSpend}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm hover:shadow transition-all"
+            >
+              <Activity size={14} className="stroke-[2.5]" />
+              <span>+ Meta Spend</span>
+            </button>
+          )}
+          {onAddClient && (
+            <button
+              onClick={onAddClient}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-sm hover:shadow transition-all"
+            >
+              <UserPlus size={14} className="stroke-[2.5]" />
+              <span>+ Client</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-4">
-        <MetricCard title="Total Revenue" value={formatBDT(metrics.totalRevenueBDT)} subtitle="BDT received from clients" icon={<ArrowDownRight size={20} className="text-emerald-600" />} bgColor="bg-emerald-50" textColorClass="text-slate-900" />
-        <MetricCard title="Total BDT Cost" value={formatBDT(dashboardData.totalBDTCost)} subtitle="USD purchase + C.O charges" icon={<Wallet size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass="text-slate-900" />
-        <MetricCard title="Net BDT" value={formatBDT(dashboardData.netBDT)} subtitle="Revenue minus USD cost" icon={<TrendingUp size={20} className="text-blue-600" />} bgColor="bg-blue-50" textColorClass={dashboardData.netBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
-        <MetricCard title="Net Profit" value={formatBDT(metrics.netProfitBDT)} subtitle={`Margin: ${metrics.profitMargin.toFixed(1)}%`} icon={<TrendingUp size={20} className="text-indigo-600" />} bgColor="bg-indigo-50" textColorClass={metrics.netProfitBDT < 0 ? 'text-red-600' : 'text-slate-900'} />
-        <MetricCard title="Meta Ads Spend" value={formatUSD(metrics.totalAdSpendUSD)} subtitle={`Tax ${formatUSD(metrics.totalTaxUSD)}`} icon={<Activity size={20} className="text-purple-600" />} bgColor="bg-purple-50" />
-        <MetricCard title="Total USD Out" value={formatUSD(dashboardData.totalUSDOut)} subtitle="Ads + tax" icon={<ArrowUpRight size={20} className="text-red-600" />} bgColor="bg-red-50" />
-        <MetricCard title="USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} subtitle={`Rate ৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} icon={<DollarSign size={20} className="text-sky-600" />} bgColor="bg-sky-50" />
-        <MetricCard title="Card Balance" value={formatUSD(metrics.totalCardBalance)} subtitle="Available across all cards" icon={<CreditCard size={20} className="text-orange-600" />} bgColor="bg-orange-50" textColorClass={metrics.totalCardBalance < 0 ? 'text-red-600' : 'text-slate-900'} />
-      </div>
+      {/* 2. EXECUTIVE FINANCIAL HEALTH MATRIX (4 MASTER PILLAR CARDS) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 overflow-hidden">
-          <div className="flex items-start justify-between gap-4 mb-5">
+        {/* PILLAR 1: DOMESTIC CASHFLOW (BDT) */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                <ArrowDownRight size={17} />
+              </div>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Domestic Cashflow</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              BDT Inflow
+            </span>
+          </div>
+
+          <div className="my-3 space-y-2">
             <div>
-              <h3 className="font-semibold text-slate-900">Money Flow</h3>
-              <p className="text-xs text-slate-500 mt-1">Revenue versus ad cost, shown on the same BDT scale.</p>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Revenue In</span>
+              <div className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">
+                {formatBDT(metrics.totalRevenueBDT)}
+              </div>
             </div>
-            <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-500">
-              <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />Revenue</span>
-              <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-500" />Ad Cost</span>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+              <div>
+                <span className="text-slate-400 block font-semibold">Procurement Cost</span>
+                <span className="font-bold text-rose-600">{formatBDT(dashboardData.totalBDTCost)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-semibold">Cash Surplus</span>
+                <span className={`font-bold ${dashboardData.netBDT < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+                  {formatBDT(dashboardData.netBDT)}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dashboardData.flowData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
-                <defs>
-                  <linearGradient id="dashboardRevenueFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.22} />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="dashboardCostFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.16} />
-                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.01} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="4 6" vertical={false} stroke="#e8edf3" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} dy={8} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(value) => `৳${Math.round(value / 1000)}k`} width={42} />
-                <Tooltip
-                  cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }}
-                  contentStyle={{ borderRadius: 14, border: '1px solid #e2e8f0', boxShadow: '0 12px 30px rgba(15,23,42,0.10)', fontSize: 12 }}
-                  formatter={(value, name) => [formatBDT(value), name]}
-                />
-                <Area type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#10b981" strokeWidth={2.5} fill="url(#dashboardRevenueFill)" dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 5 }} />
-                <Area type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT)" stroke="#f59e0b" strokeWidth={2.5} fill="url(#dashboardCostFill)" dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 5 }} />
-              </AreaChart>
-            </ResponsiveContainer>
+
+          <div className="text-[10px] text-slate-400 font-medium">
+            BDT collected from clients minus actual procurement spend.
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <div className="mb-4">
-            <h3 className="font-semibold text-slate-900">USD Expense Breakdown</h3>
-            <p className="text-xs text-slate-500 mt-1">Where your USD outflow is going.</p>
+        {/* PILLAR 2: FOREIGN FX & MEDIA BURN (USD) */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                <Activity size={17} />
+              </div>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Foreign Media Burn</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+              USD Outflow
+            </span>
           </div>
-          <div className="h-64 relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <RePieChart>
-                <Pie data={dashboardData.expenseData.filter(item => item.value > 0)} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92} paddingAngle={4} cornerRadius={8} stroke="#fff" strokeWidth={4}>
-                  {dashboardData.expenseData.map((entry, index) => <Cell key={`expense-cell-${entry.name}`} fill={['#38bdf8', '#f59e0b', '#fb7185'][index % 3]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} formatter={(value) => [formatUSD(value), 'USD']} />
-              </RePieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="text-center"><p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Out</p><p className="text-lg font-bold text-slate-900">{formatUSD(dashboardData.totalUSDOut)}</p></div></div>
+
+          <div className="my-3 space-y-2">
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total USD Outflow</span>
+              <div className="text-xl sm:text-2xl font-black text-purple-700 tracking-tight">
+                {formatUSD(dashboardData.totalBurnUSD)}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+              <div>
+                <span className="text-slate-400 block font-semibold">USD Procured</span>
+                <span className="font-bold text-sky-600">{formatUSD(metrics.totalUSDPurchased)}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-semibold">Meta Ads + 15%</span>
+                <span className="font-bold text-slate-800">{formatUSD(metrics.totalAdSpendUSD + metrics.totalTaxUSD)}</span>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 mt-2 text-center">
-            <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Ads</p><p className="text-xs font-semibold text-slate-800">{formatUSD(metrics.totalAdSpendUSD)}</p></div>
-            <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Tax</p><p className="text-xs font-semibold text-slate-800">{formatUSD(metrics.totalTaxUSD)}</p></div>
-            <div className="rounded-xl bg-slate-50 p-2"><p className="text-[10px] text-slate-500">Total</p><p className="text-xs font-semibold text-slate-800">{formatUSD(dashboardData.totalUSDOut)}</p></div>
+
+          <div className="text-[10px] text-slate-400 font-medium">
+            Meta Ads spend + 15% VAT + bank card fees.
+          </div>
+        </div>
+
+        {/* PILLAR 3: NET AGENCY PROFIT & EFFICIENCY (HERO KPI) */}
+        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm text-white flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                <TrendingUp size={17} />
+              </div>
+              <span className="font-extrabold text-xs text-white uppercase tracking-wider">Net Agency Profit</span>
+            </div>
+            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+              metrics.profitMargin >= 50 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+              metrics.profitMargin < 0 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+              'bg-sky-500/20 text-sky-300 border-sky-500/40'
+            }`}>
+              {metrics.profitMargin.toFixed(1)}% Margin
+            </span>
+          </div>
+
+          <div className="my-3 space-y-2">
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Bottom Line BDT</span>
+              <div className={`text-xl sm:text-2xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                {formatBDT(metrics.netProfitBDT)}
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
+              <span className="text-slate-400 font-medium">Conversion Yield:</span>
+              <span className="font-bold text-white">
+                ৳{(metrics.netProfitBDT / (dashboardData.totalBurnUSD || 1)).toFixed(1)} / USD Burn
+              </span>
+            </div>
+          </div>
+
+          <div className="text-[10px] text-slate-400 font-medium">
+            Revenue minus USD ad burn evaluated at effective purchase rate.
+          </div>
+        </div>
+
+        {/* PILLAR 4: CARD LIQUIDITY & PROCUREMENT RATE */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                totalCardBalance < 0 ? 'bg-rose-50 text-rose-600' : 'bg-sky-50 text-sky-600'
+              }`}>
+                <CreditCard size={17} />
+              </div>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Card Liquidity</span>
+            </div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              totalCardBalance < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-sky-50 text-sky-700 border-sky-200'
+            }`}>
+              {cards.length} Cards
+            </span>
+          </div>
+
+          <div className="my-3 space-y-2">
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Available Balance</span>
+              <div className={`text-xl sm:text-2xl font-black tracking-tight ${totalCardBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                {formatUSD(totalCardBalance)}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+              <div>
+                <span className="text-slate-400 block font-semibold">Effective Rate</span>
+                <span className="font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}/USD</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-semibold">Total 15% VAT</span>
+                <span className="font-bold text-rose-600">{formatUSD(metrics.totalTaxUSD)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-[10px] text-slate-400 font-medium">
+            Combined spendable balance across all funded virtual cards.
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <div className="flex items-start justify-between mb-4">
+      {/* 3. MASTER VISUAL INTELLIGENCE CENTER (DUAL GLOW SPLINE & CYBER RADIAL HUD) */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+
+        {/* CHART 1: Dual-Chamber Revenue vs Media Cost Glow Flow (8 Cols) */}
+        <div className="xl:col-span-8 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
             <div>
-              <h3 className="font-semibold text-slate-900">Client Performance</h3>
-              <p className="text-xs text-slate-500 mt-1">Revenue, ad cost and estimated profit by client.</p>
+              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+                <TrendingUp size={16} className="text-emerald-600" />
+                Revenue vs Ad Burn Trajectory
+              </h3>
+              <p className="text-xs text-slate-400 font-medium">Daily BDT collection vs equivalent BDT ad cost.</p>
             </div>
-            <span className="text-xs font-medium text-slate-400">{clients.length} client{clients.length === 1 ? '' : 's'}</span>
+            <div className="flex items-center gap-4 text-xs font-bold">
+              <span className="inline-flex items-center gap-1.5 text-emerald-600">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
+                Revenue In (BDT)
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-amber-500">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
+                Ad Cost (BDT)
+              </span>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 text-left text-xs text-slate-500">
-                  <th className="pb-3 font-medium">Client</th>
-                  <th className="pb-3 font-medium text-right">Revenue</th>
-                  <th className="pb-3 font-medium text-right">Ad Cost</th>
-                  <th className="pb-3 font-medium text-right">Profit</th>
-                  <th className="pb-3 font-medium text-right">Status</th>
+
+          <div className="h-64 sm:h-72 w-full">
+            {dashboardData.flowData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dashboardData.flowData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="dashRevGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.28} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="dashCostGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.22} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 10.5, fontWeight: 600 }}
+                    dy={6}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 10.5, fontWeight: 600 }}
+                    tickFormatter={(v) => `৳${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const rev = payload.find(p => p.dataKey === 'revenue')?.value || 0;
+                      const cost = payload.find(p => p.dataKey === 'adCostBDT')?.value || 0;
+                      const margin = rev > 0 ? (((rev - cost) / rev) * 100).toFixed(1) : 0;
+                      return (
+                        <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-800 rounded-xl p-3 shadow-xl text-xs space-y-1.5 min-w-[170px]">
+                          <div className="font-bold text-slate-400 border-b border-slate-800 pb-1 flex items-center justify-between">
+                            <span>{label}</span>
+                            <span className="text-[10px] text-emerald-400 font-extrabold">{margin}% Margin</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-emerald-400 font-medium flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Revenue:
+                            </span>
+                            <span className="font-bold font-mono text-emerald-400">{formatBDT(rev)}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-amber-400 font-medium flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Ad Cost:
+                            </span>
+                            <span className="font-bold font-mono text-amber-400">{formatBDT(cost)}</span>
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Revenue"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#dashRevGrad)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="adCostBDT"
+                    name="Ad Cost"
+                    stroke="#f59e0b"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#dashCostGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <ReportEmptyState />
+            )}
+          </div>
+        </div>
+
+        {/* CHART 2: Cybernetic Concentric Radial Burn HUD (4 Cols) */}
+        <div className="xl:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+          <div className="mb-2 pb-3 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+                <Activity size={16} className="text-purple-600" />
+                USD Burn Allocation
+              </h3>
+              <p className="text-[11px] text-slate-400 font-medium">Meta Ads, 15% VAT, and bank fees.</p>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200/60 text-[10px] font-bold text-purple-700">
+              Concentric HUD
+            </span>
+          </div>
+
+          {/* UNIQUE GLOWING CONCENTRIC CIRCULAR GAUGE */}
+          {dashboardData.totalBurnUSD > 0 ? (
+            <div className="py-2 flex flex-col items-center">
+              <div className="relative w-48 h-48 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 190 190">
+                  <defs>
+                    <linearGradient id="dashGlowAds" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#a855f7" />
+                      <stop offset="100%" stopColor="#6366f1" />
+                    </linearGradient>
+                    <linearGradient id="dashGlowTax" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#ec4899" />
+                      <stop offset="100%" stopColor="#f43f5e" />
+                    </linearGradient>
+                    <linearGradient id="dashGlowFees" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#f59e0b" />
+                      <stop offset="100%" stopColor="#eab308" />
+                    </linearGradient>
+                    <filter id="dashShadowViolet" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#8b5cf6" floodOpacity="0.4" />
+                    </filter>
+                    <filter id="dashShadowPink" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ec4899" floodOpacity="0.4" />
+                    </filter>
+                    <filter id="dashShadowAmber" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#f59e0b" floodOpacity="0.4" />
+                    </filter>
+                  </defs>
+
+                  {/* Precision Radial Calibration Dial Ticks */}
+                  {[...Array(24)].map((_, i) => {
+                    const angle = (i * 360) / 24;
+                    const rad = (angle * Math.PI) / 180;
+                    const x1 = 95 + 88 * Math.cos(rad);
+                    const y1 = 95 + 88 * Math.sin(rad);
+                    const x2 = 95 + 83 * Math.cos(rad);
+                    const y2 = 95 + 83 * Math.sin(rad);
+                    return (
+                      <line
+                        key={i}
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke="#cbd5e1"
+                        strokeWidth={i % 6 === 0 ? "2" : "1"}
+                        strokeOpacity={i % 6 === 0 ? "0.8" : "0.35"}
+                      />
+                    );
+                  })}
+
+                  {/* Base Track Arcs */}
+                  <circle cx="95" cy="95" r="72" fill="none" stroke="#f1f5f9" strokeWidth="8" />
+                  <circle cx="95" cy="95" r="56" fill="none" stroke="#f1f5f9" strokeWidth="7" />
+                  <circle cx="95" cy="95" r="40" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+
+                  {/* Glowing Layer 1: Meta Ads (Outer) */}
+                  {metrics.totalAdSpendUSD > 0 && (
+                    <circle
+                      cx="95"
+                      cy="95"
+                      r="72"
+                      fill="none"
+                      stroke="url(#dashGlowAds)"
+                      strokeWidth="8"
+                      strokeDasharray={2 * Math.PI * 72}
+                      strokeDashoffset={(2 * Math.PI * 72) * (1 - Math.min(1, (metrics.totalAdSpendUSD || 0) / (dashboardData.totalBurnUSD || 1)))}
+                      strokeLinecap="round"
+                      filter="url(#dashShadowViolet)"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  )}
+
+                  {/* Glowing Layer 2: 15% VAT (Middle) */}
+                  {metrics.totalTaxUSD > 0 && (
+                    <circle
+                      cx="95"
+                      cy="95"
+                      r="56"
+                      fill="none"
+                      stroke="url(#dashGlowTax)"
+                      strokeWidth="7"
+                      strokeDasharray={2 * Math.PI * 56}
+                      strokeDashoffset={(2 * Math.PI * 56) * (1 - Math.min(1, (metrics.totalTaxUSD || 0) / (dashboardData.totalBurnUSD || 1)))}
+                      strokeLinecap="round"
+                      filter="url(#dashShadowPink)"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  )}
+
+                  {/* Glowing Layer 3: Card Fees (Inner) */}
+                  {dashboardData.totalFees > 0 && (
+                    <circle
+                      cx="95"
+                      cy="95"
+                      r="40"
+                      fill="none"
+                      stroke="url(#dashGlowFees)"
+                      strokeWidth="6"
+                      strokeDasharray={2 * Math.PI * 40}
+                      strokeDashoffset={(2 * Math.PI * 40) * (1 - Math.min(1, (dashboardData.totalFees || 0) / (dashboardData.totalBurnUSD || 1)))}
+                      strokeLinecap="round"
+                      filter="url(#dashShadowAmber)"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  )}
+                </svg>
+
+                {/* Center Futuristic Digital HUD Core */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">TOTAL BURN</span>
+                  </div>
+                  <span className="text-base font-black text-slate-900 tracking-tight leading-none">
+                    {formatUSD(dashboardData.totalBurnUSD)}
+                  </span>
+                  <span className="text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200/60 mt-1">
+                    Live Telemetry
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <ReportEmptyState />
+          )}
+
+          {/* Segmented Metric Progress Bars */}
+          <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+            {dashboardData.expenseBreakdown.map((item, idx) => (
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center justify-between font-semibold text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-slate-700 font-bold">{item.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 text-[10px]">({item.percentage}%)</span>
+                    <span className="font-bold text-slate-900">{formatUSD(item.value)}</span>
+                  </div>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, parseFloat(item.percentage) || 0)}%`,
+                      backgroundColor: item.color
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. LIVE OPERATIONAL COCKPIT: CLIENT LEADERBOARD & EMV VIRTUAL CARDS */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+
+        {/* CLIENT PERFORMANCE & MARGIN MATRIX (8 Cols) */}
+        <div className="xl:col-span-8 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col justify-between">
+          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+            <div>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client Profit & Margins</h3>
+              <p className="text-[10.5px] text-slate-400 font-medium">Top client accounts, revenue collected & net margin.</p>
+            </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('clients')}
+                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+              >
+                <span>View All Clients</span>
+                <ChevronRight size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="overflow-y-auto overflow-x-hidden max-h-[360px] no-scrollbar">
+            <table className="table-fixed w-full text-xs text-left">
+              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
+                <tr>
+                  <th className="w-[28%] pl-5 pr-2 py-3 text-left">Client & Brand</th>
+                  <th className="w-[21%] px-3 py-3 text-right">Revenue</th>
+                  <th className="w-[20%] px-3 py-3 text-right">Ad Cost</th>
+                  <th className="w-[18%] px-3 py-3 text-right">Net Profit</th>
+                  <th className="w-[13%] pl-2 pr-5 py-3 text-right">Margin</th>
                 </tr>
               </thead>
-              <tbody>
-                {dashboardData.clientRows.length > 0 ? dashboardData.clientRows.slice(0, 6).map(row => (
-                  <tr key={row.id} className="border-b border-slate-50 last:border-0">
-                    <td className="py-3 font-medium text-slate-800">{row.name}</td>
-                    <td className="py-3 text-right text-emerald-600">{formatBDT(row.revenue)}</td>
-                    <td className="py-3 text-right text-slate-700">{formatBDT(row.adCostBDT)}</td>
-                    <td className={`py-3 text-right font-semibold ${row.profit < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{formatBDT(row.profit)}</td>
-                    <td className="py-3 text-right">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full border text-[10px] font-medium ${getStatusClasses(row.status)}`}>{row.status}</span>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {dashboardData.clientRows.length === 0 && (
+                  <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-400 font-semibold">No client activity recorded yet.</td></tr>
+                )}
+                {dashboardData.clientRows.slice(0, 5).map(row => (
+                  <tr
+                    key={row.id}
+                    onClick={() => onViewClient && row.rawClient && onViewClient(row.rawClient)}
+                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                  >
+                    <td className="w-[28%] pl-5 pr-2 py-3 text-left">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-sky-600 group-hover:text-white transition-colors">
+                          {row.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 truncate group-hover:text-sky-700 transition-colors">{row.name}</div>
+                          <div className="text-[10px] text-slate-400 truncate">{row.company}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="w-[21%] px-3 py-3 text-right font-bold text-emerald-700">{formatBDT(row.revenue)}</td>
+                    <td className="w-[20%] px-3 py-3 text-right text-slate-600 font-semibold">{formatBDT(row.adCostBDT)}</td>
+                    <td className={`w-[18%] px-3 py-3 text-right font-black ${row.profit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                      {formatBDT(row.profit)}
+                    </td>
+                    <td className="w-[13%] pl-2 pr-5 py-3 text-right">
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                        row.margin > 50 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                        row.margin < 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
+                        {row.margin.toFixed(1)}%
+                      </span>
                     </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan="5" className="py-10 text-center text-slate-400">No client data yet.</td></tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <div className="mb-4">
-            <h3 className="font-semibold text-slate-900">Quick Stats</h3>
-            <p className="text-xs text-slate-500 mt-1">A compact snapshot of your operation.</p>
-          </div>
-          <div className="space-y-3">
-            <StatRow label="Active Clients" value={dashboardData.activeClients.length} />
-            <StatRow label="Total Clients" value={clients.length} />
-            <StatRow label="Total Cards" value={Object.keys(metrics.cardBalances || {}).length} />
-            <Divider />
-            <StatRow label="Avg USD Effective Rate" value={`৳${metrics.avgUSDEffectiveRate.toFixed(2)}`} />
-            <StatRow label="USD Purchased" value={formatUSD(metrics.totalUSDPurchased)} />
-            <StatRow label="Total BDT Spent on USD" value={formatBDT(dashboardData.totalBDTCost)} />
-            <StatRow label="Meta Tax" value={formatUSD(metrics.totalTaxUSD)} className="text-red-600" />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
+        {/* ACTIVE EMV VIRTUAL CARDS (4 Cols) */}
+        <div className="xl:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h3 className="font-semibold text-slate-900">Card Overview</h3>
-              <p className="text-xs text-slate-500 mt-1">Purchased, spent and current balance.</p>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Active Virtual Cards</h3>
+              <p className="text-[10.5px] text-slate-400 font-medium">Funded balances & card burn limits.</p>
             </div>
-            <CreditCard size={18} className="text-slate-400" />
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('cards')}
+                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+              >
+                <span>All Cards</span>
+                <ChevronRight size={14} />
+              </button>
+            )}
           </div>
-          <div className="space-y-3">
-            {Object.keys(metrics.cardBalances || {}).length > 0 ? Object.keys(metrics.cardBalances).map(cardId => {
-              const card = (metrics.cardStats && metrics.cardStats[cardId]) || { purchased: 0, adSpend: 0, tax: 0, fees: 0 };
-              const foundCard = (dashboardData.allCards || []).find(c => c.id === cardId);
-              const openingBalance = parseFloat(foundCard?.initialBalance || 0);
-              const balance = openingBalance + card.purchased - card.adSpend - card.tax - card.fees;
-              const cardName = (() => {
-                const allCards = dashboardData.allCards || [];
-                const found = allCards.find(c => c.id === cardId);
-                return found?.name || `Card • ${String(cardId).slice(-4)}`;
-              })();
-              return (
-                <div key={cardId} className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-slate-800">{cardName}</p>
-                      <p className="text-[11px] text-slate-500">Purchased {formatUSD(card.purchased)} · Spent {formatUSD(card.adSpend + card.tax + card.fees)}</p>
+
+          <div className="space-y-3 my-3">
+            {dashboardData.allCards.length === 0 && (
+              <div className="py-8 text-center text-slate-400 text-xs">No active cards found.</div>
+            )}
+            {dashboardData.allCards.slice(0, 3).map(card => (
+              <div
+                key={card.id}
+                onClick={() => onViewCard && onViewCard(card)}
+                className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[7px] font-black text-white shadow-2xs">
+                      EMV
                     </div>
-                    <p className={`font-bold ${balance < 0 ? 'text-red-600' : 'text-slate-900'}`}>{formatUSD(balance)}</p>
+                    <div>
+                      <span className="font-bold text-xs text-slate-900 group-hover:text-sky-700 transition-colors">
+                        {card.name}
+                      </span>
+                      {card.last4 && <span className="ml-1 text-[10px] font-mono text-slate-400">*{card.last4}</span>}
+                    </div>
                   </div>
+                  <span className={`font-black text-xs ${card.balance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    {formatUSD(card.balance)}
+                  </span>
                 </div>
-              );
-            }) : <div className="py-10 text-center text-slate-400 text-sm">No cards added yet.</div>}
-          </div>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-semibold text-slate-900">Recent Transactions</h3>
-              <p className="text-xs text-slate-500 mt-1">Latest movement across your ledger.</p>
-            </div>
-            <Activity size={18} className="text-slate-400" />
-          </div>
-          <div className="space-y-2">
-            {dashboardData.recentTransactions.length > 0 ? dashboardData.recentTransactions.map(tx => {
-              const isIn = tx.type === 'PAYMENT_RECEIVED' || tx.type === 'USD_PURCHASE';
-              const amount = tx.type === 'PAYMENT_RECEIVED'
-                ? formatBDT(tx.amountBDT)
-                : tx.type === 'USD_PURCHASE'
-                  ? formatUSD(tx.amountUSD)
-                  : formatUSD((parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)));
-              return (
-                <div key={tx.id} className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 hover:bg-slate-50 transition-colors">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-800 truncate">{getTransactionLabel(tx)}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{getTransactionEntity(tx)} · {tx.date || '—'}</p>
+                <div className="space-y-1 text-[10.5px]">
+                  <div className="flex items-center justify-between text-slate-400 font-semibold">
+                    <span>Funded: {formatUSD(card.purchased)}</span>
+                    <span>Burned: {formatUSD(card.spent)}</span>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-semibold ${isIn ? 'text-emerald-600' : 'text-red-600'}`}>{isIn ? '+' : '-'}{amount.replace(/^-/, '')}</p>
+                  <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        card.balance < 0 ? 'bg-rose-500' : card.utilPercent > 85 ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(0, card.utilPercent))}%` }}
+                    />
                   </div>
                 </div>
-              );
-            }) : <div className="py-10 text-center text-slate-400 text-sm">No transactions yet.</div>}
+              </div>
+            ))}
           </div>
+
+          {onAddUSD && (
+            <button
+              onClick={onAddUSD}
+              className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Plus size={14} />
+              <span>Top Up USD to Card</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
-          <div className="flex items-center gap-2 text-emerald-700"><CheckCircle2 size={17} /><span className="text-sm font-semibold">Healthy Revenue</span></div>
-          <p className="text-xs text-emerald-700/80 mt-2">{formatBDT(metrics.totalRevenueBDT)} received from clients.</p>
+      {/* 5. LIVE MOVEMENT STREAM & SMART HEALTH AUDIT */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+
+        {/* REAL-TIME MOVEMENT STREAM (6 Cols) */}
+        <div className="xl:col-span-6 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Live Movement Stream</h3>
+              <p className="text-[10.5px] text-slate-400 font-medium">Real-time ledger events and transactions.</p>
+            </div>
+            {onNavigate && (
+              <button
+                onClick={() => onNavigate('transactions')}
+                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+              >
+                <span>Full Ledger</span>
+                <ChevronRight size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="divide-y divide-slate-100 my-2">
+            {dashboardData.recentTransactions.length === 0 && (
+              <div className="py-8 text-center text-slate-400 text-xs">No transactions recorded yet.</div>
+            )}
+            {dashboardData.recentTransactions.map(tx => {
+              const isIn = tx.type === 'PAYMENT_RECEIVED' || tx.type === 'USD_PURCHASE';
+              const isPayment = tx.type === 'PAYMENT_RECEIVED';
+              const isUSD = tx.type === 'USD_PURCHASE';
+              const isAds = tx.type === 'AD_SPEND';
+              const isFee = tx.type === 'FEE';
+
+              const client = clients.find(c => c.id === tx.clientId)?.name;
+              const card = cards.find(c => c.id === tx.cardId)?.name;
+
+              return (
+                <div key={tx.id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 px-2 rounded-lg transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      isPayment ? 'bg-emerald-50 text-emerald-600' :
+                      isUSD ? 'bg-sky-50 text-sky-600' :
+                      isAds ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'
+                    }`}>
+                      {isPayment && <ArrowDownLeft size={16} />}
+                      {isUSD && <DollarSign size={16} />}
+                      {isAds && <Activity size={16} />}
+                      {isFee && <Wallet size={16} />}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs text-slate-900 truncate">
+                        {isPayment ? 'Payment Received' : isUSD ? 'USD Purchased' : isAds ? 'Meta Ad Spend' : 'Card Fee'}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate">
+                        {client || card || tx.campaign || tx.notes || 'Ledger entry'} · {formatDate(tx.date)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <div className={`font-black text-xs ${isIn ? 'text-emerald-600' : isAds ? 'text-purple-700' : 'text-slate-900'}`}>
+                      {isPayment ? `+${formatBDT(tx.amountBDT)}` :
+                       isUSD ? `+${formatUSD(tx.amountUSD)}` :
+                       isAds ? `-${formatUSD(parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0))}` :
+                       `-${formatUSD(tx.amountUSD)}`}
+                    </div>
+                    <div className="text-[9.5px] font-mono text-slate-400">#{String(tx.id).slice(-6)}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-[10.5px] text-slate-400 font-medium pt-2 border-t border-slate-100 flex items-center justify-between">
+            <span>Verified against Supabase Ledger</span>
+            <span className="font-bold text-slate-700">{transactions.length} Total Records</span>
+          </div>
         </div>
-        <div className={`rounded-2xl border p-4 ${metrics.totalCardBalance < 0 ? 'border-red-100 bg-red-50/70' : 'border-slate-200 bg-slate-50'}`}>
-          <div className={`flex items-center gap-2 ${metrics.totalCardBalance < 0 ? 'text-red-700' : 'text-slate-700'}`}><AlertCircle size={17} /><span className="text-sm font-semibold">Card Balance</span></div>
-          <p className={`text-xs mt-2 ${metrics.totalCardBalance < 0 ? 'text-red-700/80' : 'text-slate-600'}`}>{metrics.totalCardBalance < 0 ? `Total card balance is ${formatUSD(metrics.totalCardBalance)}.` : 'All card balances are currently non-negative.'}</p>
-        </div>
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
-          <div className="flex items-center gap-2 text-blue-700"><TrendingUp size={17} /><span className="text-sm font-semibold">Profit Snapshot</span></div>
-          <p className="text-xs text-blue-700/80 mt-2">{formatBDT(metrics.netProfitBDT)} net profit · {metrics.profitMargin.toFixed(1)}% margin.</p>
+
+        {/* SMART OPERATIONAL SAFETY & HEALTH FEED (6 Cols) */}
+        <div className="xl:col-span-6 space-y-4">
+          
+          {/* Card Balance Alert & Safety Card */}
+          <div className={`rounded-2xl border p-4.5 transition-all shadow-2xs ${
+            totalCardBalance < 0
+              ? 'bg-rose-50/80 border-rose-200 text-rose-950'
+              : 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+          }`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                  totalCardBalance < 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  {totalCardBalance < 0 ? <AlertCircle size={18} /> : <ShieldCheck size={18} />}
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-xs uppercase tracking-wider">
+                    {totalCardBalance < 0 ? 'Card Liquidity Warning' : 'Healthy Card Liquidity'}
+                  </h4>
+                  <p className="text-[11px] font-medium opacity-80 mt-0.5">
+                    {totalCardBalance < 0
+                      ? `Virtual card balances are negative by ${formatUSD(totalCardBalance)}. Top up immediately to prevent Meta ad pauses.`
+                      : `Total spendable balance across all active cards is ${formatUSD(totalCardBalance)}.`}
+                  </p>
+                </div>
+              </div>
+              {totalCardBalance < 0 && onAddUSD && (
+                <button
+                  onClick={onAddUSD}
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0 shadow-2xs"
+                >
+                  Top Up
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Revenue & Margin Snapshot */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4.5 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+                  <Coins size={15} />
+                </div>
+                <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Operational Health Snapshot</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-400">Real-Time Metrics</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-slate-400 text-[10.5px] font-semibold block mb-0.5">Active Clients</span>
+                <span className="font-black text-slate-900 text-sm">{dashboardData.activeClients.length} of {clients.length}</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-slate-400 text-[10.5px] font-semibold block mb-0.5">FX Purchase Base</span>
+                <span className="font-black text-slate-900 text-sm">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 col-span-2 sm:col-span-1">
+                <span className="text-slate-400 text-[10.5px] font-semibold block mb-0.5">Meta 15% VAT Total</span>
+                <span className="font-black text-rose-600 text-sm">{formatUSD(metrics.totalTaxUSD)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
