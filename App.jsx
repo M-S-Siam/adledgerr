@@ -2398,37 +2398,37 @@ function DashboardView({
         </div>
       </div>
 
-      {/* 2. EXECUTIVE FINANCIAL HEALTH MATRIX (4 MASTER PILLAR CARDS) */}
+      {/* 2. EXECUTIVE FINANCIAL HEALTH MATRIX (4 SIMPLE, UNIFIED MASTER CARDS) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
 
-        {/* PILLAR 1: DOMESTIC CASHFLOW (BDT) */}
+        {/* CARD 1: TOTAL REVENUE (BDT) */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                 <ArrowDownRight size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Domestic Cashflow</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Total Revenue</span>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-              BDT Inflow
+              BDT In
             </span>
           </div>
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Revenue In</span>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Received</span>
               <div className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">
                 {formatBDT(metrics.totalRevenueBDT)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
               <div>
-                <span className="text-slate-400 block font-semibold">Procurement Cost</span>
+                <span className="text-slate-400 block font-semibold">Total BDT Cost</span>
                 <span className="font-bold text-rose-600">{formatBDT(dashboardData.totalBDTCost)}</span>
               </div>
               <div>
-                <span className="text-slate-400 block font-semibold">Cash Surplus</span>
+                <span className="text-slate-400 block font-semibold">Net BDT in Hand</span>
                 <span className={`font-bold ${dashboardData.netBDT < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
                   {formatBDT(dashboardData.netBDT)}
                 </span>
@@ -2437,34 +2437,34 @@ function DashboardView({
           </div>
 
           <div className="text-[10px] text-slate-400 font-medium">
-            BDT collected from clients minus actual procurement spend.
+            Client payments received minus BDT spent on USD.
           </div>
         </div>
 
-        {/* PILLAR 2: FOREIGN FX & MEDIA BURN (USD) */}
+        {/* CARD 2: TOTAL USD SPENT */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
                 <Activity size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Foreign Media Burn</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Total USD Spent</span>
             </div>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-              USD Outflow
+              USD Out
             </span>
           </div>
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total USD Outflow</span>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Ads + Tax + Fees</span>
               <div className="text-xl sm:text-2xl font-black text-purple-700 tracking-tight">
                 {formatUSD(dashboardData.totalBurnUSD)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
               <div>
-                <span className="text-slate-400 block font-semibold">USD Procured</span>
+                <span className="text-slate-400 block font-semibold">USD Purchased</span>
                 <span className="font-bold text-sky-600">{formatUSD(metrics.totalUSDPurchased)}</span>
               </div>
               <div>
@@ -2475,25 +2475,23 @@ function DashboardView({
           </div>
 
           <div className="text-[10px] text-slate-400 font-medium">
-            Meta Ads spend + 15% VAT + bank card fees.
+            Total USD spent on Meta ads, 15% VAT, and bank fees.
           </div>
         </div>
 
-        {/* PILLAR 3: NET AGENCY PROFIT & EFFICIENCY (HERO KPI) */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm text-white flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
-          
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+        {/* CARD 3: NET AGENCY PROFIT (UNIFIED WHITE CARD) */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
                 <TrendingUp size={17} />
               </div>
-              <span className="font-extrabold text-xs text-white uppercase tracking-wider">Net Agency Profit</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Net Agency Profit</span>
             </div>
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-              metrics.profitMargin >= 50 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
-              metrics.profitMargin < 0 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
-              'bg-sky-500/20 text-sky-300 border-sky-500/40'
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              metrics.profitMargin >= 50 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+              metrics.profitMargin < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' :
+              'bg-indigo-50 text-indigo-700 border-indigo-200'
             }`}>
               {metrics.profitMargin.toFixed(1)}% Margin
             </span>
@@ -2501,34 +2499,38 @@ function DashboardView({
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Bottom Line BDT</span>
-              <div className={`text-xl sm:text-2xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Actual Earnings</span>
+              <div className={`text-xl sm:text-2xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                 {formatBDT(metrics.netProfitBDT)}
               </div>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px]">
-              <span className="text-slate-400 font-medium">Conversion Yield:</span>
-              <span className="font-bold text-white">
-                ৳{(metrics.netProfitBDT / (dashboardData.totalBurnUSD || 1)).toFixed(1)} / USD Burn
-              </span>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+              <div>
+                <span className="text-slate-400 block font-semibold">Profit Margin</span>
+                <span className="font-bold text-emerald-600">{metrics.profitMargin.toFixed(1)}%</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-semibold">Buy Rate</span>
+                <span className="font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}/USD</span>
+              </div>
             </div>
           </div>
 
           <div className="text-[10px] text-slate-400 font-medium">
-            Revenue minus USD ad burn evaluated at effective purchase rate.
+            Client revenue minus actual USD ad cost in BDT.
           </div>
         </div>
 
-        {/* PILLAR 4: CARD LIQUIDITY & PROCUREMENT RATE */}
+        {/* CARD 4: TOTAL CARD BALANCE */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
                 totalCardBalance < 0 ? 'bg-rose-50 text-rose-600' : 'bg-sky-50 text-sky-600'
               }`}>
                 <CreditCard size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Card Liquidity</span>
+              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Total Card Balance</span>
             </div>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               totalCardBalance < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-sky-50 text-sky-700 border-sky-200'
@@ -2539,25 +2541,25 @@ function DashboardView({
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Available Balance</span>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Available USD</span>
               <div className={`text-xl sm:text-2xl font-black tracking-tight ${totalCardBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                 {formatUSD(totalCardBalance)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
               <div>
-                <span className="text-slate-400 block font-semibold">Effective Rate</span>
-                <span className="font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}/USD</span>
+                <span className="text-slate-400 block font-semibold">Dollar Buy Rate</span>
+                <span className="font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
               </div>
               <div>
-                <span className="text-slate-400 block font-semibold">Total 15% VAT</span>
+                <span className="text-slate-400 block font-semibold">15% VAT Paid</span>
                 <span className="font-bold text-rose-600">{formatUSD(metrics.totalTaxUSD)}</span>
               </div>
             </div>
           </div>
 
           <div className="text-[10px] text-slate-400 font-medium">
-            Combined spendable balance across all funded virtual cards.
+            Current spendable USD balance across all virtual cards.
           </div>
         </div>
       </div>
