@@ -3071,25 +3071,29 @@ function DashboardView({
         <div className="xl:col-span-6 space-y-4">
           
           {/* Card Balance Alert & Safety Card */}
-          <div className={`rounded-2xl border p-4.5 transition-all shadow-2xs ${
+          <div className={`rounded-2xl border p-4 sm:p-5 transition-all shadow-2xs ${
             totalCardBalance < 0
-              ? 'bg-rose-50/80 border-rose-200 text-rose-950'
-              : 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+              ? 'bg-rose-50/90 border-rose-200/90 text-rose-950'
+              : 'bg-emerald-50/80 border-emerald-200/90 text-emerald-950'
           }`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-2xs ${
                   totalCardBalance < 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
                 }`}>
-                  {totalCardBalance < 0 ? <AlertCircle size={18} /> : <ShieldCheck size={18} />}
+                  {totalCardBalance < 0 ? <AlertCircle size={19} /> : <ShieldCheck size={19} />}
                 </div>
-                <div>
-                  <h4 className="font-extrabold text-xs uppercase tracking-wider">
+                <div className="min-w-0">
+                  <h4 className={`font-black text-xs uppercase tracking-wider ${
+                    totalCardBalance < 0 ? 'text-rose-900' : 'text-emerald-900'
+                  }`}>
                     {totalCardBalance < 0 ? 'Card Liquidity Warning' : 'Healthy Card Liquidity'}
                   </h4>
-                  <p className="text-[11px] font-medium opacity-80 mt-0.5">
+                  <p className={`text-[11.5px] font-medium mt-0.5 ${
+                    totalCardBalance < 0 ? 'text-rose-800/90' : 'text-emerald-800/90'
+                  }`}>
                     {totalCardBalance < 0
-                      ? `Virtual card balances are negative by ${formatUSD(totalCardBalance)}. Top up immediately to prevent Meta ad pauses.`
+                      ? `Virtual card balance is in deficit by ${formatUSD(Math.abs(totalCardBalance))}. Top up immediately to prevent Meta ad pauses.`
                       : `Total spendable balance across all active cards is ${formatUSD(totalCardBalance)}.`}
                   </p>
                 </div>
@@ -3097,9 +3101,10 @@ function DashboardView({
               {totalCardBalance < 0 && onAddUSD && (
                 <button
                   onClick={onAddUSD}
-                  className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0 shadow-2xs"
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shrink-0 shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 self-start sm:self-center"
                 >
-                  Top Up
+                  <Plus size={14} className="stroke-[2.5]" />
+                  <span>Top Up</span>
                 </button>
               )}
             </div>
