@@ -1145,10 +1145,10 @@ export default function AdLedgerApp() {
               <div className="relative" ref={quickSettingsRef}>
                 <button
                   onClick={() => setIsQuickSettingsOpen(prev => !prev)}
-                  title="Quick Settings & Profile"
-                  className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100/90 active:scale-95 transition-all focus:outline-none flex items-center justify-center"
+                  title="Quick Controls & Settings"
+                  className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all focus:outline-none flex items-center justify-center"
                 >
-                  <Settings size={18} className={`transition-transform duration-300 ${isQuickSettingsOpen ? 'rotate-90 text-sky-600' : ''}`} />
+                  <SlidersHorizontal size={18} className={`transition-all duration-200 ${isQuickSettingsOpen ? 'text-sky-600' : ''}`} />
                 </button>
 
                 {/* QUICK SETTINGS DROPDOWN MENU */}
