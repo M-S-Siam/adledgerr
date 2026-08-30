@@ -2321,6 +2321,27 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
   const [cardFilter, setCardFilter] = useState('ALL');
   const [inspectingTx, setInspectingTx] = useState(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClickOutside = (e) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowExportMenu(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showExportMenu]);
 
   const filtered = useMemo(() => {
     const today = new Date();
@@ -2574,30 +2595,38 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
+          {/* UNIFIED EXPORT DROPDOWN (CSV & PDF STATEMENT) */}
+          <div className="relative" ref={exportMenuRef}>
             <button
               onClick={() => setShowExportMenu(prev => !prev)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border text-xs font-bold shadow-2xs transition-all ${
+                showExportMenu
+                  ? 'bg-slate-100 border-slate-300 text-slate-900 ring-2 ring-sky-500/20'
+                  : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50'
+              }`}
             >
-              <Download size={14} className="text-slate-500" /> Export <ChevronDown size={12} className="text-slate-400" />
+              <Download size={14} className="text-slate-500" /> Export <ChevronDown size={12} className={`text-slate-400 transition-transform duration-150 ${showExportMenu ? 'rotate-180' : ''}`} />
             </button>
             {showExportMenu && (
-              <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in duration-150">
-                <button
-                  onClick={() => { setShowExportMenu(false); handleExportCSV(); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors"
-                >
-                  <FileSpreadsheet size={15} className="text-emerald-600" />
-                  <span>Export Excel / CSV (.csv)</span>
-                </button>
-                <button
-                  onClick={() => { setShowExportMenu(false); handlePrintLedgerPDF(); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800"
-                >
-                  <Printer size={15} className="text-sky-600" />
-                  <span>Print / PDF Statement (A4)</span>
-                </button>
-              </div>
+              <>
+                <div className="fixed inset-0 z-20 cursor-default" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in duration-150">
+                  <button
+                    onClick={() => { setShowExportMenu(false); handleExportCSV(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors"
+                  >
+                    <FileSpreadsheet size={15} className="text-emerald-600" />
+                    <span>Export Excel / CSV (.csv)</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowExportMenu(false); handlePrintLedgerPDF(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800"
+                  >
+                    <Printer size={15} className="text-sky-600" />
+                    <span>Print / PDF Statement (A4)</span>
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
