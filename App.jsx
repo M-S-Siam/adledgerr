@@ -2930,7 +2930,7 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* CLIENT PERFORMANCE & MARGIN MATRIX (8 Cols) */}
-        <div className="xl:col-span-8 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col justify-between">
+        <div className="xl:col-span-8 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
           <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client Profit & Margins</h3>
@@ -2947,7 +2947,7 @@ function DashboardView({
             )}
           </div>
 
-          <div className="overflow-y-auto overflow-x-hidden max-h-[360px] no-scrollbar">
+          <div className="overflow-y-auto overflow-x-hidden flex-1 no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
               <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
