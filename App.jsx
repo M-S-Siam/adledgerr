@@ -511,6 +511,7 @@ export default function AdLedgerApp() {
   const [activeModal, setActiveModal] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   // --- FINANCIAL CALCULATIONS (Auto-derived from transactions) ---
   const metrics = useMemo(() => {
@@ -610,6 +611,28 @@ export default function AdLedgerApp() {
       });
     });
     setActiveModal(null);
+  };
+
+  const handleSaveTransaction = (txData) => {
+    if (activeModal === 'edit-transaction' && selectedTransaction) {
+      setTransactions(prev => {
+        const updated = prev.map(t => t.id === selectedTransaction.id ? { ...t, ...txData, id: selectedTransaction.id } : t);
+        return updated.sort((a, b) => {
+          const tA = a.timestamp || new Date(a.date).getTime();
+          const tB = b.timestamp || new Date(b.date).getTime();
+          return tB - tA;
+        });
+      });
+      setSelectedTransaction(null);
+      setActiveModal(null);
+    } else {
+      handleAddTransaction(txData);
+    }
+  };
+
+  const handleEditTransaction = (tx) => {
+    setSelectedTransaction(tx);
+    setActiveModal('edit-transaction');
   };
 
   const handleSaveCard = (cardData) => {
@@ -844,6 +867,7 @@ export default function AdLedgerApp() {
           cards={cards}
           metrics={metrics}
           onDeleteTransaction={handleDeleteTransaction}
+          onEditTransaction={handleEditTransaction}
           onAddPayment={() => { setSelectedClient(null); setActiveModal('payment'); }}
           onAddUSD={() => { setSelectedCard(null); setActiveModal('usd'); }}
           onAddSpend={() => { setSelectedCard(null); setActiveModal('spend'); }}
@@ -999,6 +1023,18 @@ export default function AdLedgerApp() {
         {activeModal === 'spend' && (
           <Modal title="Record Meta Ad Spend" onClose={() => setActiveModal(null)}>
             <TransactionForm type="AD_SPEND" clients={clients} cards={cards} initialClientId={selectedClient?.id} onSubmit={handleAddTransaction} onCancel={() => setActiveModal(null)} />
+          </Modal>
+        )}
+        {activeModal === 'edit-transaction' && selectedTransaction && (
+          <Modal title={`Edit Transaction: #${String(selectedTransaction.id).slice(-8)}`} onClose={() => { setActiveModal(null); setSelectedTransaction(null); }}>
+            <TransactionForm
+              type={selectedTransaction.type}
+              initialData={selectedTransaction}
+              clients={clients}
+              cards={cards}
+              onSubmit={handleSaveTransaction}
+              onCancel={() => { setActiveModal(null); setSelectedTransaction(null); }}
+            />
           </Modal>
         )}
         {(activeModal === 'add-card' || activeModal === 'edit-card') && (
@@ -2042,7 +2078,7 @@ function MasterLedgerBadge({ type }) {
   );
 }
 
-function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete }) {
+function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete, onEdit }) {
   const client = clients.find(c => c.id === tx.clientId);
   const card = cards.find(c => c.id === tx.cardId);
 
@@ -2132,7 +2168,6 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* OBSIDIAN VOUCHER HEADER */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-4 sm:p-5 border border-slate-800 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
@@ -2158,7 +2193,6 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
         </div>
       </div>
 
-      {/* 4 DUAL-CURRENCY BREAKDOWN PILLARS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/50 border border-emerald-200/80 rounded-xl p-3.5 shadow-2xs">
           <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">BDT Inflow</span>
@@ -2185,7 +2219,6 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
         </div>
       </div>
 
-      {/* COUNTERPARTY & LEDGER CONTEXT */}
       <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 shadow-2xs space-y-3.5">
         <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
           Counterparty & Financial Narrative
@@ -2245,8 +2278,7 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
         )}
       </div>
 
-      {/* FOOTER ACTIONS */}
-      <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+      <div className="flex justify-between items-center pt-2 border-t border-slate-100 flex-wrap gap-2">
         <button
           type="button"
           onClick={() => { onClose(); onDelete(tx.id); }}
@@ -2255,25 +2287,40 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete 
           <Trash2 size={13} /> Delete Record
         </button>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all"
-        >
-          Close
-        </button>
+        <div className="flex items-center gap-2">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => { onClose(); onEdit(tx); }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg text-xs font-bold transition-all"
+            >
+              <Edit size={13} /> Edit Entry
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction, onAddPayment, onAddUSD, onAddSpend, onAddFee }) {
+function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction, onEditTransaction, onAddPayment, onAddUSD, onAddSpend, onAddFee }) {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('ALL');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [clientFilter, setClientFilter] = useState('ALL');
   const [cardFilter, setCardFilter] = useState('ALL');
   const [inspectingTx, setInspectingTx] = useState(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const filtered = useMemo(() => {
     const today = new Date();
@@ -2317,6 +2364,9 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         } else if (dateFilter === 'THIS_MONTH') {
           const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
           matchesDate = txDate >= monthStart && txDate <= today;
+        } else if (dateFilter === 'CUSTOM') {
+          if (customStart && txDate < new Date(customStart + 'T00:00:00')) return false;
+          if (customEnd && txDate > new Date(customEnd + 'T23:59:59')) return false;
         }
 
         return matchesType && matchesClient && matchesCard && matchesSearch && matchesDate;
@@ -2326,7 +2376,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         const timeB = b.timestamp || new Date(b.date).getTime();
         return timeB - timeA;
       });
-  }, [transactions, clients, cards, typeFilter, clientFilter, cardFilter, searchTerm, dateFilter]);
+  }, [transactions, clients, cards, typeFilter, clientFilter, cardFilter, searchTerm, dateFilter, customStart, customEnd]);
 
   const ledgerSummary = useMemo(() => {
     let bdtIn = 0;
@@ -2360,12 +2410,14 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
   const clearFilters = () => {
     setTypeFilter('ALL');
     setDateFilter('ALL');
+    setCustomStart('');
+    setCustomEnd('');
     setClientFilter('ALL');
     setCardFilter('ALL');
     setSearchTerm('');
   };
 
-  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || clientFilter !== 'ALL' || cardFilter !== 'ALL' || searchTerm.trim() !== '';
+  const hasFilters = typeFilter !== 'ALL' || dateFilter !== 'ALL' || customStart || customEnd || clientFilter !== 'ALL' || cardFilter !== 'ALL' || searchTerm.trim() !== '';
 
   const handleExportCSV = () => {
     if (!filtered.length) return;
@@ -2401,9 +2453,118 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
     URL.revokeObjectURL(url);
   };
 
+  const handlePrintLedgerPDF = () => {
+    if (!filtered.length) return;
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    const periodLabel = dateFilter === 'CUSTOM'
+      ? `${customStart || 'Start'} to ${customEnd || 'Present'}`
+      : (dateFilter === 'ALL' ? 'All Time Historical' : dateFilter.replace('_', ' '));
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Financial Ledger Statement - ${new Date().toLocaleDateString()}</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 32px; margin: 0; background: #fff; line-height: 1.4; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px; }
+          .brand { font-size: 24px; font-weight: 900; color: #0284c7; }
+          .title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+          .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 24px; }
+          .kpi-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 8px; text-align: center; }
+          .kpi-title { font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: #475569; }
+          .kpi-val { font-size: 13px; font-weight: 900; margin-top: 4px; color: #0f172a; }
+          .green { color: #16a34a !important; }
+          .red { color: #dc2626 !important; }
+          .blue { color: #0284c7 !important; }
+          .purple { color: #9333ea !important; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px; }
+          th { background: #f1f5f9; text-align: left; padding: 8px 10px; font-weight: 800; border-bottom: 1.5px solid #cbd5e1; color: #334155; text-transform: uppercase; font-size: 9px; }
+          td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+          .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 700; background: #f1f5f9; }
+          .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 10.5px; color: #64748b; display: flex; justify-content: space-between; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Financial Command</div>
+            <div class="title">Official Transaction Ledger & Cashflow Statement</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 12px;">Period: ${periodLabel}</div>
+            <div style="font-size: 11px; color: #64748b;">Generated: ${new Date().toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-title">BDT In</div><div class="kpi-val green">${formatBDT(ledgerSummary.bdtIn)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">BDT Out</div><div class="kpi-val red">${formatBDT(ledgerSummary.bdtOut)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Net BDT</div><div class="kpi-val ${ledgerSummary.netBDT < 0 ? 'red' : 'blue'}">${formatBDT(ledgerSummary.netBDT)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">USD In</div><div class="kpi-val blue">${formatUSD(ledgerSummary.usdIn)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">USD Out</div><div class="kpi-val purple">${formatUSD(ledgerSummary.usdOut)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Net USD</div><div class="kpi-val ${ledgerSummary.netUSD < 0 ? 'red' : 'green'}">${formatUSD(ledgerSummary.netUSD)}</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ref ID</th>
+              <th>Type</th>
+              <th>Counterparty / Entity</th>
+              <th>Campaign / Memo</th>
+              <th style="text-align: right;">BDT In</th>
+              <th style="text-align: right;">BDT Out</th>
+              <th style="text-align: right;">USD In</th>
+              <th style="text-align: right;">USD Out</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(tx => {
+              const client = clients.find(c => c.id === tx.clientId);
+              const card = cards.find(c => c.id === tx.cardId);
+              const bdtIn = tx.type === 'PAYMENT_RECEIVED' ? parseFloat(tx.amountBDT || 0) : 0;
+              const bdtOut = tx.type === 'USD_PURCHASE' ? (parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) : 0;
+              const usdIn = tx.type === 'USD_PURCHASE' ? parseFloat(tx.amountUSD || 0) : 0;
+              const usdOut = tx.type === 'AD_SPEND' ? (parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) : (tx.type === 'FEE' ? parseFloat(tx.amountUSD || 0) : 0);
+              return `
+                <tr>
+                  <td>${formatDate(tx.date)}</td>
+                  <td style="font-family: monospace; font-weight: bold;">#${String(tx.id).slice(-6)}</td>
+                  <td><span class="badge">${tx.type.replaceAll('_', ' ')}</span></td>
+                  <td><strong>${client?.name || card?.name || 'Agency Internal'}</strong></td>
+                  <td>${tx.campaign || tx.adAccount || tx.notes || '—'}</td>
+                  <td style="text-align: right; color: #16a34a; font-weight: bold;">${bdtIn > 0 ? formatBDT(bdtIn) : '—'}</td>
+                  <td style="text-align: right; color: #dc2626; font-weight: bold;">${bdtOut > 0 ? formatBDT(bdtOut) : '—'}</td>
+                  <td style="text-align: right; color: #0284c7; font-weight: bold;">${usdIn > 0 ? formatUSD(usdIn) : '—'}</td>
+                  <td style="text-align: right; color: #9333ea; font-weight: bold;">${usdOut > 0 ? formatUSD(usdOut) : '—'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div>Authorized Accounting Ledger Record • AdLytic Double-Entry System</div>
+          <div>Total Transactions: ${filtered.length} entries verified</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
+  };
+
   return (
     <div className="space-y-4 w-full max-w-[1720px] mx-auto animate-in fade-in duration-300 pb-16">
-      {/* BESPOKE FLAGSHIP FINANCIAL HEADER */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900">Transaction Ledger</h1>
@@ -2413,12 +2574,32 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all"
-          >
-            <Download size={14} className="text-slate-500" /> Export CSV
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowExportMenu(prev => !prev)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all"
+            >
+              <Download size={14} className="text-slate-500" /> Export <ChevronDown size={12} className="text-slate-400" />
+            </button>
+            {showExportMenu && (
+              <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in duration-150">
+                <button
+                  onClick={() => { setShowExportMenu(false); handleExportCSV(); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors"
+                >
+                  <FileSpreadsheet size={15} className="text-emerald-600" />
+                  <span>Export Excel / CSV (.csv)</span>
+                </button>
+                <button
+                  onClick={() => { setShowExportMenu(false); handlePrintLedgerPDF(); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800"
+                >
+                  <Printer size={15} className="text-sky-600" />
+                  <span>Print / PDF Statement (A4)</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {onAddPayment && (
             <button
@@ -2449,9 +2630,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </div>
       </div>
 
-      {/* DUAL-CHAMBER FINANCIAL LIQUIDITY CONSOLE (UNIQUE FLAGSHIP DESIGN) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-        {/* CHAMBER 1: BDT CASHFLOW ENGINE */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 border border-slate-800 rounded-xl p-4 shadow-md text-white">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
             <div className="flex items-center gap-2">
@@ -2487,7 +2666,6 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
           </div>
         </div>
 
-        {/* CHAMBER 2: USD FOREIGN EXCHANGE & AD BURN */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-xl p-4 shadow-md text-white">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
             <div className="flex items-center gap-2">
@@ -2524,8 +2702,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </div>
       </div>
 
-      {/* STREAM SEGMENTED FILTER CHIPS */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
         {[
           { id: 'ALL', label: 'All Streams', count: transactions.length },
           { id: 'PAYMENT_RECEIVED', label: '📥 Payments In (BDT)', count: transactions.filter(t => t.type === 'PAYMENT_RECEIVED').length },
@@ -2552,7 +2729,6 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         ))}
       </div>
 
-      {/* MULTI-DIMENSION SEARCH AND FILTERS */}
       <div className="flex flex-col sm:flex-row gap-2.5 flex-wrap">
         <div className="relative flex-1 min-w-[220px]">
           <Search size={15} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
@@ -2584,7 +2760,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </select>
 
         <select
-          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[120px] shadow-2xs text-slate-700"
+          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[130px] shadow-2xs text-slate-700"
           value={dateFilter}
           onChange={e => setDateFilter(e.target.value)}
         >
@@ -2592,6 +2768,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
           <option value="TODAY">Today</option>
           <option value="THIS_WEEK">This Week</option>
           <option value="THIS_MONTH">This Month</option>
+          <option value="CUSTOM">📅 Custom Range...</option>
         </select>
 
         {hasFilters && (
@@ -2604,84 +2781,105 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         )}
       </div>
 
-      {/* FLAGSHIP DOUBLE-ENTRY FINANCIAL MATRIX TABLE */}
-      <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Accounting Flow Stream</h3>
-            <p className="text-[11px] text-slate-400">Buy USD = BDT Out + USD In • Meta Ads = USD Out (with 15% VAT)</p>
-          </div>
-          <span className="px-2 py-0.5 rounded-full bg-slate-200/60 text-[10px] font-bold text-slate-700">
-            {filtered.length} {filtered.length === 1 ? 'Entry' : 'Entries'}
+      {dateFilter === 'CUSTOM' && (
+        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs animate-in fade-in flex-wrap">
+          <span className="font-extrabold text-slate-700 flex items-center gap-1.5">
+            <Calendar size={14} className="text-sky-600" /> Custom Range:
           </span>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-500">From:</span>
+            <input
+              type="date"
+              value={customStart}
+              onChange={e => setCustomStart(e.target.value)}
+              className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs bg-white font-semibold outline-none focus:border-sky-500"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-500">To:</span>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={e => setCustomEnd(e.target.value)}
+              className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs bg-white font-semibold outline-none focus:border-sky-500"
+            />
+          </div>
+          {(customStart || customEnd) && (
+            <button
+              onClick={() => { setCustomStart(''); setCustomEnd(''); }}
+              className="text-rose-600 font-bold hover:underline ml-auto text-xs"
+            >
+              Clear Dates
+            </button>
+          )}
         </div>
+      )}
 
+      <div className="bg-white border border-slate-200/90 rounded-xl shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50/90 text-slate-500 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[10.5px]">
-              <tr>
-                <th className="px-4 py-3.5">Date & Ref</th>
-                <th className="px-3 py-3.5">Stream Type</th>
-                <th className="px-4 py-3.5">Counterparty & Narrative</th>
-                <th className="px-4 py-3.5 text-right text-emerald-700">BDT In</th>
-                <th className="px-4 py-3.5 text-right text-rose-700">BDT Out</th>
-                <th className="px-4 py-3.5 text-right text-sky-700">USD In</th>
-                <th className="px-4 py-3.5 text-right text-purple-700">USD Out</th>
-                <th className="px-4 py-3.5 text-center">Audit</th>
+          <table className="w-full text-left text-xs whitespace-nowrap">
+            <thead>
+              <tr className="bg-slate-50/90 border-b border-slate-200 text-[10.5px] font-black text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3">Date & Ref</th>
+                <th className="px-3 py-3">Category</th>
+                <th className="px-4 py-3">Entity & Context</th>
+                <th className="px-4 py-3 text-right">BDT In</th>
+                <th className="px-4 py-3 text-right">BDT Out</th>
+                <th className="px-4 py-3 text-right">USD In</th>
+                <th className="px-4 py-3 text-right">USD Out</th>
+                <th className="px-4 py-3 text-center">Action</th>
               </tr>
             </thead>
-
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-14 text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <DollarSign size={28} className="text-slate-300" />
-                      <span className="text-xs font-semibold text-slate-500">No transaction records found matching your filters.</span>
+                  <td colSpan="8" className="px-6 py-14 text-center">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                      <Receipt size={22} />
                     </div>
+                    <h4 className="font-black text-slate-800 text-sm">No Transactions Found</h4>
+                    <p className="text-slate-400 text-xs mt-1">
+                      {hasFilters ? 'Try adjusting your search criteria or stream filters.' : 'Record your first BDT receipt or USD spend above.'}
+                    </p>
+                    {hasFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-sky-600 hover:text-sky-700"
+                      >
+                        Reset all filters
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : (
-                filtered.map(tx => {
+                filtered.map((tx) => {
                   const client = clients.find(c => c.id === tx.clientId);
                   const card = cards.find(c => c.id === tx.cardId);
 
-                  const isPayment = tx.type === 'PAYMENT_RECEIVED';
-                  const isPurchase = tx.type === 'USD_PURCHASE';
-                  const isAdSpend = tx.type === 'AD_SPEND';
-                  const isFee = tx.type === 'FEE';
+                  const bdtIn = tx.type === 'PAYMENT_RECEIVED' ? parseFloat(tx.amountBDT || 0) : 0;
+                  const bdtOut = tx.type === 'USD_PURCHASE' ? (parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) : 0;
+                  const usdIn = tx.type === 'USD_PURCHASE' ? parseFloat(tx.amountUSD || 0) : 0;
+                  const usdOut = tx.type === 'AD_SPEND' ? (parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) : (tx.type === 'FEE' ? parseFloat(tx.amountUSD || 0) : 0);
 
-                  const bdtIn = isPayment ? parseFloat(tx.amountBDT || 0) : 0;
-                  const bdtOut = isPurchase ? (parseFloat(tx.amountBDT || 0) + parseFloat(tx.cashOutCharge || 0)) : 0;
-                  const usdIn = isPurchase ? parseFloat(tx.amountUSD || 0) : 0;
-                  const usdOut = isAdSpend ? (parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0)) : (isFee ? parseFloat(tx.amountUSD || 0) : 0);
-
-                  const borderAccent = isPayment
+                  const stripColor = tx.type === 'PAYMENT_RECEIVED'
                     ? 'border-l-4 border-l-emerald-500'
-                    : isPurchase
-                      ? 'border-l-4 border-l-sky-500'
-                      : isAdSpend
-                        ? 'border-l-4 border-l-purple-500'
-                        : 'border-l-4 border-l-amber-500';
+                    : tx.type === 'USD_PURCHASE'
+                    ? 'border-l-4 border-l-sky-500'
+                    : tx.type === 'AD_SPEND'
+                    ? 'border-l-4 border-l-purple-500'
+                    : 'border-l-4 border-l-amber-500';
 
                   return (
                     <tr
                       key={tx.id}
-                      className={`hover:bg-slate-50/80 transition-colors group cursor-pointer ${borderAccent}`}
                       onClick={() => setInspectingTx(tx)}
+                      className={`hover:bg-slate-50/80 transition-colors cursor-pointer group ${stripColor}`}
                     >
-                      {/* Date & Ref */}
                       <td className="px-4 py-3.5">
                         <div className="font-bold text-slate-900 text-xs">{formatDate(tx.date)}</div>
                         <div className="font-mono text-[10px] text-slate-400 mt-0.5">#{String(tx.id).slice(-6)}</div>
                       </td>
-
-                      {/* Type Badge */}
-                      <td className="px-3 py-3.5">
-                        <MasterLedgerBadge type={tx.type} />
-                      </td>
-
-                      {/* Entity & Details */}
+                      <td className="px-3 py-3.5"><MasterLedgerBadge type={tx.type} /></td>
                       <td className="px-4 py-3.5 min-w-[240px]">
                         <div className="flex items-center gap-2 flex-wrap">
                           {client && (
@@ -2692,89 +2890,27 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
                               {client.name}
                             </span>
                           )}
-
                           {card && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10.5px] font-semibold">
                               <CreditCard size={11} className="text-slate-500" />
                               {card.name}
                             </span>
                           )}
-
-                          {tx.type === 'USD_PURCHASE' && (
-                            <span className="text-[10.5px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">
-                              @ ৳{usdIn > 0 ? (bdtOut / usdIn).toFixed(2) : '0.00'}/$
-                            </span>
-                          )}
                         </div>
-
-                        {tx.type === 'AD_SPEND' && (
-                          <div className="text-[11px] text-slate-500 font-medium mt-1">
-                            <span className="font-semibold text-slate-700">{tx.adAccount || 'Ad Account'}</span>
-                            {tx.campaign && <span className="text-purple-700 font-bold"> • {tx.campaign}</span>}
-                          </div>
-                        )}
-
-                        {tx.notes && (
-                          <div className="text-[10.5px] text-slate-400 mt-0.5 truncate max-w-sm">
-                            {tx.notes}
-                          </div>
-                        )}
+                        {tx.notes && <div className="text-[10.5px] text-slate-400 mt-0.5 truncate max-w-sm">{tx.notes}</div>}
                       </td>
-
-                      {/* BDT In */}
-                      <td className="px-4 py-3.5 text-right">
-                        {bdtIn > 0 ? (
-                          <span className="font-black text-emerald-600 text-xs">+{formatBDT(bdtIn)}</span>
-                        ) : (
-                          <span className="text-slate-300 font-bold">—</span>
-                        )}
-                      </td>
-
-                      {/* BDT Out */}
-                      <td className="px-4 py-3.5 text-right">
-                        {bdtOut > 0 ? (
-                          <span className="font-black text-rose-600 text-xs">-{formatBDT(bdtOut)}</span>
-                        ) : (
-                          <span className="text-slate-300 font-bold">—</span>
-                        )}
-                      </td>
-
-                      {/* USD In */}
-                      <td className="px-4 py-3.5 text-right">
-                        {usdIn > 0 ? (
-                          <span className="font-black text-sky-700 text-xs">+{formatUSD(usdIn)}</span>
-                        ) : (
-                          <span className="text-slate-300 font-bold">—</span>
-                        )}
-                      </td>
-
-                      {/* USD Out */}
-                      <td className="px-4 py-3.5 text-right">
-                        {usdOut > 0 ? (
-                          <span className="font-black text-purple-700 text-xs">-{formatUSD(usdOut)}</span>
-                        ) : (
-                          <span className="text-slate-300 font-bold">—</span>
-                        )}
-                      </td>
-
-                      {/* Action / Inspect */}
+                      <td className="px-4 py-3.5 text-right">{bdtIn > 0 ? <span className="font-black text-emerald-600 text-xs">+{formatBDT(bdtIn)}</span> : <span className="text-slate-300 font-bold">—</span>}</td>
+                      <td className="px-4 py-3.5 text-right">{bdtOut > 0 ? <span className="font-black text-rose-600 text-xs">-{formatBDT(bdtOut)}</span> : <span className="text-slate-300 font-bold">—</span>}</td>
+                      <td className="px-4 py-3.5 text-right">{usdIn > 0 ? <span className="font-black text-sky-700 text-xs">+{formatUSD(usdIn)}</span> : <span className="text-slate-300 font-bold">—</span>}</td>
+                      <td className="px-4 py-3.5 text-right">{usdOut > 0 ? <span className="font-black text-purple-700 text-xs">-{formatUSD(usdOut)}</span> : <span className="text-slate-300 font-bold">—</span>}</td>
                       <td className="px-4 py-3.5 text-center" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => setInspectingTx(tx)}
-                            title="Audit Voucher"
-                            className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
-                          >
-                            <Eye size={15} />
-                          </button>
+                          <button onClick={() => setInspectingTx(tx)} title="Audit Voucher" className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"><Eye size={15} /></button>
+                          {onEditTransaction && (
+                            <button onClick={() => onEditTransaction(tx)} title="Edit Entry" className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"><Edit size={14} /></button>
+                          )}
                           {onDeleteTransaction && (
-                            <button
-                              onClick={() => onDeleteTransaction(tx.id)}
-                              title="Delete Record"
-                              className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <button onClick={() => onDeleteTransaction(tx.id)} title="Delete Record" className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"><Trash2 size={14} /></button>
                           )}
                         </div>
                       </td>
@@ -2787,7 +2923,6 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </div>
       </div>
 
-      {/* VIP AUDIT VOUCHER MODAL */}
       {inspectingTx && (
         <Modal title={`Transaction Audit Voucher: #${String(inspectingTx.id).slice(-8)}`} onClose={() => setInspectingTx(null)} width="max-w-3xl">
           <TransactionAuditModal
@@ -2796,6 +2931,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
             cards={cards}
             metrics={metrics}
             onClose={() => setInspectingTx(null)}
+            onEdit={onEditTransaction}
             onDelete={(id) => {
               if (onDeleteTransaction) onDeleteTransaction(id);
               setInspectingTx(null);
@@ -9732,21 +9868,30 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
   );
 }
 
-function TransactionForm({ type, clients, cards, onSubmit, onCancel }) {
+function TransactionForm({ type, initialData, clients, cards, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    amountBDT: '', cashOutCharge: '', amountUSD: '',
-    clientId: clients?.[0]?.id || '',
-    cardId: cards?.[0]?.id || '',
-    taxUSD: '', notes: '',
-    adAccount: '', campaign: ''
+    date: initialData?.date || new Date().toISOString().split('T')[0],
+    amountBDT: initialData?.amountBDT !== undefined ? initialData.amountBDT : '',
+    cashOutCharge: initialData?.cashOutCharge !== undefined ? initialData.cashOutCharge : '',
+    amountUSD: initialData?.amountUSD !== undefined ? initialData.amountUSD : '',
+    clientId: initialData?.clientId || clients?.[0]?.id || '',
+    cardId: initialData?.cardId || cards?.[0]?.id || '',
+    taxUSD: initialData?.taxUSD !== undefined ? initialData.taxUSD : '',
+    notes: initialData?.notes || '',
+    adAccount: initialData?.adAccount || '',
+    campaign: initialData?.campaign || ''
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = { type, date: formData.date, notes: formData.notes };
+    const payload = {
+      ...initialData,
+      type,
+      date: formData.date,
+      notes: formData.notes
+    };
 
     if (type === 'PAYMENT_RECEIVED') {
       payload.amountBDT = parseFloat(formData.amountBDT) || 0;
