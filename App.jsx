@@ -514,17 +514,32 @@ export default function AdLedgerApp() {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [isNewEntryOpen, setIsNewEntryOpen] = useState(false);
   const newEntryRef = useRef(null);
+  const [isQuickSettingsOpen, setIsQuickSettingsOpen] = useState(false);
+  const quickSettingsRef = useRef(null);
 
-  // Close + New Entry dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (newEntryRef.current && !newEntryRef.current.contains(e.target)) {
         setIsNewEntryOpen(false);
       }
+      if (quickSettingsRef.current && !quickSettingsRef.current.contains(e.target)) {
+        setIsQuickSettingsOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleQuickLogOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Sign out error:', err);
+    } finally {
+      window.location.reload();
+    }
+  };
 
   // --- FINANCIAL CALCULATIONS (Auto-derived from transactions) ---
   const metrics = useMemo(() => {
@@ -1122,6 +1137,120 @@ export default function AdLedgerApp() {
                         <div className="text-[10px] text-slate-400 font-medium">Client profile & settings</div>
                       </div>
                     </button>
+                  </div>
+                )}
+              </div>
+
+              {/* SLIDERS QUICK CONTROLS BUTTON (Clean Standalone Icon) */}
+              <div className="relative" ref={quickSettingsRef}>
+                <button
+                  onClick={() => setIsQuickSettingsOpen(prev => !prev)}
+                  title="Quick Settings & Profile"
+                  className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none flex items-center justify-center cursor-pointer"
+                >
+                  <SlidersHorizontal size={19} className={`transition-all duration-200 ${isQuickSettingsOpen ? 'text-sky-600' : ''}`} />
+                </button>
+
+                {/* QUICK SETTINGS DROPDOWN MENU */}
+                {isQuickSettingsOpen && (
+                  <div
+                    style={{ right: 0 }}
+                    className="absolute right-0 mt-2.5 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                  >
+                    {/* Active Workspace Info Header */}
+                    <div className="px-3 py-2 bg-slate-50 rounded-xl mb-1.5 border border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 shadow-2xs">
+                          {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs text-slate-900 truncate">
+                            {workspaceSettings.businessName || 'AdLytic Workspace'}
+                          </div>
+                          <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Active Workspace
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+                      Quick Controls
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setCurrentView('settings');
+                        setIsQuickSettingsOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-sky-50/80 text-left transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <SlidersHorizontal size={14} className="stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-900 group-hover:text-sky-800">
+                          Workspace Settings
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">Branding, currency & defaults</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setCurrentView('team');
+                        setIsQuickSettingsOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-100 text-left transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <UsersRound size={14} className="stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-900 group-hover:text-slate-950">
+                          Team & Members
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">Manage access & roles</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setCurrentView('reports');
+                        setIsQuickSettingsOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-purple-50/80 text-left transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <BarChart3 size={14} className="stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-900 group-hover:text-purple-800">
+                          Audit & Reports
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">Financial & P&L statements</div>
+                      </div>
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100" />
+
+                    <button
+                      onClick={handleQuickLogOut}
+                      className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-rose-50 text-left transition-colors group text-rose-600"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <LogOut size={14} className="stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-rose-700 group-hover:text-rose-800">
+                          Log Out
+                        </div>
+                        <div className="text-[10px] text-rose-400 font-medium">End current session</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </header>
