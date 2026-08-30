@@ -11116,17 +11116,6 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 )}
               </div>
             </div>
-
-            {/* Currency Live Preview Card */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Display Preview</div>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-xs text-slate-600">Sample Metric:</span>
-                <span className="text-sm font-black text-slate-900">
-                  {selectedCurrencySymbol}15,450.00
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* General Inputs */}
