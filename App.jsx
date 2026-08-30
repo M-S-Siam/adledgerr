@@ -1091,9 +1091,32 @@ function ReportsView({ clients, cards, transactions }) {
   const [datePreset, setDatePreset] = useState('This Month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   const [clientFilter, setClientFilter] = useState('all');
   const [cardFilter, setCardFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClickOutside = (e) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowExportMenu(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showExportMenu]);
 
   const dateRange = useMemo(() => {
     if (datePreset === 'Custom') {
@@ -1160,7 +1183,7 @@ function ReportsView({ clients, cards, transactions }) {
 
     const totalUSDOut = result.usdSpent + result.taxUSD + result.feesUSD;
     const totalBDTCost = result.usdPurchaseBDT + result.cashOutBDT;
-    const effectiveRate = result.usdPurchased > 0 ? totalBDTCost / result.usdPurchased : 0;
+    const effectiveRate = result.usdPurchased > 0 ? totalBDTCost / result.usdPurchased : 130;
     const adCostBDT = (result.usdSpent + result.taxUSD) * effectiveRate;
     const profitBDT = result.revenueBDT - adCostBDT;
     const margin = result.revenueBDT > 0 ? (profitBDT / result.revenueBDT) * 100 : 0;
@@ -1183,6 +1206,7 @@ function ReportsView({ clients, cards, transactions }) {
       map[c.id] = {
         id: c.id,
         name: c.name || 'Unnamed Client',
+        company: c.company || 'Direct',
         revenue: 0,
         adSpend: 0,
         tax: 0,
@@ -1215,6 +1239,7 @@ function ReportsView({ clients, cards, transactions }) {
         map[targetClientId] = {
           id: targetClientId,
           name: fallback?.name || 'Unknown Client',
+          company: fallback?.company || 'Direct',
           revenue: 0,
           adSpend: 0,
           tax: 0,
@@ -1233,14 +1258,15 @@ function ReportsView({ clients, cards, transactions }) {
       }
     });
 
-    const rate = report.effectiveRate || 0;
+    const rate = report.effectiveRate || 130;
     return Object.values(map)
-      .map(row => ({
-        ...row,
-        costBDT: (row.adSpend + row.tax) * rate,
-        profit: row.revenue - ((row.adSpend + row.tax) * rate)
-      }))
-      .filter(row => row.transactions > 0)
+      .map(row => {
+        const costBDT = (row.adSpend + row.tax) * rate;
+        const profit = row.revenue - costBDT;
+        const margin = row.revenue > 0 ? (profit / row.revenue) * 100 : 0;
+        return { ...row, costBDT, profit, margin };
+      })
+      .filter(row => row.transactions > 0 || row.revenue > 0 || row.adSpend > 0)
       .sort((a, b) => b.profit - a.profit);
   }, [clients, filteredTransactions, report.effectiveRate]);
 
@@ -1250,6 +1276,8 @@ function ReportsView({ clients, cards, transactions }) {
       map[c.id] = {
         id: c.id,
         name: c.name || 'Unnamed Card',
+        provider: c.provider || 'Bank Card',
+        last4: c.last4 || '',
         purchased: 0,
         adSpend: 0,
         tax: 0,
@@ -1288,23 +1316,31 @@ function ReportsView({ clients, cards, transactions }) {
       if (t.type === 'USD_PURCHASE') map[key].usdPurchased += parseFloat(t.amountUSD || 0);
     });
 
-    const rate = report.effectiveRate || 0;
+    const rate = report.effectiveRate || 130;
     return Object.values(map)
       .map(row => ({
         ...row,
-        adCostBDT: row.adSpendUSD * rate
+        adCostBDT: Math.round(row.adSpendUSD * rate),
+        formattedDate: formatDate(row.date)
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [filteredTransactions, report.effectiveRate]);
 
-  const expenseChart = [
-    { name: 'Ad Spend', value: report.usdSpent },
-    { name: 'Tax', value: report.taxUSD },
-    { name: 'Fees', value: report.feesUSD }
-  ];
+  const expenseBreakdown = useMemo(() => {
+    const raw = [
+      { name: 'Meta Ads', value: report.usdSpent, color: '#8b5cf6', fill: '#8b5cf6' },
+      { name: '15% VAT', value: report.taxUSD, color: '#ec4899', fill: '#ec4899' },
+      { name: 'Bank Fees', value: report.feesUSD, color: '#f59e0b', fill: '#f59e0b' }
+    ];
+    const total = report.totalUSDOut || 1;
+    return raw.map(item => ({
+      ...item,
+      percentage: total > 0 ? ((item.value / total) * 100).toFixed(1) : '0'
+    }));
+  }, [report.usdSpent, report.taxUSD, report.feesUSD, report.totalUSDOut]);
 
   const exportCSV = () => {
-    const headers = ['Date', 'Type', 'Description', 'Client', 'Card', 'BDT In', 'BDT Out', 'USD In', 'USD Out'];
+    const headers = ['Date', 'Ref ID', 'Type', 'Description / Notes', 'Client', 'Card', 'BDT In', 'BDT Out', 'USD In', 'USD Out'];
     const rows = filteredTransactions.map(t => {
       const client = clients.find(c => c.id === t.clientId)?.name || '';
       const card = cards.find(c => c.id === t.cardId)?.name || '';
@@ -1318,31 +1354,118 @@ function ReportsView({ clients, cards, transactions }) {
         : t.type === 'FEE' ? parseFloat(t.amountUSD || 0) : 0;
 
       return [
-        t.date || '',
-        t.type || '',
-        t.description || t.source || '',
-        client,
-        card,
-        bdtIn.toFixed(2),
-        bdtOut.toFixed(2),
-        usdIn.toFixed(2),
-        usdOut.toFixed(2)
-      ];
+        `"${formatDate(t.date)}"`,
+        `"${t.id}"`,
+        `"${t.type}"`,
+        `"${(t.notes || t.description || t.campaign || '').replace(/"/g, '""')}"`,
+        `"${client.replace(/"/g, '""')}"`,
+        `"${card.replace(/"/g, '""')}"`,
+        `"${bdtIn.toFixed(2)}"`,
+        `"${bdtOut.toFixed(2)}"`,
+        `"${usdIn.toFixed(2)}"`,
+        `"${usdOut.toFixed(2)}"`
+      ].join(',');
     });
 
-    const csv = [headers, ...rows]
-      .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
+    const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `adledger-report-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
+    a.download = `adlytic_financial_report_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
-    a.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const handlePrintReportPDF = () => {
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Agency Financial Intelligence & P&L Statement</title>
+        <style>
+          body { font-family: system-ui, -apple-system, sans-serif; color: #0f172a; padding: 32px; margin: 0; background: #fff; line-height: 1.4; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px; }
+          .brand { font-size: 24px; font-weight: 900; color: #0284c7; }
+          .title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-top: 4px; }
+          .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 24px; }
+          .kpi-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 8px; text-align: center; }
+          .kpi-title { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #475569; }
+          .kpi-val { font-size: 13px; font-weight: 900; margin-top: 4px; color: #0f172a; }
+          .green { color: #16a34a !important; }
+          .red { color: #dc2626 !important; }
+          .blue { color: #0284c7 !important; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 24px; }
+          th { background: #f1f5f9; text-align: left; padding: 8px 10px; font-weight: 800; border-bottom: 1.5px solid #cbd5e1; color: #334155; text-transform: uppercase; font-size: 9px; }
+          td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+          .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 10.5px; color: #64748b; display: flex; justify-content: space-between; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">AdLytic Financial Command</div>
+            <div class="title">Official Executive P&L & Financial Intelligence Statement</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 12px;">Period: ${selectedRangeLabel}</div>
+            <div style="font-size: 11px; color: #64748b;">Generated: ${new Date().toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-title">Total Revenue (BDT)</div><div class="kpi-val green">${formatBDT(report.revenueBDT)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Procurement Cost</div><div class="kpi-val">${formatBDT(report.totalBDTCost)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">USD Procured</div><div class="kpi-val blue">${formatUSD(report.usdPurchased)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Total USD Burned</div><div class="kpi-val red">${formatUSD(report.totalUSDOut)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Net Profit (BDT)</div><div class="kpi-val ${report.profitBDT < 0 ? 'red' : 'green'}">${formatBDT(report.profitBDT)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Profit Margin</div><div class="kpi-val">${report.margin.toFixed(1)}%</div></div>
+        </div>
+
+        <h3 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #334155; margin-bottom: 8px;">Client Profit & Loss Performance</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Client Name & Brand</th>
+              <th style="text-align: right;">Revenue (BDT)</th>
+              <th style="text-align: right;">Ad Spend (USD)</th>
+              <th style="text-align: right;">Total Cost (BDT Eqv)</th>
+              <th style="text-align: right;">Net Profit (BDT)</th>
+              <th style="text-align: right;">Margin %</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${clientRows.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding:12px;">No client transactions recorded.</td></tr>' : ''}
+            ${clientRows.map(r => `
+              <tr>
+                <td><strong>${r.name}</strong> <span style="color:#64748b; font-size:10px;">(${r.company})</span></td>
+                <td style="text-align: right; font-weight: bold; color: #16a34a;">${formatBDT(r.revenue)}</td>
+                <td style="text-align: right;">${formatUSD(r.adSpend + r.tax)}</td>
+                <td style="text-align: right;">${formatBDT(r.costBDT)}</td>
+                <td style="text-align: right; font-weight: bold; color: ${r.profit < 0 ? '#dc2626' : '#16a34a'};">${formatBDT(r.profit)}</td>
+                <td style="text-align: right; font-weight: bold;">${r.margin.toFixed(1)}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div>Authorized Financial Intelligence Report • AdLytic Double-Entry System</div>
+          <div>Total Transactions Audited: ${report.transactionCount} entries</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
   };
 
   const resetFilters = () => {
@@ -1360,36 +1483,49 @@ function ReportsView({ clients, cards, transactions }) {
 
   return (
     <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
-      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+
+      {/* TOP HEADER & CONTROLS */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Financial performance from your existing AdLytic data.
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Financial Intelligence & P&L Reports</h1>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {report.transactionCount} Records Audited
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Read-only double-entry financial analysis, client margins, card burn rates, and P&L statements.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* FILTER CONTROLS BAR */}
+        <div className="flex flex-wrap items-center gap-2 self-start xl:self-auto">
           <select
             value={datePreset}
-            onChange={e => setDatePreset(e.target.value)}
-            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            onChange={e => {
+              const val = e.target.value;
+              setDatePreset(val);
+              if (val === 'Custom') setIsDateModalOpen(true);
+            }}
+            className="bg-white border border-slate-200/90 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs outline-none cursor-pointer hover:bg-slate-50"
           >
-            <option>Today</option>
-            <option>Yesterday</option>
-            <option>This Week</option>
-            <option>Last Week</option>
-            <option>This Month</option>
-            <option>Last Month</option>
-            <option>This Year</option>
-            <option>Last Year</option>
-            <option>Lifetime</option>
-            <option>Custom</option>
+            <option value="Today">Today</option>
+            <option value="Yesterday">Yesterday</option>
+            <option value="This Week">This Week</option>
+            <option value="Last Week">Last Week</option>
+            <option value="This Month">This Month</option>
+            <option value="Last Month">Last Month</option>
+            <option value="This Year">This Year</option>
+            <option value="Last Year">Last Year</option>
+            <option value="Lifetime">Lifetime</option>
+            <option value="Custom">📅 Custom Range...</option>
           </select>
 
           <select
             value={clientFilter}
             onChange={e => setClientFilter(e.target.value)}
-            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            className="bg-white border border-slate-200/90 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs outline-none cursor-pointer hover:bg-slate-50"
           >
             <option value="all">All Clients</option>
             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1398,7 +1534,7 @@ function ReportsView({ clients, cards, transactions }) {
           <select
             value={cardFilter}
             onChange={e => setCardFilter(e.target.value)}
-            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            className="bg-white border border-slate-200/90 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs outline-none cursor-pointer hover:bg-slate-50"
           >
             <option value="all">All Cards</option>
             {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1407,220 +1543,455 @@ function ReportsView({ clients, cards, transactions }) {
           <select
             value={typeFilter}
             onChange={e => setTypeFilter(e.target.value)}
-            className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            className="bg-white border border-slate-200/90 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs outline-none cursor-pointer hover:bg-slate-50"
           >
-            <option value="all">All Transactions</option>
-            <option value="PAYMENT_RECEIVED">Client Payment</option>
-            <option value="USD_PURCHASE">Buy USD</option>
-            <option value="AD_SPEND">Meta Ads</option>
-            <option value="FEE">Card Fee</option>
+            <option value="all">All Streams</option>
+            <option value="PAYMENT_RECEIVED">Client Payments</option>
+            <option value="USD_PURCHASE">USD Purchases</option>
+            <option value="AD_SPEND">Meta Ad Spend</option>
+            <option value="FEE">Card Fees</option>
           </select>
 
-          <button
-            onClick={resetFilters}
-            className="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
-          >
-            Reset
-          </button>
+          {(datePreset !== 'This Month' || clientFilter !== 'all' || cardFilter !== 'all' || typeFilter !== 'all') && (
+            <button
+              onClick={resetFilters}
+              className="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors shadow-2xs"
+            >
+              Reset
+            </button>
+          )}
 
-          <button
-            onClick={exportCSV}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-          >
-            <Download size={15} /> Export CSV
-          </button>
-
-          <button
-            onClick={() => window.print()}
-            className="px-3 py-2 text-sm text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
-          >
-            Print / PDF
-          </button>
+          {/* UNIFIED EXPORT DROPDOWN (CSV & A4 PDF) */}
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(prev => !prev)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold shadow-2xs transition-all ${
+                showExportMenu
+                  ? 'bg-slate-100 border-slate-300 text-slate-900 ring-2 ring-sky-500/20'
+                  : 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800'
+              }`}
+            >
+              <Download size={13} /> Export <ChevronDown size={11} className={`transition-transform duration-150 ${showExportMenu ? 'rotate-180' : ''}`} />
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-20 cursor-default" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in duration-150">
+                  <button
+                    type="button"
+                    onClick={() => { setShowExportMenu(false); exportCSV(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors"
+                  >
+                    <FileSpreadsheet size={15} className="text-emerald-600" />
+                    <span>Export Excel / CSV (.csv)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowExportMenu(false); handlePrintReportPDF(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800"
+                  >
+                    <Printer size={15} className="text-sky-600" />
+                    <span>Print / PDF Statement (A4)</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {datePreset === 'Custom' && (
-        <div className="flex flex-wrap items-center gap-3 bg-white border border-slate-200 rounded-xl p-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Start Date</label>
-            <input
-              type="date"
-              value={customStart}
-              onChange={e => setCustomStart(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">End Date</label>
-            <input
-              type="date"
-              value={customEnd}
-              onChange={e => setCustomEnd(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
-            />
-          </div>
-          <span className="text-xs text-slate-500 mt-5">{selectedRangeLabel}</span>
-        </div>
+      {isDateModalOpen && (
+        <DateRangePickerModal
+          onClose={() => setIsDateModalOpen(false)}
+          onApply={(range) => {
+            setCustomStart(range.start || '');
+            setCustomEnd(range.end || '');
+            setDatePreset('Custom');
+            setIsDateModalOpen(false);
+          }}
+          initialRange={{ label: 'Custom Range', start: customStart, end: customEnd }}
+        />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        <ReportMetric title="Total BDT Received" value={formatBDT(report.revenueBDT)} />
-        <ReportMetric title="Total BDT Cost" value={formatBDT(report.totalBDTCost)} />
-        <ReportMetric title="Net BDT" value={formatBDT(report.netBDT)} />
-        <ReportMetric title="USD Purchased" value={formatUSD(report.usdPurchased)} />
-        <ReportMetric title="Meta Ads Spend" value={formatUSD(report.usdSpent)} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        <ReportMetric title="C.O Charge" value={formatBDT(report.cashOutBDT)} />
-        <ReportMetric title="Tax" value={formatUSD(report.taxUSD)} />
-        <ReportMetric title="Fees" value={formatUSD(report.feesUSD)} />
-        <ReportMetric title="Total USD Out" value={formatUSD(report.totalUSDOut)} />
-        <ReportMetric title="Profit" value={formatBDT(report.profitBDT)} />
-        <ReportMetric title="Profit Margin" value={`${report.margin.toFixed(1)}%`} />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-semibold text-slate-800">Revenue vs Ad Cost</h3>
-              <p className="text-xs text-slate-500">BDT revenue and USD ad cost over the selected period.</p>
+      {/* EXECUTIVE FINANCIAL P&L COMMAND CONSOLE (3 ELEGANT CLUSTERS) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
+        {/* Card 1: Domestic Cashflow (BDT) */}
+        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-xl p-4 shadow-2xs">
+          <div className="flex items-center justify-between border-b border-emerald-100 pb-2 mb-2.5">
+            <span className="text-[10.5px] font-extrabold uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
+              <ArrowDownLeft size={13} className="text-emerald-600" /> Domestic Cashflow
+            </span>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100/60 px-1.5 py-0.2 rounded">BDT</span>
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between items-baseline">
+              <span className="text-slate-500 font-semibold">Total Revenue In:</span>
+              <span className="font-black text-emerald-700 text-sm">{formatBDT(report.revenueBDT)}</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-slate-500 font-semibold">Total BDT Cost:</span>
+              <span className="font-bold text-slate-800">{formatBDT(report.totalBDTCost)}</span>
+            </div>
+            <div className="flex justify-between items-baseline pt-1.5 border-t border-emerald-100/80">
+              <span className="text-slate-700 font-bold">Operating Surplus:</span>
+              <span className={`font-black text-xs ${report.netBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{formatBDT(report.netBDT)}</span>
             </div>
           </div>
-          <div className="h-72">
-            {dailyChart.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyChart}>
-                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} dy={8} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
-                  <Tooltip cursor={{ stroke: '#9edcf5', strokeDasharray: '4 4' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
-                  <Line type="monotone" dataKey="revenue" name="Revenue (BDT)" stroke="#10b981" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="adCostBDT" name="Ad Cost (BDT Equivalent)" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <ReportEmptyState />
-            )}
+        </div>
+
+        {/* Card 2: Foreign FX & Ad Spend (USD) */}
+        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-xl p-4 shadow-2xs">
+          <div className="flex items-center justify-between border-b border-purple-100 pb-2 mb-2.5">
+            <span className="text-[10.5px] font-extrabold uppercase text-purple-800 tracking-wider flex items-center gap-1.5">
+              <Activity size={13} className="text-purple-600" /> Foreign FX & Burn
+            </span>
+            <span className="text-[10px] font-bold text-purple-600 bg-purple-100/60 px-1.5 py-0.2 rounded">USD</span>
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between items-baseline">
+              <span className="text-slate-500 font-semibold">USD Procured:</span>
+              <span className="font-bold text-emerald-700">+{formatUSD(report.usdPurchased)}</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-slate-500 font-semibold">Meta Ads + 15% VAT:</span>
+              <span className="font-bold text-purple-700">-{formatUSD(report.usdSpent + report.taxUSD)}</span>
+            </div>
+            <div className="flex justify-between items-baseline pt-1.5 border-t border-purple-100/80">
+              <span className="text-slate-700 font-bold">Total USD Outflow:</span>
+              <span className="font-black text-slate-900 text-xs">{formatUSD(report.totalUSDOut)}</span>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <h3 className="font-semibold text-slate-800 mb-1">USD Expense Breakdown</h3>
-          <p className="text-xs text-slate-500 mb-4">Meta Ads, tax and card fees.</p>
-          <div className="h-72">
-            {expenseChart.some(x => x.value > 0) ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={expenseChart}>
-                  <CartesianGrid strokeDasharray="5 7" vertical={false} stroke="#d9edf8" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52708a', fontSize: 11 }} />
-                  <Tooltip cursor={{ fill: '#eefaff' }} contentStyle={{ borderRadius: 16, border: '1px solid #cfeaf7', boxShadow: '0 14px 36px rgba(14,116,144,0.12)', fontSize: 12 }} />
-                  <Bar dataKey="value" name="USD" fill="#38bdf8" radius={[10, 10, 4, 4]} barSize={42} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <ReportEmptyState />
-            )}
+        {/* Card 3: Agency Net Profit (BDT) */}
+        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-sky-100 pb-2 mb-2.5">
+            <span className="text-[10.5px] font-extrabold uppercase text-sky-800 tracking-wider flex items-center gap-1.5">
+              <TrendingUp size={13} className="text-sky-600" /> Net Profit
+            </span>
+            <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded ${report.margin > 50 ? 'bg-emerald-100 text-emerald-800' : report.margin < 0 ? 'bg-rose-100 text-rose-800' : 'bg-sky-100 text-sky-800'}`}>
+              {report.margin.toFixed(1)}% Margin
+            </span>
+          </div>
+          <div>
+            <span className={`text-xl font-black block tracking-tight ${report.profitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              {formatBDT(report.profitBDT)}
+            </span>
+            <span className="text-[10.5px] text-slate-400 font-semibold block mt-1">
+              Revenue minus actual BDT-equivalent ad expenses.
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Weighted Effective FX Rate */}
+        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-2.5">
+            <span className="text-[10.5px] font-extrabold uppercase text-amber-800 tracking-wider flex items-center gap-1.5">
+              <RefreshCw size={13} className="text-amber-600" /> Effective FX Rate
+            </span>
+            <span className="text-[10px] font-bold text-amber-700 bg-amber-100/60 px-1.5 py-0.2 rounded">Procurement</span>
+          </div>
+          <div>
+            <span className="text-xl font-black text-amber-800 block tracking-tight">
+              ৳{(report.effectiveRate || 0).toFixed(2)} <span className="text-xs font-bold text-slate-400">/ USD</span>
+            </span>
+            <span className="text-[10.5px] text-slate-400 font-semibold block mt-1">
+              Includes cash-out fees (৳{formatBDT(report.cashOutBDT)} total fees).
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200">
-            <h3 className="font-semibold text-slate-800">Client Performance</h3>
-            <p className="text-xs text-slate-500 mt-1">Revenue, ad cost and estimated profit.</p>
+      {/* UNIQUE WORLD-CLASS RECHARTS VISUALIZATIONS */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+
+        {/* CHART 1: Dual-Chamber Revenue vs Ad Cost Area Glow Spline (8 Cols) */}
+        <div className="xl:col-span-8 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+                <TrendingUp size={16} className="text-emerald-600" />
+                Revenue vs Ad Burn Trajectory
+              </h3>
+              <p className="text-xs text-slate-400 font-medium">Daily BDT collection vs BDT-equivalent ad spend.</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-bold">
+              <span className="inline-flex items-center gap-1 text-emerald-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Revenue (BDT)
+              </span>
+              <span className="inline-flex items-center gap-1 text-amber-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Ad Cost (BDT)
+              </span>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500">
+
+          <div className="h-72 w-full">
+            {dailyChart.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={dailyChart} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+                    </linearGradient>
+                    <linearGradient id="costGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="formattedDate"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }}
+                    tickFormatter={(val) => `৳${val >= 1000 ? `${(val/1000).toFixed(0)}k` : val}`}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      return (
+                        <div className="bg-slate-950/95 border border-slate-800 text-white rounded-xl p-3 shadow-2xl backdrop-blur-md text-xs">
+                          <p className="font-extrabold text-slate-300 text-[11px] mb-1.5 border-b border-slate-800 pb-1">{label}</p>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-4 font-bold text-emerald-400">
+                              <span>Revenue:</span>
+                              <span>৳{Number(payload[0]?.value || 0).toLocaleString('en-IN')}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 font-bold text-amber-400">
+                              <span>Ad Cost:</span>
+                              <span>৳{Number(payload[1]?.value || 0).toLocaleString('en-IN')}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Revenue"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#revenueGrad)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="adCostBDT"
+                    name="Ad Cost"
+                    stroke="#f59e0b"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#costGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <ReportEmptyState />
+            )}
+          </div>
+        </div>
+
+        {/* CHART 2: USD Expense Allocation Donut Radar (4 Cols) */}
+        <div className="xl:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+          <div className="mb-2 pb-3 border-b border-slate-100">
+            <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+              <Activity size={16} className="text-purple-600" />
+              USD Burn Breakdown
+            </h3>
+            <p className="text-xs text-slate-400 font-medium">Meta Ads, 15% VAT, and bank fees.</p>
+          </div>
+
+          <div className="relative h-44 w-full flex items-center justify-center">
+            {report.totalUSDOut > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={expenseBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={52}
+                      outerRadius={75}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {expenseBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                      ))}
+                    </Pie>
+                  </RePieChart>
+                </ResponsiveContainer>
+                {/* Center HUD */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Total Burn</span>
+                  <span className="text-sm font-black text-slate-900">{formatUSD(report.totalUSDOut)}</span>
+                </div>
+              </>
+            ) : (
+              <ReportEmptyState />
+            )}
+          </div>
+
+          {/* Breakdown Items List */}
+          <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+            {expenseBreakdown.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between font-semibold">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-slate-700">{item.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 text-[11px]">({item.percentage}%)</span>
+                  <span className="font-bold text-slate-900">{formatUSD(item.value)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* COMPARATIVE BREAKDOWN TABLES */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+        {/* TABLE 1: CLIENT P&L PERFORMANCE */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+            <div>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client P&L Performance</h3>
+              <p className="text-[11px] text-slate-400 font-medium">Revenue, USD ad cost, and profit margin per client.</p>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+              {clientRows.length} Accounts
+            </span>
+          </div>
+          <div className="overflow-x-auto max-h-[350px]">
+            <table className="w-full text-xs text-left whitespace-nowrap">
+              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="text-left px-5 py-3 font-medium">Client</th>
-                  <th className="text-right px-4 py-3 font-medium">Revenue</th>
-                  <th className="text-right px-4 py-3 font-medium">Ad Cost</th>
-                  <th className="text-right px-5 py-3 font-medium">Profit</th>
+                  <th className="px-4 py-2.5">Client & Brand</th>
+                  <th className="px-4 py-2.5 text-right">Revenue (BDT)</th>
+                  <th className="px-4 py-2.5 text-right">Ad Cost (BDT)</th>
+                  <th className="px-4 py-2.5 text-right">Net Profit</th>
+                  <th className="px-4 py-2.5 text-center">Margin</th>
                 </tr>
               </thead>
-              <tbody>
-                {clientRows.length ? clientRows.map(row => (
-                  <tr key={row.id} className="border-t border-slate-100">
-                    <td className="px-5 py-3 font-medium text-slate-700">{row.name}</td>
-                    <td className="px-4 py-3 text-right">{formatBDT(row.revenue)}</td>
-                    <td className="px-4 py-3 text-right">{formatBDT(row.costBDT)}</td>
-                    <td className={`px-5 py-3 text-right font-semibold ${row.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {clientRows.length === 0 && (
+                  <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-400">No client activity in this period.</td></tr>
+                )}
+                {clientRows.map(row => (
+                  <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-4 py-2.5">
+                      <div className="font-bold text-slate-900">{row.name}</div>
+                      <div className="text-[10.5px] text-slate-400">{row.company}</div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">{formatBDT(row.revenue)}</td>
+                    <td className="px-4 py-2.5 text-right text-slate-600 font-semibold">{formatBDT(row.costBDT)}</td>
+                    <td className={`px-4 py-2.5 text-right font-black ${row.profit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                       {formatBDT(row.profit)}
                     </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        row.margin > 50 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                        row.margin < 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
+                        {row.margin.toFixed(1)}%
+                      </span>
+                    </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400">No client data for this period.</td></tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200">
-            <h3 className="font-semibold text-slate-800">Card Performance</h3>
-            <p className="text-xs text-slate-500 mt-1">Purchased, spent and calculated period-end balance.</p>
+        {/* TABLE 2: CARD LIQUIDITY & UTILIZATION */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+            <div>
+              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Card Liquidity & Burn</h3>
+              <p className="text-[11px] text-slate-400 font-medium">USD funded, spent, and period-end live balance.</p>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-bold">
+              {cardRows.length} Cards
+            </span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500">
+          <div className="overflow-x-auto max-h-[350px]">
+            <table className="w-full text-xs text-left whitespace-nowrap">
+              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="text-left px-5 py-3 font-medium">Card</th>
-                  <th className="text-right px-4 py-3 font-medium">Purchased</th>
-                  <th className="text-right px-4 py-3 font-medium">Spent</th>
-                  <th className="text-right px-5 py-3 font-medium">Balance</th>
+                  <th className="px-4 py-2.5">Card Name</th>
+                  <th className="px-4 py-2.5 text-right">USD Funded</th>
+                  <th className="px-4 py-2.5 text-right">Total Burned</th>
+                  <th className="px-4 py-2.5 text-right">Balance After</th>
                 </tr>
               </thead>
-              <tbody>
-                {cardRows.length ? cardRows.map(row => (
-                  <tr key={row.id} className="border-t border-slate-100">
-                    <td className="px-5 py-3 font-medium text-slate-700">{row.name}</td>
-                    <td className="px-4 py-3 text-right">{formatUSD(row.purchased)}</td>
-                    <td className="px-4 py-3 text-right">{formatUSD(row.adSpend + row.tax + row.fees)}</td>
-                    <td className={`px-5 py-3 text-right font-semibold ${row.current >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {cardRows.length === 0 && (
+                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400">No card activity in this period.</td></tr>
+                )}
+                {cardRows.map(row => (
+                  <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-4 py-2.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>{row.name}</span>
+                        {row.last4 && <span className="text-[10px] font-mono text-slate-400">*{row.last4}</span>}
+                      </div>
+                      <div className="text-[10.5px] text-slate-400">{row.provider}</div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">+{formatUSD(row.purchased)}</td>
+                    <td className="px-4 py-2.5 text-right text-purple-700 font-bold">-{formatUSD(row.adSpend + row.tax + row.fees)}</td>
+                    <td className={`px-4 py-2.5 text-right font-black ${row.current < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                       {formatUSD(row.current)}
                     </td>
                   </tr>
-                )) : (
-                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400">No card data for this period.</td></tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-slate-800">Detailed Report</h3>
-              <p className="text-xs text-slate-500 mt-1">{report.transactionCount} transaction(s) in the selected range.</p>
-            </div>
-            <span className="text-xs text-slate-500">{selectedRangeLabel}</span>
+      {/* TABLE 3: DETAILED ITEMIZED LEDGER AUDIT STREAM */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
+        <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+          <div>
+            <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Itemized Audit Log</h3>
+            <p className="text-[11px] text-slate-400 font-medium">{report.transactionCount} transaction(s) verified in current scope.</p>
           </div>
+          <span className="text-xs font-bold text-slate-500">{selectedRangeLabel}</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-500">
+        <div className="overflow-x-auto max-h-[400px]">
+          <table className="w-full text-xs text-left whitespace-nowrap">
+            <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="text-left px-5 py-3 font-medium">Date</th>
-                <th className="text-left px-4 py-3 font-medium">Type</th>
-                <th className="text-left px-4 py-3 font-medium">Client / Card</th>
-                <th className="text-right px-4 py-3 font-medium">BDT In</th>
-                <th className="text-right px-4 py-3 font-medium">BDT Out</th>
-                <th className="text-right px-4 py-3 font-medium">USD In</th>
-                <th className="text-right px-5 py-3 font-medium">USD Out</th>
+                <th className="px-4 py-2.5">Date & Ref</th>
+                <th className="px-4 py-2.5">Stream Category</th>
+                <th className="px-4 py-2.5">Client / Card / Campaign</th>
+                <th className="px-4 py-2.5 text-right text-emerald-700">BDT In</th>
+                <th className="px-4 py-2.5 text-right text-rose-700">BDT Out</th>
+                <th className="px-4 py-2.5 text-right text-emerald-700">USD In</th>
+                <th className="px-4 py-2.5 text-right text-purple-700">USD Out</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredTransactions.length ? filteredTransactions.map(t => {
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {filteredTransactions.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="px-5 py-10 text-center text-slate-400 font-semibold">
+                    No transactions matching your filter criteria.
+                  </td>
+                </tr>
+              )}
+              {filteredTransactions.map(t => {
                 const client = clients.find(c => c.id === t.clientId)?.name;
                 const card = cards.find(c => c.id === t.cardId)?.name;
                 const bdtIn = t.type === 'PAYMENT_RECEIVED' ? parseFloat(t.amountBDT || 0) : 0;
@@ -1633,53 +2004,40 @@ function ReportsView({ clients, cards, transactions }) {
                   : t.type === 'FEE' ? parseFloat(t.amountUSD || 0) : 0;
 
                 return (
-                  <tr key={t.id} className="border-t border-slate-100">
-                    <td className="px-5 py-3">{formatDate(t.date)}</td>
-                    <td className="px-4 py-3">{t.type}</td>
-                    <td className="px-4 py-3">{client || card || t.source || t.description || '—'}</td>
-                    <td className="px-4 py-3 text-right text-green-600">{bdtIn ? formatBDT(bdtIn) : '—'}</td>
-                    <td className="px-4 py-3 text-right text-red-600">{bdtOut ? formatBDT(bdtOut) : '—'}</td>
-                    <td className="px-4 py-3 text-right text-green-600">{usdIn ? formatUSD(usdIn) : '—'}</td>
-                    <td className="px-5 py-3 text-right text-red-600">{usdOut ? formatUSD(usdOut) : '—'}</td>
+                  <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-4 py-2.5">
+                      <div className="font-bold text-slate-900">{formatDate(t.date)}</div>
+                      <div className="font-mono text-[10px] text-slate-400">#{String(t.id).slice(-6)}</div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="font-bold text-slate-700">{t.type.replaceAll('_', ' ')}</span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="font-bold text-slate-800 truncate max-w-[220px]">
+                        {client || card || t.source || t.notes || '—'}
+                      </div>
+                      {t.campaign && <div className="text-[10px] text-slate-400">{t.campaign}</div>}
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-black text-emerald-600">{bdtIn ? `+${formatBDT(bdtIn)}` : '—'}</td>
+                    <td className="px-4 py-2.5 text-right font-black text-rose-600">{bdtOut ? `-${formatBDT(bdtOut)}` : '—'}</td>
+                    <td className="px-4 py-2.5 text-right font-black text-emerald-600">{usdIn ? `+${formatUSD(usdIn)}` : '—'}</td>
+                    <td className="px-4 py-2.5 text-right font-black text-purple-700">{usdOut ? `-${formatUSD(usdOut)}` : '—'}</td>
                   </tr>
                 );
-              }) : (
-                <tr>
-                  <td colSpan="7" className="px-5 py-10 text-center text-slate-400">
-                    No transactions found for the selected filters.
-                  </td>
-                </tr>
-              )}
+              })}
             </tbody>
           </table>
         </div>
       </div>
-
-      <style>{`
-        @media print {
-          aside, header, button, select, input { display: none !important; }
-          main { overflow: visible !important; height: auto !important; }
-          main > div { overflow: visible !important; }
-          body { background: white !important; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function ReportMetric({ title, value }) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4">
-      <p className="text-xs font-medium text-slate-500">{title}</p>
-      <p className="text-xl font-bold text-slate-900 mt-2">{value}</p>
     </div>
   );
 }
 
 function ReportEmptyState() {
   return (
-    <div className="h-full flex items-center justify-center text-sm text-slate-400">
-      No report data for the selected period.
+    <div className="h-full flex flex-col items-center justify-center text-xs text-slate-400 py-10">
+      <TrendingUp size={24} className="text-slate-300 mb-1" />
+      <span>No analytical data points recorded for this selected range.</span>
     </div>
   );
 }
