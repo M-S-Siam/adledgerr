@@ -1799,58 +1799,170 @@ function ReportsView({ clients, cards, transactions }) {
           </div>
         </div>
 
-        {/* CHART 2: USD Expense Allocation Donut Radar (4 Cols) */}
+        {/* CHART 2: Futuristic Cybernetic Radial Burn Meter & Allocation (4 Cols) */}
         <div className="xl:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="mb-2 pb-3 border-b border-slate-100">
-            <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
-              <Activity size={16} className="text-purple-600" />
-              USD Burn Breakdown
-            </h3>
-            <p className="text-xs text-slate-400 font-medium">Meta Ads, 15% VAT, and bank fees.</p>
+          <div className="mb-2 pb-3 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+                <Activity size={16} className="text-purple-600" />
+                USD Burn Allocation
+              </h3>
+              <p className="text-[11px] text-slate-400 font-medium">Meta Ads, 15% VAT, and bank fees.</p>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200/60 text-[10px] font-bold text-purple-700">
+              Concentric HUD
+            </span>
           </div>
 
-          <div className="relative h-44 w-full flex items-center justify-center">
-            {report.totalUSDOut > 0 ? (
-              <>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RePieChart>
-                    <Pie
-                      data={expenseBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={52}
-                      outerRadius={75}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {expenseBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                      ))}
-                    </Pie>
-                  </RePieChart>
-                </ResponsiveContainer>
-                {/* Center HUD */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Total Burn</span>
-                  <span className="text-sm font-black text-slate-900">{formatUSD(report.totalUSDOut)}</span>
+          {/* UNIQUE GLOWING CONCENTRIC CIRCULAR GAUGE */}
+          {report.totalUSDOut > 0 ? (
+            <div className="py-2 flex flex-col items-center">
+              <div className="relative w-48 h-48 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 190 190">
+                  <defs>
+                    <linearGradient id="glowAds" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#a855f7" />
+                      <stop offset="100%" stopColor="#6366f1" />
+                    </linearGradient>
+                    <linearGradient id="glowTax" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#ec4899" />
+                      <stop offset="100%" stopColor="#f43f5e" />
+                    </linearGradient>
+                    <linearGradient id="glowFees" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#f59e0b" />
+                      <stop offset="100%" stopColor="#eab308" />
+                    </linearGradient>
+                    <filter id="shadowViolet" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#8b5cf6" floodOpacity="0.4" />
+                    </filter>
+                    <filter id="shadowPink" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#ec4899" floodOpacity="0.4" />
+                    </filter>
+                    <filter id="shadowAmber" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#f59e0b" floodOpacity="0.4" />
+                    </filter>
+                  </defs>
+
+                  {/* Precision Radial Calibration Dial Ticks */}
+                  {[...Array(24)].map((_, i) => {
+                    const angle = (i * 360) / 24;
+                    const rad = (angle * Math.PI) / 180;
+                    const x1 = 95 + 88 * Math.cos(rad);
+                    const y1 = 95 + 88 * Math.sin(rad);
+                    const x2 = 95 + 83 * Math.cos(rad);
+                    const y2 = 95 + 83 * Math.sin(rad);
+                    return (
+                      <line
+                        key={i}
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke="#cbd5e1"
+                        strokeWidth={i % 6 === 0 ? "2" : "1"}
+                        strokeOpacity={i % 6 === 0 ? "0.8" : "0.35"}
+                      />
+                    );
+                  })}
+
+                  {/* Base Track Arcs */}
+                  <circle cx="95" cy="95" r="72" fill="none" stroke="#f1f5f9" strokeWidth="8" />
+                  <circle cx="95" cy="95" r="56" fill="none" stroke="#f1f5f9" strokeWidth="7" />
+                  <circle cx="95" cy="95" r="40" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+
+                  {/* Glowing Layer 1: Meta Ads (Outer) */}
+                  {report.usdSpent > 0 && (
+                    <circle
+                      cx="95"
+                      cy="95"
+                      r="72"
+                      fill="none"
+                      stroke="url(#glowAds)"
+                      strokeWidth="8"
+                      strokeDasharray={2 * Math.PI * 72}
+                      strokeDashoffset={(2 * Math.PI * 72) * (1 - Math.min(1, report.usdSpent / (report.totalUSDOut || 1)))}
+                      strokeLinecap="round"
+                      filter="url(#shadowViolet)"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  )}
+
+                  {/* Glowing Layer 2: 15% VAT (Middle) */}
+                  {report.taxUSD > 0 && (
+                    <circle
+                      cx="95"
+                      cy="95"
+                      r="56"
+                      fill="none"
+                      stroke="url(#glowTax)"
+                      strokeWidth="7"
+                      strokeDasharray={2 * Math.PI * 56}
+                      strokeDashoffset={(2 * Math.PI * 56) * (1 - Math.min(1, report.taxUSD / (report.totalUSDOut || 1)))}
+                      strokeLinecap="round"
+                      filter="url(#shadowPink)"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  )}
+
+                  {/* Glowing Layer 3: Card Fees (Inner) */}
+                  {report.feesUSD > 0 && (
+                    <circle
+                      cx="95"
+                      cy="95"
+                      r="40"
+                      fill="none"
+                      stroke="url(#glowFees)"
+                      strokeWidth="6"
+                      strokeDasharray={2 * Math.PI * 40}
+                      strokeDashoffset={(2 * Math.PI * 40) * (1 - Math.min(1, report.feesUSD / (report.totalUSDOut || 1)))}
+                      strokeLinecap="round"
+                      filter="url(#shadowAmber)"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  )}
+                </svg>
+
+                {/* Center Futuristic Digital HUD Core */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">TOTAL BURN</span>
+                  </div>
+                  <span className="text-base font-black text-slate-900 tracking-tight leading-none">
+                    {formatUSD(report.totalUSDOut)}
+                  </span>
+                  <span className="text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200/60 mt-1">
+                    100% Attributed
+                  </span>
                 </div>
-              </>
-            ) : (
-              <ReportEmptyState />
-            )}
-          </div>
+              </div>
+            </div>
+          ) : (
+            <ReportEmptyState />
+          )}
 
-          {/* Breakdown Items List */}
+          {/* Segmented Metric Progress Bars */}
           <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
             {expenseBreakdown.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between font-semibold">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-slate-700">{item.name}</span>
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center justify-between font-semibold text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-slate-700 font-bold">{item.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 text-[10px]">({item.percentage}%)</span>
+                    <span className="font-bold text-slate-900">{formatUSD(item.value)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400 text-[11px]">({item.percentage}%)</span>
-                  <span className="font-bold text-slate-900">{formatUSD(item.value)}</span>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, parseFloat(item.percentage) || 0)}%`,
+                      backgroundColor: item.color
+                    }}
+                  />
                 </div>
               </div>
             ))}
@@ -1858,29 +1970,29 @@ function ReportsView({ clients, cards, transactions }) {
         </div>
       </div>
 
-      {/* COMPARATIVE BREAKDOWN TABLES */}
+      {/* COMPARATIVE BREAKDOWN TABLES (ZERO HORIZONTAL SCROLLBAR) */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
         {/* TABLE 1: CLIENT P&L PERFORMANCE */}
         <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client P&L Performance</h3>
-              <p className="text-[11px] text-slate-400 font-medium">Revenue, USD ad cost, and profit margin per client.</p>
+              <p className="text-[10.5px] text-slate-400 font-medium">Revenue, USD ad cost, and profit margin per client.</p>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
               {clientRows.length} Accounts
             </span>
           </div>
-          <div className="overflow-x-auto max-h-[350px]">
-            <table className="w-full text-xs text-left whitespace-nowrap">
-              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[10px]">
+          <div className="overflow-y-auto overflow-x-hidden max-h-[350px] no-scrollbar">
+            <table className="table-fixed w-full text-xs text-left">
+              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
-                  <th className="px-4 py-2.5">Client & Brand</th>
-                  <th className="px-4 py-2.5 text-right">Revenue (BDT)</th>
-                  <th className="px-4 py-2.5 text-right">Ad Cost (BDT)</th>
-                  <th className="px-4 py-2.5 text-right">Net Profit</th>
-                  <th className="px-4 py-2.5 text-center">Margin</th>
+                  <th className="w-[32%] pl-4 pr-2 py-2.5">Client & Brand</th>
+                  <th className="w-[22%] px-2 py-2.5 text-right">Revenue</th>
+                  <th className="w-[20%] px-2 py-2.5 text-right">Ad Cost</th>
+                  <th className="w-[16%] px-2 py-2.5 text-right">Profit</th>
+                  <th className="w-[10%] pl-1 pr-4 py-2.5 text-center">Margin</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -1889,22 +2001,22 @@ function ReportsView({ clients, cards, transactions }) {
                 )}
                 {clientRows.map(row => (
                   <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-4 py-2.5">
-                      <div className="font-bold text-slate-900">{row.name}</div>
-                      <div className="text-[10.5px] text-slate-400">{row.company}</div>
+                    <td className="w-[32%] pl-4 pr-2 py-2.5">
+                      <div className="font-bold text-slate-900 truncate">{row.name}</div>
+                      <div className="text-[10px] text-slate-400 truncate">{row.company}</div>
                     </td>
-                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">{formatBDT(row.revenue)}</td>
-                    <td className="px-4 py-2.5 text-right text-slate-600 font-semibold">{formatBDT(row.costBDT)}</td>
-                    <td className={`px-4 py-2.5 text-right font-black ${row.profit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    <td className="w-[22%] px-2 py-2.5 text-right font-bold text-emerald-700">{formatBDT(row.revenue)}</td>
+                    <td className="w-[20%] px-2 py-2.5 text-right text-slate-600 font-semibold">{formatBDT(row.costBDT)}</td>
+                    <td className={`w-[16%] px-2 py-2.5 text-right font-black ${row.profit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                       {formatBDT(row.profit)}
                     </td>
-                    <td className="px-4 py-2.5 text-center">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                    <td className="w-[10%] pl-1 pr-4 py-2.5 text-center">
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9.5px] font-bold ${
                         row.margin > 50 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                         row.margin < 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
                         'bg-slate-100 text-slate-700'
                       }`}>
-                        {row.margin.toFixed(1)}%
+                        {row.margin.toFixed(0)}%
                       </span>
                     </td>
                   </tr>
@@ -1916,23 +2028,23 @@ function ReportsView({ clients, cards, transactions }) {
 
         {/* TABLE 2: CARD LIQUIDITY & UTILIZATION */}
         <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs">
-          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+          <div className="px-4 sm:px-5 py-3 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Card Liquidity & Burn</h3>
-              <p className="text-[11px] text-slate-400 font-medium">USD funded, spent, and period-end live balance.</p>
+              <p className="text-[10.5px] text-slate-400 font-medium">USD funded, spent, and period-end live balance.</p>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-bold">
               {cardRows.length} Cards
             </span>
           </div>
-          <div className="overflow-x-auto max-h-[350px]">
-            <table className="w-full text-xs text-left whitespace-nowrap">
-              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[10px]">
+          <div className="overflow-y-auto overflow-x-hidden max-h-[350px] no-scrollbar">
+            <table className="table-fixed w-full text-xs text-left">
+              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
-                  <th className="px-4 py-2.5">Card Name</th>
-                  <th className="px-4 py-2.5 text-right">USD Funded</th>
-                  <th className="px-4 py-2.5 text-right">Total Burned</th>
-                  <th className="px-4 py-2.5 text-right">Balance After</th>
+                  <th className="w-[36%] pl-4 pr-2 py-2.5">Card Name</th>
+                  <th className="w-[22%] px-2 py-2.5 text-right">USD Funded</th>
+                  <th className="w-[22%] px-2 py-2.5 text-right">Total Burned</th>
+                  <th className="w-[20%] pl-2 pr-4 py-2.5 text-right">Balance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -1941,16 +2053,16 @@ function ReportsView({ clients, cards, transactions }) {
                 )}
                 {cardRows.map(row => (
                   <tr key={row.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-4 py-2.5">
-                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                        <span>{row.name}</span>
-                        {row.last4 && <span className="text-[10px] font-mono text-slate-400">*{row.last4}</span>}
+                    <td className="w-[36%] pl-4 pr-2 py-2.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5 truncate">
+                        <span className="truncate">{row.name}</span>
+                        {row.last4 && <span className="text-[9.5px] font-mono text-slate-400 shrink-0">*{row.last4}</span>}
                       </div>
-                      <div className="text-[10.5px] text-slate-400">{row.provider}</div>
+                      <div className="text-[10px] text-slate-400 truncate">{row.provider}</div>
                     </td>
-                    <td className="px-4 py-2.5 text-right font-bold text-emerald-700">+{formatUSD(row.purchased)}</td>
-                    <td className="px-4 py-2.5 text-right text-purple-700 font-bold">-{formatUSD(row.adSpend + row.tax + row.fees)}</td>
-                    <td className={`px-4 py-2.5 text-right font-black ${row.current < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    <td className="w-[22%] px-2 py-2.5 text-right font-bold text-emerald-700">{formatUSD(row.purchased)}</td>
+                    <td className="w-[22%] px-2 py-2.5 text-right text-purple-700 font-bold">-{formatUSD(row.adSpend + row.tax + row.fees)}</td>
+                    <td className={`w-[20%] pl-2 pr-4 py-2.5 text-right font-black ${row.current < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                       {formatUSD(row.current)}
                     </td>
                   </tr>

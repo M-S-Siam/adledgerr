@@ -138,3 +138,14 @@ body {
   .adl-auth-page > form > div:nth-child(2) > div:nth-child(2) { margin-bottom: 8px !important; }
   .adl-auth-page > form input { padding-top: 8px !important; padding-bottom: 8px !important; }
 }
+
+/* ---------- UTILITY: HIDE SCROLLBAR ---------- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
