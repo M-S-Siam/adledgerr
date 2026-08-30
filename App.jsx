@@ -2471,19 +2471,10 @@ function DashboardView({
 
         {/* Live Operational Status & DB Telemetry */}
         <div className="flex items-center gap-2.5">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold text-slate-600">Supabase DB Sync: 100% Active</span>
+            <span className="text-xs font-bold text-slate-700">Live Supabase DB Sync</span>
           </div>
-          {onAddSpend && (
-            <button
-              onClick={onAddSpend}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold text-xs shadow-xs hover:shadow transition-all"
-            >
-              <Activity size={14} className="stroke-[2.5]" />
-              <span>+ Record Spend</span>
-            </button>
-          )}
         </div>
       </div>
 
