@@ -2494,12 +2494,8 @@ function DashboardView({
                 Net Agency<br />Profit
               </span>
             </div>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-              metrics.profitMargin >= 50 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-              metrics.profitMargin < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' :
-              'bg-indigo-50 text-indigo-700 border-indigo-200'
-            }`}>
-              {metrics.profitMargin.toFixed(1)}% Margin
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+              Net BDT
             </span>
           </div>
 
