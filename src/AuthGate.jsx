@@ -219,13 +219,7 @@ export default function AuthGate({ children }) {
     </div>
   );
 
-  if (session && mode !== 'reset') return (
-    <>
-      {children}
-      <style>{`.adl-shell header button:last-of-type{margin-right:56px!important}.adl-shell header{padding-right:4px!important}`}</style>
-      <button type="button" onClick={() => { const el = Array.from(document.querySelectorAll('.adl-shell aside button, .adl-shell aside a')).find((node) => node.textContent?.replace(/\s+/g, ' ').trim() === 'Settings'); if (el) el.click(); }} aria-label="Open Settings" title="Settings" style={{ position:'fixed', top:14, right:14, zIndex:9999, width:38, height:38, display:'inline-flex', alignItems:'center', justifyContent:'center', border:'1px solid #cbd5e1', borderRadius:8, background:'#fff', color:'#334155', boxShadow:'0 6px 18px rgba(15,23,42,.10)', cursor:'pointer' }}><Settings2 size={17} /></button>
-    </>
-  );
+  if (session && mode !== 'reset') return children;
 
   const isLogin = mode === 'login', isSignup = mode === 'signup', isForgot = mode === 'forgot', isReset = mode === 'reset';
   const formSubmit = isLogin ? handleLogin : isSignup ? handleSignUp : isForgot ? handleForgotPassword : handleUpdatePassword;
