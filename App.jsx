@@ -1005,7 +1005,7 @@ export default function AdLedgerApp() {
           <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-lg text-white shadow-[0_0_20px_rgba(56,189,248,0.35)] ring-2 ring-sky-400/40 shrink-0">
-                A
+                Q
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
