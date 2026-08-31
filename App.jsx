@@ -10562,12 +10562,13 @@ function UserGuideView({ onNavigate }) {
 
 // --- SUBSCRIPTION & BILLING PLANS COMPONENT ---
 function BillingPlansView({ subscription, onUpdate, businessName }) {
-  const [selectedPlan, setSelectedPlan] = useState('starter_monthly');
+  const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('bKash');
   const [trxId, setTrxId] = useState('');
   const [isActivating, setIsActivating] = useState(false);
   const [activationSuccess, setActivationSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [copiedNumber, setCopiedNumber] = useState(false);
 
   const plans = [
     {
@@ -10579,6 +10580,7 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       badge: '50% OFF · Most Popular',
       popular: true,
       trialNote: '✨ 3-Day Free Trial Included',
+      btnText: 'Subscribe for ৳500 / mo',
       features: [
         'Full Dual-Currency Ledger (BDT & USD)',
         'Unlimited Clients & Campaign Portfolios',
@@ -10597,6 +10599,7 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       badge: '2 Months Free',
       popular: false,
       trialNote: '✨ Best Value for Established Agencies',
+      btnText: 'Get Annual Pro Pass (৳4,500)',
       features: [
         'Everything in Starter Plan',
         'Unlimited Team Members & Role Access',
@@ -10614,6 +10617,7 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       badge: 'Lifetime Deal',
       popular: false,
       trialNote: '💎 Pay Once, Use Forever',
+      btnText: 'Get Lifetime Access (৳6,999)',
       features: [
         'Lifetime Access to All Current Features',
         'All Future V2 & Pro Updates Free Forever',
@@ -10623,6 +10627,12 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       ]
     }
   ];
+
+  const handleCopyNumber = () => {
+    navigator.clipboard?.writeText('01711889900');
+    setCopiedNumber(true);
+    setTimeout(() => setCopiedNumber(false), 2000);
+  };
 
   const handleVerifyTrx = (e) => {
     e.preventDefault();
@@ -10636,22 +10646,21 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
     setTimeout(() => {
       setIsActivating(false);
       setActivationSuccess(true);
-      if (onUpdate) {
+      if (onUpdate && checkoutPlan) {
         onUpdate(prev => ({
           ...prev,
           status: 'active',
-          plan: selectedPlan,
-          planName: plans.find(p => p.id === selectedPlan)?.name || 'Pro Agency Plan',
-          price: plans.find(p => p.id === selectedPlan)?.price || 500,
+          plan: checkoutPlan.id,
+          planName: checkoutPlan.name,
+          price: checkoutPlan.price,
           activatedTrxId: trxId.trim().toUpperCase(),
           paymentMethod: paymentMethod,
-          expiresAt: Date.now() + (selectedPlan === 'lifetime_founder' ? 3650 * 24 * 60 * 60 * 1000 : selectedPlan === 'pro_annual' ? 365 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000)
+          expiresAt: Date.now() + (checkoutPlan.id === 'lifetime_founder' ? 3650 * 24 * 60 * 60 * 1000 : checkoutPlan.id === 'pro_annual' ? 365 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000)
         }));
       }
     }, 1200);
   };
 
-  const isTrialActive = subscription?.status === 'trial';
   const isProActive = subscription?.status === 'active';
 
   return (
@@ -10677,7 +10686,7 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
                 Special Launch Offer: Full Pro Access at ৳500 / month!
               </h3>
               <p className="text-xs text-slate-300 mt-0.5">
-                Enjoy an active <strong>3-Day Free Trial</strong> with full feature access. Upgrade anytime via bKash or Nagad to keep your data running without interruption.
+                Enjoy an active <strong>3-Day Free Trial</strong> with full feature access. Select any plan below to activate Pro securely via bKash or Nagad.
               </p>
             </div>
           </div>
@@ -10697,15 +10706,13 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       {/* PLAN PRICING COMPARISON CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {plans.map((plan) => {
-          const isSelected = selectedPlan === plan.id;
           return (
             <div
               key={plan.id}
-              onClick={() => setSelectedPlan(plan.id)}
-              className={`rounded-2xl p-5 border transition-all cursor-pointer relative flex flex-col justify-between ${
-                isSelected
+              className={`rounded-2xl p-6 border transition-all relative flex flex-col justify-between ${
+                plan.popular
                   ? 'bg-white border-sky-500 ring-2 ring-sky-500/20 shadow-md'
-                  : 'bg-white/80 border-slate-200/80 hover:border-slate-300 hover:bg-white shadow-xs'
+                  : 'bg-white/90 border-slate-200/90 hover:border-slate-300 shadow-xs'
               }`}
             >
               <div>
@@ -10717,9 +10724,9 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
                   }`}>
                     {plan.badge}
                   </span>
-                  {isSelected && (
-                    <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-xs font-bold">
-                      ✓
+                  {plan.popular && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
+                      RECOMMENDED
                     </span>
                   )}
                 </div>
@@ -10752,17 +10759,23 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
                 </div>
               </div>
 
-              <div className="pt-5 mt-4 border-t border-slate-100">
+              <div className="pt-5 mt-5 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setSelectedPlan(plan.id)}
-                  className={`w-full py-2.5 rounded-xl text-xs font-extrabold transition-all ${
-                    isSelected
-                      ? 'bg-sky-600 text-white shadow-sm hover:bg-sky-700'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  onClick={() => {
+                    setCheckoutPlan(plan);
+                    setActivationSuccess(false);
+                    setErrorMessage('');
+                    setTrxId('');
+                  }}
+                  className={`w-full py-3 rounded-xl text-xs font-extrabold transition-all shadow-sm active:scale-98 flex items-center justify-center gap-2 cursor-pointer ${
+                    plan.popular
+                      ? 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-600/20'
+                      : 'bg-slate-900 hover:bg-slate-800 text-white'
                   }`}
                 >
-                  {isSelected ? 'Selected Plan' : 'Select Plan'}
+                  <CreditCard size={15} />
+                  <span>{plan.btnText}</span>
                 </button>
               </div>
             </div>
@@ -10770,144 +10783,214 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
         })}
       </div>
 
-      {/* DIRECT CHECKOUT & INSTANT ACTIVATION BOX */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-5">
-        <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-          <CreditCard size={18} className="text-sky-600" />
+      {/* TRUST & GUARANTEE FEATURES BAR */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <Shield size={20} />
+          </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm">Instant Payment & Pro Activation</h3>
-            <p className="text-[11px] text-slate-500">
-              Pay via bKash or Nagad and enter your Transaction ID (TrxID) to activate Pro instantly.
-            </p>
+            <div className="text-xs font-bold text-slate-900">256-bit Bank Grade Security</div>
+            <div className="text-[11px] text-slate-500">Your financial data is private & encrypted.</div>
           </div>
         </div>
 
-        {activationSuccess ? (
-          <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-2 text-center animate-in zoom-in-95">
-            <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
-              <Check size={24} className="stroke-[3]" />
-            </div>
-            <h4 className="font-extrabold text-base text-emerald-950">Subscription Successfully Activated!</h4>
-            <p className="text-xs text-emerald-800">
-              Thank you for subscribing to Quantrex! Your workspace <strong>{businessName}</strong> is now on the Pro Plan.
-            </p>
-            <div className="inline-block px-3 py-1 rounded-lg bg-white border border-emerald-300 font-mono text-xs font-bold text-emerald-900 mt-2">
-              TrxID: {subscription?.activatedTrxId || trxId.toUpperCase()}
-            </div>
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+            <Zap size={20} />
           </div>
-        ) : (
-          <form onSubmit={handleVerifyTrx} className="space-y-4">
-            {/* Payment Method Selector */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('bKash')}
-                className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
-                  paymentMethod === 'bKash'
-                    ? 'border-pink-500 bg-pink-50/50 ring-2 ring-pink-500/20'
-                    : 'border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <div className="w-7 h-7 rounded-lg bg-pink-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                  bK
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">bKash Payment</div>
-                  <div className="text-[10px] text-slate-500">Send Money / Merchant</div>
-                </div>
-              </button>
+          <div>
+            <div className="text-xs font-bold text-slate-900">Instant Activation</div>
+            <div className="text-[11px] text-slate-500">Pay via bKash/Nagad & activate in seconds.</div>
+          </div>
+        </div>
 
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('Nagad')}
-                className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
-                  paymentMethod === 'Nagad'
-                    ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
-                    : 'border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <div className="w-7 h-7 rounded-lg bg-orange-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                  NG
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Nagad Payment</div>
-                  <div className="text-[10px] text-slate-500">Personal / Merchant</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('Bank/Card')}
-                className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
-                  paymentMethod === 'Bank/Card'
-                    ? 'border-sky-500 bg-sky-50/50 ring-2 ring-sky-500/20'
-                    : 'border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <div className="w-7 h-7 rounded-lg bg-sky-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                  💳
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Cards / Bank</div>
-                  <div className="text-[10px] text-slate-500">Visa / Mastercard</div>
-                </div>
-              </button>
-            </div>
-
-            {/* Payment Instructions Box */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-              <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
-                {paymentMethod} Payment Instructions:
-              </div>
-              <ol className="list-decimal list-inside space-y-1 text-slate-700 leading-relaxed text-[11.5px]">
-                <li>Open your <strong>{paymentMethod} App</strong> and select <strong>Send Money</strong> or <strong>Payment</strong>.</li>
-                <li>Number: <strong className="font-mono bg-white px-2 py-0.5 rounded border border-slate-300 text-slate-900 font-bold select-all">01711-889900</strong> (Personal / Merchant)</li>
-                <li>Amount: <strong>৳{plans.find(p => p.id === selectedPlan)?.price.toLocaleString()}</strong> (Reference: <strong>{businessName}</strong>)</li>
-                <li>After completing the transfer, copy your <strong>Transaction ID (TrxID)</strong> and submit below.</li>
-              </ol>
-            </div>
-
-            {/* TrxID Input & Button */}
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative flex-1 w-full">
-                <input
-                  type="text"
-                  required
-                  value={trxId}
-                  onChange={(e) => setTrxId(e.target.value)}
-                  placeholder="Enter TrxID (e.g. 9J82K3L4M)"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isActivating || !trxId.trim()}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 active:scale-98 text-white text-xs font-extrabold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-              >
-                {isActivating ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    <span>Verifying TrxID...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={15} />
-                    <span>Verify & Activate Pro</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {errorMessage && (
-              <p className="text-xs font-semibold text-rose-600 flex items-center gap-1.5">
-                <AlertCircle size={14} /> {errorMessage}
-              </p>
-            )}
-          </form>
-        )}
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+            <MessageCircle size={20} />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-900">Dedicated Support</div>
+            <div className="text-[11px] text-slate-500">Live WhatsApp help for setup & accounting.</div>
+          </div>
+        </div>
       </div>
+
+      {/* ================= MODAL: SECURE PAYMENT & ACTIVATION CHECKOUT ================= */}
+      {checkoutPlan && (
+        <Modal
+          title="Secure Checkout & Subscription Activation"
+          width="max-w-xl"
+          onClose={() => setCheckoutPlan(null)}
+        >
+          <div className="p-6 space-y-5">
+            {/* Selected Plan Summary Banner */}
+            <div className="p-4 rounded-2xl bg-slate-900 text-white flex items-center justify-between gap-3 shadow-inner">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-400">
+                  {checkoutPlan.badge}
+                </span>
+                <h4 className="text-base font-extrabold text-white">{checkoutPlan.name}</h4>
+                <p className="text-xs text-slate-400">Workspace: <strong className="text-white">{businessName}</strong></p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-black text-white">৳{checkoutPlan.price.toLocaleString()}</div>
+                <div className="text-[10px] text-slate-400">{checkoutPlan.period}</div>
+              </div>
+            </div>
+
+            {activationSuccess ? (
+              <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-3 text-center animate-in zoom-in-95">
+                <div className="w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
+                  <Check size={28} className="stroke-[3]" />
+                </div>
+                <h4 className="font-extrabold text-lg text-emerald-950">Subscription Successfully Activated!</h4>
+                <p className="text-xs text-emerald-800 max-w-md mx-auto">
+                  Thank you for subscribing! Your workspace <strong>{businessName}</strong> is now on the <strong>{checkoutPlan.name}</strong>.
+                </p>
+                <div className="inline-block px-3.5 py-1.5 rounded-lg bg-white border border-emerald-300 font-mono text-xs font-bold text-emerald-900">
+                  Verified TrxID: {trxId.toUpperCase()}
+                </div>
+                <div className="pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutPlan(null)}
+                    className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    Done & Back to Workspace
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleVerifyTrx} className="space-y-4">
+                {/* Payment Method Selector */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-2">Select Payment Method:</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('bKash')}
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
+                        paymentMethod === 'bKash'
+                          ? 'border-pink-500 bg-pink-50/60 ring-2 ring-pink-500/20'
+                          : 'border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-pink-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        bK
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900">bKash</div>
+                        <div className="text-[10px] text-slate-500">Send Money</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('Nagad')}
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
+                        paymentMethod === 'Nagad'
+                          ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/20'
+                          : 'border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-orange-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        NG
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900">Nagad</div>
+                        <div className="text-[10px] text-slate-500">Send Money</div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('Bank/Card')}
+                      className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
+                        paymentMethod === 'Bank/Card'
+                          ? 'border-sky-500 bg-sky-50/60 ring-2 ring-sky-500/20'
+                          : 'border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-sky-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        💳
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900">Cards / Bank</div>
+                        <div className="text-[10px] text-slate-500">Visa / Master</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Step-by-Step Payment Instructions */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 text-xs space-y-2">
+                  <div className="font-bold text-slate-900 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                      {paymentMethod} Payment Steps:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyNumber}
+                      className="text-[11px] font-bold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedNumber ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                      {copiedNumber ? 'Copied!' : 'Copy Number'}
+                    </button>
+                  </div>
+
+                  <ol className="list-decimal list-inside space-y-1 text-slate-700 leading-relaxed text-[11.5px]">
+                    <li>Open your <strong>{paymentMethod} App</strong> and choose <strong>Send Money</strong>.</li>
+                    <li>Number: <strong className="font-mono bg-white px-2 py-0.5 rounded border border-slate-300 text-slate-900 font-bold">01711-889900</strong> (Personal)</li>
+                    <li>Amount: <strong className="text-slate-900">৳{checkoutPlan.price.toLocaleString()}</strong> (Ref: <strong className="text-sky-700">{businessName}</strong>)</li>
+                    <li>Copy your <strong>Transaction ID (TrxID)</strong> and paste it below.</li>
+                  </ol>
+                </div>
+
+                {/* TrxID Input & Button */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Enter Transaction ID (TrxID) *</label>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <input
+                      type="text"
+                      required
+                      value={trxId}
+                      onChange={(e) => setTrxId(e.target.value)}
+                      placeholder="e.g. 9J82K3L4M"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={isActivating || !trxId.trim()}
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 active:scale-98 text-white text-xs font-extrabold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                    >
+                      {isActivating ? (
+                        <>
+                          <RefreshCw size={14} className="animate-spin" />
+                          <span>Verifying TrxID...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={15} />
+                          <span>Confirm & Activate Pro</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {errorMessage && (
+                  <p className="text-xs font-semibold text-rose-600 flex items-center gap-1.5">
+                    <AlertCircle size={14} /> {errorMessage}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
