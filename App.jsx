@@ -1046,7 +1046,7 @@ export default function AdLedgerApp() {
                 <img
                   src={QUANTREX_WORDMARK_DATA_URL}
                   alt="QUANTREX"
-                  className="h-5 w-auto max-w-[155px] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] brightness-125 origin-left"
+                  className="h-4 w-auto max-w-[130px] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] brightness-125 origin-left"
                 />
                 <div className="text-[10px] font-medium text-slate-400 tracking-wide truncate leading-none mt-1">
                   Ad Spend Intelligence
