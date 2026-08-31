@@ -85,7 +85,7 @@ export default function AuthGate({ children }) {
       if (event === 'PASSWORD_RECOVERY') {
         setMode('reset');
         setError('');
-        setMessage('Choose a new password for your AdLytic account.');
+        setMessage('Choose a new password for your Quantrex account.');
       }
     });
 
@@ -140,7 +140,7 @@ export default function AuthGate({ children }) {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { emailRedirectTo: redirectUrl, data: { business_name: businessName.trim() || 'AdLytic' } },
+        options: { emailRedirectTo: redirectUrl, data: { business_name: businessName.trim() || 'Quantrex' } },
       });
       if (signUpError) {
         setError(signUpError.message || 'Unable to create your account.');
@@ -149,7 +149,7 @@ export default function AuthGate({ children }) {
         setConfirmPassword('');
         if (data?.session) {
           setSession(data.session);
-          setMessage('Account created successfully. Your AdLytic workspace is ready.');
+          setMessage('Account created successfully. Your Quantrex workspace is ready.');
         } else {
           setMode('login');
           setMessage('Account created. Check your email to confirm your account, then sign in.');
@@ -215,7 +215,7 @@ export default function AuthGate({ children }) {
 
   if (checking) return (
     <div style={{ minHeight:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:'#07111f', color:'#fff', fontFamily:'Inter,system-ui,sans-serif' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:10, fontSize:14 }}><Loader2 size={17} color="#38bdf8" className="animate-spin" /> Loading AdLytic…</div>
+      <div style={{ display:'flex', alignItems:'center', gap:10, fontSize:14 }}><Loader2 size={17} color="#38bdf8" className="animate-spin" /> Loading Quantrex…</div>
     </div>
   );
 
@@ -224,7 +224,7 @@ export default function AuthGate({ children }) {
   const isLogin = mode === 'login', isSignup = mode === 'signup', isForgot = mode === 'forgot', isReset = mode === 'reset';
   const formSubmit = isLogin ? handleLogin : isSignup ? handleSignUp : isForgot ? handleForgotPassword : handleUpdatePassword;
   const title = isReset ? 'Reset password' : isForgot ? 'Reset password' : isSignup ? 'Create account' : 'Login';
-  const subtitle = isSignup ? 'Create your secure AdLytic workspace.' : isReset ? 'Set a new password for your account.' : isForgot ? 'We’ll send a secure reset link to your email.' : 'Sign in to continue to your workspace.';
+  const subtitle = isSignup ? 'Create your secure Quantrex workspace.' : isReset ? 'Set a new password for your account.' : isForgot ? 'We’ll send a secure reset link to your email.' : 'Sign in to continue to your workspace.';
   const submitText = busy ? 'Please wait…' : isReset ? 'Update password' : isForgot ? 'Send reset email' : isSignup ? 'Create account' : 'Login';
   const passwordPlaceholder = (isSignup || isReset) ? 'Create a strong password' : 'Enter your password';
 
@@ -241,8 +241,8 @@ export default function AuthGate({ children }) {
 
       <form onSubmit={formSubmit} style={{ position:'relative', zIndex:1, width:'100%', maxWidth:430, maxHeight:'calc(100dvh - 28px)', overflowY:'auto', background:'rgba(255,255,255,.88)', border:'1px solid rgba(255,255,255,.68)', borderRadius:22, padding:'22px 22px 18px', boxShadow:'0 28px 80px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.8)', backdropFilter:'blur(22px)', WebkitBackdropFilter:'blur(22px)' }}>
         <div style={{ textAlign:'center', marginBottom:18 }}>
-          <div style={{ margin:'0 auto', width:52, height:52, borderRadius:15, background:'linear-gradient(135deg,#38bdf8,#2563eb 70%,#4f46e5)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:23, fontWeight:850, color:'#fff', WebkitTextFillColor:'#fff', boxShadow:'0 12px 30px rgba(37,99,235,.28)', border:'1px solid rgba(255,255,255,.65)' }}>A</div>
-          <div style={{ marginTop:11, fontSize:22, lineHeight:1.15, fontWeight:500, color:'#0f172a' }}>Welcome to <strong style={{ fontWeight:850, color:'#2563eb' }}>AdLytic</strong></div>
+          <div style={{ margin:'0 auto', width:52, height:52, borderRadius:15, background:'linear-gradient(135deg,#38bdf8,#2563eb 70%,#4f46e5)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:23, fontWeight:850, color:'#fff', WebkitTextFillColor:'#fff', boxShadow:'0 12px 30px rgba(37,99,235,.28)', border:'1px solid rgba(255,255,255,.65)' }}>Q</div>
+          <div style={{ marginTop:11, fontSize:22, lineHeight:1.15, fontWeight:500, color:'#0f172a' }}>Welcome to <strong style={{ fontWeight:850, color:'#2563eb' }}>Quantrex</strong></div>
           <div style={{ marginTop:6, fontSize:11.5, color:'#ffffff' }}>{subtitle}</div>
         </div>
 
@@ -290,7 +290,7 @@ export default function AuthGate({ children }) {
 
           {(isForgot || isReset) && <button type="button" onClick={()=>{clearFeedback();setPassword('');setConfirmPassword('');setMode('login')}} style={{ width:'100%', marginTop:11, border:0, background:'transparent', color:'rgba(255,255,255,.80)', fontSize:11.5, fontWeight:650, cursor:'pointer' }}>Back to Login</button>}
 
-          {isLogin && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(255,255,255,.20)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'rgba(255,255,255,.86)' }}>New to AdLytic?</span><button type="button" onClick={()=>{clearFeedback();setMode('signup')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#38bdf8', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Create account</button></div>}
+          {isLogin && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(255,255,255,.20)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'rgba(255,255,255,.86)' }}>New to Quantrex?</span><button type="button" onClick={()=>{clearFeedback();setMode('signup')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#38bdf8', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Create account</button></div>}
           {isSignup && <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(255,255,255,.20)', textAlign:'center' }}><span style={{ fontSize:11.5, color:'rgba(255,255,255,.86)' }}>Already have an account?</span><button type="button" onClick={()=>{clearFeedback();setPassword('');setConfirmPassword('');setMode('login')}} style={{ marginLeft:5, border:0, background:'transparent', color:'#38bdf8', fontSize:11.5, fontWeight:850, cursor:'pointer' }}>Sign in</button></div>}
 
           <div style={{ marginTop:12, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:10, color:'rgba(255,255,255,.72)' }}><ShieldCheck size={12} /> Secure account authentication</div>

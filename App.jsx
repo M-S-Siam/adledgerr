@@ -130,7 +130,7 @@ export async function getAdLedgerWorkspaceId() {
       }
       return bestWsId;
     } catch (err) {
-      console.warn('AdLytic workspace resolution fallback:', err);
+      console.warn('Quantrex workspace resolution fallback:', err);
       const fallbackId = user.id;
       resolvedWorkspaceId = fallbackId;
       return fallbackId;
@@ -229,7 +229,7 @@ function useLocalStorage(key, initialValue) {
           }
         }
       } catch (err) {
-        console.error(`AdLytic cloud sync error for ${key}:`, err);
+        console.error(`Quantrex cloud sync error for ${key}:`, err);
       } finally {
         if (!cancelled) setHydrated(true);
       }
@@ -262,7 +262,7 @@ function useLocalStorage(key, initialValue) {
           window.localStorage.setItem(`${key}__workspace_${workspaceId}`, JSON.stringify(storedValue));
         }
       } catch (err) {
-        console.error(`AdLytic cloud save error for ${key}:`, err);
+        console.error(`Quantrex cloud save error for ${key}:`, err);
       }
     }, 400);
 
@@ -431,7 +431,7 @@ const getPresetDates = (preset) => {
 
 // --- DEFAULT WORKSPACE SETTINGS ---
 const DEFAULT_SETTINGS = {
-  businessName: 'AdLytic',
+  businessName: 'Quantrex',
   shortCode: 'ADL',
   workspaceType: 'Agency',
   industry: 'Digital Marketing',
@@ -501,7 +501,7 @@ export default function AdLedgerApp() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const bizName = data?.user?.user_metadata?.business_name;
-      if (bizName && bizName.trim() && (!workspaceSettings.businessName || workspaceSettings.businessName === 'AdLytic')) {
+      if (bizName && bizName.trim() && (!workspaceSettings.businessName || workspaceSettings.businessName === 'Quantrex')) {
         setWorkspaceSettings(prev => ({ ...prev, businessName: bizName.trim() }));
       }
     }).catch(() => {});
@@ -798,7 +798,7 @@ export default function AdLedgerApp() {
 
   const exportBackup = () => {
     const payload = {
-      app: 'AdLytic',
+      app: 'Quantrex',
       version: 1,
       exportedAt: new Date().toISOString(),
       clients, cards, transactions, campaigns, workspaceSettings, teamMembers, workspaceLogo
@@ -818,7 +818,7 @@ export default function AdLedgerApp() {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        if (!data || (data.app !== 'AdLytic' && data.app !== 'AdLedger')) throw new Error('Invalid backup');
+        if (!data || (data.app !== 'Quantrex' && data.app !== 'AdLedger')) throw new Error('Invalid backup');
         if (Array.isArray(data.clients)) setClients(data.clients);
         if (Array.isArray(data.cards)) setCards(data.cards);
         if (Array.isArray(data.transactions)) setTransactions(data.transactions);
@@ -843,7 +843,7 @@ export default function AdLedgerApp() {
     setTeamMembers([]);
     setWorkspaceLogo('');
     setWorkspaceSettings({
-      businessName: 'AdLytic',
+      businessName: 'Quantrex',
       timezone: 'Asia/Dhaka',
       alerts: true,
       defaultReportRange: 'This Month'
@@ -1009,7 +1009,7 @@ export default function AdLedgerApp() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-extrabold text-white tracking-tight">AdLytic</span>
+                  <span className="text-sm font-extrabold text-white tracking-tight">Quantrex</span>
                   <span className="text-[8.5px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 uppercase tracking-wider">
                     PLATFORM
                   </span>
@@ -1168,7 +1168,7 @@ export default function AdLedgerApp() {
                         </div>
                         <div className="min-w-0">
                           <div className="font-bold text-xs text-slate-900 truncate">
-                            {workspaceSettings.businessName || 'AdLytic Workspace'}
+                            {workspaceSettings.businessName || 'Quantrex Workspace'}
                           </div>
                           <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1642,7 +1642,7 @@ function ReportsView({ clients, cards, transactions }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `adlytic_financial_report_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `quantrex_financial_report_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -1678,7 +1678,7 @@ function ReportsView({ clients, cards, transactions }) {
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Financial Command</div>
+            <div class="brand">Quantrex Financial Command</div>
             <div class="title">Official Executive P&L & Financial Intelligence Statement</div>
           </div>
           <div style="text-align: right;">
@@ -1724,7 +1724,7 @@ function ReportsView({ clients, cards, transactions }) {
         </table>
 
         <div class="footer">
-          <div>Authorized Financial Intelligence Report • AdLytic Double-Entry System</div>
+          <div>Authorized Financial Intelligence Report • Quantrex Double-Entry System</div>
           <div>Total Transactions Audited: ${report.transactionCount} entries</div>
         </div>
       </body>
@@ -3491,7 +3491,7 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete,
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Financial Command</div>
+            <div class="brand">Quantrex Financial Command</div>
             <div class="voucher-title">Accounting Transaction Voucher</div>
           </div>
           <div style="text-align: right;">
@@ -3518,11 +3518,11 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete,
 
         <div style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 12px; margin-bottom: 24px;">
           <strong>Narrative & Ledger Memo:</strong><br/>
-          <p style="margin: 4px 0 0 0; color: #334155;">${tx.notes || 'Standard accounting entry verified by AdLytic Engine.'}</p>
+          <p style="margin: 4px 0 0 0; color: #334155;">${tx.notes || 'Standard accounting entry verified by Quantrex Engine.'}</p>
         </div>
 
         <div class="footer">
-          <div>Authorized Accounting Record • AdLytic Double-Entry System</div>
+          <div>Authorized Accounting Record • Quantrex Double-Entry System</div>
           <div>Generated on ${new Date().toLocaleString()}</div>
         </div>
       </body>
@@ -3839,7 +3839,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `adlytic_ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `quantrex_ledger_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -3882,7 +3882,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Financial Command</div>
+            <div class="brand">Quantrex Financial Command</div>
             <div class="title">Official Transaction Ledger & Cashflow Statement</div>
           </div>
           <div style="text-align: right;">
@@ -3940,7 +3940,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </table>
 
         <div class="footer">
-          <div>Authorized Accounting Ledger Record • AdLytic Double-Entry System</div>
+          <div>Authorized Accounting Ledger Record • Quantrex Double-Entry System</div>
           <div>Total Transactions: ${filtered.length} entries verified</div>
         </div>
       </body>
@@ -4795,7 +4795,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Financial Command</div>
+            <div class="brand">Quantrex Financial Command</div>
             <div class="title">USD Foreign Exchange & Procurement Statement</div>
           </div>
           <div style="text-align: right;">
@@ -4857,7 +4857,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
         </table>
 
         <div class="footer">
-          <div>Authorized Foreign Exchange Procurement Ledger • AdLytic Double-Entry System</div>
+          <div>Authorized Foreign Exchange Procurement Ledger • Quantrex Double-Entry System</div>
           <div>Total Records: ${filteredUSDPurchases.length} entries verified</div>
         </div>
       </body>
@@ -5386,7 +5386,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Financial Command</div>
+            <div class="brand">Quantrex Financial Command</div>
             <div class="title">Official Card Account Statement</div>
           </div>
           <div style="text-align: right;">
@@ -5445,7 +5445,7 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
         </table>
 
         <div class="footer">
-          <div>Authorized Card Ledger Statement • AdLytic Double-Entry System</div>
+          <div>Authorized Card Ledger Statement • Quantrex Double-Entry System</div>
           <div>Balance Verification: ${isMatch ? 'PASSED (Zero Discrepancy)' : 'AUDIT WARNING'}</div>
         </div>
       </body>
@@ -5628,7 +5628,7 @@ function TransactionDetailsModal({ tx, cardName, onClose, onEdit, onDelete }) {
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Financial Command</div>
+            <div class="brand">Quantrex Financial Command</div>
             <div class="title">USD Purchase Voucher</div>
           </div>
           <div style="text-align: right;">
@@ -5652,7 +5652,7 @@ function TransactionDetailsModal({ tx, cardName, onClose, onEdit, onDelete }) {
         </div>
 
         <div class="footer">
-          <div>Authorized Foreign Exchange Procurement • AdLytic Engine</div>
+          <div>Authorized Foreign Exchange Procurement • Quantrex Engine</div>
           <div>Verified on ${new Date().toLocaleString()}</div>
         </div>
       </body>
@@ -5929,7 +5929,7 @@ function CampaignDetailsModal({ campaign, clients, transactions, metrics, onClos
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Campaign Intelligence</div>
+            <div class="brand">Quantrex Campaign Intelligence</div>
             <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Campaign Audit & ROI Report</div>
           </div>
           <div style="text-align: right;">
@@ -5981,7 +5981,7 @@ function CampaignDetailsModal({ campaign, clients, transactions, metrics, onClos
         </table>
 
         <div class="footer">
-          Generated automatically by AdLytic Platform • Confidential Campaign Intelligence Report
+          Generated automatically by Quantrex Platform • Confidential Campaign Intelligence Report
         </div>
       </body>
       </html>
@@ -6458,7 +6458,7 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `adlytic_campaigns_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `quantrex_campaigns_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -6961,7 +6961,7 @@ const INITIAL_INTEGRATIONS_DATA = [
     statsBadge: 'Ready to configure',
     config: {
       apiKey: 'adl_live_sec_99a8b7c6d5e4f3a2b1c0d9e8',
-      webhookEndpoint: 'https://api.adlytic.app/v1/workspace/sync'
+      webhookEndpoint: 'https://api.quantrex.io/v1/workspace/sync'
     }
   }
 ];
@@ -7793,7 +7793,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                   <Field label="Custom Webhook Listener Endpoint">
                     <input
                       type="url"
-                      value={modalFormData.webhookEndpoint || 'https://api.adlytic.app/v1/workspace/sync'}
+                      value={modalFormData.webhookEndpoint || 'https://api.quantrex.io/v1/workspace/sync'}
                       onChange={(e) => setModalFormData(p => ({ ...p, webhookEndpoint: e.target.value }))}
                       className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-mono outline-none"
                     />
@@ -8222,9 +8222,9 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
   };
 
   const shareViaWhatsApp = (member) => {
-    const agencyName = workspaceSettings.businessName || 'AdLytic';
+    const agencyName = workspaceSettings.businessName || 'Quantrex';
     const inviteUrl = `${window.location.origin}/join?ws=${encodeURIComponent(agencyName)}&token=adl_inv_${member.id}`;
-    const text = `Hello ${member.name || 'Team Member'},\n\nYou have been invited to join the *${agencyName}* workspace on AdLytic as *${member.role || 'Campaign Manager'}*.\n\n👉 Access your portal here:\n${inviteUrl}\n\nWelcome aboard!`;
+    const text = `Hello ${member.name || 'Team Member'},\n\nYou have been invited to join the *${agencyName}* workspace on Quantrex as *${member.role || 'Campaign Manager'}*.\n\n👉 Access your portal here:\n${inviteUrl}\n\nWelcome aboard!`;
     const cleanPhone = (member.phone || '').replace(/[^0-9]/g, '');
     const waUrl = cleanPhone
       ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`
@@ -8262,7 +8262,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `adlytic-team-audit-trail-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `quantrex-team-audit-trail-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     showToast('Exported Team Audit Log CSV');
@@ -8340,7 +8340,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Manage campaign managers, financial accountants, and member roles across your {workspaceSettings.businessName || 'AdLytic'} workspace.
+            Manage campaign managers, financial accountants, and member roles across your {workspaceSettings.businessName || 'Quantrex'} workspace.
           </p>
         </div>
 
@@ -8503,7 +8503,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-black text-xs text-white tracking-tight flex items-center gap-1.5">
-                  <span className="text-white drop-shadow-sm font-black">{workspaceSettings.businessName || 'AdLytic'} Founder</span>
+                  <span className="text-white drop-shadow-sm font-black">{workspaceSettings.businessName || 'Quantrex'} Founder</span>
                 </h3>
                 <span className="px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black uppercase tracking-wider shadow-2xs">
                   Super Admin · Root
@@ -9161,7 +9161,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             <div className="text-center">
               <h3 className="font-bold text-slate-900 text-base">Remove {deleteConfirmMember.name || deleteConfirmMember.email}?</h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                This will revoke their access to the {workspaceSettings.businessName || 'AdLytic'} workspace immediately.
+                This will revoke their access to the {workspaceSettings.businessName || 'Quantrex'} workspace immediately.
               </p>
             </div>
 
@@ -9219,7 +9219,7 @@ function UserGuideView({ onNavigate }) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AdLytic — Master User Manual & Standard Operating Procedure (SOP) Guide</title>
+  <title>Quantrex — Master User Manual & Standard Operating Procedure (SOP) Guide</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet">
@@ -9615,7 +9615,7 @@ function UserGuideView({ onNavigate }) {
 
   <div class="print-bar">
     <div>
-      <h3>📄 AdLytic — Agency Operating System (Official Master Manual & SOP)</h3>
+      <h3>📄 Quantrex — Agency Operating System (Official Master Manual & SOP)</h3>
     </div>
     <button class="print-btn" onclick="window.print()">
       Print / Save as PDF
@@ -9627,7 +9627,7 @@ function UserGuideView({ onNavigate }) {
     <!-- Cover Header -->
     <div class="cover-header">
       <div class="brand-badge">Official Master Standard Operating Procedure (SOP)</div>
-      <h1 class="cover-title">AdLytic — Digital Agency Financial Manual</h1>
+      <h1 class="cover-title">Quantrex — Digital Agency Financial Manual</h1>
       <p class="cover-subtitle">ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।</p>
       <div class="meta-pills">
         <span>📅 ভার্সন: ২.০ (মাস্টার লেভেল)</span>
@@ -9654,7 +9654,7 @@ function UserGuideView({ onNavigate }) {
 
       <div class="alert-box tip">
         <div>
-          <strong>AdLytic কীভাবে পুরো সমস্যার সমাধান করে:</strong> আপনি শুধু দৈনন্দিন ট্রানজ্যাকশনগুলো এন্ট্রি করবেন—বাকি সব <strong>Effective Dollar Buy Rate</strong>, <strong>15% Meta Tax Deduction</strong>, <strong>Card Liquidity Balance</strong> এবং <strong>Net Agency Profit (প্রকৃত নিট লাভ)</strong> AdLytic মিলি-সেকেন্ডের মধ্যে নিখুঁতভাবে নির্ধারণ করে দেয়।
+          <strong>Quantrex কীভাবে পুরো সমস্যার সমাধান করে:</strong> আপনি শুধু দৈনন্দিন ট্রানজ্যাকশনগুলো এন্ট্রি করবেন—বাকি সব <strong>Effective Dollar Buy Rate</strong>, <strong>15% Meta Tax Deduction</strong>, <strong>Card Liquidity Balance</strong> এবং <strong>Net Agency Profit (প্রকৃত নিট লাভ)</strong> Quantrex মিলি-সেকেন্ডের মধ্যে নিখুঁতভাবে নির্ধারণ করে দেয়।
         </div>
       </div>
     </div>
@@ -9776,7 +9776,7 @@ function UserGuideView({ onNavigate }) {
     <!-- অধ্যায় ৪: প্রতিটি পেজের পূর্ণাঙ্গ ব্যবহারবিধি গাইড -->
     <div class="section-block">
       <h2 class="section-title"><span class="num-badge">৪</span> প্ল্যাটফর্মের প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড</h2>
-      <p>নিচে AdLytic-এর প্রতিটি পেজ, তার ভিতরের ফিচার এবং কীভাবে নিখুঁতভাবে ব্যবহার করতে হবে তা বিস্তারিত বর্ণনা করা হলো:</p>
+      <p>নিচে Quantrex-এর প্রতিটি পেজ, তার ভিতরের ফিচার এবং কীভাবে নিখুঁতভাবে ব্যবহার করতে হবে তা বিস্তারিত বর্ণনা করা হলো:</p>
 
       <!-- পেজ ১: Dashboard -->
       <div class="feature-card">
@@ -9900,7 +9900,7 @@ function UserGuideView({ onNavigate }) {
       <div class="faq-item">
         <div class="faq-q">২. মেটা ভ্যাট (15% Tax) কি আমাকে আলাদা যোগ করে স্পেন্ড এন্ট্রি দিতে হবে?</div>
         <div class="faq-a">
-          <strong>না!</strong> আপনি শুধুমাত্র মেটা অ্যাড ম্যানেজারের আসল স্পেন্ডটি ইনপুট দেবেন। AdLytic এর ব্যাকএন্ড অ্যালগরিদম স্বয়ংক্রিয়ভাবে তার সাথে ১৫% ভ্যাট যুক্ত করে আপনার কার্ড ব্যালেন্স ও প্রফিট মার্জিন থেকে অ্যাডজাস্ট করে নিবে। আপনাকে কোনো ম্যানুয়াল ক্যালকুলেশন করতে হবে না।
+          <strong>না!</strong> আপনি শুধুমাত্র মেটা অ্যাড ম্যানেজারের আসল স্পেন্ডটি ইনপুট দেবেন। Quantrex এর ব্যাকএন্ড অ্যালগরিদম স্বয়ংক্রিয়ভাবে তার সাথে ১৫% ভ্যাট যুক্ত করে আপনার কার্ড ব্যালেন্স ও প্রফিট মার্জিন থেকে অ্যাডজাস্ট করে নিবে। আপনাকে কোনো ম্যানুয়াল ক্যালকুলেশন করতে হবে না।
         </div>
       </div>
 
@@ -9928,7 +9928,7 @@ function UserGuideView({ onNavigate }) {
       <div class="faq-item">
         <div class="faq-q">৬. কম্পিউটার নষ্ট হলে বা ব্রাউজার হিস্ট্রি ডিলিট হলে আমার ডাটা কি হারিয়ে যাবে?</div>
         <div class="faq-a">
-          <strong>কখনোই না!</strong> AdLytic-এর সমস্ত ডাটা রিয়েল-টাইমে <strong>Supabase Cloud PostgreSQL Database</strong>-এ নিরাপদ থাকে। নতুন যেকোনো পিসি বা মোবাইলে লগইন করলেই সব ডাটা সাথে সাথে পেয়ে যাবেন। অতিরিক্ত সতর্কতার জন্য <code>Settings ➔ Export JSON Backup</code> থেকে অফলাইন ফাইল সংরক্ষণ করতে পারেন।
+          <strong>কখনোই না!</strong> Quantrex-এর সমস্ত ডাটা রিয়েল-টাইমে <strong>Supabase Cloud PostgreSQL Database</strong>-এ নিরাপদ থাকে। নতুন যেকোনো পিসি বা মোবাইলে লগইন করলেই সব ডাটা সাথে সাথে পেয়ে যাবেন। অতিরিক্ত সতর্কতার জন্য <code>Settings ➔ Export JSON Backup</code> থেকে অফলাইন ফাইল সংরক্ষণ করতে পারেন।
         </div>
       </div>
     </div>
@@ -9938,7 +9938,7 @@ function UserGuideView({ onNavigate }) {
       <h2 class="section-title"><span class="num-badge">৬</span> এজেন্সির সাফল্যের জন্য প্রো-টিপস ও স্ট্যান্ডার্ড চেকলিস্ট</h2>
       <div class="info-card" style="background: #fdfefe; border: 1px solid #bae6fd;">
         <ol style="padding-left: 20px; line-height: 2;">
-          <li><strong>দৈনিক ৫ মিনিটের অডিট রুটিন:</strong> প্রতিদিন রাত ১০টায় মেটা অ্যাড ম্যানেজার থেকে সারাদিনের মোট স্পেন্ড দেখে AdLytic-এ এন্ট্রি দিন। এটি দৈনিক অভ্যাসে পরিণত করলে কোনো আর্থিক গড়মিল থাকবে না।</li>
+          <li><strong>দৈনিক ৫ মিনিটের অডিট রুটিন:</strong> প্রতিদিন রাত ১০টায় মেটা অ্যাড ম্যানেজার থেকে সারাদিনের মোট স্পেন্ড দেখে Quantrex-এ এন্ট্রি দিন। এটি দৈনিক অভ্যাসে পরিণত করলে কোনো আর্থিক গড়মিল থাকবে না।</li>
           <li><strong>ডলার ক্রয়ের সাথে সাথে এন্ট্রি:</strong> সেলারের থেকে ভার্চুয়াল কার্ডে ডলার জমা হওয়ার সাথে সাথে ক্যাশআউট ফি সহ এন্ট্রি দিন, যাতে লাইভ বাই রেট সবসময় ১০০% নিখুঁত থাকে।</li>
           <li><strong>ক্লায়েন্ট পেমেন্ট ফলো-আপ:</strong> ক্লায়েন্টের অবশিষ্ট বাজেট শেষ হওয়ার ২ দিন আগেই ড্যাশবোর্ডের Client P&L দেখে পরবর্তী পেমেন্টের রিমাইন্ডার পাঠান।</li>
           <li><strong>মাসিক অফলাইন ব্যাকআপ:</strong> প্রতি মাসের ১ তারিখে সেটিংস পেজ থেকে 'Export Backup' ফাইলটি ডাউনলোড করে গুগল ড্রাইভে ক্লাউড ব্যাকআপ রাখুন।</li>
@@ -9948,7 +9948,7 @@ function UserGuideView({ onNavigate }) {
 
     <!-- Document Footer -->
     <div class="doc-footer">
-      <p>© 2026 AdLytic Inc. সর্বস্বত্ব সংরক্ষিত। Enterprise Digital Agency Financial Engineering Platform.</p>
+      <p>© 2026 Quantrex Inc. সর্বস্বত্ব সংরক্ষিত। Enterprise Digital Agency Financial Engineering Platform.</p>
     </div>
 
   </div>
@@ -9979,7 +9979,7 @@ function UserGuideView({ onNavigate }) {
               <span>Official Standard Operating Procedure (SOP) Manual</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              AdLytic — Digital Agency Financial Manual
+              Quantrex — Digital Agency Financial Manual
             </h1>
             <p className="text-sm text-sky-100 max-w-2xl font-medium leading-relaxed">
               ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।
@@ -10045,7 +10045,7 @@ function UserGuideView({ onNavigate }) {
               <h2 className="text-base font-extrabold text-slate-900">ডিজিটাল এজেন্সির মূল সমস্যা ও ডুয়েল-কারেন্সি সমাধান</h2>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              ডিজিটাল মার্কেটিং এজেন্সির আর্থিক হিসাব সাধারণ ব্যবসা থেকে আলাদা। কারণ এখানে ক্লায়েন্ট পেমেন্ট করে টাকায় (BDT), কিন্তু ফেসবুক/গুগল-এ অ্যাড খরচ হয় ভার্চুয়াল কার্ডের মাধ্যমে ডলারে (USD)। ডলার কেনার সময় ক্যাশআউট চার্জ এবং মেটার ১৫% সরকারি ভ্যাটের কারণে প্রকৃত লাভ বের করা অসম্ভব হয়ে পড়ে। AdLytic এই পুরো প্রক্রিয়াকে স্বয়ংক্রিয় করে।
+              ডিজিটাল মার্কেটিং এজেন্সির আর্থিক হিসাব সাধারণ ব্যবসা থেকে আলাদা। কারণ এখানে ক্লায়েন্ট পেমেন্ট করে টাকায় (BDT), কিন্তু ফেসবুক/গুগল-এ অ্যাড খরচ হয় ভার্চুয়াল কার্ডের মাধ্যমে ডলারে (USD)। ডলার কেনার সময় ক্যাশআউট চার্জ এবং মেটার ১৫% সরকারি ভ্যাটের কারণে প্রকৃত লাভ বের করা অসম্ভব হয়ে পড়ে। Quantrex এই পুরো প্রক্রিয়াকে স্বয়ংক্রিয় করে।
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
@@ -10065,7 +10065,7 @@ function UserGuideView({ onNavigate }) {
                   মেটা ১৫% ভ্যাট (15% Tax Guard)
                 </div>
                 <p className="text-[11.5px] text-slate-500 leading-relaxed">
-                  ফেসবুক প্রতি $১০০ স্পেন্ডে কার্ড থেকে $১১৫ কাটে। AdLytic এই $১৫ ভ্যাট স্বয়ংক্রিয়ভাবে কার্ড ব্যালেন্স থেকে কর্তন করে।
+                  ফেসবুক প্রতি $১০০ স্পেন্ডে কার্ড থেকে $১১৫ কাটে। Quantrex এই $১৫ ভ্যাট স্বয়ংক্রিয়ভাবে কার্ড ব্যালেন্স থেকে কর্তন করে।
                 </p>
               </div>
 
@@ -10086,7 +10086,7 @@ function UserGuideView({ onNavigate }) {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <span className="text-sky-400 font-sans font-black text-xs uppercase tracking-wider flex items-center gap-2">
                 <Terminal size={15} />
-                Financial Mathematics & Logic Behind AdLytic
+                Financial Mathematics & Logic Behind Quantrex
               </span>
               <span className="text-[10px] text-slate-500 uppercase font-sans font-bold">100% Automated</span>
             </div>
@@ -10425,7 +10425,7 @@ function UserGuideView({ onNavigate }) {
                 দৈনিক ৫ মিনিটের রুটিন
               </div>
               <p className="text-xs text-amber-900 leading-relaxed">
-                প্রতিদিন কাজের শেষে মেটা অ্যাড ম্যানেজার থেকে সারাদিনের স্পেন্ড AdLytic-এ রেকর্ড করে ফেলুন। এতে মাসের শেষে কোনো অসামঞ্জস্য থাকবে না।
+                প্রতিদিন কাজের শেষে মেটা অ্যাড ম্যানেজার থেকে সারাদিনের স্পেন্ড Quantrex-এ রেকর্ড করে ফেলুন। এতে মাসের শেষে কোনো অসামঞ্জস্য থাকবে না।
               </p>
             </div>
 
@@ -10709,7 +10709,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `AdLytic_Transactions_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Quantrex_Transactions_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -10735,7 +10735,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `AdLytic_Clients_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Quantrex_Clients_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -10761,7 +10761,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `AdLytic_Cards_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Quantrex_Cards_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -10790,7 +10790,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
       <html>
       <head>
         <meta charset="utf-8">
-        <title>AdLytic Financial Statement — ${data.businessName || 'AdLytic'}</title>
+        <title>Quantrex Financial Statement — ${data.businessName || 'Quantrex'}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 36px; line-height: 1.5; background: #fff; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 18px; margin-bottom: 24px; }
@@ -10815,7 +10815,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         </div>
         <div class="header">
           <div>
-            <div class="brand">${data.businessName || 'AdLytic Agency'}</div>
+            <div class="brand">${data.businessName || 'Quantrex Agency'}</div>
             <div class="contact">
               ${data.contactEmail ? data.contactEmail + ' · ' : ''}
               ${data.phone ? data.phone + ' · ' : ''}
@@ -10868,7 +10868,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
 
         <div class="footer">
           ${data.invoiceNotes || 'Thank you for choosing our digital advertising services.'}
-          <div style="margin-top: 4px; font-size: 10px; color: #94a3b8;">Generated via AdLytic — Digital Marketing & Media Buying Ledger System</div>
+          <div style="margin-top: 4px; font-size: 10px; color: #94a3b8;">Generated via Quantrex — Digital Marketing & Media Buying Ledger System</div>
         </div>
       </body>
       </html>
@@ -10889,7 +10889,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
             onImport(file);
             setRestoreFeedback({ success: true, message: 'Backup imported successfully!' });
           } else {
-            setRestoreFeedback({ success: false, message: 'Invalid AdLytic backup format.' });
+            setRestoreFeedback({ success: false, message: 'Invalid Quantrex backup format.' });
           }
         } catch (err) {
           setRestoreFeedback({ success: false, message: 'JSON parsing failed. Please upload a valid JSON file.' });
@@ -11132,7 +11132,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                     required
                     value={data.businessName || ''}
                     onChange={(e) => handleChange('businessName', e.target.value)}
-                    placeholder="e.g. AdLytic Agency"
+                    placeholder="e.g. Quantrex Agency"
                     className={`w-full mt-1 px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
                       validationErrors.businessName
                         ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-400'
@@ -11929,7 +11929,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <h4 className="text-xs font-bold text-slate-900">Restore & Danger Zone</h4>
-                    <p className="text-[10px] text-slate-500">Restore AdLytic JSON or purge local browser cache.</p>
+                    <p className="text-[10px] text-slate-500">Restore Quantrex JSON or purge local browser cache.</p>
                   </div>
                 </div>
 
@@ -12857,7 +12857,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
       <body>
         <div class="header">
           <div>
-            <div class="brand">AdLytic Platform</div>
+            <div class="brand">Quantrex Platform</div>
             <div class="subtitle">Client Account Statement & Ledger</div>
           </div>
           <div style="text-align: right;">
@@ -12908,7 +12908,7 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
         </table>
 
         <div class="footer">
-          Generated automatically by AdLytic Agency Intelligence Platform • www.adlytic.app
+          Generated automatically by Quantrex Agency Intelligence Platform • www.quantrex.io
         </div>
       </body>
       </html>
