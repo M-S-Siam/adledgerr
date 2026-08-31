@@ -957,11 +957,13 @@ export default function AdLedgerApp() {
           {/* Top: Active Agency Workspace Switcher Card */}
           <div className="p-3 border-b border-slate-800/80 bg-slate-950/30">
             <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
-              <img
-                src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
-                alt="Workspace logo"
-                className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shrink-0 bg-slate-900"
-              />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-[#181d27] to-[#080a0f] p-1 shadow-[0_4px_10px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] border border-slate-700/60 flex items-center justify-center shrink-0">
+                <img
+                  src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
+                  alt="Workspace logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="block text-xs font-bold tracking-tight text-white truncate">
@@ -999,19 +1001,21 @@ export default function AdLedgerApp() {
           {/* Sidebar Footer: Master Software Platform Brand (Distinctive & High-Tech) */}
           <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
             <div className="flex items-center gap-3">
-              <img
-                src={QUANTREX_LOGO_DATA_URL}
-                alt="Quantrex Platform"
-                className="w-10 h-10 rounded-xl object-cover shadow-[0_0_20px_rgba(56,189,248,0.4)] ring-2 ring-sky-400/50 shrink-0 bg-slate-900"
-              />
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] p-1.5 shadow-[0_8px_16px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.18),inset_0_-1px_2px_rgba(0,0,0,0.9)] border border-slate-700/60 flex items-center justify-center shrink-0">
+                <img
+                  src={QUANTREX_LOGO_DATA_URL}
+                  alt="Quantrex Platform"
+                  className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                />
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-extrabold text-white tracking-tight">Quantrex</span>
-                  <span className="text-[8.5px] font-extrabold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 uppercase tracking-wider">
+                  <span className="text-[8.5px] font-extrabold px-1.5 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/80 uppercase tracking-wider font-mono">
                     PLATFORM
                   </span>
                 </div>
-                <div className="text-[10px] font-medium text-sky-400 tracking-wide mt-1 truncate">
+                <div className="text-[10px] font-medium text-slate-400 tracking-wide mt-0.5 truncate">
                   Ad Spend Intelligence
                 </div>
               </div>
@@ -9978,11 +9982,13 @@ function UserGuideView({ onNavigate }) {
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
-            <img
-              src={QUANTREX_LOGO_DATA_URL}
-              alt="Quantrex Logo"
-              className="w-16 h-16 rounded-2xl object-cover shadow-2xl ring-2 ring-white/30 shrink-0 hidden sm:block bg-slate-900"
-            />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] p-2 shadow-[0_12px_28px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)] border border-slate-700/70 hidden sm:flex items-center justify-center shrink-0">
+              <img
+                src={QUANTREX_LOGO_DATA_URL}
+                alt="Quantrex Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-white/20">
                 <BookOpen size={13} className="stroke-[2.5]" />
