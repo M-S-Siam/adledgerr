@@ -994,155 +994,179 @@ export default function AdLedgerApp() {
   return (
     <>
       <style>{`
-        /* NEUMORPHIC THEME TRANSITIONS */
+        /* SMOOTH THEME TRANSITIONS */
         .adl-shell, .adl-shell header, .adl-shell aside, .adl-shell main, .adl-shell .bg-white, .adl-shell input, .adl-shell button, .adl-shell select, .adl-shell textarea {
-          transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+          transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
         }
 
         ${theme === 'dark' ? `
-        /* ================= DARK CYBER NEUMORPHISM (MOON MODE) ================= */
+        /* ================= HIGH-CONTRAST DARK CYBER (MOON MODE) ================= */
         .adl-shell {
-          background: #090e17 !important;
-          color: #f1f5f9 !important;
+          background: #080d16 !important;
+          color: #f8fafc !important;
         }
         .adl-shell main {
-          background: #090e17 !important;
+          background: #080d16 !important;
         }
         .adl-shell header {
-          background: #0d1422 !important;
-          border-color: rgba(255, 255, 255, 0.08) !important;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+          background: rgba(13, 20, 34, 0.96) !important;
+          border-color: #1e293b !important;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+          backdrop-filter: blur(14px);
         }
         .adl-shell aside {
-          background: #070b12 !important;
-          border-color: rgba(255, 255, 255, 0.06) !important;
-          box-shadow: 8px 0 25px rgba(0, 0, 0, 0.5) !important;
+          background: linear-gradient(180deg, #050910 0%, #080f1a 58%, #05080e 100%) !important;
+          border-color: #1e293b !important;
+          box-shadow: 8px 0 25px rgba(0, 0, 0, 0.4) !important;
         }
-        /* Neumorphic Extruded Dark Cards */
-        .adl-shell .bg-white {
-          background: #111a2b !important;
-          border: 1px solid rgba(255, 255, 255, 0.06) !important;
-          box-shadow: 6px 6px 16px #05080f, -6px -6px 16px #19263e !important;
-          color: #f8fafc !important;
+        /* Crisp Dark Surfaces (No Washed-Out White Glare) */
+        .adl-shell .bg-white, 
+        .adl-shell [class*="bg-gradient-to-br from-sky-50"],
+        .adl-shell [class*="bg-gradient-to-br from-emerald-50"],
+        .adl-shell [class*="bg-gradient-to-br from-purple-50"],
+        .adl-shell [class*="bg-gradient-to-br from-amber-50"] {
+          background: #0f172a !important;
+          border-color: #1e293b !important;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
         }
         .adl-shell .bg-slate-50 {
-          background: #0d1422 !important;
-          border-color: rgba(255, 255, 255, 0.07) !important;
+          background: #0b111e !important;
+          border-color: #1e293b !important;
         }
         .adl-shell .bg-slate-100 {
-          background: #101827 !important;
-          border-color: rgba(255, 255, 255, 0.07) !important;
+          background: #131d31 !important;
+          border-color: #1e293b !important;
         }
-        .adl-shell .border-slate-200, .adl-shell .border-slate-300, .adl-shell .border-slate-100 {
-          border-color: rgba(255, 255, 255, 0.08) !important;
+        .adl-shell .border-slate-200, .adl-shell .border-slate-300, .adl-shell .border-slate-100, .adl-shell .border-sky-200 {
+          border-color: #1e293b !important;
         }
-        /* Typography High Contrast for Dark Mode */
-        .adl-shell h1, .adl-shell h2, .adl-shell h3, .adl-shell h4, .adl-shell .text-slate-900 {
+        /* High Contrast Typography */
+        .adl-shell h1, .adl-shell h2, .adl-shell h3, .adl-shell h4, 
+        .adl-shell .text-slate-900, .adl-shell .text-slate-800 {
           color: #f8fafc !important;
         }
-        .adl-shell .text-slate-800 {
-          color: #e2e8f0 !important;
-        }
-        .adl-shell .text-slate-700 {
+        .adl-shell .text-slate-700, .adl-shell .text-slate-600 {
           color: #cbd5e1 !important;
         }
-        .adl-shell .text-slate-600 {
+        .adl-shell .text-slate-500, .adl-shell .text-slate-400 {
           color: #94a3b8 !important;
         }
-        .adl-shell .text-slate-500 {
-          color: #64748b !important;
-        }
-        .adl-shell .text-slate-400 {
-          color: #64748b !important;
-        }
-        /* Inset Neumorphic Dark Inputs */
+        /* Inset Dark Inputs */
         .adl-shell input, .adl-shell select, .adl-shell textarea {
-          background: #0a0f1a !important;
-          border-color: rgba(255, 255, 255, 0.08) !important;
-          box-shadow: inset 3px 3px 6px #04070c, inset -3px -3px 6px #141f32 !important;
+          background: #0b111e !important;
+          border: 1px solid #1e293b !important;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
           color: #f8fafc !important;
         }
         .adl-shell input::placeholder, .adl-shell textarea::placeholder {
-          color: #475569 !important;
+          color: #64748b !important;
         }
         .adl-shell header input {
-          background: #0a0f1a !important;
-          box-shadow: inset 2px 2px 5px #04070c, inset -2px -2px 5px #141f32 !important;
-          border-color: rgba(255, 255, 255, 0.08) !important;
+          background: #0b111e !important;
+          border: 1px solid #1e293b !important;
           color: #f8fafc !important;
         }
         .adl-shell table thead {
-          background: #0e1624 !important;
+          background: #0b111e !important;
         }
         .adl-shell table thead th {
           color: #94a3b8 !important;
-          border-color: rgba(255, 255, 255, 0.06) !important;
+          border-color: #1e293b !important;
         }
         .adl-shell table tbody tr:hover {
           background: rgba(255, 255, 255, 0.03) !important;
         }
         .adl-shell [role="dialog"], .adl-shell .rounded-xl.shadow-2xl, .adl-shell .rounded-2xl.shadow-2xl {
-          background: #111a2b !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          background: #0f172a !important;
+          border: 1px solid #334155 !important;
           box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9) !important;
         }
         ` : `
-        /* ================= LIGHT SOFT-UI NEUMORPHISM (SUN MODE) ================= */
+        /* ================= VIBRANT LUXURY SAAS (LIGHT MODE) ================= */
         .adl-shell {
-          background: #eef3f9 !important;
+          background: linear-gradient(135deg, #f7fcff 0%, #eef9fe 52%, #f8fdff 100%) !important;
           color: #0f2940 !important;
         }
         .adl-shell main {
-          background: #eef3f9 !important;
+          background: transparent !important;
         }
         .adl-shell header {
-          background: #eef3f9 !important;
-          border-color: rgba(255, 255, 255, 0.8) !important;
-          box-shadow: 0 4px 18px rgba(163, 177, 198, 0.35) !important;
+          background: rgba(255, 255, 255, 0.94) !important;
+          border-color: #cfeaf7 !important;
+          backdrop-filter: blur(14px);
         }
         .adl-shell aside {
-          background: linear-gradient(180deg, #091e32 0%, #0c2944 58%, #081d30 100%) !important;
-          box-shadow: 8px 0 25px rgba(3, 51, 78, 0.1) !important;
+          background: linear-gradient(180deg, #08233a 0%, #0a2e49 58%, #062238 100%) !important;
+          box-shadow: 8px 0 30px rgba(3, 51, 78, 0.08) !important;
         }
-        /* Neumorphic Extruded Soft Cards */
+        .adl-shell aside nav {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .adl-shell aside nav::-webkit-scrollbar {
+          display: none;
+        }
+        .adl-shell .adl-brand-mark {
+          color: #fff !important;
+          background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+          box-shadow: 0 8px 22px rgba(56, 189, 248, 0.28) !important;
+        }
+        .adl-shell h1 {
+          color: #075985 !important;
+          letter-spacing: -0.025em;
+        }
+        .adl-shell h2 {
+          color: #075985 !important;
+        }
+        .adl-shell h3 {
+          color: #123b59 !important;
+        }
+        .adl-shell .text-slate-500 {
+          color: #587188 !important;
+        }
+        .adl-shell .text-slate-900 {
+          color: #0f2940 !important;
+        }
         .adl-shell .bg-white {
-          background: #eef3f9 !important;
-          border: 1px solid rgba(255, 255, 255, 0.85) !important;
-          box-shadow: 7px 7px 16px rgba(163, 177, 198, 0.5), -7px -7px 16px rgba(255, 255, 255, 0.95) !important;
-        }
-        .adl-shell .bg-slate-50 {
-          background: #e6edf6 !important;
-          border-color: rgba(255, 255, 255, 0.7) !important;
-        }
-        .adl-shell .bg-slate-100 {
-          background: #e3ebf4 !important;
-          border-color: rgba(255, 255, 255, 0.7) !important;
+          background: #ffffff !important;
+          box-shadow: 0 10px 28px rgba(7, 89, 133, 0.055) !important;
+          border-color: #cfeaf7 !important;
         }
         .adl-shell .border-slate-200, .adl-shell .border-slate-300 {
-          border-color: rgba(163, 177, 198, 0.35) !important;
+          border-color: #cfeaf7 !important;
         }
-        /* Typography */
-        .adl-shell h1 { color: #0369a1 !important; }
-        .adl-shell h2 { color: #0369a1 !important; }
-        .adl-shell h3 { color: #0f2940 !important; }
-        .adl-shell .text-slate-500 { color: #587188 !important; }
-        .adl-shell .text-slate-900 { color: #0f2940 !important; }
-        /* Inset Neumorphic Inputs */
-        .adl-shell input, .adl-shell select, .adl-shell textarea {
-          background: #eef3f9 !important;
-          border-color: rgba(255, 255, 255, 0.8) !important;
-          box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.95) !important;
+        .adl-shell .bg-slate-50 {
+          background: #f3faff !important;
         }
-        .adl-shell header input {
-          background: #eef3f9 !important;
-          box-shadow: inset 2px 2px 5px rgba(163, 177, 198, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.9) !important;
-          border-color: rgba(255, 255, 255, 0.75) !important;
+        .adl-shell .bg-slate-100 {
+          background: #eaf7fd !important;
+        }
+        .adl-shell .bg-blue-600 {
+          background: #0ea5e9 !important;
+        }
+        .adl-shell .text-blue-600, .adl-shell .text-sky-600 {
+          color: #0284c7 !important;
+        }
+        .adl-shell input:focus, .adl-shell select:focus, .adl-shell textarea:focus {
+          outline: none;
+          border-color: #7dd3fc !important;
+          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15) !important;
+        }
+        .adl-shell header input:focus {
+          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15) !important;
         }
         .adl-shell table thead {
-          background: #e5edf6 !important;
+          background: #eef9fe !important;
         }
         .adl-shell table thead th {
           color: #25617f !important;
+          font-weight: 700 !important;
+        }
+        .adl-shell button:not(:disabled):hover {
+          transform: translateY(-1px);
+        }
+        .adl-shell button {
+          transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
         }
         `}
       `}</style>
