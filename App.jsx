@@ -957,11 +957,11 @@ export default function AdLedgerApp() {
           {/* Top: Active Agency Workspace Switcher Card */}
           <div className="p-3 border-b border-slate-800/80 bg-slate-950/30">
             <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-[#181d27] to-[#080a0f] p-1 shadow-[0_4px_10px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] border border-slate-700/60 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-b from-[#181d27] to-[#080a0f] overflow-hidden shadow-[0_4px_10px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] border border-slate-700/60 flex items-center justify-center shrink-0">
                 <img
                   src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
                   alt="Workspace logo"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover scale-[1.38]"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -1001,11 +1001,11 @@ export default function AdLedgerApp() {
           {/* Sidebar Footer: Master Software Platform Brand (Distinctive & High-Tech) */}
           <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] p-1.5 shadow-[0_8px_16px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.18),inset_0_-1px_2px_rgba(0,0,0,0.9)] border border-slate-700/60 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] overflow-hidden shadow-[0_8px_18px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.2),inset_0_-1px_2px_rgba(0,0,0,0.9)] border border-slate-700/70 flex items-center justify-center shrink-0">
                 <img
                   src={QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
-                  className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                  className="w-full h-full object-cover scale-[1.40]"
                 />
               </div>
               <div className="min-w-0 flex-1">
