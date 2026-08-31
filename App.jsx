@@ -432,8 +432,8 @@ const getPresetDates = (preset) => {
 
 // --- DEFAULT WORKSPACE SETTINGS ---
 const DEFAULT_SETTINGS = {
-  businessName: 'Quantrex',
-  shortCode: 'ADL',
+  businessName: 'My Agency Workspace',
+  shortCode: 'AGY',
   workspaceType: 'Agency',
   industry: 'Digital Marketing',
   country: 'BD',
@@ -981,14 +981,14 @@ export default function AdLedgerApp() {
                   className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shrink-0 bg-slate-900"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-600 to-cyan-500 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white/10">
-                  {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
+                <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700/80 text-slate-400 flex items-center justify-center shrink-0">
+                  <Building size={15} className="text-slate-400" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="block text-xs font-bold tracking-tight text-white truncate">
-                    {workspaceSettings.businessName || 'Quantrex HQ'}
+                    {workspaceSettings.businessName || 'My Agency Workspace'}
                   </span>
                   <ChevronDown size={13} className="text-slate-400 shrink-0 ml-1 opacity-70" />
                 </div>
@@ -11105,7 +11105,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-sky-200 rounded-2xl bg-sky-50/40 text-center relative group">
+            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 text-center relative group">
               {logo ? (
                 <div className="relative">
                   <img
@@ -11118,13 +11118,14 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
                   </div>
                 </div>
               ) : (
-                <div className="adl-brand-mark w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-md">
-                  {data.shortCode?.[0] || data.businessName?.[0] || 'Q'}
+                <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400 shadow-xs">
+                  <Upload size={22} className="text-slate-400 mb-1" />
+                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">No Logo</span>
                 </div>
               )}
 
               <p className="text-xs font-semibold text-slate-700 mt-4">
-                {logo ? 'Custom Brandmark Attached' : 'Default Brand Symbol'}
+                {logo ? 'Custom Brandmark Attached' : 'No Logo Uploaded Yet'}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">PNG, JPG, SVG or WebP · Max 2MB</p>
 
