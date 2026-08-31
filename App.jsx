@@ -497,6 +497,7 @@ export default function AdLedgerApp() {
   const [workspaceSettings, setWorkspaceSettings] = useLocalStorage('adledger_settings', DEFAULT_SETTINGS);
   const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', INITIAL_TEAM);
   const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
+  const [workspaceLogoScale, setWorkspaceLogoScale] = useLocalStorage('quantrex_logo_scale', 1.15);
 
   // Auto-sync workspace name from signup metadata if not customized
   useEffect(() => {
@@ -926,7 +927,7 @@ export default function AdLedgerApp() {
       case 'guide':
         return <UserGuideView onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
-        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} clients={clients} cards={cards} transactions={transactions} campaigns={campaigns} metrics={metrics} />;
+        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} logoScale={workspaceLogoScale} onLogoScaleChange={setWorkspaceLogoScale} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} clients={clients} cards={cards} transactions={transactions} campaigns={campaigns} metrics={metrics} />;
       default: return (
         <DashboardView
           metrics={metrics}
@@ -957,11 +958,16 @@ export default function AdLedgerApp() {
           {/* Top: Active Agency Workspace Switcher Card */}
           <div className="p-3 border-b border-slate-800/80 bg-slate-950/30">
             <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
-              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-slate-700/60 shrink-0 bg-black flex items-center justify-center">
+              <div
+                onClick={() => setCurrentView('settings')}
+                className="w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-slate-700/60 shrink-0 bg-black flex items-center justify-center cursor-pointer hover:border-sky-400/60 transition-all group"
+                title="Click to customize logo & scale in Settings"
+              >
                 <img
                   src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
                   alt="Workspace logo"
-                  className="w-full h-full object-cover scale-[1.14]"
+                  style={{ transform: `scale(${workspaceLogoScale || 1.15})` }}
+                  className="w-full h-full object-cover transition-transform"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -1001,11 +1007,16 @@ export default function AdLedgerApp() {
           {/* Sidebar Footer: Master Software Platform Brand (Distinctive & High-Tech) */}
           <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-slate-800 shrink-0 bg-black flex items-center justify-center">
+              <div
+                onClick={() => setCurrentView('settings')}
+                className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-slate-800 shrink-0 bg-black flex items-center justify-center cursor-pointer hover:border-sky-400/60 transition-all group"
+                title="Click to customize logo & scale in Settings"
+              >
                 <img
-                  src={QUANTREX_LOGO_DATA_URL}
+                  src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
-                  className="w-full h-full object-cover scale-[1.15]"
+                  style={{ transform: `scale(${workspaceLogoScale || 1.15})` }}
+                  className="w-full h-full object-cover transition-transform"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -10484,9 +10495,10 @@ function UserGuideView({ onNavigate }) {
 
 
 // --- PROFESSIONAL SETTINGS CENTER ---
-function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset, clients = [], cards = [], transactions = [], campaigns = [], metrics = {} }) {
+function SettingsView({ settings, logo, logoScale = 1.15, onLogoScaleChange, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset, clients = [], cards = [], transactions = [], campaigns = [], metrics = {} }) {
   const [activeTab, setActiveTab] = useState('branding');
   const [data, setData] = useState(() => ({ ...DEFAULT_SETTINGS, ...settings }));
+  const [localScale, setLocalScale] = useState(logoScale || 1.15);
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving' | 'saved'
   const [copiedId, setCopiedId] = useState(false);
@@ -11071,63 +11083,160 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
       {/* ================= TAB 1: GENERAL & BRANDING ================= */}
       {activeTab === 'branding' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-in fade-in duration-300">
-          {/* Logo Card */}
+          {/* Studio-Grade 3D Logo & Live Scaler Card */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <Sparkles size={18} className="text-sky-600" />
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">Workspace Brand Logo</h3>
-                <p className="text-[11px] text-slate-500">Appears on headers and PDF reports.</p>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <Sparkles size={18} className="text-sky-600" />
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm">3D Brandmark & Scaler</h3>
+                  <p className="text-[11px] text-slate-500">Live scale, upload & 3D squircle preview.</p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-slate-900 text-sky-400 font-mono text-[10px] font-black">
+                {Math.round(localScale * 100)}%
+              </span>
+            </div>
+
+            {/* Live 3D Matte Black Squircle Canvas */}
+            <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-br from-[#0c1017] to-[#151c28] border border-slate-800 text-center relative overflow-hidden shadow-inner">
+              <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] opacity-10 pointer-events-none" />
+
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] overflow-hidden shadow-[0_16px_36px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-1px_2px_rgba(0,0,0,0.9)] border border-slate-700/70 flex items-center justify-center relative transition-transform">
+                <img
+                  src={logo || QUANTREX_LOGO_DATA_URL}
+                  alt="Live 3D Logo"
+                  style={{ transform: `scale(${localScale})` }}
+                  className="w-full h-full object-cover transition-transform duration-75"
+                />
+              </div>
+
+              <div className="mt-4 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <p className="text-xs font-bold text-slate-200">
+                  {logo ? 'Custom Uploaded Logo' : 'Official Quantrex 3D Logo'}
+                </p>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">Drag slider below to zoom & resize perfectly</p>
+            </div>
+
+            {/* Interactive Live Scaling Controls */}
+            <div className="space-y-2.5 pt-1">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                <span className="flex items-center gap-1">
+                  <span>Logo Zoom Scale</span>
+                </span>
+                <span className="font-mono text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
+                  {Math.round(localScale * 100)}%
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = Math.max(0.6, Number((localScale - 0.05).toFixed(2)));
+                    setLocalScale(next);
+                    if (onLogoScaleChange) onLogoScaleChange(next);
+                  }}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-sm flex items-center justify-center transition-all cursor-pointer"
+                  title="Zoom Out 5%"
+                >
+                  −
+                </button>
+                <input
+                  type="range"
+                  min="0.60"
+                  max="2.00"
+                  step="0.01"
+                  value={localScale}
+                  onChange={(e) => {
+                    const next = parseFloat(e.target.value);
+                    setLocalScale(next);
+                    if (onLogoScaleChange) onLogoScaleChange(next);
+                  }}
+                  className="flex-1 accent-sky-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = Math.min(2.0, Number((localScale + 0.05).toFixed(2)));
+                    setLocalScale(next);
+                    if (onLogoScaleChange) onLogoScaleChange(next);
+                  }}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-sm flex items-center justify-center transition-all cursor-pointer"
+                  title="Zoom In 5%"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Preset Quick Scale Buttons */}
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
+                {[
+                  ['95%', 0.95, 'Compact'],
+                  ['115%', 1.15, 'Balanced'],
+                  ['135%', 1.35, 'Prominent'],
+                  ['155%', 1.55, 'Full']
+                ].map(([label, val, title]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      setLocalScale(val);
+                      if (onLogoScaleChange) onLogoScaleChange(val);
+                    }}
+                    className={`py-1 px-1.5 rounded-lg text-[10.5px] font-bold border transition-all ${
+                      Math.abs(localScale - val) < 0.03
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {title} ({label})
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-sky-200 rounded-2xl bg-sky-50/40 text-center relative group">
+            {/* Actions: Upload / Remove / Revert */}
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+              <label className="cursor-pointer w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-98 text-white text-xs font-bold shadow-sm transition-all">
+                <Upload size={14} /> {logo ? 'Upload Different Logo' : 'Upload Custom Logo'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => {
+                    onLogoUpload(e.target.files?.[0]);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+
               {logo ? (
-                <div className="relative">
-                  <img
-                    src={logo}
-                    alt="Workspace Logo"
-                    className="w-24 h-24 rounded-2xl object-cover bg-white border border-sky-200 shadow-md transition-transform group-hover:scale-105"
-                  />
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-extrabold uppercase">
-                    Active Logo
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRemoveLogo();
+                    setLocalScale(1.15);
+                    if (onLogoScaleChange) onLogoScaleChange(1.15);
+                  }}
+                  className="w-full py-2 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Reset to Default Quantrex Logo
+                </button>
               ) : (
-                <div className="adl-brand-mark w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-md">
-                  {data.shortCode?.[0] || data.businessName?.[0] || 'A'}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalScale(1.15);
+                    if (onLogoScaleChange) onLogoScaleChange(1.15);
+                  }}
+                  className="w-full py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Reset Scale to 115% Default
+                </button>
               )}
-
-              <p className="text-xs font-semibold text-slate-700 mt-4">
-                {logo ? 'Custom Brandmark Attached' : 'Default Brand Symbol'}
-              </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">PNG, JPG, SVG or WebP · Max 2MB</p>
-
-              <div className="flex items-center gap-2 mt-4">
-                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all">
-                  <Upload size={13} /> {logo ? 'Change Logo' : 'Upload Logo'}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                    className="hidden"
-                    onChange={(e) => {
-                      onLogoUpload(e.target.files?.[0]);
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
-
-                {logo && (
-                  <button
-                    type="button"
-                    onClick={onRemoveLogo}
-                    className="px-3 py-2 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-bold transition-colors"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
             </div>
           </div>
 
