@@ -956,21 +956,15 @@ export default function AdLedgerApp() {
           {/* Top: Active Agency Workspace Switcher Card */}
           <div className="p-3 border-b border-slate-800/80 bg-slate-950/30">
             <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
-              {workspaceLogo ? (
-                <img
-                  src={workspaceLogo}
-                  alt="Workspace logo"
-                  className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shrink-0 bg-white"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-lg bg-slate-800 text-sky-400 flex items-center justify-center font-bold text-xs shadow-sm shrink-0 border border-slate-700">
-                  {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <img
+                src={workspaceLogo || "/quantrex-logo.png"}
+                alt="Workspace logo"
+                className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shrink-0 bg-slate-900"
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="block text-xs font-bold tracking-tight text-white truncate">
-                    {workspaceSettings.businessName || 'My Workspace'}
+                    {workspaceSettings.businessName || 'Quantrex HQ'}
                   </span>
                   <ChevronDown size={13} className="text-slate-400 shrink-0 ml-1 opacity-70" />
                 </div>
@@ -1004,9 +998,11 @@ export default function AdLedgerApp() {
           {/* Sidebar Footer: Master Software Platform Brand (Distinctive & High-Tech) */}
           <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-lg text-white shadow-[0_0_20px_rgba(56,189,248,0.35)] ring-2 ring-sky-400/40 shrink-0">
-                Q
-              </div>
+              <img
+                src="/quantrex-logo.png"
+                alt="Quantrex Platform"
+                className="w-10 h-10 rounded-xl object-cover shadow-[0_0_20px_rgba(56,189,248,0.4)] ring-2 ring-sky-400/50 shrink-0 bg-slate-900"
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-extrabold text-white tracking-tight">Quantrex</span>
@@ -1676,10 +1672,13 @@ function ReportsView({ clients, cards, transactions }) {
         </style>
       </head>
       <body>
-        <div class="header">
-          <div>
-            <div class="brand">Quantrex Financial Command</div>
-            <div class="title">Official Executive P&L & Financial Intelligence Statement</div>
+        <div class="header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px;">
+          <div style="display:flex; align-items:center; gap: 14px;">
+            <img src="/quantrex-logo.png" alt="Quantrex" style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+            <div>
+              <div class="brand">Quantrex Financial Command</div>
+              <div class="title">Official Executive P&L & Financial Intelligence Statement</div>
+            </div>
           </div>
           <div style="text-align: right;">
             <div style="font-weight: 800; font-size: 12px;">Period: ${selectedRangeLabel}</div>
@@ -3489,10 +3488,13 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete,
         </style>
       </head>
       <body>
-        <div class="header">
-          <div>
-            <div class="brand">Quantrex Financial Command</div>
-            <div class="voucher-title">Accounting Transaction Voucher</div>
+        <div class="header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px;">
+          <div style="display:flex; align-items:center; gap: 12px;">
+            <img src="/quantrex-logo.png" alt="Quantrex" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.12);" />
+            <div>
+              <div class="brand">Quantrex Financial Command</div>
+              <div class="voucher-title">Accounting Transaction Voucher</div>
+            </div>
           </div>
           <div style="text-align: right;">
             <div style="font-weight: 800; font-size: 13px;">Ref: ${tx.id}</div>
@@ -9626,6 +9628,7 @@ function UserGuideView({ onNavigate }) {
     
     <!-- Cover Header -->
     <div class="cover-header">
+      <img src="/quantrex-logo.png" alt="Quantrex Logo" style="width: 70px; height: 70px; border-radius: 16px; object-fit: cover; margin: 0 auto 16px; display: block; box-shadow: 0 8px 20px rgba(0,0,0,0.15);" />
       <div class="brand-badge">Official Master Standard Operating Procedure (SOP)</div>
       <h1 class="cover-title">Quantrex — Digital Agency Financial Manual</h1>
       <p class="cover-subtitle">ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।</p>
@@ -9973,17 +9976,24 @@ function UserGuideView({ onNavigate }) {
         <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-white/20">
-              <BookOpen size={13} className="stroke-[2.5]" />
-              <span>Official Standard Operating Procedure (SOP) Manual</span>
+          <div className="flex items-start gap-4">
+            <img
+              src="/quantrex-logo.png"
+              alt="Quantrex Logo"
+              className="w-16 h-16 rounded-2xl object-cover shadow-2xl ring-2 ring-white/30 shrink-0 hidden sm:block bg-slate-900"
+            />
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-white/20">
+                <BookOpen size={13} className="stroke-[2.5]" />
+                <span>Official Standard Operating Procedure (SOP) Manual</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                Quantrex — Digital Agency Financial Manual
+              </h1>
+              <p className="text-sm text-sky-100 max-w-2xl font-medium leading-relaxed">
+                ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Quantrex — Digital Agency Financial Manual
-            </h1>
-            <p className="text-sm text-sky-100 max-w-2xl font-medium leading-relaxed">
-              ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।
-            </p>
           </div>
 
           <button
@@ -12855,10 +12865,13 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
         </style>
       </head>
       <body>
-        <div class="header">
-          <div>
-            <div class="brand">Quantrex Platform</div>
-            <div class="subtitle">Client Account Statement & Ledger</div>
+        <div class="header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 24px;">
+          <div style="display:flex; align-items:center; gap: 14px;">
+            <img src="${workspaceLogo || '/quantrex-logo.png'}" alt="Logo" style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.12);" />
+            <div>
+              <div class="brand">Quantrex Platform</div>
+              <div class="subtitle">Client Account Statement & Ledger</div>
+            </div>
           </div>
           <div style="text-align: right;">
             <span class="statement-badge">CONFIDENTIAL STATEMENT</span>
