@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import { QUANTREX_LOGO_DATA_URL } from './src/quantrex-logo.js';
+import { QUANTREX_WORDMARK_DATA_URL } from './src/quantrex-wordmark.js';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -1043,8 +1044,12 @@ export default function AdLedgerApp() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-extrabold text-white tracking-tight">Quantrex</span>
-                  <span className="text-[8.5px] font-extrabold px-1.5 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/80 uppercase tracking-wider font-mono">
+                  <img
+                    src={QUANTREX_WORDMARK_DATA_URL}
+                    alt="QUANTREX"
+                    className="h-4.5 w-auto max-w-[105px] object-contain filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)] brightness-110 shrink-0"
+                  />
+                  <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/80 uppercase tracking-wider font-mono shrink-0">
                     PLATFORM
                   </span>
                 </div>
