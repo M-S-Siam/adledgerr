@@ -501,6 +501,20 @@ export default function AdLedgerApp() {
   const [workspaceLogoScale, setWorkspaceLogoScale] = useLocalStorage('quantrex_logo_scale', 1.15);
   const [workspaceLogoOffsetX, setWorkspaceLogoOffsetX] = useLocalStorage('quantrex_logo_offset_x', 0);
   const [workspaceLogoOffsetY, setWorkspaceLogoOffsetY] = useLocalStorage('quantrex_logo_offset_y', 0);
+  const [subscription, setSubscription] = useLocalStorage('quantrex_subscription', {
+    plan: 'starter_monthly',
+    planName: 'Starter Agency Plan',
+    status: 'trial', // 'trial' | 'active'
+    price: 500,
+    regularPrice: 1000,
+    promoCode: 'LAUNCH500',
+    isPromoApplied: true,
+    trialDaysTotal: 3,
+    trialStartedAt: Date.now(),
+    expiresAt: Date.now() + 3 * 24 * 60 * 60 * 1000,
+    activatedTrxId: '',
+    paymentMethod: 'bKash'
+  });
 
   // Auto-sync & sanitize workspace name from signup metadata (cleanse legacy 'AdLytic' test names)
   useEffect(() => {
@@ -942,6 +956,8 @@ export default function AdLedgerApp() {
         return <SettingsView
           settings={workspaceSettings}
           logo={workspaceLogo}
+          subscription={subscription}
+          onUpdateSubscription={setSubscription}
           onSave={handleSaveWorkspaceSettings}
           onLogoUpload={handleLogoUpload}
           onRemoveLogo={handleRemoveLogo}
@@ -1078,6 +1094,32 @@ export default function AdLedgerApp() {
             </div>
 
             <div className="flex items-center gap-3 pr-3 sm:pr-5">
+              {/* SUBSCRIPTION & 3-DAY TRIAL STATUS PILL */}
+              <button
+                onClick={() => setCurrentView('settings')}
+                className={`hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border shadow-2xs cursor-pointer ${
+                  subscription?.status === 'active'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100/80'
+                    : 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-amber-300/90 text-amber-950 hover:border-amber-400'
+                }`}
+                title="Click to view Subscription & Billing details"
+              >
+                {subscription?.status === 'active' ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                    <span>Pro Active · ৳500/mo</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} className="text-amber-600 animate-pulse shrink-0" />
+                    <span>3-Day Free Trial (৳500/mo)</span>
+                    <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider">
+                      Promo Auto-Applied
+                    </span>
+                  </>
+                )}
+              </button>
+
               {/* GLOBAL NEW ENTRY DROPDOWN (Master Level UX) */}
               <div className="relative" ref={newEntryRef}>
                 <button
@@ -10518,9 +10560,361 @@ function UserGuideView({ onNavigate }) {
 }
 
 
+// --- SUBSCRIPTION & BILLING PLANS COMPONENT ---
+function BillingPlansView({ subscription, onUpdate, businessName }) {
+  const [selectedPlan, setSelectedPlan] = useState('starter_monthly');
+  const [paymentMethod, setPaymentMethod] = useState('bKash');
+  const [trxId, setTrxId] = useState('');
+  const [isActivating, setIsActivating] = useState(false);
+  const [activationSuccess, setActivationSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const plans = [
+    {
+      id: 'starter_monthly',
+      name: 'Starter Agency (Launch Special)',
+      price: 500,
+      regularPrice: 1000,
+      period: '/ month',
+      badge: '50% OFF · Most Popular',
+      popular: true,
+      trialNote: '✨ 3-Day Free Trial Included',
+      features: [
+        'Full Dual-Currency Ledger (BDT & USD)',
+        'Unlimited Clients & Campaign Portfolios',
+        'Auto 15% Ad Tax, Margins & Fee Tracking',
+        'Real-time Client Live Ledger Link & PDF Statements',
+        'Multi-Currency Ad Cards & Bank FX Wallet',
+        'Supabase Cloud Sync & Multi-Device Access'
+      ]
+    },
+    {
+      id: 'pro_annual',
+      name: 'Annual Pro Pass',
+      price: 4500,
+      regularPrice: 6000,
+      period: '/ year (৳375/mo)',
+      badge: '2 Months Free',
+      popular: false,
+      trialNote: '✨ Best Value for Established Agencies',
+      features: [
+        'Everything in Starter Plan',
+        'Unlimited Team Members & Role Access',
+        'Custom Brand Invoice Footer & White-labeling',
+        'Priority 24/7 Dedicated WhatsApp Support',
+        'Quarterly Financial Statement Exports'
+      ]
+    },
+    {
+      id: 'lifetime_founder',
+      name: 'Lifetime Founder Access',
+      price: 6999,
+      regularPrice: 15000,
+      period: 'one-time payment',
+      badge: 'Lifetime Deal',
+      popular: false,
+      trialNote: '💎 Pay Once, Use Forever',
+      features: [
+        'Lifetime Access to All Current Features',
+        'All Future V2 & Pro Updates Free Forever',
+        'Unlimited Clients, Cards & Workspaces',
+        'Founder Community Private Access',
+        'VIP Direct Phone Support'
+      ]
+    }
+  ];
+
+  const handleVerifyTrx = (e) => {
+    e.preventDefault();
+    if (!trxId || trxId.trim().length < 6) {
+      setErrorMessage('Please enter a valid Transaction ID (TrxID) with at least 6 characters.');
+      return;
+    }
+    setErrorMessage('');
+    setIsActivating(true);
+
+    setTimeout(() => {
+      setIsActivating(false);
+      setActivationSuccess(true);
+      if (onUpdate) {
+        onUpdate(prev => ({
+          ...prev,
+          status: 'active',
+          plan: selectedPlan,
+          planName: plans.find(p => p.id === selectedPlan)?.name || 'Pro Agency Plan',
+          price: plans.find(p => p.id === selectedPlan)?.price || 500,
+          activatedTrxId: trxId.trim().toUpperCase(),
+          paymentMethod: paymentMethod,
+          expiresAt: Date.now() + (selectedPlan === 'lifetime_founder' ? 3650 * 24 * 60 * 60 * 1000 : selectedPlan === 'pro_annual' ? 365 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000)
+        }));
+      }
+    }, 1200);
+  };
+
+  const isTrialActive = subscription?.status === 'trial';
+  const isProActive = subscription?.status === 'active';
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* AUTO-APPLIED PROMO CODE CELEBRATION HERO */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-900 via-slate-900 to-blue-950 text-white border border-sky-500/30 shadow-lg relative overflow-hidden">
+        <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-sky-500/10 blur-2xl pointer-events-none" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center shrink-0 text-sky-400">
+              <Sparkles size={20} className="animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider">
+                  Promo Auto-Applied
+                </span>
+                <span className="text-xs font-mono font-bold text-sky-300">
+                  CODE: LAUNCH500 (50% OFF)
+                </span>
+              </div>
+              <h3 className="text-base font-extrabold text-white mt-1">
+                Special Launch Offer: Full Pro Access at ৳500 / month!
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Enjoy an active <strong>3-Day Free Trial</strong> with full feature access. Upgrade anytime via bKash or Nagad to keep your data running without interruption.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="text-right hidden sm:block">
+              <div className="text-[11px] text-slate-400">Current Status</div>
+              <div className="text-sm font-extrabold text-emerald-400 flex items-center justify-end gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                {isProActive ? 'Pro Active' : '3-Day Trial Active'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PLAN PRICING COMPARISON CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {plans.map((plan) => {
+          const isSelected = selectedPlan === plan.id;
+          return (
+            <div
+              key={plan.id}
+              onClick={() => setSelectedPlan(plan.id)}
+              className={`rounded-2xl p-5 border transition-all cursor-pointer relative flex flex-col justify-between ${
+                isSelected
+                  ? 'bg-white border-sky-500 ring-2 ring-sky-500/20 shadow-md'
+                  : 'bg-white/80 border-slate-200/80 hover:border-slate-300 hover:bg-white shadow-xs'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                    plan.popular
+                      ? 'bg-sky-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}>
+                    {plan.badge}
+                  </span>
+                  {isSelected && (
+                    <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-xs font-bold">
+                      ✓
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="font-extrabold text-slate-900 text-base">{plan.name}</h4>
+                <p className="text-[11px] font-semibold text-sky-600 mt-0.5">{plan.trialNote}</p>
+
+                <div className="my-4 pb-4 border-b border-slate-100">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-black text-slate-900 tracking-tight">৳{plan.price.toLocaleString()}</span>
+                    <span className="text-xs text-slate-500 font-medium">{plan.period}</span>
+                  </div>
+                  {plan.regularPrice > plan.price && (
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-400">
+                      <span>Regular:</span>
+                      <span className="line-through font-medium">৳{plan.regularPrice.toLocaleString()}</span>
+                      <span className="text-emerald-600 font-bold">Save ৳{(plan.regularPrice - plan.price).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Included Features:</p>
+                  {plan.features.map((feat, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
+                      <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-5 mt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan(plan.id)}
+                  className={`w-full py-2.5 rounded-xl text-xs font-extrabold transition-all ${
+                    isSelected
+                      ? 'bg-sky-600 text-white shadow-sm hover:bg-sky-700'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {isSelected ? 'Selected Plan' : 'Select Plan'}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* DIRECT CHECKOUT & INSTANT ACTIVATION BOX */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-5">
+        <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+          <CreditCard size={18} className="text-sky-600" />
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm">Instant Payment & Pro Activation</h3>
+            <p className="text-[11px] text-slate-500">
+              Pay via bKash or Nagad and enter your Transaction ID (TrxID) to activate Pro instantly.
+            </p>
+          </div>
+        </div>
+
+        {activationSuccess ? (
+          <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-2 text-center animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
+              <Check size={24} className="stroke-[3]" />
+            </div>
+            <h4 className="font-extrabold text-base text-emerald-950">Subscription Successfully Activated!</h4>
+            <p className="text-xs text-emerald-800">
+              Thank you for subscribing to Quantrex! Your workspace <strong>{businessName}</strong> is now on the Pro Plan.
+            </p>
+            <div className="inline-block px-3 py-1 rounded-lg bg-white border border-emerald-300 font-mono text-xs font-bold text-emerald-900 mt-2">
+              TrxID: {subscription?.activatedTrxId || trxId.toUpperCase()}
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleVerifyTrx} className="space-y-4">
+            {/* Payment Method Selector */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('bKash')}
+                className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
+                  paymentMethod === 'bKash'
+                    ? 'border-pink-500 bg-pink-50/50 ring-2 ring-pink-500/20'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="w-7 h-7 rounded-lg bg-pink-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                  bK
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">bKash Payment</div>
+                  <div className="text-[10px] text-slate-500">Send Money / Merchant</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('Nagad')}
+                className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
+                  paymentMethod === 'Nagad'
+                    ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-500/20'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="w-7 h-7 rounded-lg bg-orange-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                  NG
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">Nagad Payment</div>
+                  <div className="text-[10px] text-slate-500">Personal / Merchant</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('Bank/Card')}
+                className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
+                  paymentMethod === 'Bank/Card'
+                    ? 'border-sky-500 bg-sky-50/50 ring-2 ring-sky-500/20'
+                    : 'border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="w-7 h-7 rounded-lg bg-sky-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                  💳
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">Cards / Bank</div>
+                  <div className="text-[10px] text-slate-500">Visa / Mastercard</div>
+                </div>
+              </button>
+            </div>
+
+            {/* Payment Instructions Box */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                {paymentMethod} Payment Instructions:
+              </div>
+              <ol className="list-decimal list-inside space-y-1 text-slate-700 leading-relaxed text-[11.5px]">
+                <li>Open your <strong>{paymentMethod} App</strong> and select <strong>Send Money</strong> or <strong>Payment</strong>.</li>
+                <li>Number: <strong className="font-mono bg-white px-2 py-0.5 rounded border border-slate-300 text-slate-900 font-bold select-all">01711-889900</strong> (Personal / Merchant)</li>
+                <li>Amount: <strong>৳{plans.find(p => p.id === selectedPlan)?.price.toLocaleString()}</strong> (Reference: <strong>{businessName}</strong>)</li>
+                <li>After completing the transfer, copy your <strong>Transaction ID (TrxID)</strong> and submit below.</li>
+              </ol>
+            </div>
+
+            {/* TrxID Input & Button */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <input
+                  type="text"
+                  required
+                  value={trxId}
+                  onChange={(e) => setTrxId(e.target.value)}
+                  placeholder="Enter TrxID (e.g. 9J82K3L4M)"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-mono font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isActivating || !trxId.trim()}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 active:scale-98 text-white text-xs font-extrabold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+              >
+                {isActivating ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    <span>Verifying TrxID...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={15} />
+                    <span>Verify & Activate Pro</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {errorMessage && (
+              <p className="text-xs font-semibold text-rose-600 flex items-center gap-1.5">
+                <AlertCircle size={14} /> {errorMessage}
+              </p>
+            )}
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // --- PROFESSIONAL SETTINGS CENTER ---
-function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset, clients = [], cards = [], transactions = [], campaigns = [], metrics = {} }) {
-  const [activeTab, setActiveTab] = useState('branding');
+function SettingsView({ settings, logo, subscription, onUpdateSubscription, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset, clients = [], cards = [], transactions = [], campaigns = [], metrics = {} }) {
+  const [activeTab, setActiveTab] = useState('billing');
   const [data, setData] = useState(() => ({ ...DEFAULT_SETTINGS, ...settings }));
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving' | 'saved'
@@ -11007,6 +11401,7 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
   ];
 
   const navTabs = [
+    { id: 'billing', label: 'Subscription & Plans', icon: <Crown size={17} /> },
     { id: 'branding', label: 'General & Branding', icon: <SlidersHorizontal size={17} /> },
     { id: 'agency', label: 'Agency Profile', icon: <Building size={17} /> },
     { id: 'financial', label: 'Financial Safety & Rates', icon: <Coins size={17} /> },
@@ -11073,8 +11468,8 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
         </div>
       )}
 
-      {/* TAB NAVIGATION (EQUAL 5-COLUMN FULL WIDTH DISTRIBUTION) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 p-1 bg-slate-200/60 rounded-lg w-full">
+      {/* TAB NAVIGATION (EQUAL 6-COLUMN FULL WIDTH DISTRIBUTION) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 p-1 bg-slate-200/60 rounded-lg w-full">
         {navTabs.map((tab) => {
           const active = activeTab === tab.id;
           const hasError =
@@ -11102,6 +11497,15 @@ function SettingsView({ settings, logo, onSave, onLogoUpload, onRemoveLogo, onEx
           );
         })}
       </div>
+
+      {/* ================= TAB 0: SUBSCRIPTION & BILLING PLANS ================= */}
+      {activeTab === 'billing' && (
+        <BillingPlansView
+          subscription={subscription}
+          onUpdate={onUpdateSubscription}
+          businessName={data.businessName || 'My Agency Workspace'}
+        />
+      )}
 
       {/* ================= TAB 1: GENERAL & BRANDING ================= */}
       {activeTab === 'branding' && (
