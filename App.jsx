@@ -498,6 +498,8 @@ export default function AdLedgerApp() {
   const [teamMembers, setTeamMembers] = useLocalStorage('adledger_team', INITIAL_TEAM);
   const [workspaceLogo, setWorkspaceLogo] = useLocalStorage('adlytic_workspace_logo', '');
   const [workspaceLogoScale, setWorkspaceLogoScale] = useLocalStorage('quantrex_logo_scale', 1.15);
+  const [workspaceLogoOffsetX, setWorkspaceLogoOffsetX] = useLocalStorage('quantrex_logo_offset_x', 0);
+  const [workspaceLogoOffsetY, setWorkspaceLogoOffsetY] = useLocalStorage('quantrex_logo_offset_y', 0);
 
   // Auto-sync workspace name from signup metadata if not customized
   useEffect(() => {
@@ -927,7 +929,26 @@ export default function AdLedgerApp() {
       case 'guide':
         return <UserGuideView onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
-        return <SettingsView settings={workspaceSettings} logo={workspaceLogo} logoScale={workspaceLogoScale} onLogoScaleChange={setWorkspaceLogoScale} onSave={handleSaveWorkspaceSettings} onLogoUpload={handleLogoUpload} onRemoveLogo={handleRemoveLogo} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} clients={clients} cards={cards} transactions={transactions} campaigns={campaigns} metrics={metrics} />;
+        return <SettingsView
+          settings={workspaceSettings}
+          logo={workspaceLogo}
+          logoScale={workspaceLogoScale}
+          logoOffsetX={workspaceLogoOffsetX}
+          logoOffsetY={workspaceLogoOffsetY}
+          onLogoScaleChange={setWorkspaceLogoScale}
+          onLogoOffsetChange={(x, y) => { setWorkspaceLogoOffsetX(x); setWorkspaceLogoOffsetY(y); }}
+          onSave={handleSaveWorkspaceSettings}
+          onLogoUpload={handleLogoUpload}
+          onRemoveLogo={handleRemoveLogo}
+          onExport={exportBackup}
+          onImport={importBackup}
+          onReset={resetAllData}
+          clients={clients}
+          cards={cards}
+          transactions={transactions}
+          campaigns={campaigns}
+          metrics={metrics}
+        />;
       default: return (
         <DashboardView
           metrics={metrics}
@@ -961,12 +982,14 @@ export default function AdLedgerApp() {
               <div
                 onClick={() => setCurrentView('settings')}
                 className="w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-slate-700/60 shrink-0 bg-black flex items-center justify-center cursor-pointer hover:border-sky-400/60 transition-all group"
-                title="Click to customize logo & scale in Settings"
+                title="Click to customize logo, position & scale in Settings"
               >
                 <img
                   src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
                   alt="Workspace logo"
-                  style={{ transform: `scale(${workspaceLogoScale || 1.15})` }}
+                  style={{
+                    transform: `scale(${workspaceLogoScale || 1.15}) translate(${workspaceLogoOffsetX || 0}px, ${workspaceLogoOffsetY || 0}px)`
+                  }}
                   className="w-full h-full object-cover transition-transform"
                 />
               </div>
@@ -1010,12 +1033,14 @@ export default function AdLedgerApp() {
               <div
                 onClick={() => setCurrentView('settings')}
                 className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-slate-800 shrink-0 bg-black flex items-center justify-center cursor-pointer hover:border-sky-400/60 transition-all group"
-                title="Click to customize logo & scale in Settings"
+                title="Click to customize logo, position & scale in Settings"
               >
                 <img
                   src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
-                  style={{ transform: `scale(${workspaceLogoScale || 1.15})` }}
+                  style={{
+                    transform: `scale(${workspaceLogoScale || 1.15}) translate(${workspaceLogoOffsetX || 0}px, ${workspaceLogoOffsetY || 0}px)`
+                  }}
                   className="w-full h-full object-cover transition-transform"
                 />
               </div>
@@ -10495,10 +10520,14 @@ function UserGuideView({ onNavigate }) {
 
 
 // --- PROFESSIONAL SETTINGS CENTER ---
-function SettingsView({ settings, logo, logoScale = 1.15, onLogoScaleChange, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset, clients = [], cards = [], transactions = [], campaigns = [], metrics = {} }) {
+function SettingsView({ settings, logo, logoScale = 1.15, logoOffsetX = 0, logoOffsetY = 0, onLogoScaleChange, onLogoOffsetChange, onSave, onLogoUpload, onRemoveLogo, onExport, onImport, onReset, clients = [], cards = [], transactions = [], campaigns = [], metrics = {} }) {
   const [activeTab, setActiveTab] = useState('branding');
   const [data, setData] = useState(() => ({ ...DEFAULT_SETTINGS, ...settings }));
   const [localScale, setLocalScale] = useState(logoScale || 1.15);
+  const [localOffsetX, setLocalOffsetX] = useState(logoOffsetX || 0);
+  const [localOffsetY, setLocalOffsetY] = useState(logoOffsetY || 0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
   const [isDirty, setIsDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // 'saving' | 'saved'
   const [copiedId, setCopiedId] = useState(false);
@@ -11083,14 +11112,14 @@ function SettingsView({ settings, logo, logoScale = 1.15, onLogoScaleChange, onS
       {/* ================= TAB 1: GENERAL & BRANDING ================= */}
       {activeTab === 'branding' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-in fade-in duration-300">
-          {/* Studio-Grade 3D Logo & Live Scaler Card */}
+          {/* Studio-Grade 3D Logo & Live Interactive Drag & Scale Studio */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <Sparkles size={18} className="text-sky-600" />
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">3D Brandmark & Scaler</h3>
-                  <p className="text-[11px] text-slate-500">Live scale, upload & 3D squircle preview.</p>
+                  <h3 className="font-bold text-slate-900 text-sm">3D Interactive Logo Studio</h3>
+                  <p className="text-[11px] text-slate-500">Drag to position, double-click to center.</p>
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-slate-900 text-sky-400 font-mono text-[10px] font-black">
@@ -11098,26 +11127,156 @@ function SettingsView({ settings, logo, logoScale = 1.15, onLogoScaleChange, onS
               </span>
             </div>
 
-            {/* Live 3D Matte Black Squircle Canvas */}
-            <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-br from-[#0c1017] to-[#151c28] border border-slate-800 text-center relative overflow-hidden shadow-inner">
+            {/* Live 3D Matte Black Squircle Canvas with Mouse Dragging & Double Click */}
+            <div
+              className={`flex flex-col items-center justify-center p-6 rounded-2xl bg-gradient-to-br from-[#0c1017] to-[#151c28] border border-slate-800 text-center relative overflow-hidden shadow-inner select-none ${
+                isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              }`}
+              onMouseDown={(e) => {
+                setIsDragging(true);
+                dragStartRef.current = {
+                  startX: e.clientX,
+                  startY: e.clientY,
+                  initialX: localOffsetX,
+                  initialY: localOffsetY
+                };
+              }}
+              onMouseMove={(e) => {
+                if (!isDragging) return;
+                const dx = Math.round((e.clientX - dragStartRef.current.startX) / 2);
+                const dy = Math.round((e.clientY - dragStartRef.current.startY) / 2);
+                const nextX = Math.max(-30, Math.min(30, dragStartRef.current.initialX + dx));
+                const nextY = Math.max(-30, Math.min(30, dragStartRef.current.initialY + dy));
+                setLocalOffsetX(nextX);
+                setLocalOffsetY(nextY);
+                if (onLogoOffsetChange) onLogoOffsetChange(nextX, nextY);
+              }}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => setIsDragging(false)}
+              onTouchStart={(e) => {
+                if (e.touches.length === 1) {
+                  setIsDragging(true);
+                  dragStartRef.current = {
+                    startX: e.touches[0].clientX,
+                    startY: e.touches[0].clientY,
+                    initialX: localOffsetX,
+                    initialY: localOffsetY
+                  };
+                }
+              }}
+              onTouchMove={(e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const dx = Math.round((e.touches[0].clientX - dragStartRef.current.startX) / 2);
+                const dy = Math.round((e.touches[0].clientY - dragStartRef.current.startY) / 2);
+                const nextX = Math.max(-30, Math.min(30, dragStartRef.current.initialX + dx));
+                const nextY = Math.max(-30, Math.min(30, dragStartRef.current.initialY + dy));
+                setLocalOffsetX(nextX);
+                setLocalOffsetY(nextY);
+                if (onLogoOffsetChange) onLogoOffsetChange(nextX, nextY);
+              }}
+              onTouchEnd={() => setIsDragging(false)}
+              onDoubleClick={() => {
+                setLocalOffsetX(0);
+                setLocalOffsetY(0);
+                if (onLogoOffsetChange) onLogoOffsetChange(0, 0);
+              }}
+              title="Click & Drag to move logo · Double click to Center"
+            >
               <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] opacity-10 pointer-events-none" />
 
-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] overflow-hidden shadow-[0_16px_36px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-1px_2px_rgba(0,0,0,0.9)] border border-slate-700/70 flex items-center justify-center relative transition-transform">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] overflow-hidden shadow-[0_16px_36px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-1px_2px_rgba(0,0,0,0.9)] border border-slate-700/70 flex items-center justify-center relative pointer-events-none">
                 <img
                   src={logo || QUANTREX_LOGO_DATA_URL}
                   alt="Live 3D Logo"
-                  style={{ transform: `scale(${localScale})` }}
+                  style={{
+                    transform: `scale(${localScale}) translate(${localOffsetX}px, ${localOffsetY}px)`
+                  }}
                   className="w-full h-full object-cover transition-transform duration-75"
                 />
               </div>
 
-              <div className="mt-4 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-xs font-bold text-slate-200">
-                  {logo ? 'Custom Uploaded Logo' : 'Official Quantrex 3D Logo'}
-                </p>
+              {/* Offset Position Coordinates Pill */}
+              <div className="mt-3 flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-slate-900/90 text-sky-300 font-mono text-[9.5px] border border-slate-700">
+                  X: {localOffsetX > 0 ? `+${localOffsetX}` : localOffsetX}px · Y: {localOffsetY > 0 ? `+${localOffsetY}` : localOffsetY}px
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLocalOffsetX(0);
+                    setLocalOffsetY(0);
+                    if (onLogoOffsetChange) onLogoOffsetChange(0, 0);
+                  }}
+                  className="px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[9px] transition-colors cursor-pointer"
+                  title="Reset Position to Center"
+                >
+                  Reset Center
+                </button>
               </div>
-              <p className="text-[10px] text-slate-400 mt-0.5">Drag slider below to zoom & resize perfectly</p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                🖱️ <strong>Click & Drag</strong> to move · <strong>Double-Click</strong> to center
+              </p>
+            </div>
+
+            {/* 4-Way D-Pad Positioning Arrows */}
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-slate-700">Nudge Position</span>
+                <span className="text-[10px] text-slate-400">Step: 2px</span>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = Math.max(-30, localOffsetX - 2);
+                    setLocalOffsetX(next);
+                    if (onLogoOffsetChange) onLogoOffsetChange(next, localOffsetY);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  title="Move Left"
+                >
+                  ← Left
+                </button>
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.max(-30, localOffsetY - 2);
+                      setLocalOffsetY(next);
+                      if (onLogoOffsetChange) onLogoOffsetChange(localOffsetX, next);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-bold transition-all shadow-2xs cursor-pointer"
+                    title="Move Up"
+                  >
+                    ↑ Up
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = Math.min(30, localOffsetY + 2);
+                      setLocalOffsetY(next);
+                      if (onLogoOffsetChange) onLogoOffsetChange(localOffsetX, next);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-bold transition-all shadow-2xs cursor-pointer"
+                    title="Move Down"
+                  >
+                    ↓ Down
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = Math.min(30, localOffsetX + 2);
+                    setLocalOffsetX(next);
+                    if (onLogoOffsetChange) onLogoOffsetChange(next, localOffsetY);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  title="Move Right"
+                >
+                  Right →
+                </button>
+              </div>
             </div>
 
             {/* Interactive Live Scaling Controls */}
@@ -11219,7 +11378,10 @@ function SettingsView({ settings, logo, logoScale = 1.15, onLogoScaleChange, onS
                   onClick={() => {
                     onRemoveLogo();
                     setLocalScale(1.15);
+                    setLocalOffsetX(0);
+                    setLocalOffsetY(0);
                     if (onLogoScaleChange) onLogoScaleChange(1.15);
+                    if (onLogoOffsetChange) onLogoOffsetChange(0, 0);
                   }}
                   className="w-full py-2 rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer"
                 >
@@ -11230,11 +11392,14 @@ function SettingsView({ settings, logo, logoScale = 1.15, onLogoScaleChange, onS
                   type="button"
                   onClick={() => {
                     setLocalScale(1.15);
+                    setLocalOffsetX(0);
+                    setLocalOffsetY(0);
                     if (onLogoScaleChange) onLogoScaleChange(1.15);
+                    if (onLogoOffsetChange) onLogoOffsetChange(0, 0);
                   }}
                   className="w-full py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-semibold transition-colors cursor-pointer"
                 >
-                  Reset Scale to 115% Default
+                  Reset Scale & Position to Default
                 </button>
               )}
             </div>
