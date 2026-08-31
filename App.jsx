@@ -1042,18 +1042,13 @@ export default function AdLedgerApp() {
                   className="w-full h-full object-contain"
                 />
               </div>
-              <div className="min-w-0 flex-1 flex flex-col justify-center gap-1">
-                <div className="flex items-center justify-between gap-1.5">
-                  <img
-                    src={QUANTREX_WORDMARK_DATA_URL}
-                    alt="QUANTREX"
-                    className="h-4.5 w-auto max-w-[125px] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] brightness-125 shrink-0"
-                  />
-                  <span className="text-[7.5px] font-extrabold px-1.5 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/80 uppercase tracking-wider font-mono shrink-0 ml-auto">
-                    PLATFORM
-                  </span>
-                </div>
-                <div className="text-[10px] font-medium text-slate-400 tracking-wide truncate leading-none mt-0.5">
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <img
+                  src={QUANTREX_WORDMARK_DATA_URL}
+                  alt="QUANTREX"
+                  className="h-5 w-auto max-w-[155px] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] brightness-125 origin-left"
+                />
+                <div className="text-[10px] font-medium text-slate-400 tracking-wide truncate leading-none mt-1">
                   Ad Spend Intelligence
                 </div>
               </div>
