@@ -974,20 +974,17 @@ export default function AdLedgerApp() {
           {/* Top: Active Agency Workspace Switcher Card */}
           <div className="p-3 border-b border-slate-800/80 bg-slate-950/30">
             <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
-              <div
-                onClick={() => setCurrentView('settings')}
-                className="w-8 h-8 rounded-lg overflow-hidden shadow-sm border border-slate-700/60 shrink-0 bg-black flex items-center justify-center cursor-pointer hover:border-sky-400/60 transition-all group"
-                title="Active Workspace Logo"
-              >
+              {workspaceLogo ? (
                 <img
-                  src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
+                  src={workspaceLogo}
                   alt="Workspace logo"
-                  style={{
-                    transform: `scale(${workspaceLogoScale || 1.15}) translate(${workspaceLogoOffsetX || 0}px, ${workspaceLogoOffsetY || 0}px)`
-                  }}
-                  className="w-full h-full object-contain"
+                  className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shrink-0 bg-slate-900"
                 />
-              </div>
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-600 to-cyan-500 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white/10">
+                  {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="block text-xs font-bold tracking-tight text-white truncate">
