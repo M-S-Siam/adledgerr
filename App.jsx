@@ -10,7 +10,7 @@ import {
   UserPlus, Link2, BarChart3, Target, Globe2, Save, RotateCcw,
   Bell, Receipt, Coins, KeyRound, Copy, Check, ExternalLink, Eye, EyeOff, Sparkles, Lock, LogOut, Laptop,
   FileSpreadsheet, Printer, Crown, UserCheck, UserX, Shield, Mail, Phone, Edit, Filter, UserCog, MessageCircle, Share2,
-  RefreshCw, Radio, Terminal, Cpu, Clock, Zap, Play, Pause, Layers, BookOpen, HelpCircle
+  RefreshCw, Radio, Terminal, Cpu, Clock, Zap, Play, Pause, Layers, BookOpen, HelpCircle, Sun, Moon
 } from 'lucide-react';
 import { supabase } from './src/lib/supabase.js';
 import { QUANTREX_LOGO_DATA_URL } from './src/quantrex-logo.js';
@@ -501,6 +501,7 @@ export default function AdLedgerApp() {
   const [workspaceLogoScale, setWorkspaceLogoScale] = useLocalStorage('quantrex_logo_scale', 1.15);
   const [workspaceLogoOffsetX, setWorkspaceLogoOffsetX] = useLocalStorage('quantrex_logo_offset_x', 0);
   const [workspaceLogoOffsetY, setWorkspaceLogoOffsetY] = useLocalStorage('quantrex_logo_offset_y', 0);
+  const [theme, setTheme] = useLocalStorage('quantrex_neumorphic_theme', 'light'); // 'light' | 'dark'
   const [subscription, setSubscription] = useLocalStorage('quantrex_subscription', {
     plan: 'starter_monthly',
     planName: 'Starter Agency Plan',
@@ -992,7 +993,159 @@ export default function AdLedgerApp() {
 
   return (
     <>
-      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell aside nav{scrollbar-width:none;-ms-overflow-style:none;} .adl-shell aside nav::-webkit-scrollbar{display:none;} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell header input:focus{box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
+      <style>{`
+        /* NEUMORPHIC THEME TRANSITIONS */
+        .adl-shell, .adl-shell header, .adl-shell aside, .adl-shell main, .adl-shell .bg-white, .adl-shell input, .adl-shell button, .adl-shell select, .adl-shell textarea {
+          transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+        }
+
+        ${theme === 'dark' ? `
+        /* ================= DARK CYBER NEUMORPHISM (MOON MODE) ================= */
+        .adl-shell {
+          background: #090e17 !important;
+          color: #f1f5f9 !important;
+        }
+        .adl-shell main {
+          background: #090e17 !important;
+        }
+        .adl-shell header {
+          background: #0d1422 !important;
+          border-color: rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+        }
+        .adl-shell aside {
+          background: #070b12 !important;
+          border-color: rgba(255, 255, 255, 0.06) !important;
+          box-shadow: 8px 0 25px rgba(0, 0, 0, 0.5) !important;
+        }
+        /* Neumorphic Extruded Dark Cards */
+        .adl-shell .bg-white {
+          background: #111a2b !important;
+          border: 1px solid rgba(255, 255, 255, 0.06) !important;
+          box-shadow: 6px 6px 16px #05080f, -6px -6px 16px #19263e !important;
+          color: #f8fafc !important;
+        }
+        .adl-shell .bg-slate-50 {
+          background: #0d1422 !important;
+          border-color: rgba(255, 255, 255, 0.07) !important;
+        }
+        .adl-shell .bg-slate-100 {
+          background: #101827 !important;
+          border-color: rgba(255, 255, 255, 0.07) !important;
+        }
+        .adl-shell .border-slate-200, .adl-shell .border-slate-300, .adl-shell .border-slate-100 {
+          border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        /* Typography High Contrast for Dark Mode */
+        .adl-shell h1, .adl-shell h2, .adl-shell h3, .adl-shell h4, .adl-shell .text-slate-900 {
+          color: #f8fafc !important;
+        }
+        .adl-shell .text-slate-800 {
+          color: #e2e8f0 !important;
+        }
+        .adl-shell .text-slate-700 {
+          color: #cbd5e1 !important;
+        }
+        .adl-shell .text-slate-600 {
+          color: #94a3b8 !important;
+        }
+        .adl-shell .text-slate-500 {
+          color: #64748b !important;
+        }
+        .adl-shell .text-slate-400 {
+          color: #64748b !important;
+        }
+        /* Inset Neumorphic Dark Inputs */
+        .adl-shell input, .adl-shell select, .adl-shell textarea {
+          background: #0a0f1a !important;
+          border-color: rgba(255, 255, 255, 0.08) !important;
+          box-shadow: inset 3px 3px 6px #04070c, inset -3px -3px 6px #141f32 !important;
+          color: #f8fafc !important;
+        }
+        .adl-shell input::placeholder, .adl-shell textarea::placeholder {
+          color: #475569 !important;
+        }
+        .adl-shell header input {
+          background: #0a0f1a !important;
+          box-shadow: inset 2px 2px 5px #04070c, inset -2px -2px 5px #141f32 !important;
+          border-color: rgba(255, 255, 255, 0.08) !important;
+          color: #f8fafc !important;
+        }
+        .adl-shell table thead {
+          background: #0e1624 !important;
+        }
+        .adl-shell table thead th {
+          color: #94a3b8 !important;
+          border-color: rgba(255, 255, 255, 0.06) !important;
+        }
+        .adl-shell table tbody tr:hover {
+          background: rgba(255, 255, 255, 0.03) !important;
+        }
+        .adl-shell [role="dialog"], .adl-shell .rounded-xl.shadow-2xl, .adl-shell .rounded-2xl.shadow-2xl {
+          background: #111a2b !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9) !important;
+        }
+        ` : `
+        /* ================= LIGHT SOFT-UI NEUMORPHISM (SUN MODE) ================= */
+        .adl-shell {
+          background: #eef3f9 !important;
+          color: #0f2940 !important;
+        }
+        .adl-shell main {
+          background: #eef3f9 !important;
+        }
+        .adl-shell header {
+          background: #eef3f9 !important;
+          border-color: rgba(255, 255, 255, 0.8) !important;
+          box-shadow: 0 4px 18px rgba(163, 177, 198, 0.35) !important;
+        }
+        .adl-shell aside {
+          background: linear-gradient(180deg, #091e32 0%, #0c2944 58%, #081d30 100%) !important;
+          box-shadow: 8px 0 25px rgba(3, 51, 78, 0.1) !important;
+        }
+        /* Neumorphic Extruded Soft Cards */
+        .adl-shell .bg-white {
+          background: #eef3f9 !important;
+          border: 1px solid rgba(255, 255, 255, 0.85) !important;
+          box-shadow: 7px 7px 16px rgba(163, 177, 198, 0.5), -7px -7px 16px rgba(255, 255, 255, 0.95) !important;
+        }
+        .adl-shell .bg-slate-50 {
+          background: #e6edf6 !important;
+          border-color: rgba(255, 255, 255, 0.7) !important;
+        }
+        .adl-shell .bg-slate-100 {
+          background: #e3ebf4 !important;
+          border-color: rgba(255, 255, 255, 0.7) !important;
+        }
+        .adl-shell .border-slate-200, .adl-shell .border-slate-300 {
+          border-color: rgba(163, 177, 198, 0.35) !important;
+        }
+        /* Typography */
+        .adl-shell h1 { color: #0369a1 !important; }
+        .adl-shell h2 { color: #0369a1 !important; }
+        .adl-shell h3 { color: #0f2940 !important; }
+        .adl-shell .text-slate-500 { color: #587188 !important; }
+        .adl-shell .text-slate-900 { color: #0f2940 !important; }
+        /* Inset Neumorphic Inputs */
+        .adl-shell input, .adl-shell select, .adl-shell textarea {
+          background: #eef3f9 !important;
+          border-color: rgba(255, 255, 255, 0.8) !important;
+          box-shadow: inset 3px 3px 6px rgba(163, 177, 198, 0.45), inset -3px -3px 6px rgba(255, 255, 255, 0.95) !important;
+        }
+        .adl-shell header input {
+          background: #eef3f9 !important;
+          box-shadow: inset 2px 2px 5px rgba(163, 177, 198, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.9) !important;
+          border-color: rgba(255, 255, 255, 0.75) !important;
+        }
+        .adl-shell table thead {
+          background: #e5edf6 !important;
+        }
+        .adl-shell table thead th {
+          color: #25617f !important;
+        }
+        `}
+      `}</style>
       <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
 
         {/* SIDEBAR */}
@@ -1117,6 +1270,23 @@ export default function AdLedgerApp() {
                       Promo Auto-Applied
                     </span>
                   </>
+                )}
+              </button>
+
+              {/* PHONE-STYLE TACTILE NEUMORPHIC MOON / SUN TOGGLE */}
+              <button
+                onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+                className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer active:scale-95 ${
+                  theme === 'dark'
+                    ? 'bg-[#141d2d] text-amber-400 border border-slate-700/80 shadow-[3px_3px_8px_#05080e,-3px_-3px_8px_#1c283e] hover:shadow-[1px_1px_4px_#05080e,-1px_-1px_4px_#1c283e]'
+                    : 'bg-[#eef3f9] text-slate-700 border border-white/90 shadow-[3px_3px_8px_#cbcfd6,-3px_-3px_8px_#ffffff] hover:shadow-[1px_1px_4px_#cbcfd6,-1px_-1px_4px_#ffffff]'
+                }`}
+                title={theme === 'dark' ? 'Switch to Soft Light Neumorphism (Sun)' : 'Switch to Sleek Dark Neumorphism (Moon)'}
+              >
+                {theme === 'dark' ? (
+                  <Sun size={17} className="text-amber-400 stroke-[2.2] animate-in spin-in-180 duration-300" />
+                ) : (
+                  <Moon size={17} className="text-slate-700 stroke-[2.2] animate-in spin-in-180 duration-300" />
                 )}
               </button>
 
