@@ -982,7 +982,10 @@ export default function AdLedgerApp() {
                 <img
                   src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
                   alt="Workspace logo"
-                  className="w-full h-full object-contain p-0.5"
+                  style={{
+                    transform: `scale(${workspaceLogoScale || 1.15}) translate(${workspaceLogoOffsetX || 0}px, ${workspaceLogoOffsetY || 0}px)`
+                  }}
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -1026,7 +1029,10 @@ export default function AdLedgerApp() {
                 <img
                   src={QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
-                  className="w-full h-full object-contain p-0.5"
+                  style={{
+                    transform: `scale(${workspaceLogoScale || 1.15}) translate(${workspaceLogoOffsetX || 0}px, ${workspaceLogoOffsetY || 0}px)`
+                  }}
+                  className="w-full h-full object-contain"
                 />
               </div>
               <div className="min-w-0 flex-1">
