@@ -501,11 +501,20 @@ export default function AdLedgerApp() {
   const [workspaceLogoOffsetX, setWorkspaceLogoOffsetX] = useLocalStorage('quantrex_logo_offset_x', 0);
   const [workspaceLogoOffsetY, setWorkspaceLogoOffsetY] = useLocalStorage('quantrex_logo_offset_y', 0);
 
-  // Auto-sync workspace name from signup metadata if not customized
+  // Auto-sync & sanitize workspace name from signup metadata (cleanse legacy 'AdLytic' test names)
   useEffect(() => {
+    // If current businessName is legacy AdLytic, sanitize it to generic default
+    if (!workspaceSettings.businessName || /adlytic/i.test(workspaceSettings.businessName)) {
+      setWorkspaceSettings(prev => ({
+        ...prev,
+        businessName: 'My Agency Workspace',
+        shortCode: prev.shortCode && !/adl/i.test(prev.shortCode) ? prev.shortCode : 'AGY'
+      }));
+    }
+
     supabase.auth.getUser().then(({ data }) => {
       const bizName = data?.user?.user_metadata?.business_name;
-      if (bizName && bizName.trim() && (!workspaceSettings.businessName || workspaceSettings.businessName === 'Quantrex')) {
+      if (bizName && bizName.trim() && !/adlytic/i.test(bizName.trim())) {
         setWorkspaceSettings(prev => ({ ...prev, businessName: bizName.trim() }));
       }
     }).catch(() => {});
@@ -7687,7 +7696,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                   <div className="p-3.5 rounded-2xl bg-pink-50 border border-pink-200 text-xs space-y-1">
                     <span className="font-bold text-pink-900 block">Instant Payment Notification (IPN) Webhook</span>
                     <p className="text-[11px] text-pink-700 font-mono">
-                      https://api.adlytic.app/v1/ipn/bkash
+                      https://api.quantrex.io/v1/ipn/bkash
                     </p>
                   </div>
                 </div>
@@ -7703,7 +7712,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                         required
                         value={modalFormData.storeId || ''}
                         onChange={(e) => setModalFormData(p => ({ ...p, storeId: e.target.value }))}
-                        placeholder="e.g. adlytic_live_01"
+                        placeholder="e.g. quantrex_live_01"
                         className="w-full mt-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs bg-white font-mono outline-none"
                       />
                     </Field>
@@ -7723,7 +7732,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                   <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-xs space-y-1">
                     <span className="font-bold text-blue-900 block">Instant IPN Webhook Listener</span>
                     <p className="text-[11px] text-blue-700 font-mono">
-                      https://api.adlytic.app/v1/ipn/sslcommerz
+                      https://api.quantrex.io/v1/ipn/sslcommerz
                     </p>
                   </div>
                 </div>
@@ -8245,7 +8254,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
   };
 
   const copyInviteLink = (memberId, memberName) => {
-    const fakeInviteUrl = `${window.location.origin}/join?ws=${encodeURIComponent(workspaceSettings.businessName || 'adlytic')}&token=adl_inv_${memberId}`;
+    const fakeInviteUrl = `${window.location.origin}/join?ws=${encodeURIComponent(workspaceSettings.businessName || 'quantrex')}&token=qtx_inv_${memberId}`;
     navigator.clipboard?.writeText(fakeInviteUrl);
     setCopiedInviteId(memberId);
     showToast(`Invite link copied for ${memberName}`);
