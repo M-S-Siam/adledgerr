@@ -961,7 +961,7 @@ export default function AdLedgerApp() {
                 <img
                   src={workspaceLogo || QUANTREX_LOGO_DATA_URL}
                   alt="Workspace logo"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover scale-[1.14]"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -1005,7 +1005,7 @@ export default function AdLedgerApp() {
                 <img
                   src={QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover scale-[1.15]"
                 />
               </div>
               <div className="min-w-0 flex-1">
