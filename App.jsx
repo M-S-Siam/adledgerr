@@ -485,6 +485,28 @@ const INITIAL_TEAM = [
   }
 ];
 
+// --- NEUMORPHIC SIDEBAR NAVIGATION ITEM ---
+function NavItem({ icon, label, isActive, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer ${
+        isActive
+          ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)]'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <span className={isActive ? 'text-white' : 'text-slate-500'}>
+          {React.cloneElement(icon, { size: 18, className: isActive ? 'stroke-[2.5]' : 'stroke-[2]' })}
+        </span>
+        <span className="truncate">{label}</span>
+      </div>
+      {isActive && <ChevronRight size={14} className="text-white/80 shrink-0" />}
+    </button>
+  );
+}
+
 // --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -992,36 +1014,119 @@ export default function AdLedgerApp() {
   };
 
   return (
-    <>
-      <style>{` .adl-shell{background:linear-gradient(135deg,#f7fcff 0%,#eef9fe 52%,#f8fdff 100%) !important;} .adl-shell main{background:transparent !important;} .adl-shell header{background:rgba(255,255,255,.94)!important;border-color:#cfeaf7!important;backdrop-filter:blur(14px);} .adl-shell aside{background:linear-gradient(180deg,#08233a 0%,#0a2e49 58%,#062238 100%)!important;box-shadow:8px 0 30px rgba(3,51,78,.08);} .adl-shell aside nav{scrollbar-width:none;-ms-overflow-style:none;} .adl-shell aside nav::-webkit-scrollbar{display:none;} .adl-shell .adl-brand-mark{color:#fff!important;background:linear-gradient(135deg,#38bdf8,#0284c7)!important;box-shadow:0 8px 22px rgba(56,189,248,.28);} .adl-shell h1{color:#075985!important;letter-spacing:-.025em;} .adl-shell h2{color:#075985!important;} .adl-shell h3{color:#123b59!important;} .adl-shell .text-slate-500{color:#587188!important;} .adl-shell .text-slate-900{color:#0f2940!important;} .adl-shell .bg-white{box-shadow:0 10px 28px rgba(7,89,133,.055);} .adl-shell .border-slate-200,.adl-shell .border-slate-300{border-color:#cfeaf7!important;} .adl-shell .bg-slate-50{background:#f3faff!important;} .adl-shell .bg-slate-100{background:#eaf7fd!important;} .adl-shell .bg-blue-600{background:#0ea5e9!important;} .adl-shell .text-blue-600,.adl-shell .text-sky-600{color:#0284c7!important;} .adl-shell input:focus,.adl-shell select:focus,.adl-shell textarea:focus{outline:none;border-color:#7dd3fc!important;box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell header input:focus{box-shadow:0 0 0 3px rgba(56,189,248,.15)!important;} .adl-shell table thead{background:#eef9fe!important;} .adl-shell table thead th{color:#25617f!important;font-weight:700!important;} .adl-shell button:not(:disabled):hover{transform:translateY(-1px);} .adl-shell button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease;} `}</style>
-      <div className="adl-shell flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+    <>      <style>{`
+        /* 100% AUTHENTIC MASTER NEUMORPHIC SOFT-UI DESIGN SYSTEM */
+        .adl-shell {
+          background: #ebf0f7 !important;
+          color: #0f172a !important;
+        }
+        .adl-shell main {
+          background: #ebf0f7 !important;
+        }
+        .adl-shell header {
+          background: #ebf0f7 !important;
+          border-color: rgba(166, 180, 200, 0.35) !important;
+          box-shadow: 0 4px 18px rgba(166, 180, 200, 0.2) !important;
+        }
+        .adl-shell aside {
+          background: #ebf0f7 !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.9) !important;
+          box-shadow: 8px 0 25px rgba(166, 180, 200, 0.28) !important;
+        }
+        .adl-shell aside nav {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .adl-shell aside nav::-webkit-scrollbar {
+          display: none;
+        }
+        .adl-shell h1, .adl-shell h2 {
+          color: #0f172a !important;
+          letter-spacing: -0.025em;
+        }
+        .adl-shell h3 {
+          color: #1e293b !important;
+        }
+        .adl-shell .text-slate-500 {
+          color: #64748b !important;
+        }
+        .adl-shell .text-slate-900 {
+          color: #0f172a !important;
+        }
+        /* Extruded Neumorphic Cards */
+        .adl-shell .bg-white {
+          background: #ebf0f7 !important;
+          border: 1px solid rgba(255, 255, 255, 0.9) !important;
+          box-shadow: 6px 6px 16px rgba(166, 180, 200, 0.5), -6px -6px 16px #ffffff !important;
+          border-radius: 20px !important;
+        }
+        .adl-shell .border-slate-200, .adl-shell .border-slate-300, .adl-shell .border-slate-100 {
+          border-color: rgba(166, 180, 200, 0.35) !important;
+        }
+        .adl-shell .bg-slate-50 {
+          background: #e2eaf4 !important;
+        }
+        .adl-shell .bg-slate-100 {
+          background: #dbe4ef !important;
+        }
+        /* Inset Neumorphic Inputs & Sunken Controls */
+        .adl-shell input, .adl-shell select, .adl-shell textarea {
+          background: #ebf0f7 !important;
+          border: 1px solid rgba(255, 255, 255, 0.85) !important;
+          box-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.45), inset -3px -3px 6px #ffffff !important;
+        }
+        .adl-shell input:focus, .adl-shell select:focus, .adl-shell textarea:focus {
+          outline: none;
+          border-color: #38bdf8 !important;
+          box-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.45), inset -3px -3px 6px #ffffff, 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+        }
+        .adl-shell header input {
+          background: #ebf0f7 !important;
+          border: 1px solid rgba(255, 255, 255, 0.9) !important;
+          box-shadow: inset 2px 2px 5px rgba(166, 180, 200, 0.4), inset -2px -2px 5px #ffffff !important;
+        }
+        .adl-shell table thead {
+          background: #e4edf6 !important;
+        }
+        .adl-shell table thead th {
+          color: #475569 !important;
+          font-weight: 800 !important;
+        }
+        .adl-shell button:not(:disabled):active {
+          transform: scale(0.98);
+        }
+        .adl-shell button {
+          transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+        }
+      `}</style>
+      <div className="adl-shell flex h-screen bg-[#ebf0f7] text-slate-900 font-sans overflow-hidden">
 
-        {/* SIDEBAR */}
-        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col`}>
+        {/* SIDEBAR (EXACT NEUMORPHIC SOFT-UI) */}
+        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#ebf0f7] text-slate-800 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col border-r border-white/80 shadow-[8px_0_25px_rgba(166,180,200,0.28)]`}>
           {/* Top: Active Agency Workspace Switcher Card */}
-          <div className="p-3 border-b border-slate-800/80 bg-slate-950/30">
-            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
+          <div className="p-3.5">
+            <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#ebf0f7] border border-white shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff]">
               {workspaceLogo ? (
                 <img
                   src={workspaceLogo}
                   alt="Workspace logo"
-                  className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/15 shrink-0 bg-slate-900"
+                  className="w-9 h-9 rounded-xl object-cover ring-1 ring-black/5 shrink-0 bg-white"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700/80 text-slate-400 flex items-center justify-center shrink-0">
-                  <Building size={15} className="text-slate-400" />
+                <div className="w-9 h-9 rounded-xl bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_5px_rgba(166,180,200,0.4),inset_-2px_-2px_5px_#ffffff] text-blue-600 flex items-center justify-center shrink-0">
+                  <Building size={16} className="text-blue-600" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="block text-xs font-bold tracking-tight text-white truncate">
-                    {workspaceSettings.businessName || 'My Agency Workspace'}
+                  <span className="block text-xs font-black tracking-tight text-slate-900 truncate">
+                    {workspaceSettings.businessName || 'AdLytic CR'}
                   </span>
                   <ChevronDown size={13} className="text-slate-400 shrink-0 ml-1 opacity-70" />
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] shrink-0" />
-                  <span className="text-[9.5px] font-semibold text-slate-400 uppercase tracking-wider truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] shrink-0" />
+                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider truncate">
                     Active Agency
                   </span>
                 </div>
@@ -1029,7 +1134,7 @@ export default function AdLedgerApp() {
             </div>
           </div>
 
-          <nav className="flex-1 px-3.5 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-3.5 py-2 space-y-1 overflow-y-auto">
             <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
             <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />
             <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => { setCurrentView('campaigns'); setIsMobileMenuOpen(false); }} />
@@ -1037,8 +1142,8 @@ export default function AdLedgerApp() {
             <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => { setCurrentView('cards'); setIsMobileMenuOpen(false); }} />
             <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} />
 
-            <div className="pt-3 mt-3 border-t border-slate-800/70 space-y-1">
-              <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Workspace</p>
+            <div className="pt-3 mt-3 border-t border-slate-300/60 space-y-1">
+              <p className="px-3 pb-1 text-[9.5px] font-black uppercase tracking-wider text-slate-400">Workspace</p>
               <NavItem icon={<PlugZap size={18} />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
               <NavItem icon={<UsersRound size={18} />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
               <NavItem icon={<BookOpen size={18} />} label="User Guide & SOP" isActive={currentView === 'guide'} onClick={() => { setCurrentView('guide'); setIsMobileMenuOpen(false); }} />
@@ -1047,9 +1152,9 @@ export default function AdLedgerApp() {
           </nav>
 
           {/* Sidebar Footer: Master Software Platform Brand (Distinctive & High-Tech) */}
-          <div className="p-4 border-t border-slate-800/80 bg-slate-950/50">
+          <div className="p-4 border-t border-white/80 bg-[#ebf0f7]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-slate-800 shrink-0 bg-black flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[4px_4px_10px_rgba(166,180,200,0.5),-4px_-4px_10px_#ffffff] border border-white/80 shrink-0 bg-black flex items-center justify-center">
                 <img
                   src={QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
@@ -1064,9 +1169,9 @@ export default function AdLedgerApp() {
                   <img
                     src={QUANTREX_WORDMARK_DATA_URL}
                     alt="QUANTREX"
-                    className="h-4 w-auto max-w-[130px] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] brightness-125 block"
+                    className="h-4 w-auto max-w-[130px] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)] brightness-90 block"
                   />
-                  <div className="text-[9px] font-semibold text-slate-400 tracking-wide leading-none mt-1 text-center w-full whitespace-nowrap">
+                  <div className="text-[9px] font-bold text-slate-500 tracking-wide leading-none mt-1 text-center w-full whitespace-nowrap">
                     Ad Spend Intelligence
                   </div>
                 </div>
@@ -1076,32 +1181,32 @@ export default function AdLedgerApp() {
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 flex flex-col h-screen overflow-hidden">
-          {/* HEADER (OPTION 1: GLOBAL MASTER HUB) */}
-          <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
+        <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#ebf0f7]">
+          {/* HEADER (NEUMORPHIC GLOBAL MASTER HUB) */}
+          <header className="bg-[#ebf0f7] border-b border-white/80 h-16 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0 shadow-[0_4px_18px_rgba(166,180,200,0.18)]">
             <div className="flex items-center gap-4">
               <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu size={24} />
               </button>
-              {/* Single Seamless Search Input (No Dual Box) */}
+              {/* Single Seamless Inset Search Bar */}
               <div className="relative hidden sm:flex items-center">
                 <Search size={15} className="absolute left-3.5 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search clients, campaigns, cards..."
-                  className="pl-9 pr-4 py-2 rounded-xl bg-slate-100/90 hover:bg-slate-100 focus:bg-white text-xs text-slate-800 placeholder-slate-400 font-medium border border-transparent focus:border-sky-300 outline-none transition-all w-60 lg:w-80 shadow-2xs"
+                  className="pl-9 pr-4 py-2 rounded-xl bg-[#ebf0f7] text-xs text-slate-800 placeholder-slate-400 font-semibold border border-white/90 outline-none transition-all w-60 lg:w-80 shadow-[inset_2px_2px_5px_rgba(166,180,200,0.4),inset_-2px_-2px_5px_#ffffff]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pr-3 sm:pr-5">
+            <div className="flex items-center gap-3 pr-2 sm:pr-4">
               {/* SUBSCRIPTION & 3-DAY TRIAL STATUS PILL */}
               <button
                 onClick={() => setCurrentView('settings')}
-                className={`hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border shadow-2xs cursor-pointer ${
+                className={`hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all border shadow-[3px_3px_8px_rgba(166,180,200,0.4),-3px_-3px_8px_#ffffff] cursor-pointer ${
                   subscription?.status === 'active'
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100/80'
-                    : 'bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-amber-300/90 text-amber-950 hover:border-amber-400'
+                    ? 'bg-[#ebf0f7] border-emerald-300 text-emerald-800 hover:bg-emerald-50'
+                    : 'bg-[#ebf0f7] border-amber-300 text-amber-950 hover:bg-amber-50/50'
                 }`}
                 title="Click to view Subscription & Billing details"
               >
@@ -1114,20 +1219,20 @@ export default function AdLedgerApp() {
                   <>
                     <Sparkles size={13} className="text-amber-600 animate-pulse shrink-0" />
                     <span>3-Day Free Trial (৳500/mo)</span>
-                    <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider">
+                    <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider shadow-xs">
                       Promo Auto-Applied
                     </span>
                   </>
                 )}
               </button>
 
-              {/* GLOBAL NEW ENTRY DROPDOWN (Master Level UX) */}
+              {/* GLOBAL NEW ENTRY DROPDOWN */}
               <div className="relative" ref={newEntryRef}>
                 <button
                   onClick={() => setIsNewEntryOpen(prev => !prev)}
-                  className="inline-flex items-center gap-1.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm hover:shadow transition-all tracking-wide"
+                  className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-black shadow-[4px_4px_12px_rgba(37,99,235,0.35)] hover:shadow-md transition-all tracking-wide cursor-pointer"
                 >
-                  <Plus size={15} className="stroke-[2.5]" />
+                  <Plus size={15} className="stroke-[2.8]" />
                   <span>New Entry</span>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${isNewEntryOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -1136,9 +1241,9 @@ export default function AdLedgerApp() {
                 {isNewEntryOpen && (
                   <div
                     style={{ right: 0 }}
-                    className="absolute right-0 mt-2.5 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                    className="absolute right-0 mt-2.5 w-64 bg-[#ebf0f7] rounded-2xl shadow-[8px_8px_24px_rgba(166,180,200,0.6),-8px_-8px_24px_#ffffff] border border-white p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                   >
-                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 mb-1">
                       Quick Record Actions
                     </div>
 
@@ -1148,16 +1253,16 @@ export default function AdLedgerApp() {
                         setActiveModal('payment');
                         setIsNewEntryOpen(false);
                       }}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-50/80 text-left transition-colors group"
+                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/70 text-left transition-colors group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
                         <ArrowDownLeft size={16} className="stroke-[2.5]" />
                       </div>
                       <div>
-                        <div className="font-bold text-xs text-slate-900 group-hover:text-emerald-800">
+                        <div className="font-bold text-xs text-slate-900 group-hover:text-emerald-700">
                           Receive Client Payment
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium">BDT Inflow from client</div>
+                        <div className="text-[10px] text-slate-400 font-medium">Record incoming BDT revenue</div>
                       </div>
                     </button>
 
@@ -1167,16 +1272,16 @@ export default function AdLedgerApp() {
                         setActiveModal('usd');
                         setIsNewEntryOpen(false);
                       }}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-sky-50/80 text-left transition-colors group"
+                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/70 text-left transition-colors group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
                         <DollarSign size={16} className="stroke-[2.5]" />
                       </div>
                       <div>
-                        <div className="font-bold text-xs text-slate-900 group-hover:text-sky-800">
-                          Buy / Top Up USD
+                        <div className="font-bold text-xs text-slate-900 group-hover:text-sky-700">
+                          Record USD Purchase
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium">Purchase USD & fund card</div>
+                        <div className="text-[10px] text-slate-400 font-medium">Load USD onto ad card</div>
                       </div>
                     </button>
 
@@ -1186,20 +1291,20 @@ export default function AdLedgerApp() {
                         setActiveModal('spend');
                         setIsNewEntryOpen(false);
                       }}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-purple-50/80 text-left transition-colors group"
+                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/70 text-left transition-colors group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
                         <Activity size={16} className="stroke-[2.5]" />
                       </div>
                       <div>
-                        <div className="font-bold text-xs text-slate-900 group-hover:text-purple-800">
+                        <div className="font-bold text-xs text-slate-900 group-hover:text-purple-700">
                           Record Meta Ad Spend
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium">Meta Ads spend + 15% VAT</div>
+                        <div className="text-[10px] text-slate-400 font-medium">Log live campaign deductions</div>
                       </div>
                     </button>
 
-                    <div className="my-1 border-t border-slate-100" />
+                    <div className="my-1 border-t border-slate-200" />
 
                     <button
                       onClick={() => {
@@ -1207,9 +1312,9 @@ export default function AdLedgerApp() {
                         setActiveModal('add-client');
                         setIsNewEntryOpen(false);
                       }}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 text-left transition-colors group"
+                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/70 text-left transition-colors group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-8 h-8 rounded-lg bg-slate-200/70 text-slate-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
                         <UserPlus size={16} className="stroke-[2.5]" />
                       </div>
                       <div>
@@ -1223,26 +1328,26 @@ export default function AdLedgerApp() {
                 )}
               </div>
 
-              {/* SLIDERS QUICK CONTROLS BUTTON (Clean Standalone Icon) */}
+              {/* SLIDERS QUICK CONTROLS BUTTON */}
               <div className="relative" ref={quickSettingsRef}>
                 <button
                   onClick={() => setIsQuickSettingsOpen(prev => !prev)}
                   title="Quick Settings & Profile"
-                  className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none flex items-center justify-center cursor-pointer"
+                  className="w-9 h-9 rounded-xl bg-[#ebf0f7] border border-white text-slate-600 hover:text-slate-900 shadow-[3px_3px_8px_rgba(166,180,200,0.45),-3px_-3px_8px_#ffffff] transition-all flex items-center justify-center cursor-pointer active:scale-95"
                 >
-                  <SlidersHorizontal size={19} className={`transition-all duration-200 ${isQuickSettingsOpen ? 'text-sky-600' : ''}`} />
+                  <SlidersHorizontal size={17} className={`transition-all duration-200 ${isQuickSettingsOpen ? 'text-sky-600' : ''}`} />
                 </button>
 
                 {/* QUICK SETTINGS DROPDOWN MENU */}
                 {isQuickSettingsOpen && (
                   <div
                     style={{ right: 0 }}
-                    className="absolute right-0 mt-2.5 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/90 ring-1 ring-black/5 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                    className="absolute right-0 mt-2.5 w-64 bg-[#ebf0f7] rounded-2xl shadow-[8px_8px_24px_rgba(166,180,200,0.6),-8px_-8px_24px_#ffffff] border border-white p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                   >
                     {/* Active Workspace Info Header */}
-                    <div className="px-3 py-2 bg-slate-50 rounded-xl mb-1.5 border border-slate-100">
+                    <div className="px-3 py-2 bg-white/70 rounded-xl mb-1.5 border border-white shadow-xs">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 shadow-2xs">
+                        <div className="w-6 h-6 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0 shadow-xs">
                           {(workspaceSettings.businessName || 'A').charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
@@ -1257,7 +1362,7 @@ export default function AdLedgerApp() {
                       </div>
                     </div>
 
-                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 mb-1">
+                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 mb-1">
                       Quick Controls
                     </div>
 
@@ -1269,13 +1374,13 @@ export default function AdLedgerApp() {
                       className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-sky-50/80 text-left transition-colors group"
                     >
                       <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <SlidersHorizontal size={14} className="stroke-[2.5]" />
+                        <Settings size={14} className="stroke-[2.5]" />
                       </div>
                       <div>
-                        <div className="font-bold text-xs text-slate-900 group-hover:text-sky-800">
-                          Workspace Settings
+                        <div className="font-bold text-xs text-slate-900 group-hover:text-sky-700">
+                          Agency Settings
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium">Branding, currency & defaults</div>
+                        <div className="text-[10px] text-slate-400 font-medium">Workspace, Rates & Logo</div>
                       </div>
                     </button>
 
@@ -1333,7 +1438,7 @@ export default function AdLedgerApp() {
                       </div>
                     </button>
 
-                    <div className="my-1 border-t border-slate-100" />
+                    <div className="my-1 border-t border-slate-200" />
 
                     <button
                       onClick={handleQuickLogOut}
@@ -2673,39 +2778,39 @@ function DashboardView({
   return (
     <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
       
-      {/* 1. EXECUTIVE OPERATIONAL HERO STRIP & FAST SHORTCUTS */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* 1. EXECUTIVE OPERATIONAL HERO STRIP */}
+      <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-black">
-              <LayoutDashboard size={18} />
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-9 h-9 rounded-xl bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_5px_rgba(166,180,200,0.45),inset_-2px_-2px_5px_#ffffff] text-sky-600 flex items-center justify-center font-black">
+              <LayoutDashboard size={19} />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               Agency Command Center
             </h1>
           </div>
-          <p className="text-xs text-slate-400 font-medium">
+          <p className="text-xs text-slate-500 font-medium">
             Live financial telemetry, liquidity distribution & client performance overview.
           </p>
         </div>
 
         {/* Live Operational Status & DB Telemetry */}
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff]">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] animate-pulse" />
             <span className="text-xs font-bold text-slate-700">Live Supabase DB Sync</span>
           </div>
         </div>
       </div>
 
-      {/* 2. EXECUTIVE FINANCIAL HEALTH MATRIX (4 SIMPLE, UNIFIED MASTER CARDS) */}
+      {/* 2. EXECUTIVE FINANCIAL HEALTH MATRIX (4 MASTER NEUMORPHIC CARDS) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
 
         {/* CARD 1: TOTAL REVENUE (BDT) */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
                 <ArrowDownRight size={17} />
               </div>
               <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
@@ -2719,12 +2824,12 @@ function DashboardView({
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Received</span>
-              <div className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Received</span>
+              <div className="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">
                 {formatBDT(metrics.totalRevenueBDT)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">Total BDT Cost</span>
                 <span className="font-bold text-rose-600">{formatBDT(dashboardData.totalBDTCost)}</span>
@@ -2744,10 +2849,10 @@ function DashboardView({
         </div>
 
         {/* CARD 2: TOTAL USD SPENT */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 text-purple-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
                 <Activity size={17} />
               </div>
               <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
@@ -2761,12 +2866,12 @@ function DashboardView({
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Ads + Tax + Fees</span>
-              <div className="text-xl sm:text-2xl font-black text-purple-700 tracking-tight">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Ads + Tax + Fees</span>
+              <div className="text-2xl sm:text-3xl font-black text-purple-700 tracking-tight">
                 {formatUSD(dashboardData.totalBurnUSD)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">USD Purchased</span>
                 <span className="font-bold text-sky-600">{formatUSD(metrics.totalUSDPurchased)}</span>
@@ -2784,29 +2889,29 @@ function DashboardView({
         </div>
 
         {/* CARD 3: NET AGENCY PROFIT */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-sky-50 border border-sky-200/60 text-sky-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
                 <TrendingUp size={17} />
               </div>
               <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
                 Net Agency<br />Profit
               </span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
               Net BDT
             </span>
           </div>
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Actual Earnings</span>
-              <div className={`text-xl sm:text-2xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Actual Earnings</span>
+              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                 {formatBDT(metrics.netProfitBDT)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">Profit Margin</span>
                 <span className="font-bold text-emerald-600">{metrics.profitMargin.toFixed(1)}%</span>
@@ -2824,11 +2929,11 @@ function DashboardView({
         </div>
 
         {/* CARD 4: TOTAL CARD BALANCE */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
             <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                totalCardBalance < 0 ? 'bg-rose-50 text-rose-600' : 'bg-sky-50 text-sky-600'
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+                totalCardBalance < 0 ? 'bg-rose-50 border-rose-200/60 text-rose-600' : 'bg-sky-50 border-sky-200/60 text-sky-600'
               }`}>
                 <CreditCard size={17} />
               </div>
@@ -2845,12 +2950,12 @@ function DashboardView({
 
           <div className="my-3 space-y-2">
             <div>
-              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Available USD</span>
-              <div className={`text-xl sm:text-2xl font-black tracking-tight ${totalCardBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Available USD</span>
+              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${totalCardBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                 {formatUSD(totalCardBalance)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100/80 text-[11px]">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">Dollar Buy Rate</span>
                 <span className="font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
@@ -2868,12 +2973,12 @@ function DashboardView({
         </div>
       </div>
 
-      {/* 3. MASTER VISUAL INTELLIGENCE CENTER (DUAL GLOW SPLINE & CYBER RADIAL HUD) */}
+      {/* 3. MASTER VISUAL INTELLIGENCE CENTER (SPLINE AREA & CONCENTRIC RADIAL HUD) */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
-        {/* CHART 1: Dual-Chamber Revenue vs Media Cost Glow Flow (8 Cols) */}
-        <div className="xl:col-span-8 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+        {/* CHART 1: Revenue vs Ad Burn Trajectory (8 Cols) */}
+        <div className="xl:col-span-8 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200/60">
             <div>
               <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
                 <TrendingUp size={16} className="text-emerald-600" />
@@ -2907,18 +3012,18 @@ function DashboardView({
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis
                     dataKey="date"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 10.5, fontWeight: 600 }}
+                    tick={{ fill: '#64748b', fontSize: 10.5, fontWeight: 700 }}
                     dy={6}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 10.5, fontWeight: 600 }}
+                    tick={{ fill: '#64748b', fontSize: 10.5, fontWeight: 700 }}
                     tickFormatter={(v) => `৳${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
                   />
                   <Tooltip
@@ -2954,7 +3059,7 @@ function DashboardView({
                     dataKey="revenue"
                     name="Revenue"
                     stroke="#10b981"
-                    strokeWidth={2.5}
+                    strokeWidth={2.8}
                     fillOpacity={1}
                     fill="url(#dashRevGrad)"
                   />
@@ -2963,7 +3068,7 @@ function DashboardView({
                     dataKey="adCostBDT"
                     name="Ad Cost"
                     stroke="#f59e0b"
-                    strokeWidth={2.5}
+                    strokeWidth={2.8}
                     fillOpacity={1}
                     fill="url(#dashCostGrad)"
                   />
@@ -2976,8 +3081,8 @@ function DashboardView({
         </div>
 
         {/* CHART 2: Cybernetic Concentric Radial Burn HUD (4 Cols) */}
-        <div className="xl:col-span-4 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="mb-2 pb-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="xl:col-span-4 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="mb-2 pb-3 border-b border-slate-200/60 flex items-center justify-between">
             <div>
               <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
                 <Activity size={16} className="text-purple-600" />
@@ -2985,7 +3090,7 @@ function DashboardView({
               </h3>
               <p className="text-[11px] text-slate-400 font-medium">Meta Ads, 15% VAT, and bank fees.</p>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-purple-50 border border-purple-200/60 text-[10px] font-bold text-purple-700">
+            <span className="px-2 py-0.5 rounded-full bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff] text-[10px] font-bold text-purple-700">
               Concentric HUD
             </span>
           </div>
@@ -3019,32 +3124,10 @@ function DashboardView({
                     </filter>
                   </defs>
 
-                  {/* Precision Radial Calibration Dial Ticks */}
-                  {[...Array(24)].map((_, i) => {
-                    const angle = (i * 360) / 24;
-                    const rad = (angle * Math.PI) / 180;
-                    const x1 = 95 + 88 * Math.cos(rad);
-                    const y1 = 95 + 88 * Math.sin(rad);
-                    const x2 = 95 + 83 * Math.cos(rad);
-                    const y2 = 95 + 83 * Math.sin(rad);
-                    return (
-                      <line
-                        key={i}
-                        x1={x1}
-                        y1={y1}
-                        x2={x2}
-                        y2={y2}
-                        stroke="#cbd5e1"
-                        strokeWidth={i % 6 === 0 ? "2" : "1"}
-                        strokeOpacity={i % 6 === 0 ? "0.8" : "0.35"}
-                      />
-                    );
-                  })}
-
                   {/* Base Track Arcs */}
-                  <circle cx="95" cy="95" r="72" fill="none" stroke="#f1f5f9" strokeWidth="8" />
-                  <circle cx="95" cy="95" r="56" fill="none" stroke="#f1f5f9" strokeWidth="7" />
-                  <circle cx="95" cy="95" r="40" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+                  <circle cx="95" cy="95" r="72" fill="none" stroke="#dbe4ef" strokeWidth="8" />
+                  <circle cx="95" cy="95" r="56" fill="none" stroke="#dbe4ef" strokeWidth="7" />
+                  <circle cx="95" cy="95" r="40" fill="none" stroke="#dbe4ef" strokeWidth="6" />
 
                   {/* Glowing Layer 1: Meta Ads (Outer) */}
                   {metrics.totalAdSpendUSD > 0 && (
@@ -3098,16 +3181,16 @@ function DashboardView({
                   )}
                 </svg>
 
-                {/* Center Futuristic Digital HUD Core */}
+                {/* Center Digital HUD Core */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
                   <div className="flex items-center gap-1 mb-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
                     <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">TOTAL BURN</span>
                   </div>
-                  <span className="text-base font-black text-slate-900 tracking-tight leading-none">
+                  <span className="text-lg font-black text-slate-900 tracking-tight leading-none">
                     {formatUSD(dashboardData.totalBurnUSD)}
                   </span>
-                  <span className="text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded-full border border-emerald-200/60 mt-1">
+                  <span className="text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 mt-1 shadow-xs">
                     Live Telemetry
                   </span>
                 </div>
@@ -3118,12 +3201,12 @@ function DashboardView({
           )}
 
           {/* Segmented Metric Progress Bars */}
-          <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
+          <div className="space-y-2 pt-2 border-t border-slate-200/60 text-xs">
             {dashboardData.expenseBreakdown.map((item, idx) => (
               <div key={idx} className="space-y-1">
                 <div className="flex items-center justify-between font-semibold text-[11px]">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="w-2 h-2 rounded-full shadow-xs" style={{ backgroundColor: item.color }} />
                     <span className="text-slate-700 font-bold">{item.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -3131,7 +3214,7 @@ function DashboardView({
                     <span className="font-bold text-slate-900">{formatUSD(item.value)}</span>
                   </div>
                 </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[#dbe4ef] rounded-full overflow-hidden shadow-inner">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
@@ -3146,12 +3229,12 @@ function DashboardView({
         </div>
       </div>
 
-      {/* 4. LIVE OPERATIONAL COCKPIT: DUAL COMPARATIVE TABLES (6:6 SIDE-BY-SIDE) */}
+      {/* 4. LIVE OPERATIONAL COCKPIT: DUAL COMPARATIVE TABLES */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* TABLE 1: CLIENT P&L PERFORMANCE (6 Cols) */}
-        <div className="xl:col-span-6 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
-          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+        <div className="xl:col-span-6 bg-[#ebf0f7] border border-white/90 rounded-2xl overflow-hidden shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col">
+          <div className="px-5 py-3.5 border-b border-slate-200/60 bg-[#e5edf6] flex items-center justify-between">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client P&L Performance</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">Top client accounts, revenue collected & net margin.</p>
@@ -3169,7 +3252,7 @@ function DashboardView({
 
           <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
-              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
+              <thead className="bg-[#ebf0f7] text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
                   <th className="w-[28%] pl-5 pr-2 py-3 text-left">Client & Brand</th>
                   <th className="w-[21%] px-3 py-3 text-right">Revenue</th>
@@ -3178,7 +3261,7 @@ function DashboardView({
                   <th className="w-[13%] pl-2 pr-5 py-3 text-right">Margin</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-slate-200/60 font-medium">
                 {dashboardData.clientRows.length === 0 && (
                   <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-400 font-semibold">No client activity recorded yet.</td></tr>
                 )}
@@ -3186,11 +3269,11 @@ function DashboardView({
                   <tr
                     key={row.id}
                     onClick={() => onViewClient && row.rawClient && onViewClient(row.rawClient)}
-                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                    className="hover:bg-white/50 transition-colors cursor-pointer group"
                   >
                     <td className="w-[28%] pl-5 pr-2 py-3 text-left">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-sky-600 group-hover:text-white transition-colors">
+                        <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-sky-600 group-hover:text-white transition-colors shadow-xs">
                           {row.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
@@ -3205,10 +3288,10 @@ function DashboardView({
                       {formatBDT(row.profit)}
                     </td>
                     <td className="w-[13%] pl-2 pr-5 py-3 text-right">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
                         row.margin > 50 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                         row.margin < 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                        'bg-slate-100 text-slate-700'
+                        'bg-white/80 text-slate-700 border border-slate-200'
                       }`}>
                         {row.margin.toFixed(1)}%
                       </span>
@@ -3221,8 +3304,8 @@ function DashboardView({
         </div>
 
         {/* TABLE 2: CARD LIQUIDITY & BURN (6 Cols) */}
-        <div className="xl:col-span-6 bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
-          <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+        <div className="xl:col-span-6 bg-[#ebf0f7] border border-white/90 rounded-2xl overflow-hidden shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col">
+          <div className="px-5 py-3.5 border-b border-slate-200/60 bg-[#e5edf6] flex items-center justify-between">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Card Liquidity & Burn</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">USD funded, burned, and live spendable balances.</p>
@@ -3240,7 +3323,7 @@ function DashboardView({
 
           <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
-              <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
+              <thead className="bg-[#ebf0f7] text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
                 <tr>
                   <th className="w-[32%] pl-5 pr-2 py-3 text-left">Card & Provider</th>
                   <th className="w-[23%] px-3 py-3 text-right">USD Funded</th>
@@ -3248,7 +3331,7 @@ function DashboardView({
                   <th className="w-[22%] pl-2 pr-5 py-3 text-right">Live Balance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
+              <tbody className="divide-y divide-slate-200/60 font-medium">
                 {dashboardData.allCards.length === 0 && (
                   <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400 font-semibold">No active cards found.</td></tr>
                 )}
@@ -3256,11 +3339,11 @@ function DashboardView({
                   <tr
                     key={card.id}
                     onClick={() => onViewCard && onViewCard(card)}
-                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                    className="hover:bg-white/50 transition-colors cursor-pointer group"
                   >
                     <td className="w-[32%] pl-5 pr-2 py-3 text-left">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[7px] font-black text-white shadow-2xs shrink-0">
+                        <div className="w-7 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[7px] font-black text-white shadow-xs shrink-0">
                           EMV
                         </div>
                         <div className="min-w-0">
@@ -3294,8 +3377,8 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* REAL-TIME MOVEMENT STREAM (7 Cols) */}
-        <div className="xl:col-span-7 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="xl:col-span-7 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Live Movement Stream</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">Real-time ledger events and transactions.</p>
@@ -3311,7 +3394,7 @@ function DashboardView({
             )}
           </div>
 
-          <div className="divide-y divide-slate-100 my-2">
+          <div className="divide-y divide-slate-200/60 my-2">
             {dashboardData.recentTransactions.length === 0 && (
               <div className="py-8 text-center text-slate-400 text-xs">No transactions recorded yet.</div>
             )}
@@ -3326,12 +3409,12 @@ function DashboardView({
               const card = cards.find(c => c.id === tx.cardId)?.name;
 
               return (
-                <div key={tx.id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/70 px-2 rounded-lg transition-colors">
+                <div key={tx.id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-white/60 px-2 rounded-xl transition-colors">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      isPayment ? 'bg-emerald-50 text-emerald-600' :
-                      isUSD ? 'bg-sky-50 text-sky-600' :
-                      isAds ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs border ${
+                      isPayment ? 'bg-emerald-50 border-emerald-200/60 text-emerald-600' :
+                      isUSD ? 'bg-sky-50 border-sky-200/60 text-sky-600' :
+                      isAds ? 'bg-purple-50 border-purple-200/60 text-purple-600' : 'bg-amber-50 border-amber-200/60 text-amber-600'
                     }`}>
                       {isPayment && <ArrowDownLeft size={16} />}
                       {isUSD && <DollarSign size={16} />}
@@ -3362,15 +3445,15 @@ function DashboardView({
             })}
           </div>
 
-          <div className="text-[10.5px] text-slate-400 font-medium pt-2 border-t border-slate-100 flex items-center justify-between">
+          <div className="text-[10.5px] text-slate-400 font-medium pt-2 border-t border-slate-200/60 flex items-center justify-between">
             <span>Verified against Supabase Ledger</span>
             <span className="font-bold text-slate-700">{transactions.length} Total Records</span>
           </div>
         </div>
 
         {/* QUICK STATS SNAPSHOT (5 Cols) */}
-        <div className="xl:col-span-5 bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="xl:col-span-5 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
             <div>
               <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Quick Operational Stats</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">A compact snapshot of your operations.</p>
@@ -3378,7 +3461,7 @@ function DashboardView({
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </div>
 
-          <div className="divide-y divide-slate-100/80 my-2 text-xs">
+          <div className="divide-y divide-slate-200/60 my-2 text-xs">
             <div className="py-2.5 flex items-center justify-between">
               <span className="text-slate-500 font-medium">Active Clients</span>
               <span className="font-bold text-slate-900">{dashboardData.activeClients.length} of {clients.length}</span>
@@ -3401,7 +3484,7 @@ function DashboardView({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
             <span className="text-slate-400">Ledger Health</span>
             <span className="font-bold text-emerald-600 flex items-center gap-1">
               <CheckCircle2 size={13} /> 100% Balanced
@@ -3414,15 +3497,15 @@ function DashboardView({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         
         {/* CARD 1: CARD LIQUIDITY SAFETY SHIELD */}
-        <div className={`rounded-2xl border p-5 transition-all shadow-2xs flex flex-col justify-between ${
+        <div className={`rounded-2xl border p-5 transition-all flex flex-col justify-between shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] ${
           totalCardBalance < 0
-            ? 'bg-rose-50/90 border-rose-200/90 text-rose-950'
-            : 'bg-emerald-50/80 border-emerald-200/90 text-emerald-950'
+            ? 'bg-[#ebf0f7] border-rose-200/90 text-rose-950'
+            : 'bg-[#ebf0f7] border-emerald-200/90 text-emerald-950'
         }`}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-2xs ${
-                totalCardBalance < 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+                totalCardBalance < 0 ? 'bg-rose-100/80 border-rose-200 text-rose-700' : 'bg-emerald-100/80 border-emerald-200 text-emerald-700'
               }`}>
                 {totalCardBalance < 0 ? <AlertCircle size={19} /> : <ShieldCheck size={19} />}
               </div>
@@ -3447,9 +3530,9 @@ function DashboardView({
         </div>
 
         {/* CARD 2: REVENUE INFLOW HEALTH */}
-        <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 p-5 shadow-2xs flex flex-col justify-between">
+        <div className="rounded-2xl border border-emerald-200/80 bg-[#ebf0f7] p-5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] flex flex-col justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold shrink-0 shadow-xs">
               <CheckCircle2 size={19} />
             </div>
             <div>
@@ -3465,9 +3548,9 @@ function DashboardView({
         </div>
 
         {/* CARD 3: PROFIT & MARGIN SNAPSHOT */}
-        <div className="rounded-2xl border border-blue-200/80 bg-blue-50/70 p-5 shadow-2xs flex flex-col justify-between">
+        <div className="rounded-2xl border border-blue-200/80 bg-[#ebf0f7] p-5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] flex flex-col justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0 shadow-2xs">
+            <div className="w-9 h-9 rounded-xl bg-blue-100/80 border border-blue-200 text-blue-700 flex items-center justify-center font-bold shrink-0 shadow-xs">
               <TrendingUp size={19} />
             </div>
             <div>
