@@ -4265,15 +4265,15 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
           <button
             key={chip.id}
             onClick={() => setTypeFilter(chip.id)}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all shadow-2xs whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shadow-2xs whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               typeFilter === chip.id
-                ? 'bg-slate-900 text-white'
+                ? 'bg-sky-600 text-white shadow-sm ring-1 ring-sky-500/30'
                 : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-50'
             }`}
           >
             <span>{chip.label}</span>
             <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-              typeFilter === chip.id ? 'bg-slate-800 text-sky-300' : 'bg-slate-100 text-slate-500'
+              typeFilter === chip.id ? 'bg-sky-700/80 text-white' : 'bg-slate-100 text-slate-500'
             }`}>
               {chip.count}
             </span>
