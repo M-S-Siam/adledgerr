@@ -1078,61 +1078,68 @@ export default function AdLedgerApp() {
         }
       `}</style>
       <div className="adl-shell flex h-screen bg-[#ebf0f7] text-slate-900 font-sans overflow-hidden">
-
-        {/* SIDEBAR (EXACT NEUMORPHIC SOFT-UI) */}
-        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#ebf0f7] text-slate-800 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col border-r border-white/80 shadow-[8px_0_25px_rgba(166,180,200,0.28)]`}>
-          {/* Top: Active Agency Workspace Switcher Card */}
-          <div className="p-3.5">
-            <div className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-[#ebf0f7] border border-white shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff]">
-              {workspaceLogo ? (
-                <img
-                  src={workspaceLogo}
-                  alt="Workspace logo"
-                  className="w-9 h-9 rounded-xl object-cover ring-1 ring-black/5 shrink-0 bg-white"
-                />
-              ) : (
-                <div className="w-9 h-9 rounded-xl bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_5px_rgba(166,180,200,0.4),inset_-2px_-2px_5px_#ffffff] text-blue-600 flex items-center justify-center shrink-0">
-                  <Building size={16} className="text-blue-600" />
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="block text-xs font-black tracking-tight text-slate-900 truncate">
-                    {workspaceSettings.businessName || 'AdLytic CR'}
-                  </span>
-                  <ChevronDown size={13} className="text-slate-400 shrink-0 ml-1 opacity-70" />
-                </div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] shrink-0" />
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                    Active Agency
-                  </span>
+        {/* SIDEBAR (EXACT 4 FLOATING NEUMORPHIC PORTIONS) */}
+        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#ebf0f7] text-slate-800 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col justify-between p-3.5 gap-3 h-screen overflow-y-auto no-scrollbar`}>
+          
+          {/* Top Wrapper for Portion 1, 2, 3 */}
+          <div className="space-y-3 flex-1">
+            
+            {/* PORTION 1: Top Active Agency Switcher Pill */}
+            <div className="bg-[#ebf0f7] border border-white rounded-3xl p-3 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] transition-all">
+              <div className="flex items-center gap-2.5">
+                {workspaceLogo ? (
+                  <img
+                    src={workspaceLogo}
+                    alt="Workspace logo"
+                    className="w-9 h-9 rounded-2xl object-cover ring-1 ring-black/5 shrink-0 bg-white shadow-xs"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-2xl bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff] text-blue-600 flex items-center justify-center shrink-0">
+                    <Building size={16} className="text-blue-600" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="block text-xs font-black tracking-tight text-slate-900 truncate">
+                      {workspaceSettings.businessName || 'AdLytic CR'}
+                    </span>
+                    <ChevronDown size={13} className="text-slate-400 shrink-0 ml-1 opacity-70" />
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] shrink-0" />
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                      ACTIVE AGENCY
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* PORTION 2: Main Navigation Menu Card */}
+            <div className="bg-[#ebf0f7] border border-white rounded-3xl p-2.5 space-y-1.5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]">
+              <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<Mail />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => { setCurrentView('campaigns'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => { setCurrentView('ledger'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => { setCurrentView('cards'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} />
+            </div>
+
+            {/* PORTION 3: Workspace Section Card */}
+            <div className="bg-[#ebf0f7] border border-white rounded-3xl p-2.5 space-y-1.5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]">
+              <p className="px-3 pt-1 text-[9.5px] font-black uppercase tracking-wider text-slate-400">WORKSPACE</p>
+              <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<BookOpen />} label="User Guide & SOP" isActive={currentView === 'guide'} onClick={() => { setCurrentView('guide'); setIsMobileMenuOpen(false); }} />
+              <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
+            </div>
+
           </div>
 
-          <nav className="flex-1 px-3.5 py-2 space-y-1 overflow-y-auto">
-            <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
-            <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />
-            <NavItem icon={<BriefcaseBusiness />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => { setCurrentView('campaigns'); setIsMobileMenuOpen(false); }} />
-            <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => { setCurrentView('ledger'); setIsMobileMenuOpen(false); }} />
-            <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => { setCurrentView('cards'); setIsMobileMenuOpen(false); }} />
-            <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} />
-
-            <div className="pt-3 mt-3 border-t border-slate-300/60 space-y-1">
-              <p className="px-3 pb-1 text-[9.5px] font-black uppercase tracking-wider text-slate-400">Workspace</p>
-              <NavItem icon={<PlugZap size={18} />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<UsersRound size={18} />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<BookOpen size={18} />} label="User Guide & SOP" isActive={currentView === 'guide'} onClick={() => { setCurrentView('guide'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Settings size={18} />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
-            </div>
-          </nav>
-
-          {/* Sidebar Footer: Master Software Platform Brand (Distinctive & High-Tech) */}
-          <div className="p-4 border-t border-white/80 bg-[#ebf0f7]">
+          {/* PORTION 4: Bottom Platform Brand Card */}
+          <div className="bg-[#ebf0f7] border border-white rounded-3xl p-3 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] shrink-0 mt-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-[4px_4px_10px_rgba(166,180,200,0.5),-4px_-4px_10px_#ffffff] border border-white/80 shrink-0 bg-black flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-[inset_2px_2px_4px_rgba(166,180,200,0.35),inset_-2px_-2px_4px_#ffffff] border border-white shrink-0 bg-white flex items-center justify-center">
                 <img
                   src={QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
@@ -1143,13 +1150,13 @@ export default function AdLedgerApp() {
                 />
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
-                <div className="w-fit flex flex-col items-center">
+                <div className="w-fit flex flex-col items-start">
                   <img
                     src={QUANTREX_WORDMARK_DATA_URL}
                     alt="QUANTREX"
-                    className="h-4 w-auto max-w-[130px] object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)] brightness-90 block"
+                    className="h-3.5 w-auto max-w-[120px] object-contain block"
                   />
-                  <div className="text-[9px] font-bold text-slate-500 tracking-wide leading-none mt-1 text-center w-full whitespace-nowrap">
+                  <div className="text-[9px] font-bold text-slate-500 tracking-wide leading-none mt-1 text-left w-full whitespace-nowrap">
                     Ad Spend Intelligence
                   </div>
                 </div>
@@ -12636,19 +12643,25 @@ function NavItem({ icon, label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer ${
+      className={`w-full flex items-center justify-between p-2 rounded-2xl font-bold text-xs transition-all duration-150 cursor-pointer select-none group ${
         isActive
-          ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)]'
-          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+          ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-sky-500 text-white shadow-[3px_5px_12px_rgba(37,99,235,0.38)] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)] active:scale-[0.98]'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-white/40 active:shadow-[inset_2px_2px_5px_rgba(166,180,200,0.45),inset_-2px_-2px_5px_#ffffff] active:bg-[#e2eaf4] active:translate-y-0.5'
       }`}
     >
-      <div className="flex items-center gap-3">
-        <span className={isActive ? 'text-white' : 'text-slate-500'}>
-          {React.cloneElement(icon, { size: 18, className: isActive ? 'stroke-[2.5]' : 'stroke-[2]' })}
-        </span>
-        <span className="truncate">{label}</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+            isActive
+              ? 'bg-white/20 text-white shadow-inner'
+              : 'bg-[#ebf0f7] border border-white shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] text-slate-500 group-hover:text-blue-600 group-active:shadow-[inset_1px_1px_3px_rgba(166,180,200,0.5)]'
+          }`}
+        >
+          {React.cloneElement(icon, { size: 16, className: isActive ? 'stroke-[2.5]' : 'stroke-[2]' })}
+        </div>
+        <span className="truncate text-xs font-bold">{label}</span>
       </div>
-      {isActive && <ChevronRight size={14} className="text-white/80 shrink-0" />}
+      {isActive && <ChevronRight size={14} className="text-white/90 shrink-0 mr-1" />}
     </button>
   );
 }
