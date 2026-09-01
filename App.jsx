@@ -12643,25 +12643,27 @@ function NavItem({ icon, label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between p-2 rounded-2xl font-bold text-xs transition-all duration-150 cursor-pointer select-none group ${
+      className={`w-full flex items-center justify-between p-2 rounded-2xl transition-all duration-200 cursor-pointer select-none group ${
         isActive
-          ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-sky-500 text-white shadow-[3px_5px_12px_rgba(37,99,235,0.38)] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)] active:scale-[0.98]'
-          : 'text-slate-600 hover:text-slate-900 hover:bg-white/40 active:shadow-[inset_2px_2px_5px_rgba(166,180,200,0.45),inset_-2px_-2px_5px_#ffffff] active:bg-[#e2eaf4] active:translate-y-0.5'
+          ? 'bg-[#e0eaf6] text-blue-700 font-black shadow-[inset_4px_4px_8px_rgba(166,180,200,0.75),inset_-4px_-4px_8px_#ffffff] border border-white/80'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-white/40 active:shadow-[inset_3px_3px_6px_rgba(166,180,200,0.6),inset_-3px_-3px_6px_#ffffff] active:bg-[#e2eaf4]'
       }`}
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${
             isActive
-              ? 'bg-white/20 text-white shadow-inner'
-              : 'bg-[#ebf0f7] border border-white shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] text-slate-500 group-hover:text-blue-600 group-active:shadow-[inset_1px_1px_3px_rgba(166,180,200,0.5)]'
+              ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[2px_3px_8px_rgba(37,99,235,0.4)]'
+              : 'bg-[#ebf0f7] border border-white shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] text-slate-500 group-hover:text-blue-600'
           }`}
         >
           {React.cloneElement(icon, { size: 16, className: isActive ? 'stroke-[2.5]' : 'stroke-[2]' })}
         </div>
-        <span className="truncate text-xs font-bold">{label}</span>
+        <span className={`truncate text-xs ${isActive ? 'font-black text-blue-800' : 'font-bold text-slate-700'}`}>
+          {label}
+        </span>
       </div>
-      {isActive && <ChevronRight size={14} className="text-white/90 shrink-0 mr-1" />}
+      {isActive && <ChevronRight size={15} className="text-blue-600 font-bold shrink-0 mr-1" />}
     </button>
   );
 }
