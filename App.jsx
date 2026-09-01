@@ -985,7 +985,7 @@ export default function AdLedgerApp() {
           onViewClient={(c) => { setSelectedClient(c); setActiveModal('client-details'); }}
           onViewCard={(c) => { setSelectedCard(c); setActiveModal('card-details'); }}
           onFundCard={(c) => { setSelectedCard(c); setActiveModal('usd'); }}
-          onNavigate={(tab) => setCurrentView(tab)}
+          onNavigate={(tab) => setCurrentView(tab === 'transactions' ? 'ledger' : tab)}
         />
       );
     }
@@ -3227,10 +3227,10 @@ function DashboardView({
             {onNavigate && (
               <button
                 onClick={() => onNavigate('clients')}
-                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+                className="px-2.5 py-1 rounded-xl bg-[#ebf0f7] border border-white text-[11px] font-bold text-sky-600 hover:text-sky-700 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] active:shadow-[inset_2px_2px_4px_rgba(166,180,200,0.5)] flex items-center gap-1 transition-all cursor-pointer"
               >
                 <span>All Clients</span>
-                <ChevronRight size={14} />
+                <ChevronRight size={13} className="text-sky-600" />
               </button>
             )}
           </div>
@@ -3298,10 +3298,10 @@ function DashboardView({
             {onNavigate && (
               <button
                 onClick={() => onNavigate('cards')}
-                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+                className="px-2.5 py-1 rounded-xl bg-[#ebf0f7] border border-white text-[11px] font-bold text-sky-600 hover:text-sky-700 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] active:shadow-[inset_2px_2px_4px_rgba(166,180,200,0.5)] flex items-center gap-1 transition-all cursor-pointer"
               >
                 <span>All Cards</span>
-                <ChevronRight size={14} />
+                <ChevronRight size={13} className="text-sky-600" />
               </button>
             )}
           </div>
@@ -3370,11 +3370,11 @@ function DashboardView({
             </div>
             {onNavigate && (
               <button
-                onClick={() => onNavigate('transactions')}
-                className="text-[11px] font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 transition-colors"
+                onClick={() => onNavigate('ledger')}
+                className="px-2.5 py-1 rounded-xl bg-[#ebf0f7] border border-white text-[11px] font-bold text-sky-600 hover:text-sky-700 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] active:shadow-[inset_2px_2px_4px_rgba(166,180,200,0.5)] flex items-center gap-1 transition-all cursor-pointer"
               >
                 <span>Full Ledger</span>
-                <ChevronRight size={14} />
+                <ChevronRight size={13} className="text-sky-600" />
               </button>
             )}
           </div>
