@@ -2056,11 +2056,11 @@ function ReportsView({ clients, cards, transactions }) {
         />
       )}
 
-      {/* EXECUTIVE FINANCIAL P&L COMMAND CONSOLE (3 ELEGANT CLUSTERS) */}
+      {/* EXECUTIVE FINANCIAL P&L COMMAND CONSOLE (FIXED NEUMORPHIC STATS) */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
         {/* Card 1: Domestic Cashflow (BDT) */}
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-xl p-4 shadow-2xs">
-          <div className="flex items-center justify-between border-b border-emerald-100 pb-2 mb-2.5">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] cursor-default select-none">
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 mb-2.5">
             <span className="text-[10.5px] font-extrabold uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
               <ArrowDownLeft size={13} className="text-emerald-600" /> Domestic Cashflow
             </span>
@@ -2075,7 +2075,7 @@ function ReportsView({ clients, cards, transactions }) {
               <span className="text-slate-500 font-semibold">Total BDT Cost:</span>
               <span className="font-bold text-slate-800">{formatBDT(report.totalBDTCost)}</span>
             </div>
-            <div className="flex justify-between items-baseline pt-1.5 border-t border-emerald-100/80">
+            <div className="flex justify-between items-baseline pt-1.5 border-t border-slate-200/60">
               <span className="text-slate-700 font-bold">Operating Surplus:</span>
               <span className={`font-black text-xs ${report.netBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{formatBDT(report.netBDT)}</span>
             </div>
@@ -2083,8 +2083,8 @@ function ReportsView({ clients, cards, transactions }) {
         </div>
 
         {/* Card 2: Foreign FX & Ad Spend (USD) */}
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-xl p-4 shadow-2xs">
-          <div className="flex items-center justify-between border-b border-purple-100 pb-2 mb-2.5">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] cursor-default select-none">
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 mb-2.5">
             <span className="text-[10.5px] font-extrabold uppercase text-purple-800 tracking-wider flex items-center gap-1.5">
               <Activity size={13} className="text-purple-600" /> Foreign FX & Burn
             </span>
@@ -2099,7 +2099,7 @@ function ReportsView({ clients, cards, transactions }) {
               <span className="text-slate-500 font-semibold">Meta Ads + 15% VAT:</span>
               <span className="font-bold text-purple-700">-{formatUSD(report.usdSpent + report.taxUSD)}</span>
             </div>
-            <div className="flex justify-between items-baseline pt-1.5 border-t border-purple-100/80">
+            <div className="flex justify-between items-baseline pt-1.5 border-t border-slate-200/60">
               <span className="text-slate-700 font-bold">Total USD Outflow:</span>
               <span className="font-black text-slate-900 text-xs">{formatUSD(report.totalUSDOut)}</span>
             </div>
@@ -2107,8 +2107,8 @@ function ReportsView({ clients, cards, transactions }) {
         </div>
 
         {/* Card 3: Agency Net Profit (BDT) */}
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-sky-100 pb-2 mb-2.5">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex flex-col justify-between cursor-default select-none">
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 mb-2.5">
             <span className="text-[10.5px] font-extrabold uppercase text-sky-800 tracking-wider flex items-center gap-1.5">
               <TrendingUp size={13} className="text-sky-600" /> Net Profit
             </span>
@@ -2127,19 +2127,19 @@ function ReportsView({ clients, cards, transactions }) {
         </div>
 
         {/* Card 4: Weighted Effective FX Rate */}
-        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-amber-100 pb-2 mb-2.5">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex flex-col justify-between cursor-default select-none">
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2 mb-2.5">
             <span className="text-[10.5px] font-extrabold uppercase text-amber-800 tracking-wider flex items-center gap-1.5">
               <RefreshCw size={13} className="text-amber-600" /> Effective FX Rate
             </span>
             <span className="text-[10px] font-bold text-amber-700 bg-amber-100/60 px-1.5 py-0.2 rounded">Procurement</span>
           </div>
           <div>
-            <span className="text-xl font-black text-amber-800 block tracking-tight">
-              ৳{(report.effectiveRate || 0).toFixed(2)} <span className="text-xs font-bold text-slate-400">/ USD</span>
+            <span className="text-xl font-black text-slate-900 block tracking-tight">
+              ৳{report.effectiveRate.toFixed(2)} <span className="text-xs font-bold text-slate-400">/ USD</span>
             </span>
             <span className="text-[10.5px] text-slate-400 font-semibold block mt-1">
-              Includes cash-out fees (৳{formatBDT(report.cashOutBDT)} total fees).
+              Weighted average cost per dollar procured.
             </span>
           </div>
         </div>
@@ -5053,11 +5053,11 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
         </div>
       </div>
 
-      {/* EXECUTIVE CARD LIQUIDITY OVERVIEW RIBBON */}
+      {/* EXECUTIVE CARD LIQUIDITY OVERVIEW RIBBON (FIXED NEUMORPHIC STATS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Total Card Liquidity */}
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/40 border border-sky-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-lg bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
+          <div className="w-9 h-9 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
             <CreditCard size={18} />
           </div>
           <div className="min-w-0 flex-1">
@@ -5069,8 +5069,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
         </div>
 
         {/* Card 2: Total USD Purchased */}
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
+          <div className="w-9 h-9 rounded-xl bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
             <ArrowDownRight size={18} />
           </div>
           <div className="min-w-0 flex-1">
@@ -5082,8 +5082,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
         </div>
 
         {/* Card 3: Total USD Burned */}
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-lg bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-700 shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
+          <div className="w-9 h-9 rounded-xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
             <Activity size={18} />
           </div>
           <div className="min-w-0 flex-1">
@@ -5095,8 +5095,8 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
         </div>
 
         {/* Card 4: Weighted Average FX Rate */}
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-xl px-4 py-3.5 shadow-2xs flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-lg bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-700 shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
+          <div className="w-9 h-9 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
             <RefreshCw size={18} />
           </div>
           <div className="min-w-0 flex-1">
@@ -6643,11 +6643,11 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
         </div>
       </div>
 
-      {/* 4 LUXURY FROSTED KPI TAG CARDS */}
+      {/* 4 LUXURY FROSTED KPI TAG CARDS (FIXED NEUMORPHIC STATS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Total Campaigns */}
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
             <Target size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -6660,8 +6660,8 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
         </div>
 
         {/* Card 2: Total Ad Spend */}
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
             <Activity size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -6674,8 +6674,8 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
         </div>
 
         {/* Card 3: Attributed Revenue */}
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-emerald-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-emerald-100/90 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
             <ArrowDownRight size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -6688,8 +6688,8 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
         </div>
 
         {/* Card 4: Blended ROAS & Profit */}
-        <div className="bg-gradient-to-br from-blue-50/80 via-white to-sky-50/40 border border-blue-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-blue-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-blue-100/90 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-blue-100/90 border border-blue-200/80 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
             <TrendingUp size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -7451,11 +7451,11 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
       </div>
 
-      {/* COMPACT KPI METRIC CARDS (PREMIUM FROSTED GLASS & LUXURY TAGS) */}
+      {/* COMPACT KPI METRIC CARDS (FIXED NEUMORPHIC STATS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Platforms */}
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
             <PlugZap size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -7468,8 +7468,8 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
 
         {/* Card 2: Sync Engine */}
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-emerald-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-emerald-100/90 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
             <Clock size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -7482,8 +7482,8 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
 
         {/* Card 3: API Security */}
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
             <ShieldCheck size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -7496,8 +7496,8 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         </div>
 
         {/* Card 4: Live Stream */}
-        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-amber-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-amber-100/90 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-amber-100/90 border border-amber-200/80 flex items-center justify-center text-amber-700 shadow-xs shrink-0">
             <Activity size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -8517,11 +8517,11 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
       </div>
 
-      {/* COMPACT KPI METRIC CARDS (PREMIUM FROSTED GLASS & LUXURY TAGS) */}
+      {/* COMPACT KPI METRIC CARDS (FIXED NEUMORPHIC STATS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Team Seats */}
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
             <UsersRound size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -8534,8 +8534,8 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
 
         {/* Card 2: Campaign Managers */}
-        <div className="bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border border-blue-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-blue-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-blue-100/90 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-blue-100/90 border border-blue-200/80 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
             <Target size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -8548,8 +8548,8 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
 
         {/* Card 3: Pending Invites */}
-        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-amber-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-amber-100/90 border border-amber-200 flex items-center justify-center text-amber-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-amber-100/90 border border-amber-200/80 flex items-center justify-center text-amber-700 shadow-xs shrink-0">
             <Mail size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -8562,8 +8562,8 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
 
         {/* Card 4: Audit Security */}
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
             <ShieldCheck size={16} />
           </div>
           <div className="min-w-0 flex-1">
