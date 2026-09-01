@@ -485,28 +485,6 @@ const INITIAL_TEAM = [
   }
 ];
 
-// --- NEUMORPHIC SIDEBAR NAVIGATION ITEM ---
-function NavItem({ icon, label, isActive, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer ${
-        isActive
-          ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)]'
-          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <span className={isActive ? 'text-white' : 'text-slate-500'}>
-          {React.cloneElement(icon, { size: 18, className: isActive ? 'stroke-[2.5]' : 'stroke-[2]' })}
-        </span>
-        <span className="truncate">{label}</span>
-      </div>
-      {isActive && <ChevronRight size={14} className="text-white/80 shrink-0" />}
-    </button>
-  );
-}
-
 // --- MAIN APPLICATION ---
 export default function AdLedgerApp() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -12658,14 +12636,19 @@ function NavItem({ icon, label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all text-[13px] font-semibold ${
+      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer ${
         isActive
-          ? 'bg-blue-600 text-white shadow-sm ring-1 ring-white/10'
-          : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+          ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[0_4px_14px_rgba(37,99,235,0.35)]'
+          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
       }`}
     >
-      {React.cloneElement(icon, { size: 17, className: isActive ? 'text-white' : 'text-slate-400' })}
-      <span>{label}</span>
+      <div className="flex items-center gap-3">
+        <span className={isActive ? 'text-white' : 'text-slate-500'}>
+          {React.cloneElement(icon, { size: 18, className: isActive ? 'stroke-[2.5]' : 'stroke-[2]' })}
+        </span>
+        <span className="truncate">{label}</span>
+      </div>
+      {isActive && <ChevronRight size={14} className="text-white/80 shrink-0" />}
     </button>
   );
 }
