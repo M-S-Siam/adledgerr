@@ -4563,11 +4563,11 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </button>
       </div>
 
-      {/* COMPACT KPI METRIC CARDS (PREMIUM FROSTED GLASS & LUXURY TAGS) */}
+      {/* COMPACT KPI METRIC CARDS (FIXED NEUMORPHIC STATS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Active Portfolios */}
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-sky-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-sky-100/90 border border-sky-200 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
             <UsersRound size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -4580,8 +4580,8 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </div>
 
         {/* Card 2: Total Revenue */}
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-emerald-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-emerald-100/90 border border-emerald-200 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
             <ArrowDownRight size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -4594,8 +4594,8 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </div>
 
         {/* Card 3: Total Ad Spend */}
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-purple-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-purple-100/90 border border-purple-200 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
             <Activity size={16} />
           </div>
           <div className="min-w-0 flex-1">
@@ -4608,8 +4608,8 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </div>
 
         {/* Card 4: Net Agency Profit */}
-        <div className="bg-gradient-to-br from-blue-50/80 via-white to-sky-50/40 border border-blue-200/70 rounded-lg px-3.5 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3 min-w-0 hover:border-blue-300 hover:shadow-sm transition-all">
-          <div className="w-8 h-8 rounded-md bg-blue-100/90 border border-blue-200 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
+          <div className="w-8 h-8 rounded-xl bg-blue-100/90 border border-blue-200/80 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
             <TrendingUp size={16} />
           </div>
           <div className="min-w-0 flex-1">
