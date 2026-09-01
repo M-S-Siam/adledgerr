@@ -4183,70 +4183,70 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 border border-slate-800 rounded-xl p-4 shadow-md text-white">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] cursor-default select-none">
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5 mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <ArrowDownLeft size={14} />
+              <div className="w-7 h-7 rounded-lg bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs">
+                <ArrowDownLeft size={15} />
               </div>
-              <span className="text-xs font-black tracking-wider text-emerald-300 uppercase">
+              <span className="text-xs font-black tracking-wider text-slate-900 uppercase">
                 BDT Operating Cashflow
               </span>
             </div>
-            <span className="text-[10px] font-bold text-slate-400">Domestic Ledger</span>
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/60 border border-emerald-200/60 px-2 py-0.5 rounded-md uppercase">Domestic Ledger</span>
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-left">
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT In (Received)</span>
-              <span className="text-sm sm:text-base font-black text-emerald-400 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">BDT In (Received)</span>
+              <span className="text-sm sm:text-base font-black text-emerald-600 mt-1 block">
                 {formatBDT(ledgerSummary.bdtIn)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT Out (Purchases)</span>
-              <span className="text-sm sm:text-base font-black text-rose-400 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">BDT Out (Purchases)</span>
+              <span className="text-sm sm:text-base font-black text-rose-600 mt-1 block">
                 {formatBDT(ledgerSummary.bdtOut)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Operating Surplus</span>
-              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netBDT < 0 ? 'text-rose-400' : 'text-sky-300'}`}>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Operating Surplus</span>
+              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                 {formatBDT(ledgerSummary.netBDT)}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-xl p-4 shadow-md text-white">
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5 mb-3">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] cursor-default select-none">
+          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5 mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
-                <RefreshCw size={14} />
+              <div className="w-7 h-7 rounded-lg bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs">
+                <RefreshCw size={15} />
               </div>
-              <span className="text-xs font-black tracking-wider text-sky-300 uppercase">
+              <span className="text-xs font-black tracking-wider text-slate-900 uppercase">
                 USD Foreign Liquidity & Ad Burn
               </span>
             </div>
-            <span className="text-[10px] font-bold text-slate-400">FX & Meta Spend</span>
+            <span className="text-[10px] font-bold text-sky-700 bg-sky-100/60 border border-sky-200/60 px-2 py-0.5 rounded-md uppercase">FX & Meta Spend</span>
           </div>
 
           <div className="grid grid-cols-3 gap-3 text-left">
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD In (Funded)</span>
-              <span className="text-sm sm:text-base font-black text-sky-400 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">USD In (Funded)</span>
+              <span className="text-sm sm:text-base font-black text-emerald-600 mt-1 block">
                 {formatUSD(ledgerSummary.usdIn)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD Out (Burned)</span>
-              <span className="text-sm sm:text-base font-black text-purple-400 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">USD Out (Burned)</span>
+              <span className="text-sm sm:text-base font-black text-purple-700 mt-1 block">
                 {formatUSD(ledgerSummary.usdOut)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Net USD Liquidity</span>
-              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netUSD < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Net USD Liquidity</span>
+              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netUSD < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                 {formatUSD(ledgerSummary.netUSD)}
               </span>
             </div>
