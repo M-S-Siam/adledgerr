@@ -6895,7 +6895,7 @@ function CampaignsView({ campaigns = [], clients = [], transactions = [], metric
       </div>
 
       {/* QUICK PLATFORM FILTER CHIPS */}
-      <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
+      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
         {[
           { id: 'All', label: 'All Channels', count: campaigns.length },
           { id: 'Meta', label: 'Meta Ads', count: campaigns.filter(c => (c.platform || '').toLowerCase().includes('meta') || (c.platform || '').toLowerCase().includes('facebook') || (c.platform || '').toLowerCase().includes('instagram')).length },
@@ -7726,7 +7726,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
       {/* FILTER TABS & SEARCH BAR (PERFECTLY CENTERED SPACING) */}
       <div className="flex flex-col md:flex-row items-center gap-4 pt-2">
         {/* Category Tabs with Sleek GitHub Corners */}
-        <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-lg w-full md:w-auto shrink-0">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-1 bg-slate-200/60 rounded-lg w-full md:w-auto shrink-0">
           {[
             { id: 'all', label: 'All Platforms', count: integrations.length },
             { id: 'ads', label: 'Ad Networks', count: integrations.filter(i => i.category === 'ads').length },
@@ -8896,7 +8896,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       </div>
 
       {/* TEAM SECTION TABS NAVIGATION */}
-      <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
+      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
         {[
           { id: 'members', label: 'Active Workspace Members', icon: UsersRound, count: activeMembersList.length + 1 },
           { id: 'pending', label: 'Pending Invitations', icon: Mail, count: pendingMembersList.length },
@@ -8945,7 +8945,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             </div>
 
             {/* Role Filter Tabs */}
-            <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-1 bg-slate-200/60 rounded-xl">
               {[
                 { id: 'All', label: 'All Roles', count: teamMembers.length + 1 },
                 { id: 'Admin', label: 'Admin', count: teamMembers.filter(m => m.role === 'Admin' || m.role === 'Agency Admin').length + 1 },
@@ -9561,11 +9561,11 @@ function UserGuideView({ onNavigate }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const tabs = [
-    { id: 'concepts', label: '১. মূল সমস্যা ও গাণিতিক সূত্র', icon: <Sparkles size={16} /> },
-    { id: 'workflow', label: '২. ৫-ধাপে দৈনন্দিন কাজ (SOP)', icon: <Layers size={16} /> },
-    { id: 'modules', label: '৩. প্রতিটি পেজের পূর্ণাঙ্গ ব্যবহারবিধি', icon: <LayoutDashboard size={16} /> },
-    { id: 'troubleshoot', label: '৪. সমস্যা ও সমাধান (FAQs)', icon: <HelpCircle size={16} /> },
-    { id: 'protips', label: '৫. এজেন্সির প্রো-টিপস ও চেকলিস্ট', icon: <Crown size={16} /> },
+    { id: 'concepts', label: '১. মূল সমস্যা ও সূত্র', icon: <Sparkles size={14} /> },
+    { id: 'workflow', label: '২. ৫-ধাপে SOP গাইড', icon: <Layers size={14} /> },
+    { id: 'modules', label: '৩. পেজের ব্যবহারবিধি', icon: <LayoutDashboard size={14} /> },
+    { id: 'troubleshoot', label: '৪. সমস্যা ও সমাধান (FAQs)', icon: <HelpCircle size={14} /> },
+    { id: 'protips', label: '৫. প্রো-টিপস ও চেকলিস্ট', icon: <Crown size={14} /> },
   ];
 
   const handleOpenAndPrintManual = () => {
@@ -10387,8 +10387,8 @@ function UserGuideView({ onNavigate }) {
         </div>
       </div>
 
-      {/* Category Navigation Tabs (STANDARDIZED INTEGRATION PILL STYLE) */}
-      <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
+      {/* Category Navigation Tabs (NO SCROLLBAR, COMPACT PILL DESIGN) */}
+      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
         {tabs.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -10396,7 +10396,7 @@ function UserGuideView({ onNavigate }) {
               key={tab.id}
               type="button"
               onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs font-black'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
