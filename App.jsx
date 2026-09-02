@@ -1190,7 +1190,7 @@ export default function AdLedgerApp() {
               <div className="min-w-0 flex-1 flex flex-col justify-center">
                 <div className="w-fit flex flex-col items-start select-none">
                   <div className="flex items-center font-black text-sm tracking-[0.16em] leading-none font-sans">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-600 via-indigo-600 to-sky-500 font-black">Q</span>
+                    <span className={`font-black ${theme === 'dark' ? 'text-sky-400' : 'text-blue-600'}`}>Q</span>
                     <span className={`font-black tracking-[0.15em] ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>UANTREX</span>
                   </div>
                   <div className="text-[9.5px] font-bold text-sky-600 tracking-wider leading-none mt-1 text-left w-full whitespace-nowrap">

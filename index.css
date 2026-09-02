@@ -241,12 +241,10 @@ body.dark {
   box-shadow: none !important;
 }
 
-/* ZERO BACKGROUND BOXES BEHIND ANY TEXT LABELS */
-.adl-shell.dark button span:not(.rounded-full),
-.adl-shell.dark nav span:not(.rounded-full),
-.adl-shell.dark aside span:not(.rounded-full) {
+/* ZERO BACKGROUND BOXES BEHIND BUTTON LABELS */
+.adl-shell.dark button:not(.bg-white) span:not(.rounded-full),
+.adl-shell.dark nav button:not(.bg-white) span:not(.rounded-full) {
   background-color: transparent !important;
-  background: transparent !important;
 }
 
 /* OVERRIDE ALL NEUMORPHIC WHITE HALO SHADOWS IN ALL VIEWS */
