@@ -3696,17 +3696,18 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete,
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-4 sm:p-5 border border-slate-800 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+      {/* NEUMORPHIC HEADER BANNER */}
+      <div className="bg-[#ebf0f7] border border-white text-slate-900 rounded-2xl p-4 sm:p-5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 cursor-default select-none">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
             <MasterLedgerBadge type={tx.type} />
-            <span className="font-mono text-xs font-black text-sky-400 bg-sky-950/90 px-2.5 py-0.5 rounded border border-sky-800/80 shadow-2xs">
+            <span className="font-mono text-xs font-black text-sky-800 bg-sky-100/90 px-2.5 py-0.5 rounded-lg border border-sky-200/80 shadow-2xs">
               #{String(tx.id).slice(-8)}
             </span>
           </div>
-          <div className="text-slate-300 text-xs font-semibold flex items-center gap-1.5 pt-0.5">
-            <span className="text-slate-400">Timestamp:</span>
-            <span className="text-white font-bold">{formatDate(tx.date)}</span>
+          <div className="text-slate-600 text-xs font-semibold flex items-center gap-1.5 pt-0.5">
+            <span className="text-slate-500 font-bold uppercase text-[10px] tracking-wider">Timestamp:</span>
+            <span className="text-slate-900 font-bold">{formatDate(tx.date)}</span>
           </div>
         </div>
 
@@ -3714,36 +3715,37 @@ function TransactionAuditModal({ tx, clients, cards, metrics, onClose, onDelete,
           <button
             type="button"
             onClick={handlePrintVoucher}
-            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:text-white"
+            className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
-            <Printer size={13} /> Print Voucher
+            <Printer size={13} className="text-slate-500" /> Print Voucher
           </button>
         </div>
       </div>
 
+      {/* 4 NEUMORPHIC KPI CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/50 border border-emerald-200/80 rounded-xl p-3.5 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3.5 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">BDT Inflow</span>
           <span className="text-base font-black text-emerald-700 mt-1 block">{bdtIn > 0 ? `+${formatBDT(bdtIn)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">Client Deposit</span>
+          <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">Client Deposit</span>
         </div>
 
-        <div className="bg-gradient-to-br from-rose-50/90 via-white to-red-50/50 border border-rose-200/80 rounded-xl p-3.5 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3.5 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">BDT Outflow</span>
           <span className="text-base font-black text-rose-700 mt-1 block">{bdtOut > 0 ? `-${formatBDT(bdtOut)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">USD Purchase Cost</span>
+          <span className="text-[10px] text-rose-600 font-semibold mt-1 block">USD Purchase Cost</span>
         </div>
 
-        <div className="bg-gradient-to-br from-sky-50/90 via-white to-blue-50/50 border border-sky-200/80 rounded-xl p-3.5 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3.5 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Funded</span>
           <span className="text-base font-black text-sky-700 mt-1 block">{usdIn > 0 ? `+${formatUSD(usdIn)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">Card Inflow</span>
+          <span className="text-[10px] text-sky-600 font-semibold mt-1 block">Card Inflow</span>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50/90 via-white to-indigo-50/50 border border-purple-200/80 rounded-xl p-3.5 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3.5 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Outflow</span>
           <span className="text-base font-black text-purple-700 mt-1 block">{usdOut > 0 ? `-${formatUSD(usdOut)}` : '—'}</span>
-          <span className="text-[10px] text-slate-500 font-semibold mt-1 block">Ad Spend + Tax</span>
+          <span className="text-[10px] text-purple-600 font-semibold mt-1 block">Ad Spend + Tax</span>
         </div>
       </div>
 
@@ -5831,34 +5833,34 @@ function TransactionDetailsModal({ tx, cardName, onClose, onEdit, onDelete }) {
   return (
     <Modal title={`USD Purchase Voucher: #${String(tx.id).slice(-8)}`} onClose={onClose} width="max-w-xl">
       <div className="space-y-4 text-xs">
-        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white p-4 rounded-xl border border-slate-800 flex justify-between items-center shadow-sm">
+        <div className="bg-[#ebf0f7] border border-white text-slate-900 p-4 rounded-2xl shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex justify-between items-center cursor-default select-none">
           <div>
-            <span className="font-mono text-xs font-black text-sky-400 block">#{tx.id}</span>
-            <span className="text-[11px] text-slate-300 font-semibold mt-0.5 block">{formatDate(tx.date)}</span>
+            <span className="font-mono text-xs font-black text-sky-800 bg-sky-100/90 px-2.5 py-0.5 rounded-lg border border-sky-200/80 block w-fit">#{String(tx.id).slice(-8)}</span>
+            <span className="text-[11px] text-slate-600 font-semibold mt-1 block">{formatDate(tx.date)}</span>
           </div>
           <button
             type="button"
             onClick={handlePrintVoucher}
-            className="inline-flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:text-white"
+            className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
-            <Printer size={13} /> Print Voucher
+            <Printer size={13} className="text-slate-500" /> Print Voucher
           </button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <div className="p-3 bg-[#ebf0f7] border border-white rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
             <span className="text-[10px] font-extrabold text-slate-500 uppercase block">USD Received</span>
             <span className="font-black text-emerald-700 text-base mt-0.5 block">+{formatUSD(tx.amountUSD)}</span>
           </div>
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+          <div className="p-3 bg-[#ebf0f7] border border-white rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
             <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Total Cost</span>
             <span className="font-black text-slate-900 text-base mt-0.5 block">{formatBDT(totalCost)}</span>
           </div>
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+          <div className="p-3 bg-[#ebf0f7] border border-white rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
             <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Base Rate</span>
             <span className="font-black text-slate-700 text-base mt-0.5 block">৳{baseRate}</span>
           </div>
-          <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl">
+          <div className="p-3 bg-[#ebf0f7] border border-white rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
             <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Effective Rate</span>
             <span className="font-black text-sky-700 text-base mt-0.5 block">৳{effectiveRate}</span>
           </div>
