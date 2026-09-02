@@ -6509,7 +6509,7 @@ function CampaignForm({ initialData, clients, onCancel, onSubmit }) {
   );
 }
 
-function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDelete }) {
+function CampaignsView({ campaigns = [], clients = [], transactions = [], metrics = {}, onSave, onDelete, workspaceSettings = {} }) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [inspecting, setInspecting] = useState(null);
@@ -6620,6 +6620,110 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
     URL.revokeObjectURL(url);
   };
 
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  const handlePrintCampaignsPDF = () => {
+    if (!filtered.length) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Campaigns Performance Statement - ${workspaceSettings.businessName || 'Quantrex'}</title>
+        <style>
+          @page { size: A4 landscape; margin: 12mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; margin: 0; padding: 10px; }
+          .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px; }
+          .brand { font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
+          .subbrand { font-size: 11px; color: #64748b; margin-top: 2px; }
+          .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+          .kpi-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: left; }
+          .kpi-title { font-size: 9.5px; font-weight: 800; text-transform: uppercase; color: #64748b; }
+          .kpi-val { font-size: 14px; font-weight: 900; margin-top: 3px; }
+          .kpi-val.blue { color: #0284c7; }
+          .kpi-val.green { color: #16a34a; }
+          .kpi-val.purple { color: #9333ea; }
+          table { width: 100%; border-collapse: collapse; font-size: 11px; }
+          th { background: #f1f5f9; text-align: left; padding: 8px 10px; font-weight: 800; border-bottom: 1.5px solid #cbd5e1; font-size: 10px; text-transform: uppercase; color: #475569; }
+          td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; }
+          tr:nth-child(even) { background: #f8fafc; }
+          .badge { font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1; text-transform: uppercase; }
+          .badge.active { background: #dcfce7; color: #15803d; }
+          .badge.paused { background: #fef3c7; color: #b45309; }
+          .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="brand">${workspaceSettings.businessName || 'Quantrex'} · Campaigns Performance Audit</div>
+            <div class="subbrand">Multi-Channel Ad Spend, Attributed Revenue & ROAS Intelligence</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: 800; font-size: 12px;">Active Filter: ${platformFilter === 'All' ? 'All Channels' : platformFilter}</div>
+            <div style="font-size: 11px; color: #64748b;">Generated: ${new Date().toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card"><div class="kpi-title">Total Campaigns</div><div class="kpi-val blue">${summary.totalCount} Total (${summary.activeCount} Active)</div></div>
+          <div class="kpi-card"><div class="kpi-title">Tracked Ad Spend</div><div class="kpi-val purple">${formatUSD(summary.totalSpendUSD)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Ad Spend (BDT)</div><div class="kpi-val purple">${formatBDT(summary.totalSpendBDT)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Attributed Revenue</div><div class="kpi-val green">${formatBDT(summary.totalRevenueBDT)}</div></div>
+          <div class="kpi-card"><div class="kpi-title">Blended ROAS</div><div class="kpi-val blue">${summary.blendedROAS.toFixed(2)}x ROAS</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Campaign Name</th>
+              <th>Client</th>
+              <th>Platform</th>
+              <th>Objective</th>
+              <th>Status</th>
+              <th style="text-align: right;">Budget</th>
+              <th style="text-align: right;">Spend (USD)</th>
+              <th style="text-align: right;">Revenue (BDT)</th>
+              <th style="text-align: right;">ROAS</th>
+              <th>Delivered Results</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map(c => `
+              <tr>
+                <td><strong>${c.name}</strong></td>
+                <td>${c.clientName}</td>
+                <td><span class="badge">${c.platform || 'Meta'}</span></td>
+                <td>${c.goal || 'General'}</td>
+                <td><span class="badge ${c.status === 'Active' ? 'active' : (c.status === 'Paused' ? 'paused' : '')}">${c.status || 'Active'}</span></td>
+                <td style="text-align: right; font-weight: bold;">${c.budgetType === 'USD' ? formatUSD(c.budget || 0) : formatBDT(c.budget || 0)}</td>
+                <td style="text-align: right; color: #9333ea; font-weight: bold;">${formatUSD(c.spendUSD)}</td>
+                <td style="text-align: right; color: #16a34a; font-weight: bold;">${formatBDT(c.revenueBDT)}</td>
+                <td style="text-align: right; color: #0284c7; font-weight: bold;">${c.roas.toFixed(2)}x</td>
+                <td>${c.resultCount > 0 ? `${c.resultCount} ${c.resultLabel || ''}` : '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div>Official Media Buying & Campaign Performance Record • ${workspaceSettings.businessName || 'Quantrex'}</div>
+          <div>Total Listed Campaigns: ${filtered.length} entries</div>
+        </div>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 350);
+  };
+
   return (
     <div className="space-y-4 w-full max-w-[1720px] mx-auto animate-in fade-in duration-300 pb-16">
       {/* SEAMLESS CANVAS HEADER */}
@@ -6632,12 +6736,41 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all"
-          >
-            <Download size={14} className="text-slate-500" /> Export CSV
-          </button>
+          {/* UNIFIED EXPORT DROPDOWN (CSV & PDF STATEMENT) */}
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              onClick={() => setShowExportMenu(prev => !prev)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border text-xs font-bold shadow-2xs transition-all cursor-pointer ${
+                showExportMenu
+                  ? 'bg-slate-100 border-slate-300 text-slate-900 ring-2 ring-sky-500/20'
+                  : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Download size={14} className="text-slate-500" /> Export <ChevronDown size={12} className={`text-slate-400 transition-transform duration-150 ${showExportMenu ? 'rotate-180' : ''}`} />
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="fixed inset-0 z-20 cursor-default" onClick={() => setShowExportMenu(false)} />
+                <div className="absolute right-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in duration-150">
+                  <button
+                    onClick={() => { setShowExportMenu(false); handleExportCSV(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors cursor-pointer"
+                  >
+                    <FileSpreadsheet size={15} className="text-emerald-600" />
+                    <span>Export Excel / CSV (.csv)</span>
+                  </button>
+                  <button
+                    onClick={() => { setShowExportMenu(false); handlePrintCampaignsPDF(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800 cursor-pointer"
+                  >
+                    <Printer size={15} className="text-sky-600" />
+                    <span>Print / PDF Statement (A4)</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
           <button
             onClick={() => { setEditing(null); setShowForm(true); }}
             className="inline-flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
