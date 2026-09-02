@@ -11214,10 +11214,16 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       {/* PLAN PRICING COMPARISON CARDS (UNIFIED LUXURY NEUMORPHIC SOFT UI WHITE) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {plans.map((plan) => {
+          const planGlowClass = plan.id === 'starter_monthly'
+            ? 'adl-plan-starter'
+            : plan.id === 'pro_annual'
+              ? 'adl-plan-pro'
+              : 'adl-plan-lifetime';
+
           return (
             <div
               key={plan.id}
-              className="rounded-3xl p-6 bg-[#ebf0f7] border border-white text-slate-900 transition-all duration-200 relative flex flex-col justify-between select-none shadow-[6px_6px_16px_rgba(166,180,200,0.45),-6px_-6px_16px_#ffffff] hover:ring-2 hover:ring-sky-500/60 hover:shadow-[0_12px_28px_rgba(2,132,199,0.22),6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] hover:-translate-y-1 cursor-default group"
+              className={`adl-plan-card ${planGlowClass} rounded-3xl p-6 bg-[#ebf0f7] border border-white text-slate-900 relative flex flex-col justify-between select-none shadow-[6px_6px_16px_rgba(166,180,200,0.45),-6px_-6px_16px_#ffffff] cursor-pointer group`}
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3.5">

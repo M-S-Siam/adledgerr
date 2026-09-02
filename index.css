@@ -537,3 +537,55 @@ body.dark *,
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   scrollbar-width: thin;
 }
+
+/* =========================================================================
+   PRICING PLAN CARDS HOVER GLOW (NEON GLOW ON CURSOR HOVER)
+   ========================================================================= */
+.adl-plan-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+  cursor: pointer !important;
+}
+
+/* Plan 1: Starter Agency (Sky Blue Neon Glow) */
+.adl-shell.dark .adl-plan-starter:hover,
+html.dark .adl-plan-starter:hover,
+body.dark .adl-plan-starter:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(56, 189, 248, 0.8) !important;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.4), 0 0 50px rgba(56, 189, 248, 0.15), 0 12px 30px -5px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Plan 2: Annual Pro Pass (Purple/Violet Neon Glow) */
+.adl-shell.dark .adl-plan-pro:hover,
+html.dark .adl-plan-pro:hover,
+body.dark .adl-plan-pro:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(168, 85, 247, 0.8) !important;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.4), 0 0 50px rgba(168, 85, 247, 0.15), 0 12px 30px -5px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Plan 3: Lifetime Founder Access (Emerald Neon Glow) */
+.adl-shell.dark .adl-plan-lifetime:hover,
+html.dark .adl-plan-lifetime:hover,
+body.dark .adl-plan-lifetime:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(16, 185, 129, 0.8) !important;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), 0 0 50px rgba(16, 185, 129, 0.15), 0 12px 30px -5px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Light Mode Hover Glow */
+.adl-plan-starter:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(2, 132, 199, 0.6) !important;
+  box-shadow: 0 12px 30px rgba(2, 132, 199, 0.25) !important;
+}
+.adl-plan-pro:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(124, 58, 237, 0.6) !important;
+  box-shadow: 0 12px 30px rgba(124, 58, 237, 0.25) !important;
+}
+.adl-plan-lifetime:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(5, 150, 105, 0.6) !important;
+  box-shadow: 0 12px 30px rgba(5, 150, 105, 0.25) !important;
+}
