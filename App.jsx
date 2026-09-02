@@ -8944,23 +8944,23 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
           <button
             type="button"
             onClick={() => setShowPermissionsGuide(prev => !prev)}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-bold transition-all cursor-pointer select-none ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
               showPermissionsGuide
-                ? 'bg-[#ebf0f7] border-white text-sky-800 shadow-[inset_2px_2px_5px_rgba(166,180,200,0.5),inset_-2px_-2px_5px_#ffffff]'
-                : 'bg-[#ebf0f7] border-white text-slate-700 shadow-[3px_3px_8px_rgba(166,180,200,0.45),-3px_-3px_8px_#ffffff] hover:text-sky-700 active:shadow-[inset_2px_2px_5px_rgba(166,180,200,0.5),inset_-2px_-2px_5px_#ffffff] active:scale-[0.98]'
+                ? 'bg-[#ebf0f7] dark:bg-[#182235] border-white dark:border-sky-500/30 text-sky-800 dark:text-sky-400 shadow-sm'
+                : 'bg-[#ebf0f7] dark:bg-[#111722] border-white dark:border-white/10 text-slate-700 dark:text-slate-200 hover:text-sky-700 dark:hover:text-sky-400 shadow-sm'
             }`}
           >
-            <ShieldCheck size={14} className="text-sky-600" />
+            <ShieldCheck size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
             <span>{showPermissionsGuide ? 'Hide Roles Guide' : 'View Roles Guide'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => openInviteModal('Active')}
-            className="inline-flex items-center gap-2 px-4.5 py-2 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-[3px_3px_10px_rgba(2,132,199,0.35),-2px_-2px_6px_#ffffff] active:scale-[0.98] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)] transition-all cursor-pointer select-none"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
           >
-            <UserPlus size={15} />
-            <span>Invite Member</span>
+            <UserPlus size={15} className="shrink-0" />
+            <span className="whitespace-nowrap">Invite Member</span>
           </button>
         </div>
       </div>
