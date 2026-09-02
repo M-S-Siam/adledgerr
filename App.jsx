@@ -8798,32 +8798,32 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
         </div>
       )}
 
-      {/* WORKSPACE FOUNDER / OWNER CARD (VIP LUXURY EDITION) */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white border border-slate-800/80 rounded-lg p-3 sm:px-4 sm:py-3 shadow-md shadow-slate-950/20">
+      {/* WORKSPACE FOUNDER / OWNER CARD (NEUMORPHIC SOFT UI WHITE) */}
+      <div className="bg-[#ebf0f7] border border-white text-slate-900 rounded-2xl p-3 sm:px-4 sm:py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] cursor-default select-none">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-md bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center font-black shadow-xs shrink-0">
-              <Crown size={16} className="text-slate-950" />
+            <div className="w-8 h-8 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-800 flex items-center justify-center font-black shadow-xs shrink-0">
+              <Crown size={16} className="text-amber-700" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-black text-xs text-white tracking-tight flex items-center gap-1.5">
-                  <span className="text-white drop-shadow-sm font-black">{workspaceSettings.businessName || 'Quantrex'} Founder</span>
+                <h3 className="font-black text-xs text-slate-900 tracking-tight flex items-center gap-1.5">
+                  <span>{workspaceSettings.businessName || 'Quantrex'} Founder</span>
                 </h3>
-                <span className="px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[9px] font-black uppercase tracking-wider shadow-2xs">
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 text-[9px] font-black uppercase tracking-wider shadow-2xs">
                   Super Admin · Root
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-sm" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-sm" />
               </div>
-              <p className="text-[11px] text-slate-200/90 font-medium mt-0.5 truncate">
+              <p className="text-[11px] text-slate-600 font-medium mt-0.5 truncate">
                 Primary Account Holder · Unrestricted Access to Financials, Bank Cards & Settings
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-400 shadow-2xs whitespace-nowrap">
-              <ShieldCheck size={13} className="text-emerald-400" /> 2FA Protected
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700 shadow-2xs whitespace-nowrap">
+              <ShieldCheck size={13} className="text-emerald-600" /> 2FA Protected
             </span>
           </div>
         </div>
@@ -10878,37 +10878,36 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* AUTO-APPLIED PROMO CODE CELEBRATION HERO */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-900 via-slate-900 to-blue-950 text-white border border-sky-500/30 shadow-lg relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-sky-500/10 blur-2xl pointer-events-none" />
+      {/* AUTO-APPLIED PROMO CODE CELEBRATION HERO (NEUMORPHIC SOFT UI WHITE) */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#ebf0f7] border border-white text-slate-900 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] relative overflow-hidden cursor-default select-none">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center shrink-0 text-sky-400">
+            <div className="w-10 h-10 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center shrink-0 text-sky-700 shadow-xs">
               <Sparkles size={20} className="animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider">
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 text-[10px] font-black uppercase tracking-wider">
                   Promo Auto-Applied
                 </span>
-                <span className="text-xs font-mono font-bold text-sky-300">
+                <span className="text-xs font-mono font-bold text-sky-700">
                   CODE: LAUNCH500 (50% OFF)
                 </span>
               </div>
-              <h3 className="text-base font-extrabold text-white mt-1">
+              <h3 className="text-base font-extrabold text-slate-900 mt-1">
                 Special Launch Offer: Full Pro Access at ৳500 / month!
               </h3>
-              <p className="text-xs text-slate-300 mt-0.5">
-                Enjoy an active <strong>3-Day Free Trial</strong> with full feature access. Select any plan below to activate Pro securely via bKash or Nagad.
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                Enjoy an active <strong className="text-slate-900">3-Day Free Trial</strong> with full feature access. Select any plan below to activate Pro securely via bKash or Nagad.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <div className="text-right hidden sm:block">
-              <div className="text-[11px] text-slate-400">Current Status</div>
-              <div className="text-sm font-extrabold text-emerald-400 flex items-center justify-end gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="text-[11px] font-semibold text-slate-500">Current Status</div>
+              <div className="text-sm font-extrabold text-emerald-700 flex items-center justify-end gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 {isProActive ? 'Pro Active' : '3-Day Trial Active'}
               </div>
             </div>
@@ -12557,20 +12556,21 @@ function SettingsView({ settings, logo, subscription, onUpdateSubscription, onSa
             </div>
           )}
 
-          {/* Cloud Health Card */}
-          <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400">
+          {/* Cloud Health Card (NEUMORPHIC SOFT UI WHITE) */}
+          <div className="bg-[#ebf0f7] border border-white text-slate-900 rounded-2xl p-5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-default select-none">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
                 <Database size={20} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm text-white">Supabase Cloud Database</h3>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase">
+                  <h3 className="font-extrabold text-sm text-slate-900">Supabase Cloud Database</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-black uppercase flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     Connected · Free Tier
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 mt-0.5">
+                <p className="text-xs text-slate-600 mt-0.5 font-medium">
                   All ledger mutations are encrypted and mirrored in real-time.
                 </p>
               </div>
@@ -12579,7 +12579,7 @@ function SettingsView({ settings, logo, subscription, onUpdateSubscription, onSa
             <button
               type="button"
               onClick={onExport}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold transition-all shadow-sm whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-all shadow-sm whitespace-nowrap cursor-pointer active:scale-95"
             >
               <Download size={15} /> 1-Click JSON Backup
             </button>
