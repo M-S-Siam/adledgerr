@@ -1095,7 +1095,11 @@ export default function AdLedgerApp() {
           <div className="space-y-3 flex-1">
             
             {/* PORTION 1: Top Active Agency Switcher Pill */}
-            <div className="bg-[#ebf0f7] border border-white rounded-3xl p-3 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] transition-all">
+            <div className={`rounded-3xl p-3 transition-all border ${
+              theme === 'dark'
+                ? 'bg-[#111722] border-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.5)]'
+                : 'bg-[#ebf0f7] border-white shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+            }`}>
               <div className="flex items-center gap-2.5">
                 {workspaceLogo ? (
                   <img
@@ -1104,20 +1108,24 @@ export default function AdLedgerApp() {
                     className="w-9 h-9 rounded-2xl object-cover ring-1 ring-black/5 shrink-0 bg-white shadow-xs"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-2xl bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff] text-blue-600 flex items-center justify-center shrink-0">
-                    <Building size={16} className="text-blue-600" />
+                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 border ${
+                    theme === 'dark'
+                      ? 'bg-[#091422] border-sky-500/30 text-sky-400 shadow-none'
+                      : 'bg-[#ebf0f7] border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff] text-blue-600'
+                  }`}>
+                    <Building size={16} className={theme === 'dark' ? 'text-sky-400' : 'text-blue-600'} />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="block text-xs font-black tracking-tight text-slate-900 truncate">
+                    <span className={`block text-xs font-black tracking-tight truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                       {workspaceSettings.businessName || 'AdLytic CR'}
                     </span>
                     <ChevronDown size={13} className="text-slate-400 shrink-0 ml-1 opacity-70" />
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] shrink-0" />
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    <span className={`text-[9px] font-bold uppercase tracking-wider truncate ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                       ACTIVE AGENCY
                     </span>
                   </div>
@@ -1126,30 +1134,46 @@ export default function AdLedgerApp() {
             </div>
 
             {/* PORTION 2: Main Navigation Menu Card */}
-            <div className="bg-[#ebf0f7] border border-white rounded-3xl p-2.5 space-y-1.5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]">
-              <NavItem icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Mail />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => { setCurrentView('campaigns'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => { setCurrentView('ledger'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => { setCurrentView('cards'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} />
+            <div className={`rounded-3xl p-2.5 space-y-1.5 border ${
+              theme === 'dark'
+                ? 'bg-[#111722] border-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.5)]'
+                : 'bg-[#ebf0f7] border-white shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+            }`}>
+              <NavItem theme={theme} icon={<LayoutDashboard />} label="Dashboard" isActive={currentView === 'dashboard'} onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<Users />} label="Clients" isActive={currentView === 'clients'} onClick={() => { setCurrentView('clients'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<Mail />} label="Campaigns" isActive={currentView === 'campaigns'} onClick={() => { setCurrentView('campaigns'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<Activity />} label="Transactions" isActive={currentView === 'ledger'} onClick={() => { setCurrentView('ledger'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<CreditCard />} label="Cards & USD" isActive={currentView === 'cards'} onClick={() => { setCurrentView('cards'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<PieChart />} label="Reports" isActive={currentView === 'reports'} onClick={() => { setCurrentView('reports'); setIsMobileMenuOpen(false); }} />
             </div>
 
             {/* PORTION 3: Workspace Section Card */}
-            <div className="bg-[#ebf0f7] border border-white rounded-3xl p-2.5 space-y-1.5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]">
-              <p className="px-3 pt-1 text-[9.5px] font-black uppercase tracking-wider text-slate-400">WORKSPACE</p>
-              <NavItem icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<BookOpen />} label="User Guide & SOP" isActive={currentView === 'guide'} onClick={() => { setCurrentView('guide'); setIsMobileMenuOpen(false); }} />
-              <NavItem icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
+            <div className={`rounded-3xl p-2.5 space-y-1.5 border ${
+              theme === 'dark'
+                ? 'bg-[#111722] border-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.5)]'
+                : 'bg-[#ebf0f7] border-white shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+            }`}>
+              <p className={`px-3 pt-1 text-[9.5px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>WORKSPACE</p>
+              <NavItem theme={theme} icon={<PlugZap />} label="Integrations" isActive={currentView === 'integrations'} onClick={() => { setCurrentView('integrations'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<UsersRound />} label="Team" isActive={currentView === 'team'} onClick={() => { setCurrentView('team'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<BookOpen />} label="User Guide & SOP" isActive={currentView === 'guide'} onClick={() => { setCurrentView('guide'); setIsMobileMenuOpen(false); }} />
+              <NavItem theme={theme} icon={<Settings />} label="Settings" isActive={currentView === 'settings'} onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }} />
             </div>
 
           </div>
 
           {/* PORTION 4: Bottom Platform Brand Card */}
-          <div className="bg-[#ebf0f7] border border-white rounded-3xl p-3 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] shrink-0 mt-2">
+          <div className={`rounded-3xl p-3 shrink-0 mt-2 border ${
+            theme === 'dark'
+              ? 'bg-[#111722] border-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.5)]'
+              : 'bg-[#ebf0f7] border-white shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+          }`}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-[inset_2px_2px_4px_rgba(166,180,200,0.35),inset_-2px_-2px_4px_#ffffff] border border-white shrink-0 bg-white flex items-center justify-center">
+              <div className={`w-10 h-10 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center border ${
+                theme === 'dark'
+                  ? 'bg-[#090c12] border-white/10 shadow-none'
+                  : 'bg-white border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.35),inset_-2px_-2px_4px_#ffffff]'
+              }`}>
                 <img
                   src={QUANTREX_LOGO_DATA_URL}
                   alt="Quantrex Platform"
@@ -1163,7 +1187,7 @@ export default function AdLedgerApp() {
                 <div className="w-fit flex flex-col items-start select-none">
                   <div className="flex items-center font-black text-sm tracking-[0.16em] leading-none font-sans">
                     <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-600 via-indigo-600 to-sky-500 font-black">Q</span>
-                    <span className="text-slate-900 font-black tracking-[0.15em]">UANTREX</span>
+                    <span className={`font-black tracking-[0.15em] ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>UANTREX</span>
                   </div>
                   <div className="text-[9.5px] font-bold text-sky-600 tracking-wider leading-none mt-1 text-left w-full whitespace-nowrap">
                     Ad Spend Intelligence
@@ -1184,11 +1208,15 @@ export default function AdLedgerApp() {
               </button>
               {/* Single Seamless Inset Search Bar */}
               <div className="relative hidden sm:flex items-center">
-                <Search size={15} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+                <Search size={15} className={`absolute left-3.5 pointer-events-none ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
                 <input
                   type="text"
                   placeholder="Search clients, campaigns, cards..."
-                  className="pl-9 pr-4 py-2 rounded-xl bg-[#ebf0f7] text-xs text-slate-800 placeholder-slate-400 font-semibold border border-white/90 outline-none transition-all w-60 lg:w-80 shadow-[inset_2px_2px_5px_rgba(166,180,200,0.4),inset_-2px_-2px_5px_#ffffff]"
+                  className={`pl-9 pr-4 py-2 rounded-xl text-xs font-semibold outline-none transition-all w-60 lg:w-80 border ${
+                    theme === 'dark'
+                      ? 'bg-[#090c12] text-white placeholder-slate-500 border-white/10 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.8)]'
+                      : 'bg-[#ebf0f7] text-slate-800 placeholder-slate-400 border-white/90 shadow-[inset_2px_2px_5px_rgba(166,180,200,0.4),inset_-2px_-2px_5px_#ffffff]'
+                  }`}
                 />
               </div>
             </div>
@@ -1221,10 +1249,14 @@ export default function AdLedgerApp() {
               {/* SUBSCRIPTION & 3-DAY TRIAL STATUS PILL */}
               <button
                 onClick={() => setCurrentView('settings')}
-                className={`hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all border shadow-[3px_3px_8px_rgba(166,180,200,0.4),-3px_-3px_8px_#ffffff] cursor-pointer ${
-                  subscription?.status === 'active'
-                    ? 'bg-[#ebf0f7] border-emerald-300 text-emerald-800 hover:bg-emerald-50'
-                    : 'bg-[#ebf0f7] border-amber-300 text-amber-950 hover:bg-amber-50/50'
+                className={`hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all border cursor-pointer ${
+                  theme === 'dark'
+                    ? (subscription?.status === 'active'
+                        ? 'bg-[#0a1510] border-emerald-500/40 text-emerald-300 shadow-none'
+                        : 'bg-[#181308] border-amber-500/40 text-amber-300 shadow-none')
+                    : (subscription?.status === 'active'
+                        ? 'bg-[#ebf0f7] border-emerald-300 text-emerald-800 hover:bg-emerald-50 shadow-[3px_3px_8px_rgba(166,180,200,0.4),-3px_-3px_8px_#ffffff]'
+                        : 'bg-[#ebf0f7] border-amber-300 text-amber-950 hover:bg-amber-50/50 shadow-[3px_3px_8px_rgba(166,180,200,0.4),-3px_-3px_8px_#ffffff]')
                 }`}
                 title="Click to view Subscription & Billing details"
               >
@@ -1235,9 +1267,11 @@ export default function AdLedgerApp() {
                   </>
                 ) : (
                   <>
-                    <Sparkles size={13} className="text-amber-600 animate-pulse shrink-0" />
+                    <Sparkles size={13} className={`${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'} animate-pulse shrink-0`} />
                     <span>3-Day Free Trial (৳500/mo)</span>
-                    <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider shadow-xs">
+                    <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                      theme === 'dark' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-amber-500 text-white shadow-xs'
+                    }`}>
                       Promo Auto-Applied
                     </span>
                   </>
@@ -2803,26 +2837,38 @@ function DashboardView({
     <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
       
       {/* 1. EXECUTIVE OPERATIONAL HERO STRIP */}
-      <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className={`rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border ${
+        theme === 'dark'
+          ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+          : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+      }`}>
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_5px_rgba(166,180,200,0.45),inset_-2px_-2px_5px_#ffffff] text-sky-600 flex items-center justify-center font-black">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black border ${
+              theme === 'dark'
+                ? 'bg-[#091422] border-sky-500/30 text-sky-400 shadow-none'
+                : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[inset_2px_2px_5px_rgba(166,180,200,0.45),inset_-2px_-2px_5px_#ffffff]'
+            }`}>
               <LayoutDashboard size={19} />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className={`text-xl sm:text-2xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               Agency Command Center
             </h1>
           </div>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
             Live financial telemetry, liquidity distribution & client performance overview.
           </p>
         </div>
 
         {/* Live Operational Status & DB Telemetry */}
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff]">
+          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border ${
+            theme === 'dark'
+              ? 'bg-[#0a1510] border-emerald-500/30 shadow-none'
+              : 'bg-[#ebf0f7] border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff]'
+          }`}>
             <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] animate-pulse" />
-            <span className="text-xs font-bold text-slate-700">Live Supabase DB Sync</span>
+            <span className={`text-xs font-bold ${theme === 'dark' ? 'text-emerald-300' : 'text-slate-700'}`}>Live Supabase DB Sync</span>
           </div>
         </div>
       </div>
@@ -2831,17 +2877,29 @@ function DashboardView({
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
 
         {/* CARD 1: TOTAL REVENUE (BDT) */}
-        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+                theme === 'dark'
+                  ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]'
+                  : 'bg-emerald-50 border-emerald-200/60 text-emerald-600'
+              }`}>
                 <ArrowDownRight size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                 Total<br />Revenue
               </span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              theme === 'dark'
+                ? 'bg-[#0a1510] text-emerald-400 border-emerald-500/30'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}>
               BDT In
             </span>
           </div>
@@ -2853,7 +2911,7 @@ function DashboardView({
                 {formatBDT(metrics.totalRevenueBDT)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
+            <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[11px] ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
               <div>
                 <span className="text-slate-400 block font-semibold">Total BDT Cost</span>
                 <span className="font-bold text-rose-500">{formatBDT(dashboardData.totalBDTCost)}</span>
@@ -2873,17 +2931,29 @@ function DashboardView({
         </div>
 
         {/* CARD 2: TOTAL USD SPENT */}
-        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 text-purple-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+                theme === 'dark'
+                  ? 'bg-[#130f1c] border-purple-500/30 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.15)]'
+                  : 'bg-purple-50 border-purple-200/60 text-purple-600'
+              }`}>
                 <Activity size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                 Total USD<br />Spent
               </span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              theme === 'dark'
+                ? 'bg-[#130f1c] text-purple-400 border-purple-500/30'
+                : 'bg-purple-50 text-purple-700 border-purple-200'
+            }`}>
               USD Out
             </span>
           </div>
@@ -2895,7 +2965,7 @@ function DashboardView({
                 {formatUSD(dashboardData.totalBurnUSD)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
+            <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[11px] ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
               <div>
                 <span className="text-slate-400 block font-semibold">USD Purchased</span>
                 <span className="font-bold text-sky-500">{formatUSD(metrics.totalUSDPurchased)}</span>
@@ -2913,17 +2983,29 @@ function DashboardView({
         </div>
 
         {/* CARD 3: NET AGENCY PROFIT */}
-        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-sky-50 border border-sky-200/60 text-sky-600 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+                theme === 'dark'
+                  ? 'bg-[#091422] border-sky-500/30 text-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.15)]'
+                  : 'bg-sky-50 border-sky-200/60 text-sky-600'
+              }`}>
                 <TrendingUp size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                 Net Agency<br />Profit
               </span>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              theme === 'dark'
+                ? 'bg-[#091422] text-sky-400 border-sky-500/30'
+                : 'bg-sky-50 text-sky-700 border-sky-200'
+            }`}>
               Net BDT
             </span>
           </div>
@@ -2935,7 +3017,7 @@ function DashboardView({
                 {formatBDT(metrics.netProfitBDT)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
+            <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[11px] ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
               <div>
                 <span className="text-slate-400 block font-semibold">Profit Margin</span>
                 <span className="font-bold text-emerald-500">{metrics.profitMargin.toFixed(1)}%</span>
@@ -2953,20 +3035,28 @@ function DashboardView({
         </div>
 
         {/* CARD 4: TOTAL CARD BALANCE */}
-        <div className="bg-[#ebf0f7] border border-white/90 rounded-2xl p-4 sm:p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
-                totalCardBalance < 0 ? 'bg-rose-50 border-rose-200/60 text-rose-600' : 'bg-sky-50 border-sky-200/60 text-sky-600'
+                totalCardBalance < 0
+                  ? (theme === 'dark' ? 'bg-[#190d14] border-rose-500/30 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.15)]' : 'bg-rose-50 border-rose-200/60 text-rose-600')
+                  : (theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.15)]' : 'bg-sky-50 border-sky-200/60 text-sky-600')
               }`}>
                 <CreditCard size={17} />
               </div>
-              <span className="font-extrabold text-xs text-slate-800 uppercase tracking-wider leading-tight block">
+              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                 Total Card<br />Balance
               </span>
             </div>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-              totalCardBalance < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-sky-50 text-sky-700 border-sky-200'
+              totalCardBalance < 0
+                ? (theme === 'dark' ? 'bg-[#190d14] text-rose-400 border-rose-500/30' : 'bg-rose-50 text-rose-700 border-rose-200')
+                : (theme === 'dark' ? 'bg-[#091422] text-sky-400 border-sky-500/30' : 'bg-sky-50 text-sky-700 border-sky-200')
             }`}>
               {cards.length} Cards
             </span>
@@ -3001,10 +3091,14 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* CHART 1: Revenue vs Ad Burn Trajectory (8 Cols) */}
-        <div className="xl:col-span-8 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200/60">
+        <div className={`xl:col-span-8 rounded-2xl p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                 <TrendingUp size={16} className="text-emerald-600" />
                 Revenue vs Ad Burn Trajectory
               </h3>
@@ -3105,16 +3199,24 @@ function DashboardView({
         </div>
 
         {/* CHART 2: Cybernetic Concentric Radial Burn HUD (4 Cols) */}
-        <div className="xl:col-span-4 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="mb-2 pb-3 border-b border-slate-200/60 flex items-center justify-between">
+        <div className={`xl:col-span-4 rounded-2xl p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`mb-2 pb-3 border-b flex items-center justify-between ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 tracking-tight flex items-center gap-2">
+              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                 <Activity size={16} className="text-purple-600" />
                 USD Burn Allocation
               </h3>
               <p className="text-[11px] text-slate-400 font-medium">Meta Ads, 15% VAT, and bank fees.</p>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-[#ebf0f7] border border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff] text-[10px] font-bold text-purple-700">
+            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+              theme === 'dark'
+                ? 'bg-[#130f1c] border-purple-500/30 text-purple-400'
+                : 'bg-[#ebf0f7] border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff] text-purple-700'
+            }`}>
               Concentric HUD
             </span>
           </div>
@@ -3257,26 +3359,38 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* TABLE 1: CLIENT P&L PERFORMANCE (6 Cols) */}
-        <div className="xl:col-span-6 bg-[#ebf0f7] border border-white/90 rounded-2xl overflow-hidden shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col">
-          <div className="px-5 py-3.5 border-b border-slate-200/60 bg-[#e5edf6] flex items-center justify-between">
+        <div className={`xl:col-span-6 rounded-2xl overflow-hidden flex flex-col border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`px-5 py-3.5 border-b flex items-center justify-between ${
+            theme === 'dark' ? 'bg-[#0d121b] border-white/10' : 'bg-[#e5edf6] border-slate-200/60'
+          }`}>
             <div>
-              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Client P&L Performance</h3>
+              <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Client P&L Performance</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">Top client accounts, revenue collected & net margin.</p>
             </div>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('clients')}
-                className="px-2.5 py-1 rounded-xl bg-[#ebf0f7] border border-white text-[11px] font-bold text-sky-600 hover:text-sky-700 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] active:shadow-[inset_2px_2px_4px_rgba(166,180,200,0.5)] flex items-center gap-1 transition-all cursor-pointer"
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                  theme === 'dark'
+                    ? 'bg-[#182235] border-sky-500/30 text-sky-400 shadow-none'
+                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff]'
+                }`}
               >
                 <span>All Clients</span>
-                <ChevronRight size={13} className="text-sky-600" />
+                <ChevronRight size={13} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
               </button>
             )}
           </div>
 
           <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
-              <thead className="bg-[#ebf0f7] text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
+              <thead className={`sticky top-0 uppercase tracking-wider text-[9.5px] font-bold border-b ${
+                theme === 'dark' ? 'bg-[#0a0d14] text-slate-400 border-white/10' : 'bg-[#ebf0f7] text-slate-500 border-slate-200'
+              }`}>
                 <tr>
                   <th className="w-[28%] pl-5 pr-2 py-3 text-left">Client & Brand</th>
                   <th className="w-[21%] px-3 py-3 text-right">Revenue</th>
@@ -3285,7 +3399,7 @@ function DashboardView({
                   <th className="w-[13%] pl-2 pr-5 py-3 text-right">Margin</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200/60 font-medium">
+              <tbody className={`divide-y font-medium ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
                 {dashboardData.clientRows.length === 0 && (
                   <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-400 font-semibold">No client activity recorded yet.</td></tr>
                 )}
@@ -3293,29 +3407,35 @@ function DashboardView({
                   <tr
                     key={row.id}
                     onClick={() => onViewClient && row.rawClient && onViewClient(row.rawClient)}
-                    className="hover:bg-white/50 transition-colors cursor-pointer group"
+                    className={`transition-colors cursor-pointer group ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-white/50'}`}
                   >
                     <td className="w-[28%] pl-5 pr-2 py-3 text-left">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-sky-600 group-hover:text-white transition-colors shadow-xs">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors shadow-xs ${
+                          theme === 'dark'
+                            ? 'bg-sky-950/60 text-sky-400 border border-sky-500/30 group-hover:bg-sky-600 group-hover:text-white'
+                            : 'bg-sky-100 text-sky-700 group-hover:bg-sky-600 group-hover:text-white'
+                        }`}>
                           {row.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-bold text-slate-900 truncate group-hover:text-sky-700 transition-colors">{row.name}</div>
+                          <div className={`font-bold truncate transition-colors ${theme === 'dark' ? 'text-white group-hover:text-sky-400' : 'text-slate-900 group-hover:text-sky-700'}`}>{row.name}</div>
                           <div className="text-[10px] text-slate-400 truncate">{row.company}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="w-[21%] px-3 py-3 text-right font-bold text-emerald-700">{formatBDT(row.revenue)}</td>
-                    <td className="w-[20%] px-3 py-3 text-right text-slate-600 font-semibold">{formatBDT(row.adCostBDT)}</td>
-                    <td className={`w-[18%] px-3 py-3 text-right font-black ${row.profit < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    <td className={`w-[21%] px-3 py-3 text-right font-bold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>{formatBDT(row.revenue)}</td>
+                    <td className={`w-[20%] px-3 py-3 text-right font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{formatBDT(row.adCostBDT)}</td>
+                    <td className={`w-[18%] px-3 py-3 text-right font-black ${row.profit < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                       {formatBDT(row.profit)}
                     </td>
                     <td className="w-[13%] pl-2 pr-5 py-3 text-right">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        row.margin > 50 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                        row.margin < 0 ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                        'bg-white/80 text-slate-700 border border-slate-200'
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        row.margin > 50
+                          ? (theme === 'dark' ? 'bg-[#0a1510] text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200')
+                          : row.margin < 0
+                          ? (theme === 'dark' ? 'bg-[#190d14] text-rose-400 border-rose-500/30' : 'bg-rose-50 text-rose-700 border-rose-200')
+                          : (theme === 'dark' ? 'bg-[#182235] text-slate-300 border-white/10' : 'bg-white/80 text-slate-700 border-slate-200')
                       }`}>
                         {row.margin.toFixed(1)}%
                       </span>
@@ -3328,26 +3448,38 @@ function DashboardView({
         </div>
 
         {/* TABLE 2: CARD LIQUIDITY & BURN (6 Cols) */}
-        <div className="xl:col-span-6 bg-[#ebf0f7] border border-white/90 rounded-2xl overflow-hidden shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col">
-          <div className="px-5 py-3.5 border-b border-slate-200/60 bg-[#e5edf6] flex items-center justify-between">
+        <div className={`xl:col-span-6 rounded-2xl overflow-hidden flex flex-col border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`px-5 py-3.5 border-b flex items-center justify-between ${
+            theme === 'dark' ? 'bg-[#0d121b] border-white/10' : 'bg-[#e5edf6] border-slate-200/60'
+          }`}>
             <div>
-              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Card Liquidity & Burn</h3>
+              <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Card Liquidity & Burn</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">USD funded, burned, and live spendable balances.</p>
             </div>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('cards')}
-                className="px-2.5 py-1 rounded-xl bg-[#ebf0f7] border border-white text-[11px] font-bold text-sky-600 hover:text-sky-700 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] active:shadow-[inset_2px_2px_4px_rgba(166,180,200,0.5)] flex items-center gap-1 transition-all cursor-pointer"
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                  theme === 'dark'
+                    ? 'bg-[#182235] border-sky-500/30 text-sky-400 shadow-none'
+                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff]'
+                }`}
               >
                 <span>All Cards</span>
-                <ChevronRight size={13} className="text-sky-600" />
+                <ChevronRight size={13} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
               </button>
             )}
           </div>
 
           <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
-              <thead className="bg-[#ebf0f7] text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[9.5px]">
+              <thead className={`sticky top-0 uppercase tracking-wider text-[9.5px] font-bold border-b ${
+                theme === 'dark' ? 'bg-[#0a0d14] text-slate-400 border-white/10' : 'bg-[#ebf0f7] text-slate-500 border-slate-200'
+              }`}>
                 <tr>
                   <th className="w-[32%] pl-5 pr-2 py-3 text-left">Card & Provider</th>
                   <th className="w-[23%] px-3 py-3 text-right">USD Funded</th>
@@ -3355,7 +3487,7 @@ function DashboardView({
                   <th className="w-[22%] pl-2 pr-5 py-3 text-right">Live Balance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200/60 font-medium">
+              <tbody className={`divide-y font-medium ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
                 {dashboardData.allCards.length === 0 && (
                   <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400 font-semibold">No active cards found.</td></tr>
                 )}
@@ -3363,7 +3495,7 @@ function DashboardView({
                   <tr
                     key={card.id}
                     onClick={() => onViewCard && onViewCard(card)}
-                    className="hover:bg-white/50 transition-colors cursor-pointer group"
+                    className={`transition-colors cursor-pointer group ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-white/50'}`}
                   >
                     <td className="w-[32%] pl-5 pr-2 py-3 text-left">
                       <div className="flex items-center gap-2">
@@ -3371,7 +3503,7 @@ function DashboardView({
                           EMV
                         </div>
                         <div className="min-w-0">
-                          <div className="font-bold text-slate-900 truncate group-hover:text-sky-700 transition-colors">
+                          <div className={`font-bold truncate transition-colors ${theme === 'dark' ? 'text-white group-hover:text-sky-400' : 'text-slate-900 group-hover:text-sky-700'}`}>
                             {card.name}
                           </div>
                           <div className="text-[10px] text-slate-400 truncate">
@@ -3380,13 +3512,13 @@ function DashboardView({
                         </div>
                       </div>
                     </td>
-                    <td className="w-[23%] px-3 py-3 text-right font-bold text-emerald-700">
+                    <td className={`w-[23%] px-3 py-3 text-right font-bold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
                       +{formatUSD(card.purchased)}
                     </td>
-                    <td className="w-[23%] px-3 py-3 text-right font-bold text-purple-700">
+                    <td className={`w-[23%] px-3 py-3 text-right font-bold ${theme === 'dark' ? 'text-purple-400' : 'text-purple-700'}`}>
                       -{formatUSD(card.spent)}
                     </td>
-                    <td className={`w-[22%] pl-2 pr-5 py-3 text-right font-black ${card.balance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    <td className={`w-[22%] pl-2 pr-5 py-3 text-right font-black ${card.balance < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                       {formatUSD(card.balance)}
                     </td>
                   </tr>
@@ -3401,24 +3533,32 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* REAL-TIME MOVEMENT STREAM (7 Cols) */}
-        <div className="xl:col-span-7 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+        <div className={`xl:col-span-7 rounded-2xl p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
-              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Live Movement Stream</h3>
+              <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Live Movement Stream</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">Real-time ledger events and transactions.</p>
             </div>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('ledger')}
-                className="px-2.5 py-1 rounded-xl bg-[#ebf0f7] border border-white text-[11px] font-bold text-sky-600 hover:text-sky-700 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] active:shadow-[inset_2px_2px_4px_rgba(166,180,200,0.5)] flex items-center gap-1 transition-all cursor-pointer"
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                  theme === 'dark'
+                    ? 'bg-[#182235] border-sky-500/30 text-sky-400 shadow-none'
+                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff]'
+                }`}
               >
                 <span>Full Ledger</span>
-                <ChevronRight size={13} className="text-sky-600" />
+                <ChevronRight size={13} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
               </button>
             )}
           </div>
 
-          <div className="divide-y divide-slate-200/60 my-2">
+          <div className={`divide-y my-2 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
             {dashboardData.recentTransactions.length === 0 && (
               <div className="py-8 text-center text-slate-400 text-xs">No transactions recorded yet.</div>
             )}
@@ -3433,12 +3573,18 @@ function DashboardView({
               const card = cards.find(c => c.id === tx.cardId)?.name;
 
               return (
-                <div key={tx.id} className="py-2.5 flex items-center justify-between gap-3 hover:bg-white/60 px-2 rounded-xl transition-colors">
+                <div key={tx.id} className={`py-2.5 flex items-center justify-between gap-3 px-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-white/60'}`}>
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs border ${
-                      isPayment ? 'bg-emerald-50 border-emerald-200/60 text-emerald-600' :
-                      isUSD ? 'bg-sky-50 border-sky-200/60 text-sky-600' :
-                      isAds ? 'bg-purple-50 border-purple-200/60 text-purple-600' : 'bg-amber-50 border-amber-200/60 text-amber-600'
+                      theme === 'dark'
+                        ? (isPayment ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400' :
+                           isUSD ? 'bg-[#091422] border-sky-500/30 text-sky-400' :
+                           isAds ? 'bg-[#130f1c] border-purple-500/30 text-purple-400' :
+                           'bg-[#181308] border-amber-500/30 text-amber-400')
+                        : (isPayment ? 'bg-emerald-50 border-emerald-200/60 text-emerald-600' :
+                           isUSD ? 'bg-sky-50 border-sky-200/60 text-sky-600' :
+                           isAds ? 'bg-purple-50 border-purple-200/60 text-purple-600' :
+                           'bg-amber-50 border-amber-200/60 text-amber-600')
                     }`}>
                       {isPayment && <ArrowDownLeft size={16} />}
                       {isUSD && <DollarSign size={16} />}
@@ -3446,7 +3592,7 @@ function DashboardView({
                       {isFee && <Wallet size={16} />}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-bold text-xs text-slate-900 truncate">
+                      <div className={`font-bold text-xs truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         {isPayment ? 'Payment Received' : isUSD ? 'USD Purchased' : isAds ? 'Meta Ad Spend' : 'Card Fee'}
                       </div>
                       <div className="text-[10px] text-slate-400 truncate">
@@ -3456,7 +3602,13 @@ function DashboardView({
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className={`font-black text-xs ${isIn ? 'text-emerald-600' : isAds ? 'text-purple-700' : 'text-slate-900'}`}>
+                    <div className={`font-black text-xs ${
+                      isIn
+                        ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600')
+                        : isAds
+                        ? (theme === 'dark' ? 'text-purple-400' : 'text-purple-700')
+                        : (theme === 'dark' ? 'text-white' : 'text-slate-900')
+                    }`}>
                       {isPayment ? `+${formatBDT(tx.amountBDT)}` :
                        isUSD ? `+${formatUSD(tx.amountUSD)}` :
                        isAds ? `-${formatUSD(parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0))}` :
@@ -3469,42 +3621,46 @@ function DashboardView({
             })}
           </div>
 
-          <div className="text-[10.5px] text-slate-400 font-medium pt-2 border-t border-slate-200/60 flex items-center justify-between">
+          <div className={`text-[10.5px] font-medium pt-2 border-t flex items-center justify-between ${theme === 'dark' ? 'border-white/10 text-slate-400' : 'border-slate-200/60 text-slate-400'}`}>
             <span>Verified against Supabase Ledger</span>
-            <span className="font-bold text-slate-700">{transactions.length} Total Records</span>
+            <span className={`font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{transactions.length} Total Records</span>
           </div>
         </div>
 
         {/* QUICK STATS SNAPSHOT (5 Cols) */}
-        <div className="xl:col-span-5 bg-[#ebf0f7] border border-white/90 rounded-2xl p-5 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+        <div className={`xl:col-span-5 rounded-2xl p-5 flex flex-col justify-between border ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
-              <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">Quick Operational Stats</h3>
+              <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Quick Operational Stats</h3>
               <p className="text-[10.5px] text-slate-400 font-medium">A compact snapshot of your operations.</p>
             </div>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </div>
 
-          <div className="divide-y divide-slate-200/60 my-2 text-xs">
+          <div className={`divide-y my-2 text-xs ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
             <div className="py-2.5 flex items-center justify-between">
-              <span className="text-slate-500 font-medium">Active Clients</span>
-              <span className="font-bold text-slate-900">{dashboardData.activeClients.length} of {clients.length}</span>
+              <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Active Clients</span>
+              <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{dashboardData.activeClients.length} of {clients.length}</span>
             </div>
             <div className="py-2.5 flex items-center justify-between">
-              <span className="text-slate-500 font-medium">Total Virtual Cards</span>
-              <span className="font-bold text-slate-900">{cards.length} Cards</span>
+              <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Total Virtual Cards</span>
+              <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{cards.length} Cards</span>
             </div>
             <div className="py-2.5 flex items-center justify-between">
-              <span className="text-slate-500 font-medium">Avg Effective FX Rate</span>
-              <span className="font-bold text-sky-600 font-mono">৳{metrics.avgUSDEffectiveRate.toFixed(2)} / USD</span>
+              <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Avg Effective FX Rate</span>
+              <span className={`font-bold font-mono ${theme === 'dark' ? 'text-sky-400' : 'text-sky-600'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(2)} / USD</span>
             </div>
             <div className="py-2.5 flex items-center justify-between">
-              <span className="text-slate-500 font-medium">Total BDT Spent on USD</span>
-              <span className="font-bold text-rose-600">{formatBDT(dashboardData.totalBDTCost)}</span>
+              <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Total BDT Spent on USD</span>
+              <span className={`font-bold ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatBDT(dashboardData.totalBDTCost)}</span>
             </div>
             <div className="py-2.5 flex items-center justify-between">
-              <span className="text-slate-500 font-medium">Total Meta 15% VAT</span>
-              <span className="font-bold text-rose-600">{formatUSD(metrics.totalTaxUSD)}</span>
+              <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Total Meta 15% VAT</span>
+              <span className={`font-bold ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatUSD(metrics.totalTaxUSD)}</span>
             </div>
           </div>
 
@@ -12907,14 +13063,18 @@ function Field({ label, children }) {
 }
 
 
-function NavItem({ icon, label, isActive, onClick }) {
+function NavItem({ icon, label, isActive, onClick, theme = 'light' }) {
   return (
     <button
       onClick={onClick}
       className={`w-full flex items-center justify-between p-2 rounded-2xl transition-all duration-200 cursor-pointer select-none group ${
         isActive
-          ? 'bg-[#e0eaf6] text-blue-700 font-black shadow-[inset_4px_4px_8px_rgba(166,180,200,0.75),inset_-4px_-4px_8px_#ffffff] border border-white/80'
-          : 'text-slate-600 hover:text-slate-900 hover:bg-white/40 active:shadow-[inset_3px_3px_6px_rgba(166,180,200,0.6),inset_-3px_-3px_6px_#ffffff] active:bg-[#e2eaf4]'
+          ? (theme === 'dark'
+              ? 'bg-[#182235] text-sky-400 font-black border border-sky-500/30 shadow-[inset_2px_2px_6px_rgba(0,0,0,0.7)]'
+              : 'bg-[#e0eaf6] text-blue-700 font-black shadow-[inset_4px_4px_8px_rgba(166,180,200,0.75),inset_-4px_-4px_8px_#ffffff] border border-white/80')
+          : (theme === 'dark'
+              ? 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/40 active:shadow-[inset_3px_3px_6px_rgba(166,180,200,0.6),inset_-3px_-3px_6px_#ffffff] active:bg-[#e2eaf4]')
       }`}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -12922,16 +13082,22 @@ function NavItem({ icon, label, isActive, onClick }) {
           className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${
             isActive
               ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[2px_3px_8px_rgba(37,99,235,0.4)]'
-              : 'bg-[#ebf0f7] border border-white shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] text-slate-500 group-hover:text-blue-600'
+              : (theme === 'dark'
+                  ? 'bg-[#0c1017] border border-white/10 text-slate-400 group-hover:text-sky-400 group-hover:border-sky-500/30'
+                  : 'bg-[#ebf0f7] border border-white shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] text-slate-500 group-hover:text-blue-600')
           }`}
         >
           {React.cloneElement(icon, { size: 16, className: isActive ? 'stroke-[2.5]' : 'stroke-[2]' })}
         </div>
-        <span className={`truncate text-xs ${isActive ? 'font-black text-blue-800' : 'font-bold text-slate-700'}`}>
+        <span className={`truncate text-xs ${
+          isActive
+            ? (theme === 'dark' ? 'font-black text-sky-400' : 'font-black text-blue-800')
+            : (theme === 'dark' ? 'font-bold text-slate-300 group-hover:text-white' : 'font-bold text-slate-700')
+        }`}>
           {label}
         </span>
       </div>
-      {isActive && <ChevronRight size={15} className="text-blue-600 font-bold shrink-0 mr-1" />}
+      {isActive && <ChevronRight size={15} className={`${theme === 'dark' ? 'text-sky-400' : 'text-blue-600'} font-bold shrink-0 mr-1`} />}
     </button>
   );
 }

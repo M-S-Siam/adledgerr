@@ -275,6 +275,61 @@ body.dark {
   background-color: rgba(255, 255, 255, 0.03) !important;
 }
 
+/* ZERO WHITE BOXES OR PILLS IN DARK MODE */
+.adl-shell.dark .bg-white,
+.adl-shell.dark [class*="bg-white/"],
+.adl-shell.dark [class*="bg-slate-50"],
+.adl-shell.dark [class*="bg-slate-100"] {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Convert all light pastel badge/icon boxes to dark obsidian neon in dark mode */
+.adl-shell.dark [class*="bg-emerald-50"] {
+  background-color: #0a1510 !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.adl-shell.dark [class*="bg-purple-50"] {
+  background-color: #130f1c !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+.adl-shell.dark [class*="bg-sky-50"],
+.adl-shell.dark [class*="bg-blue-50"] {
+  background-color: #091422 !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+.adl-shell.dark [class*="bg-rose-50"] {
+  background-color: #190d14 !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+.adl-shell.dark [class*="bg-amber-50"] {
+  background-color: #181308 !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Eliminate pastel light borders in dark mode */
+.adl-shell.dark [class*="border-emerald-200"] {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.adl-shell.dark [class*="border-purple-200"] {
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+.adl-shell.dark [class*="border-sky-200"],
+.adl-shell.dark [class*="border-blue-200"] {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+.adl-shell.dark [class*="border-rose-200"] {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+.adl-shell.dark [class*="border-amber-200"],
+.adl-shell.dark [class*="border-amber-300"] {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
 /* MODALS IN DARK MODE */
 .adl-shell.dark [role="dialog"],
 .adl-shell.dark .fixed [class*="bg-white"],
