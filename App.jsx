@@ -1504,9 +1504,10 @@ export default function AdLedgerApp() {
               client={selectedClient}
               metrics={metrics}
               transactions={transactions}
+              cards={cards}
+              clients={clients}
+              onAddTransaction={handleAddTransaction}
               onClose={() => setActiveModal(null)}
-              onReceivePayment={() => openPaymentForClient(selectedClient)}
-              onAdSpend={() => openAdSpendForClient(selectedClient)}
             />
           </Modal>
         )}
@@ -12858,13 +12859,13 @@ function TransactionTypeBadge({ type }) {
   return <span className={`px-2.5 py-1 rounded text-xs font-semibold border ${styles[type] || 'bg-slate-100 text-slate-600'}`}>{labels[type] || type}</span>;
 }
 
-function Modal({ title, onClose, children, width = "max-w-md" }) {
+function Modal({ title, onClose, children, width = "max-w-md", zIndex = "z-50" }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200">
+    <div className={`fixed inset-0 ${zIndex} flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 sm:p-0 animate-in fade-in duration-200`}>
       <div className={`bg-white rounded-xl shadow-2xl w-full ${width} overflow-hidden flex flex-col max-h-[92vh] border border-slate-200/90`}>
         <div className="flex justify-between items-center px-5 py-3 border-b border-slate-200/80 bg-slate-50/80 shrink-0">
           <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"><X size={18} /></button>
+          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"><X size={18} /></button>
         </div>
         <div className="p-4 sm:p-4.5 overflow-y-auto">
           {children}
@@ -13554,7 +13555,8 @@ function CardForm({ initialData, onSubmit, onCancel }) {
   );
 }
 
-function ClientDetailsModal({ client, metrics, transactions, onClose, onReceivePayment, onAdSpend }) {
+function ClientDetailsModal({ client, metrics, transactions, cards = [], clients = [], onAddTransaction, onClose }) {
+  const [subModal, setSubModal] = useState(null);
   const clientTx = useMemo(() => transactions.filter(t => t.clientId === client.id).sort((a, b) => new Date(b.date) - new Date(a.date)), [transactions, client.id]);
 
   const stats = useMemo(() => {
@@ -13768,14 +13770,14 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
         <div className="flex flex-row md:flex-col gap-2 shrink-0 self-start md:self-center justify-center">
           <button
             type="button"
-            onClick={onReceivePayment}
+            onClick={() => setSubModal('payment')}
             className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
             <Coins size={14} /> + Payment
           </button>
           <button
             type="button"
-            onClick={onAdSpend}
+            onClick={() => setSubModal('spend')}
             className="inline-flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
             <Activity size={14} /> + Ad Spend
@@ -13944,6 +13946,38 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
           </div>
         </div>
       </div>
+
+      {/* NESTED SUB-MODALS DIRECTLY INSIDE VIEW DETAILS */}
+      {subModal === 'payment' && (
+        <Modal title={`Receive Payment — ${client.name}`} onClose={() => setSubModal(null)} width="max-w-md" zIndex="z-[60]">
+          <TransactionForm
+            type="PAYMENT_RECEIVED"
+            clients={[client, ...(clients || []).filter(c => c.id !== client.id)]}
+            initialData={{ clientId: client.id }}
+            onSubmit={(payload) => {
+              if (onAddTransaction) onAddTransaction(payload);
+              setSubModal(null);
+            }}
+            onCancel={() => setSubModal(null)}
+          />
+        </Modal>
+      )}
+
+      {subModal === 'spend' && (
+        <Modal title={`Record Meta Ad Spend — ${client.name}`} onClose={() => setSubModal(null)} width="max-w-md" zIndex="z-[60]">
+          <TransactionForm
+            type="AD_SPEND"
+            clients={[client, ...(clients || []).filter(c => c.id !== client.id)]}
+            cards={cards}
+            initialData={{ clientId: client.id }}
+            onSubmit={(payload) => {
+              if (onAddTransaction) onAddTransaction(payload);
+              setSubModal(null);
+            }}
+            onCancel={() => setSubModal(null)}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
