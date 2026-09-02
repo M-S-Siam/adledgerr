@@ -13696,52 +13696,52 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
 
   return (
     <div className="flex flex-col h-full space-y-5">
-      {/* VIP CLIENT OBSIDIAN HEADER CARD */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-5 border border-slate-800 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* VIP CLIENT NEUMORPHIC HEADER CARD */}
+      <div className="bg-[#ebf0f7] border border-white text-slate-900 rounded-2xl p-5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-default select-none">
         <div className="w-full min-w-0">
           <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-            <h2 className="text-xl font-black text-white tracking-tight">{client.name}</h2>
-            <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold flex items-center gap-1.5 ${
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">{client.name}</h2>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 ${
               displayStatus.includes('Active') || displayStatus.includes('Working')
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200/80'
                 : displayStatus.includes('Completed')
-                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                  : 'bg-slate-700/60 text-slate-300 border border-slate-600'
+                  ? 'bg-sky-100 text-sky-800 border border-sky-200/80'
+                  : 'bg-slate-200/80 text-slate-700 border border-slate-300'
             }`}>
               {(displayStatus.includes('Active') || displayStatus.includes('Working')) && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               )}
               {displayStatus}
             </span>
           </div>
-          <p className="text-slate-300 text-xs font-semibold">
+          <p className="text-slate-600 text-xs font-semibold">
             {client.company || 'Direct Account'} {client.serviceType ? `• ${client.serviceType}` : ''}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-3.5 pt-3.5 border-t border-slate-800/80 text-xs">
-            <div className="text-slate-300">
-              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Budget Plan</span>
-              <span className="font-bold text-sky-400">{getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2.5 mt-3.5 pt-3.5 border-t border-slate-200/80 text-xs">
+            <div>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Budget Plan</span>
+              <span className="font-bold text-sky-700">{getBudgetDisplay(client.budgetType, client.budgetAmount || client.budget)}</span>
             </div>
-            <div className="text-slate-300">
-              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Duration</span>
-              <span className="font-semibold text-slate-200">{getCampaignDurationDisplay(client)}</span>
+            <div>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Duration</span>
+              <span className="font-semibold text-slate-800">{getCampaignDurationDisplay(client)}</span>
             </div>
-            <div className="text-slate-300">
-              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Campaign Timeline</span>
-              <span className="font-semibold text-slate-200">{formatDate(client.startDate)} – {client.currentlyWorking ? 'Ongoing' : formatDate(client.endDate)}</span>
+            <div>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Campaign Timeline</span>
+              <span className="font-semibold text-slate-800">{formatDate(client.startDate)} – {client.currentlyWorking ? 'Ongoing' : formatDate(client.endDate)}</span>
             </div>
             {client.phone && (
-              <div className="text-slate-300">
-                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Phone & WhatsApp</span>
+              <div>
+                <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Phone & WhatsApp</span>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <a href={`tel:${client.phone}`} className="font-semibold text-sky-300 hover:underline">{client.phone}</a>
+                  <a href={`tel:${client.phone}`} className="font-semibold text-sky-700 hover:underline">{client.phone}</a>
                   <a
                     href={`https://wa.me/${(client.phone || '').replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
                     title="Direct WhatsApp Chat"
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white border border-emerald-500/40 text-[10px] font-bold transition-all"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-200 text-[10px] font-bold transition-all shadow-2xs"
                   >
                     <MessageCircle size={11} /> WhatsApp
                   </a>
@@ -13749,15 +13749,15 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
               </div>
             )}
             {client.email && (
-              <div className="text-slate-300">
-                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Email</span>
-                <a href={`mailto:${client.email}`} className="font-semibold text-sky-300 hover:underline truncate block">{client.email}</a>
+              <div>
+                <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Email</span>
+                <a href={`mailto:${client.email}`} className="font-semibold text-sky-700 hover:underline truncate block">{client.email}</a>
               </div>
             )}
             {client.fb && (
-              <div className="text-slate-300">
-                <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Facebook</span>
-                <a href={client.fb.startsWith('http') ? client.fb : `https://${client.fb}`} target="_blank" rel="noreferrer" className="font-semibold text-blue-400 hover:underline truncate block">
+              <div>
+                <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Facebook</span>
+                <a href={client.fb.startsWith('http') ? client.fb : `https://${client.fb}`} target="_blank" rel="noreferrer" className="font-semibold text-blue-700 hover:underline truncate block">
                   {client.fb}
                 </a>
               </div>
@@ -13769,59 +13769,59 @@ function ClientDetailsModal({ client, metrics, transactions, onClose, onReceiveP
           <button
             type="button"
             onClick={onReceivePayment}
-            className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
             <Coins size={14} /> + Payment
           </button>
           <button
             type="button"
             onClick={onAdSpend}
-            className="inline-flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
             <Activity size={14} /> + Ad Spend
           </button>
           <button
             type="button"
             onClick={handlePrintStatement}
-            className="inline-flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap hover:text-white"
+            className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
-            <Printer size={13} /> Statement / PDF
+            <Printer size={13} className="text-slate-500" /> Statement / PDF
           </button>
         </div>
       </div>
 
-      {/* 4 COMPACT LUXURY FROSTED TAG CARDS */}
+      {/* 4 COMPACT LUXURY FROSTED TAG CARDS (FIXED NEUMORPHIC STATS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Received</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Received</span>
             <ArrowDownRight size={14} className="text-emerald-600" />
           </div>
           <span className="text-sm font-black text-emerald-700 mt-1 block">{formatBDT(stats.revenue)}</span>
           <span className="text-[10px] text-emerald-600 font-semibold mt-0.5 block">100% Collected</span>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Ad Spend</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Ad Spend</span>
             <Activity size={14} className="text-purple-600" />
           </div>
           <span className="text-sm font-black text-purple-700 mt-1 block">{formatUSD(stats.adSpendUSD)}</span>
           <span className="text-[10px] text-purple-600 font-semibold mt-0.5 block">Tax: {formatUSD(stats.taxUSD)}</span>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Cost (BDT)</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Cost (BDT)</span>
             <Wallet size={14} className="text-amber-600" />
           </div>
           <span className="text-sm font-black text-slate-900 mt-1 block">{formatBDT(stats.totalCostBDT)}</span>
-          <span className="text-[10px] text-slate-400 font-medium mt-0.5 block">Live FX Converted</span>
+          <span className="text-[10px] text-slate-500 font-medium mt-0.5 block">Live FX Converted</span>
         </div>
 
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Agency Profit</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Net Agency Profit</span>
             <TrendingUp size={14} className="text-sky-600" />
           </div>
           <span className={`text-sm font-black mt-1 block ${stats.profitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{formatBDT(stats.profitBDT)}</span>
