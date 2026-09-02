@@ -914,6 +914,7 @@ export default function AdLedgerApp() {
         />;
       case 'clients':
         return <ClientsView
+          theme={theme}
           clients={clients}
           transactions={transactions}
           metrics={metrics}
@@ -928,6 +929,7 @@ export default function AdLedgerApp() {
         />;
       case 'ledger':
         return <LedgerView
+          theme={theme}
           transactions={transactions}
           clients={clients}
           cards={cards}
@@ -941,6 +943,7 @@ export default function AdLedgerApp() {
         />;
       case 'cards':
         return <CardsView
+          theme={theme}
           cards={cards}
           metrics={metrics}
           transactions={transactions}
@@ -953,17 +956,18 @@ export default function AdLedgerApp() {
           onDeleteTransaction={handleDeleteTransaction}
         />;
       case 'reports':
-        return <ReportsView clients={clients} cards={cards} transactions={transactions} />;
+        return <ReportsView theme={theme} clients={clients} cards={cards} transactions={transactions} />;
       case 'campaigns':
-        return <CampaignsView campaigns={campaigns} clients={clients} transactions={transactions} metrics={metrics} onSave={handleSaveCampaign} onDelete={handleDeleteCampaign} />;
+        return <CampaignsView theme={theme} campaigns={campaigns} clients={clients} transactions={transactions} metrics={metrics} onSave={handleSaveCampaign} onDelete={handleDeleteCampaign} />;
       case 'integrations':
-        return <IntegrationsView clients={clients} transactions={transactions} workspaceSettings={workspaceSettings} />;
+        return <IntegrationsView theme={theme} clients={clients} transactions={transactions} workspaceSettings={workspaceSettings} />;
       case 'team':
-        return <TeamView teamMembers={teamMembers} onAdd={handleAddTeamMember} onUpdate={handleUpdateTeamMember} onRemove={handleRemoveTeamMember} clients={clients} workspaceSettings={workspaceSettings} />;
+        return <TeamView theme={theme} teamMembers={teamMembers} onAdd={handleAddTeamMember} onUpdate={handleUpdateTeamMember} onRemove={handleRemoveTeamMember} clients={clients} workspaceSettings={workspaceSettings} />;
       case 'guide':
-        return <UserGuideView onNavigate={(view) => setCurrentView(view)} />;
+        return <UserGuideView theme={theme} onNavigate={(view) => setCurrentView(view)} />;
       case 'settings':
         return <SettingsView
+          theme={theme}
           settings={workspaceSettings}
           logo={workspaceLogo}
           subscription={subscription}

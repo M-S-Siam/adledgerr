@@ -151,7 +151,7 @@ body {
 }
 
 /* =========================================================================
-   100% BULLETPROOF OBSIDIAN DARK FINTECH THEME
+   100% BULLETPROOF OBSIDIAN DARK FINTECH THEME (ALL VIEWS COVERAGE)
    ========================================================================= */
 .adl-shell.dark,
 html.dark,
@@ -166,7 +166,7 @@ body.dark {
   background-color: #0a0d14 !important;
 }
 
-/* ALL CARDS & SIDEBAR PORTIONS IN DARK MODE: Deep Obsidian Surface #111722 */
+/* ALL CARDS, PANELS & CONTAINERS IN ALL VIEWS (Clients, Transactions, Campaigns, Team, etc.) */
 .adl-shell.dark .bg-\[\#ebf0f7\],
 .adl-shell.dark [class*="bg-[#ebf0f7]"],
 .adl-shell.dark .bg-white,
@@ -177,14 +177,65 @@ body.dark {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* OVERRIDE ALL NEUMORPHIC WHITE HALO SHADOWS IN DARK MODE */
+/* ALL TAB STRIPS & FILTER BARS ACROSS ALL SECTIONS (e.g. bg-slate-200/60, bg-[#dbe4ef]) */
+.adl-shell.dark [class*="bg-slate-200"],
+.adl-shell.dark [class*="bg-slate-300"],
+.adl-shell.dark [class*="bg-slate-100"],
+.adl-shell.dark [class*="bg-[#dbe4ef]"],
+.adl-shell.dark [class*="bg-[#e2eaf4]"],
+.adl-shell.dark [class*="bg-[#e0eaf6]"],
+.adl-shell.dark [class*="bg-[#e5edf6]"],
+.adl-shell.dark [class*="bg-[#e4edf6]"] {
+  background-color: #0b0f17 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ACTIVE TAB BUTTONS ACROSS ALL VIEWS (Transactions All Streams, Team Active Members, Role Filters) */
+.adl-shell.dark [class*="bg-slate-200"] button[class*="bg-white"],
+.adl-shell.dark [class*="bg-slate-100"] button[class*="bg-white"],
+.adl-shell.dark [class*="rounded-xl"] > button[class*="bg-white"],
+.adl-shell.dark [class*="rounded-lg"] > button[class*="bg-white"] {
+  background-color: #182235 !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* INACTIVE TAB BUTTONS */
+.adl-shell.dark [class*="bg-slate-200"] button:not([class*="bg-white"]),
+.adl-shell.dark [class*="bg-slate-100"] button:not([class*="bg-white"]),
+.adl-shell.dark [class*="rounded-xl"] > button:not([class*="bg-white"]),
+.adl-shell.dark [class*="rounded-lg"] > button:not([class*="bg-white"]) {
+  color: #94a3b8 !important;
+}
+.adl-shell.dark [class*="bg-slate-200"] button:not([class*="bg-white"]):hover,
+.adl-shell.dark [class*="rounded-xl"] > button:not([class*="bg-white"]):hover {
+  color: #f8fafc !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ACTIVE COUNT PILLS INSIDE TABS */
+.adl-shell.dark button[class*="bg-white"] [class*="bg-sky-100"],
+.adl-shell.dark button[class*="bg-white"] [class*="bg-blue-100"] {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+/* INACTIVE COUNT PILLS INSIDE TABS */
+.adl-shell.dark [class*="bg-slate-300"],
+.adl-shell.dark [class*="bg-slate-200"] span {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+}
+
+/* OVERRIDE ALL NEUMORPHIC WHITE HALO SHADOWS IN ALL VIEWS */
 .adl-shell.dark [class*="-6px_-6px"],
 .adl-shell.dark [class*="-5px_-5px"],
 .adl-shell.dark [class*="-4px_-4px"],
 .adl-shell.dark [class*="-3px_-3px"],
 .adl-shell.dark [class*="-2px_-2px"],
-.adl-shell.dark .shadow-\[6px_6px_16px_rgba\(166\,180\,200\,0\.5\)\,-6px_-6px_16px_\#ffffff\],
-.adl-shell.dark .shadow-\[5px_5px_14px_rgba\(166\,180\,200\,0\.45\)\,-5px_-5px_14px_\#ffffff\] {
+.adl-shell.dark [class*="_#ffffff"] {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.65), 0 8px 10px -6px rgba(0, 0, 0, 0.65) !important;
 }
 
@@ -195,7 +246,83 @@ body.dark {
   box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8), inset -1px -1px 2px rgba(255, 255, 255, 0.03) !important;
 }
 
-/* HIGH-CONTRAST TYPOGRAPHY IN DARK MODE */
+/* ALL PASTEL 50 & 100 ICON BOXES & BADGES ACROSS ALL SECTIONS */
+/* Emerald (Payments, Revenue In, Attributed Revenue, Domestic Ledger, 2FA) */
+.adl-shell.dark [class*="bg-emerald-50"],
+.adl-shell.dark [class*="bg-emerald-100"],
+.adl-shell.dark [class*="bg-emerald-200"] {
+  background-color: #0a1510 !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Purple (Total USD Spent, USD Out, Tracked Ad Spend, Concentric HUD) */
+.adl-shell.dark [class*="bg-purple-50"],
+.adl-shell.dark [class*="bg-purple-100"],
+.adl-shell.dark [class*="bg-purple-200"] {
+  background-color: #130f1c !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+/* Sky & Blue (Campaigns, Blended ROAS, FX & Meta Spend, USD Purchases) */
+.adl-shell.dark [class*="bg-sky-50"],
+.adl-shell.dark [class*="bg-sky-100"],
+.adl-shell.dark [class*="bg-sky-200"],
+.adl-shell.dark [class*="bg-blue-50"],
+.adl-shell.dark [class*="bg-blue-100"],
+.adl-shell.dark [class*="bg-blue-200"] {
+  background-color: #091422 !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* Rose (Card Deficit, Card Warnings, Deficit Badges) */
+.adl-shell.dark [class*="bg-rose-50"],
+.adl-shell.dark [class*="bg-rose-100"],
+.adl-shell.dark [class*="bg-rose-200"] {
+  background-color: #190d14 !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+/* Amber (Card Fees, Warnings, Promo Badges) */
+.adl-shell.dark [class*="bg-amber-50"],
+.adl-shell.dark [class*="bg-amber-100"],
+.adl-shell.dark [class*="bg-amber-200"] {
+  background-color: #181308 !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* ALL PASTEL BORDERS IN DARK MODE */
+.adl-shell.dark [class*="border-emerald-200"],
+.adl-shell.dark [class*="border-emerald-300"],
+.adl-shell.dark [class*="border-emerald-500"] {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.adl-shell.dark [class*="border-purple-200"],
+.adl-shell.dark [class*="border-purple-300"],
+.adl-shell.dark [class*="border-purple-500"] {
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+.adl-shell.dark [class*="border-sky-200"],
+.adl-shell.dark [class*="border-sky-300"],
+.adl-shell.dark [class*="border-sky-500"],
+.adl-shell.dark [class*="border-blue-200"],
+.adl-shell.dark [class*="border-blue-300"],
+.adl-shell.dark [class*="border-blue-500"] {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+.adl-shell.dark [class*="border-rose-200"] {
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+.adl-shell.dark [class*="border-amber-200"],
+.adl-shell.dark [class*="border-amber-300"] {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* HIGH-CONTRAST TYPOGRAPHY IN ALL VIEWS */
 .adl-shell.dark h1,
 .adl-shell.dark h2,
 .adl-shell.dark h3,
@@ -215,10 +342,11 @@ body.dark {
   color: #94a3b8 !important;
 }
 
-/* INPUTS, SELECTS & SEARCH IN DARK MODE */
+/* ALL INPUTS, SEARCH BARS & SELECTS IN ALL VIEWS */
 .adl-shell.dark input,
 .adl-shell.dark select,
-.adl-shell.dark textarea {
+.adl-shell.dark textarea,
+.adl-shell.dark [class*="bg-slate-50"] {
   background-color: #090c12 !important;
   color: #f8fafc !important;
   border-color: rgba(255, 255, 255, 0.09) !important;
@@ -254,11 +382,9 @@ body.dark {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* TABLES IN DARK MODE */
+/* TABLES IN ALL VIEWS */
 .adl-shell.dark table thead,
-.adl-shell.dark table thead tr,
-.adl-shell.dark [class*="bg-[#e5edf6]"],
-.adl-shell.dark [class*="bg-[#e4edf6]"] {
+.adl-shell.dark table thead tr {
   background-color: #0d121b !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
@@ -273,61 +399,6 @@ body.dark {
 
 .adl-shell.dark table tbody tr:hover {
   background-color: rgba(255, 255, 255, 0.03) !important;
-}
-
-/* ZERO WHITE BOXES OR PILLS IN DARK MODE */
-.adl-shell.dark .bg-white,
-.adl-shell.dark [class*="bg-white/"],
-.adl-shell.dark [class*="bg-slate-50"],
-.adl-shell.dark [class*="bg-slate-100"] {
-  background-color: rgba(255, 255, 255, 0.04) !important;
-}
-
-/* Convert all light pastel badge/icon boxes to dark obsidian neon in dark mode */
-.adl-shell.dark [class*="bg-emerald-50"] {
-  background-color: #0a1510 !important;
-  color: #34d399 !important;
-  border-color: rgba(16, 185, 129, 0.3) !important;
-}
-.adl-shell.dark [class*="bg-purple-50"] {
-  background-color: #130f1c !important;
-  color: #c084fc !important;
-  border-color: rgba(168, 85, 247, 0.3) !important;
-}
-.adl-shell.dark [class*="bg-sky-50"],
-.adl-shell.dark [class*="bg-blue-50"] {
-  background-color: #091422 !important;
-  color: #38bdf8 !important;
-  border-color: rgba(56, 189, 248, 0.3) !important;
-}
-.adl-shell.dark [class*="bg-rose-50"] {
-  background-color: #190d14 !important;
-  color: #fb7185 !important;
-  border-color: rgba(244, 63, 94, 0.3) !important;
-}
-.adl-shell.dark [class*="bg-amber-50"] {
-  background-color: #181308 !important;
-  color: #fbbf24 !important;
-  border-color: rgba(245, 158, 11, 0.3) !important;
-}
-
-/* Eliminate pastel light borders in dark mode */
-.adl-shell.dark [class*="border-emerald-200"] {
-  border-color: rgba(16, 185, 129, 0.3) !important;
-}
-.adl-shell.dark [class*="border-purple-200"] {
-  border-color: rgba(168, 85, 247, 0.3) !important;
-}
-.adl-shell.dark [class*="border-sky-200"],
-.adl-shell.dark [class*="border-blue-200"] {
-  border-color: rgba(56, 189, 248, 0.3) !important;
-}
-.adl-shell.dark [class*="border-rose-200"] {
-  border-color: rgba(244, 63, 94, 0.3) !important;
-}
-.adl-shell.dark [class*="border-amber-200"],
-.adl-shell.dark [class*="border-amber-300"] {
-  border-color: rgba(245, 158, 11, 0.3) !important;
 }
 
 /* MODALS IN DARK MODE */
