@@ -469,9 +469,86 @@ body.dark {
   background-color: rgba(255, 255, 255, 0.03) !important;
 }
 
-/* MODALS IN DARK MODE */
+/* =========================================================================
+   ALL DROPDOWNS, CONTEXT MENUS, POPOVERS & PORTALS IN DARK MODE
+   ========================================================================= */
+html.dark [role="menu"],
+body.dark [role="menu"],
+.adl-shell.dark [role="menu"],
+html.dark [class*="z-[99999]"],
+body.dark [class*="z-[99999]"],
+.adl-shell.dark [class*="z-[99999]"],
+html.dark .fixed[class*="shadow-2xl"],
+body.dark .fixed[class*="shadow-2xl"],
+html.dark .fixed.bg-white,
+body.dark .fixed.bg-white,
+html.dark .absolute.bg-white,
+body.dark .absolute.bg-white,
+.adl-shell.dark .absolute.bg-white,
+html.dark [class*="bg-[#ebf0f7]"][class*="z-50"],
+body.dark [class*="bg-[#ebf0f7]"][class*="z-50"] {
+  background-color: #111722 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  color: #f8fafc !important;
+}
+
+html.dark [role="menu"] button,
+body.dark [role="menu"] button,
+html.dark [class*="z-[99999]"] button,
+body.dark [class*="z-[99999]"] button,
+html.dark .fixed[class*="shadow-2xl"] button,
+body.dark .fixed[class*="shadow-2xl"] button,
+html.dark .absolute.z-30 button,
+body.dark .absolute.z-30 button,
+html.dark .absolute.z-50 button,
+body.dark .absolute.z-50 button,
+.adl-shell.dark .absolute button {
+  color: #cbd5e1 !important;
+}
+
+html.dark [role="menu"] button:hover,
+body.dark [role="menu"] button:hover,
+html.dark [class*="z-[99999]"] button:hover,
+body.dark [class*="z-[99999]"] button:hover,
+html.dark .fixed[class*="shadow-2xl"] button:hover,
+body.dark .fixed[class*="shadow-2xl"] button:hover,
+html.dark .absolute.z-30 button:hover,
+body.dark .absolute.z-30 button:hover,
+html.dark .absolute.z-50 button:hover,
+body.dark .absolute.z-50 button:hover,
+.adl-shell.dark .absolute button:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+html.dark [role="menu"] [class*="bg-slate-50"],
+body.dark [role="menu"] [class*="bg-slate-50"],
+html.dark [class*="z-[99999]"] [class*="bg-slate-50"],
+body.dark [class*="z-[99999]"] [class*="bg-slate-50"] {
+  background-color: #0c1017 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark [role="menu"] [class*="border-slate-100"],
+body.dark [role="menu"] [class*="border-slate-100"],
+html.dark [class*="z-[99999]"] [class*="border-slate-100"],
+body.dark [class*="z-[99999]"] [class*="border-slate-100"],
+html.dark [role="menu"] [class*="h-px"],
+body.dark [role="menu"] [class*="h-px"] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ALL MODALS & DIALOGS IN DARK MODE */
+html.dark [role="dialog"],
+body.dark [role="dialog"],
 .adl-shell.dark [role="dialog"],
+html.dark .fixed [class*="bg-white"],
+body.dark .fixed [class*="bg-white"],
 .adl-shell.dark .fixed [class*="bg-white"],
+html.dark .fixed [class*="bg-[#ebf0f7]"],
+body.dark .fixed [class*="bg-[#ebf0f7]"],
 .adl-shell.dark .fixed [class*="bg-[#ebf0f7]"] {
   background-color: #111722 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
