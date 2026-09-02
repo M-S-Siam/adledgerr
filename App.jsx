@@ -13142,23 +13142,23 @@ function NavItem({ icon, label, isActive, onClick, theme = 'light' }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center justify-between p-2 rounded-2xl cursor-pointer select-none group outline-none focus:outline-none transition-colors duration-100 ${
+      className={`w-full flex items-center justify-between p-2 rounded-2xl cursor-pointer select-none group outline-none focus:outline-none transition-colors duration-100 border-0 ${
         theme === 'dark'
           ? (isActive
-              ? 'bg-[#182235] text-sky-400 font-black border border-sky-500/30 shadow-[inset_0_1px_0_rgba(56,189,248,0.2),inset_0_2px_4px_rgba(0,0,0,0.6)]'
-              : 'border border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800/40')
+              ? 'bg-[#182235] text-sky-400 font-black shadow-[inset_0_0_0_1px_rgba(56,189,248,0.35),inset_0_2px_4px_rgba(0,0,0,0.6)]'
+              : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/40 shadow-none')
           : (isActive
               ? 'bg-[#e0eaf6] text-blue-700 font-black shadow-[inset_4px_4px_8px_rgba(166,180,200,0.75),inset_-4px_-4px_8px_#ffffff] border border-white/80'
-              : 'border border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/40 active:shadow-[inset_3px_3px_6px_rgba(166,180,200,0.6),inset_-3px_-3px_6px_#ffffff] active:bg-[#e2eaf4]')
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/40 active:shadow-[inset_3px_3px_6px_rgba(166,180,200,0.6),inset_-3px_-3px_6px_#ffffff] active:bg-[#e2eaf4]')
       }`}
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
-          className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-100 ${
+          className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-100 border-0 ${
             theme === 'dark'
               ? (isActive
-                  ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[0_0_12px_rgba(56,189,248,0.4)] border border-transparent'
-                  : 'bg-[#0c1017] border border-white/5 text-slate-400 group-hover:text-sky-400 group-hover:border-sky-500/20')
+                  ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[0_0_12px_rgba(56,189,248,0.4)]'
+                  : 'bg-[#0c1017] text-slate-400 group-hover:text-sky-400 shadow-none')
               : (isActive
                   ? 'bg-gradient-to-r from-blue-600 to-sky-500 text-white shadow-[2px_3px_8px_rgba(37,99,235,0.4)]'
                   : 'bg-[#ebf0f7] border border-white shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff] text-slate-500 group-hover:text-blue-600')
