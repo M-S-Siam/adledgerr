@@ -7514,6 +7514,10 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
 
   // Handle Sync All Services
   const handleSyncAll = () => {
+    if (connectedCount === 0) {
+      showToast('No active integrations connected yet to synchronize.');
+      return;
+    }
     setIsSyncingAll(true);
     setTimeout(() => {
       setIntegrations(prev => prev.map(i => {
@@ -7529,14 +7533,14 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
         status: 200,
         statusText: 'OK',
         source: 'Global Sync Engine',
-        details: `Synchronized ${connectedCount} connected platforms simultaneously. All endpoints healthy.`,
+        details: `Synchronized ${connectedCount} connected platform${connectedCount > 1 ? 's' : ''} simultaneously. All endpoints healthy.`,
         timestamp: 'Just now',
         date: new Date().toISOString().slice(0, 19).replace('T', ' ')
       };
       setWebhookLogs(prev => [newLog, ...prev]);
 
       setIsSyncingAll(false);
-      showToast(`All ${connectedCount} active platforms synchronized!`);
+      showToast(`All ${connectedCount} active platform${connectedCount > 1 ? 's' : ''} synchronized successfully!`);
     }, 1800);
   };
 
@@ -7608,9 +7612,11 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
     <div className="w-full max-w-[1720px] mx-auto space-y-6 animate-in fade-in duration-500 pb-16">
       {/* TOAST FEEDBACK */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-2xl flex items-center gap-2.5 border border-slate-700 animate-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 size={16} className="text-emerald-400" />
-          <span>{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-[99999] px-4.5 py-3 rounded-2xl bg-[#ebf0f7] border border-white text-slate-800 text-xs font-bold shadow-[6px_6px_18px_rgba(166,180,200,0.55),-6px_-6px_18px_#ffffff] flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-200 cursor-default select-none">
+          <div className="w-6 h-6 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-2xs shrink-0">
+            <CheckCircle2 size={15} />
+          </div>
+          <span className="font-bold text-slate-800 tracking-tight">{toastMessage}</span>
         </div>
       )}
 
@@ -7640,20 +7646,20 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
           <button
             type="button"
             onClick={() => setShowConsoleModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-sm transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#ebf0f7] border border-white text-slate-700 text-xs font-bold shadow-[3px_3px_8px_rgba(166,180,200,0.45),-3px_-3px_8px_#ffffff] hover:text-purple-700 active:shadow-[inset_2px_2px_5px_rgba(166,180,200,0.5),inset_-2px_-2px_5px_#ffffff] active:scale-[0.98] transition-all cursor-pointer select-none"
           >
             <Terminal size={14} className="text-purple-600" />
-            Developer Console ({webhookLogs.length})
+            <span>Developer Console ({webhookLogs.length})</span>
           </button>
 
           <button
             type="button"
             disabled={isSyncingAll}
             onClick={handleSyncAll}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white text-xs font-bold shadow-md shadow-sky-500/20 transition-all hover:scale-[1.02] disabled:opacity-75"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white text-xs font-bold shadow-[3px_3px_10px_rgba(37,99,235,0.35),-2px_-2px_6px_#ffffff] active:scale-[0.98] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)] transition-all disabled:opacity-75 cursor-pointer select-none"
           >
             <RefreshCw size={14} className={isSyncingAll ? 'animate-spin' : ''} />
-            {isSyncingAll ? 'Syncing All Services...' : 'Sync All Services'}
+            <span>{isSyncingAll ? 'Syncing All Services...' : 'Sync All Services'}</span>
           </button>
         </div>
       </div>
@@ -7821,12 +7827,12 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                 </div>
               </div>
 
-              {/* Action Buttons with Sleek Corners */}
+              {/* Action Buttons with Neumorphic Pressed Inset Feedback */}
               <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => openConfigModal(item)}
-                  className="flex-1 py-2 px-3 rounded-lg border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors text-center shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  className="flex-1 py-2 px-3 rounded-xl bg-[#ebf0f7] border border-white text-slate-700 hover:text-sky-700 text-xs font-bold shadow-[2px_2px_6px_rgba(166,180,200,0.4),-2px_-2px_6px_#ffffff] active:shadow-[inset_2px_2px_5px_rgba(166,180,200,0.5),inset_-2px_-2px_5px_#ffffff] active:scale-[0.98] transition-all text-center cursor-pointer select-none"
                 >
                   {isConnected ? 'Configure' : 'Connect'}
                 </button>
@@ -7837,7 +7843,7 @@ function IntegrationsView({ clients = [], transactions = [], workspaceSettings =
                     disabled={isSyncing}
                     onClick={() => handleSyncItem(item)}
                     title="Run Instant Synchronization"
-                    className="py-2 px-3 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                    className="py-2 px-3 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200/80 text-sky-700 text-xs font-bold shadow-2xs active:shadow-[inset_2px_2px_5px_rgba(14,165,233,0.3)] active:scale-[0.98] transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-60 cursor-pointer select-none"
                   >
                     <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
                     <span>{isSyncing ? 'Syncing...' : 'Sync'}</span>
