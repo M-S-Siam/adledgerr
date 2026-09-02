@@ -10987,9 +10987,7 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
           return (
             <div
               key={plan.id}
-              className={`rounded-3xl p-6 bg-[#ebf0f7] border border-white text-slate-900 transition-all relative flex flex-col justify-between select-none shadow-[6px_6px_16px_rgba(166,180,200,0.45),-6px_-6px_16px_#ffffff] ${
-                plan.popular ? 'ring-2 ring-sky-500/40' : ''
-              }`}
+              className="rounded-3xl p-6 bg-[#ebf0f7] border border-white text-slate-900 transition-all duration-200 relative flex flex-col justify-between select-none shadow-[6px_6px_16px_rgba(166,180,200,0.45),-6px_-6px_16px_#ffffff] hover:ring-2 hover:ring-sky-500/60 hover:shadow-[0_12px_28px_rgba(2,132,199,0.22),6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff] hover:-translate-y-1 cursor-default group"
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3.5">
