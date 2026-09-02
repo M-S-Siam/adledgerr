@@ -11122,74 +11122,100 @@ function UserGuideView({ onNavigate }) {
 // --- SUBSCRIPTION & BILLING PLANS COMPONENT ---
 function BillingPlansView({ subscription, onUpdate, businessName }) {
   const [checkoutPlan, setCheckoutPlan] = useState(null);
-  const [paymentChannel, setPaymentChannel] = useState('mobile'); // 'mobile' | 'card'
-  const [mobileOperator, setMobileOperator] = useState('bkash'); // 'bkash' | 'nagad'
-  const [mobileStep, setMobileStep] = useState('phone'); // 'phone' | 'otp' | 'pin' | 'processing' | 'success'
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [pinCode, setPinCode] = useState('');
-  const [otpTimer, setOtpTimer] = useState(120);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [completedReceipt, setCompletedReceipt] = useState(null);
+  const [gatewayTab, setGatewayTab] = useState('mfs'); // 'cards' | 'mfs' | 'netbanking'
+  const [mfsOperator, setMfsOperator] = useState(null); // null | 'bkash' | 'nagad' | 'rocket' | 'upay'
+  const [mfsStep, setMfsStep] = useState('phone'); // 'phone' | 'otp' | 'pin' | 'processing'
+  const [mfsPhone, setMfsPhone] = useState('');
+  const [mfsOtp, setMfsOtp] = useState('');
+  const [mfsPin, setMfsPin] = useState('');
+  const [mfsTimer, setMfsTimer] = useState(120);
 
-  // Card payment states
+  // Cards
   const [cardHolder, setCardHolder] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
-  const [cardStep, setCardStep] = useState('card_form'); // 'card_form' | 'card_otp' | 'card_processing'
+  const [cardStep, setCardStep] = useState('form'); // 'form' | 'otp' | 'processing'
   const [cardOtp, setCardOtp] = useState('');
+
+  // Net Banking
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [bankUserId, setBankUserId] = useState('');
+  const [bankPassword, setBankPassword] = useState('');
+  const [bankStep, setBankStep] = useState('select'); // 'select' | 'login' | 'otp' | 'processing'
+  const [bankOtp, setBankOtp] = useState('');
+
+  // Overall status
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [completedReceipt, setCompletedReceipt] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [orderRef, setOrderRef] = useState('');
 
   // OTP Countdown timer
   useEffect(() => {
     let timer = null;
-    if ((mobileStep === 'otp' || cardStep === 'card_otp') && otpTimer > 0) {
+    if ((mfsStep === 'otp' || cardStep === 'otp' || bankStep === 'otp') && mfsTimer > 0) {
       timer = setInterval(() => {
-        setOtpTimer(prev => (prev > 0 ? prev - 1 : 0));
+        setMfsTimer(prev => (prev > 0 ? prev - 1 : 0));
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [mobileStep, cardStep, otpTimer]);
+  }, [mfsStep, cardStep, bankStep, mfsTimer]);
 
   const handleOpenPlanCheckout = (plan) => {
     setCheckoutPlan(plan);
-    setPaymentChannel('mobile');
-    setMobileOperator('bkash');
-    setMobileStep('phone');
-    setMobileNumber('');
-    setOtpCode('');
-    setPinCode('');
-    setOtpTimer(120);
-    setErrorMessage('');
-    setCompletedReceipt(null);
+    setGatewayTab('mfs');
+    setMfsOperator(null);
+    setMfsStep('phone');
+    setMfsPhone('');
+    setMfsOtp('');
+    setMfsPin('');
+    setMfsTimer(120);
     setCardHolder('');
     setCardNumber('');
     setCardExpiry('');
     setCardCvc('');
-    setCardStep('card_form');
+    setCardStep('form');
     setCardOtp('');
+    setSelectedBank(null);
+    setBankUserId('');
+    setBankPassword('');
+    setBankStep('select');
+    setBankOtp('');
+    setIsSuccess(false);
+    setCompletedReceipt(null);
+    setErrorMessage('');
+    setOrderRef('QTX-' + Math.floor(100000 + Math.random() * 900000));
   };
 
-  const finalizeActivation = (methodName, accNumber) => {
-    const prefix = mobileOperator === 'bkash' ? 'BK' : mobileOperator === 'nagad' ? 'NG' : 'CRD';
+  const finalizePayment = (channelName, accInfo) => {
+    let prefix = 'TX';
+    if (channelName.toLowerCase().includes('bkash')) prefix = 'BK';
+    else if (channelName.toLowerCase().includes('nagad')) prefix = 'NG';
+    else if (channelName.toLowerCase().includes('rocket')) prefix = 'RK';
+    else if (channelName.toLowerCase().includes('upay')) prefix = 'UP';
+    else if (channelName.toLowerCase().includes('card')) prefix = 'CRD';
+    else if (channelName.toLowerCase().includes('bank')) prefix = 'BNK';
+
     const randId = prefix + Math.random().toString(36).substring(2, 8).toUpperCase() + Math.floor(10 + Math.random() * 90);
-    const invoiceNum = 'INV-' + Date.now().toString().slice(-6);
     const dateStr = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const bankRefNum = 'BB-NPSB-' + Math.floor(10000000 + Math.random() * 90000000);
 
     const receipt = {
       trxId: randId,
-      invoiceNumber: invoiceNum,
+      invoiceNumber: orderRef || ('QTX-' + Math.floor(100000 + Math.random() * 900000)),
+      bankRef: bankRefNum,
       date: dateStr,
       amount: checkoutPlan.price,
       planName: checkoutPlan.name,
       planId: checkoutPlan.id,
-      paymentMethod: methodName,
-      accountNumber: accNumber,
+      paymentMethod: channelName,
+      accountNumber: accInfo,
       workspaceName: businessName || 'My Agency Workspace'
     };
 
     setCompletedReceipt(receipt);
-    setMobileStep('success');
+    setIsSuccess(true);
 
     if (onUpdate && checkoutPlan) {
       onUpdate(prev => ({
@@ -11199,49 +11225,47 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
         planName: checkoutPlan.name,
         price: checkoutPlan.price,
         activatedTrxId: randId,
-        paymentMethod: methodName,
+        paymentMethod: channelName,
         expiresAt: Date.now() + (checkoutPlan.id === 'lifetime_founder' ? 3650 * 24 * 60 * 60 * 1000 : checkoutPlan.id === 'pro_annual' ? 365 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000)
       }));
     }
   };
 
-  const handlePhoneSubmit = (e) => {
+  const handleMfsPhoneSubmit = (e) => {
     e.preventDefault();
-    const cleaned = mobileNumber.replace(/\D/g, '');
+    const cleaned = mfsPhone.replace(/\D/g, '');
     if (cleaned.length < 11) {
       setErrorMessage('Please enter a valid 11-digit mobile number (e.g. 017XXXXXXXX).');
       return;
     }
     setErrorMessage('');
-    setOtpCode('');
-    setOtpTimer(120);
-    setMobileStep('otp');
+    setMfsOtp('');
+    setMfsTimer(120);
+    setMfsStep('otp');
   };
 
-  const handleOtpSubmit = (e) => {
+  const handleMfsOtpSubmit = (e) => {
     e.preventDefault();
-    if (otpCode.trim().length < 4) {
-      setErrorMessage('Please enter the verification code sent to your phone.');
+    if (mfsOtp.trim().length < 4) {
+      setErrorMessage('Please enter the verification code sent to your mobile phone.');
       return;
     }
     setErrorMessage('');
-    setPinCode('');
-    setMobileStep('pin');
+    setMfsPin('');
+    setMfsStep('pin');
   };
 
-  const handlePinSubmit = (e) => {
+  const handleMfsPinSubmit = (e) => {
     e.preventDefault();
-    if (pinCode.trim().length < 4) {
-      setErrorMessage(`Please enter your ${mobileOperator === 'bkash' ? 'bKash' : 'Nagad'} PIN.`);
+    if (mfsPin.trim().length < 4) {
+      setErrorMessage('Please enter your 4 or 5-digit secret PIN.');
       return;
     }
     setErrorMessage('');
-    setMobileStep('processing');
+    setMfsStep('processing');
     setTimeout(() => {
-      finalizeActivation(
-        mobileOperator === 'bkash' ? 'bKash Direct Gateway' : 'Nagad PGW',
-        mobileNumber
-      );
+      const opName = mfsOperator === 'bkash' ? 'bKash Tokenized PGW' : mfsOperator === 'nagad' ? 'Nagad Direct PGW' : mfsOperator === 'rocket' ? 'DBBL Rocket MFS' : 'Upay Digital';
+      finalizePayment(opName, mfsPhone);
     }, 1800);
   };
 
@@ -11252,8 +11276,8 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       return;
     }
     setErrorMessage('');
-    setOtpTimer(120);
-    setCardStep('card_otp');
+    setMfsTimer(120);
+    setCardStep('otp');
   };
 
   const handleCardOtpSubmit = (e) => {
@@ -11263,9 +11287,33 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
       return;
     }
     setErrorMessage('');
-    setCardStep('card_processing');
+    setCardStep('processing');
     setTimeout(() => {
-      finalizeActivation('Credit / Debit Card (3D Secure)', 'Card Ending in ' + cardNumber.slice(-4));
+      finalizePayment('Cards (Visa / MasterCard 3D-Secure)', 'Card ending in ' + cardNumber.slice(-4));
+    }, 1800);
+  };
+
+  const handleBankSubmit = (e) => {
+    e.preventDefault();
+    if (!bankUserId.trim() || !bankPassword.trim()) {
+      setErrorMessage('Please enter your Internet Banking User ID and Password.');
+      return;
+    }
+    setErrorMessage('');
+    setMfsTimer(120);
+    setBankStep('otp');
+  };
+
+  const handleBankOtpSubmit = (e) => {
+    e.preventDefault();
+    if (bankOtp.trim().length < 4) {
+      setErrorMessage('Please enter the 2FA bank OTP.');
+      return;
+    }
+    setErrorMessage('');
+    setBankStep('processing');
+    setTimeout(() => {
+      finalizePayment(`${selectedBank?.name || 'Internet Banking'} Portal`, `A/C User: ${bankUserId}`);
     }, 1800);
   };
 
@@ -11604,572 +11652,871 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
         </div>
       </div>
 
-      {/* ================= MODAL: ENTERPRISE AUTOMATED PAYMENT GATEWAY ================= */}
+      {/* ================= MODAL: SSLCOMMERZ / AAMARPAY STYLE UNIFIED DARK GATEWAY ================= */}
       {checkoutPlan && (
         <Modal
-          title="Quantrex Automated Checkout"
-          width="max-w-2xl"
+          title="SSLCommerz / Quantrex Secured Payment Gateway"
+          width="max-w-4xl"
           onClose={() => setCheckoutPlan(null)}
         >
-          <div className="p-5 sm:p-6 space-y-5">
-            {/* Selected Plan Summary Bar (NEUMORPHIC WHITE / DARK OBSIDIAN) */}
-            <div className="p-4 rounded-2xl bg-[#ebf0f7] dark:bg-[#0c1017] border border-white dark:border-white/10 text-slate-900 dark:text-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[4px_4px_10px_rgba(166,180,200,0.45),-4px_-4px_10px_#ffffff] dark:shadow-none cursor-default select-none">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-300 bg-sky-100/90 dark:bg-sky-950/60 border border-sky-200/80 dark:border-sky-500/30 px-2 py-0.5 rounded-md">
-                  {checkoutPlan.badge}
-                </span>
-                <h4 className="text-base font-extrabold text-slate-900 dark:text-white mt-1">{checkoutPlan.name}</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Workspace: <strong className="text-slate-800 dark:text-slate-200">{businessName || 'My Agency Workspace'}</strong></p>
+          <div className="bg-[#090d16] text-slate-100 rounded-xl overflow-hidden -m-4 sm:-m-4.5 border border-[#1e293b] font-sans">
+            {/* Top Gateway Enterprise Header Bar */}
+            <div className="p-4 sm:p-5 border-b border-[#1e293b] bg-[#0c111c] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-700 flex items-center justify-center font-black text-white text-lg shadow-md shrink-0">
+                  Q
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-sm sm:text-base text-white tracking-tight">
+                      QUANTREX TECHNOLOGIES INC.
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Verified Merchant
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-3">
+                    <span>Order: <strong>{orderRef}</strong></span>
+                    <span>·</span>
+                    <span>Terminal: <strong>SSL-BD-7892</strong></span>
+                    <span>·</span>
+                    <span>Workspace: <strong className="text-slate-200">{businessName || 'My Agency'}</strong></span>
+                  </div>
+                </div>
               </div>
-              <div className="sm:text-right">
-                <div className="text-2xl font-black text-slate-900 dark:text-white">৳{checkoutPlan.price.toLocaleString()}</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">{checkoutPlan.period}</div>
+
+              <div className="sm:text-right border-t sm:border-t-0 border-[#1e293b] pt-3 sm:pt-0">
+                <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Total Payable Amount</div>
+                <div className="text-2xl sm:text-3xl font-black text-white tracking-tight font-mono">
+                  BDT {checkoutPlan.price.toLocaleString()}.00
+                </div>
+                <div className="text-[10px] text-emerald-400 font-medium">Zero Gateway Processing Surcharge</div>
               </div>
             </div>
 
-            {/* ================= SUCCESS STATE (ALL CHANNELS) ================= */}
-            {mobileStep === 'success' && completedReceipt ? (
-              <div className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/30 text-emerald-900 dark:text-emerald-100 space-y-4 text-center animate-in zoom-in-95">
-                <div className="w-16 h-16 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/30 animate-bounce">
-                  <Check size={32} className="stroke-[3]" />
-                </div>
-                <div>
-                  <h4 className="font-black text-xl text-emerald-950 dark:text-emerald-200">Payment Successful!</h4>
-                  <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-1">
-                    ৳{completedReceipt.amount.toLocaleString()} has been received & verified. Your workspace <strong>{businessName}</strong> is now upgraded to <strong>{completedReceipt.planName}</strong>.
-                  </p>
-                </div>
+            {/* Official Security Guarantee Strip */}
+            <div className="px-4 py-2 bg-[#090d16] border-b border-[#1e293b] flex items-center justify-between text-[10.5px] text-slate-400 font-medium overflow-x-auto whitespace-nowrap">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Lock size={12} className="text-emerald-400" />
+                <span>256-Bit SSL Encrypted Connection</span>
+              </div>
+              <div className="flex items-center gap-4 text-slate-400">
+                <span>Bangladesh Bank Licensed MFS & Card PGW</span>
+                <span>·</span>
+                <span>PCI-DSS Level 1 Certified</span>
+                <span>·</span>
+                <span>National Payment Switch (NPSB)</span>
+              </div>
+            </div>
 
-                {/* Digital Receipt Card */}
-                <div className="p-4 rounded-xl bg-white dark:bg-[#0c1017] border border-emerald-300/80 dark:border-emerald-500/30 text-left space-y-2 font-mono text-xs shadow-xs">
-                  <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/10 pb-2">
-                    <span className="text-slate-500 dark:text-slate-400 font-sans">Transaction ID:</span>
-                    <span className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      {completedReceipt.trxId}
-                      <button
-                        type="button"
-                        onClick={() => navigator.clipboard?.writeText(completedReceipt.trxId)}
-                        className="text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer"
-                        title="Copy TrxID"
-                      >
-                        <Copy size={12} />
-                      </button>
-                    </span>
+            {/* Main Gateway Body: 2-Column Split Architecture */}
+            <div className="flex flex-col md:flex-row min-h-[480px]">
+              {/* Left Column: Official Navigation Channels Sidebar */}
+              <div className="w-full md:w-64 bg-[#0a0f1a] border-b md:border-b-0 md:border-r border-[#1e293b] p-3 space-y-2 shrink-0 flex flex-col justify-between">
+                <div className="space-y-1.5">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400 px-3 py-1">
+                    Select Payment Channel
                   </div>
-                  <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/10 pb-2">
-                    <span className="text-slate-500 dark:text-slate-400 font-sans">Invoice Number:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{completedReceipt.invoiceNumber}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/10 pb-2">
-                    <span className="text-slate-500 dark:text-slate-400 font-sans">Payment Method:</span>
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">{completedReceipt.paymentMethod}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-slate-100 dark:border-white/10 pb-2">
-                    <span className="text-slate-500 dark:text-slate-400 font-sans">Account / Card:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{completedReceipt.accountNumber}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500 dark:text-slate-400 font-sans">Status:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 size={13} /> 100% Verified & Active
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  {/* Tab 1: Mobile Banking */}
                   <button
                     type="button"
-                    onClick={() => setCheckoutPlan(null)}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/25 cursor-pointer"
+                    onClick={() => {
+                      setGatewayTab('mfs');
+                      setErrorMessage('');
+                    }}
+                    className={`w-full p-3 rounded-xl transition-all text-left flex items-start gap-3 cursor-pointer ${
+                      gatewayTab === 'mfs'
+                        ? 'bg-sky-600/15 border border-sky-500/40 text-white shadow-sm ring-1 ring-sky-500/20'
+                        : 'border border-transparent hover:bg-white/[0.04] text-slate-400 hover:text-slate-200'
+                    }`}
                   >
-                    🎉 Enter Pro Dashboard
+                    <div className="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 border border-pink-500/30 flex items-center justify-center font-bold text-sm shrink-0">
+                      📱
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                        Mobile Banking
+                        {gatewayTab === 'mfs' && <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium">
+                        <span className="text-[#e2136e] font-bold">bKash</span>
+                        <span>·</span>
+                        <span className="text-[#f7941d] font-bold">Nagad</span>
+                        <span>·</span>
+                        <span className="text-[#8c2d8c] font-bold">Rocket</span>
+                      </div>
+                    </div>
                   </button>
+
+                  {/* Tab 2: Cards */}
                   <button
                     type="button"
-                    onClick={() => handlePrintReceipt(completedReceipt)}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() => {
+                      setGatewayTab('cards');
+                      setErrorMessage('');
+                    }}
+                    className={`w-full p-3 rounded-xl transition-all text-left flex items-start gap-3 cursor-pointer ${
+                      gatewayTab === 'cards'
+                        ? 'bg-sky-600/15 border border-sky-500/40 text-white shadow-sm ring-1 ring-sky-500/20'
+                        : 'border border-transparent hover:bg-white/[0.04] text-slate-400 hover:text-slate-200'
+                    }`}
                   >
-                    <Download size={14} />
-                    <span>Download Tax Invoice (PDF)</span>
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-sm shrink-0">
+                      💳
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                        Cards (Debit / Credit)
+                        {gatewayTab === 'cards' && <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium">
+                        <span>Visa</span>
+                        <span>·</span>
+                        <span>MasterCard</span>
+                        <span>·</span>
+                        <span>Amex</span>
+                      </div>
+                    </div>
                   </button>
+
+                  {/* Tab 3: Net Banking */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGatewayTab('netbanking');
+                      setErrorMessage('');
+                    }}
+                    className={`w-full p-3 rounded-xl transition-all text-left flex items-start gap-3 cursor-pointer ${
+                      gatewayTab === 'netbanking'
+                        ? 'bg-sky-600/15 border border-sky-500/40 text-white shadow-sm ring-1 ring-sky-500/20'
+                        : 'border border-transparent hover:bg-white/[0.04] text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-sm shrink-0">
+                      🏛️
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-white flex items-center gap-1.5">
+                        Internet Banking
+                        {gatewayTab === 'netbanking' && <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium">
+                        <span>Citytouch</span>
+                        <span>·</span>
+                        <span>Astha</span>
+                        <span>·</span>
+                        <span>EBL</span>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Sidebar Support Info */}
+                <div className="p-3 rounded-xl bg-[#0e1422] border border-[#1e293b] text-[11px] space-y-1.5 text-slate-400 mt-4">
+                  <div className="font-bold text-white flex items-center gap-1.5">
+                    <Shield size={13} className="text-sky-400" />
+                    24/7 Gateway Helpdesk
+                  </div>
+                  <div>Helpline: <strong className="text-slate-200 font-mono">16247</strong></div>
+                  <div>WhatsApp: <strong className="text-slate-200 font-mono">+880 1711-889900</strong></div>
+                  <div className="text-[10px] text-slate-400 border-t border-[#1e293b] pt-1 mt-1">
+                    Powered by SSLCommerz Core
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Channel Switcher (2 Primary Options) */}
-                <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-slate-100 dark:bg-[#0c1017] border border-slate-200/80 dark:border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaymentChannel('mobile');
-                      setErrorMessage('');
-                    }}
-                    className={`py-3 px-4 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
-                      paymentChannel === 'mobile'
-                        ? 'bg-white dark:bg-[#151c29] text-sky-700 dark:text-sky-300 shadow-md border border-slate-200/90 dark:border-white/10'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <span className="text-base">📱</span>
-                    <span>Mobile Banking (bKash / Nagad)</span>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaymentChannel('card');
-                      setErrorMessage('');
-                    }}
-                    className={`py-3 px-4 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2.5 cursor-pointer ${
-                      paymentChannel === 'card'
-                        ? 'bg-white dark:bg-[#151c29] text-sky-700 dark:text-sky-300 shadow-md border border-slate-200/90 dark:border-white/10'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <span className="text-base">💳</span>
-                    <span>Cards (Visa / Master / Amex)</span>
-                  </button>
-                </div>
-
-                {/* ================= CHANNEL 1: MOBILE BANKING (BKASH / NAGAD) ================= */}
-                {paymentChannel === 'mobile' && (
-                  <div className="space-y-4">
-                    {/* Operator Toggle Buttons */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMobileOperator('bkash');
-                          setMobileStep('phone');
-                          setErrorMessage('');
-                        }}
-                        className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 cursor-pointer ${
-                          mobileOperator === 'bkash'
-                            ? 'border-[#e2136e] bg-[#e2136e]/5 ring-4 ring-[#e2136e]/15'
-                            : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-white dark:bg-[#0c1017]'
-                        }`}
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-[#e2136e] text-white font-black text-sm flex items-center justify-center shadow-sm shrink-0">
-                          bK
-                        </div>
-                        <div className="text-left">
-                          <div className="font-black text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                            bKash Direct PGW
-                            {mobileOperator === 'bkash' && <span className="w-2 h-2 rounded-full bg-[#e2136e] animate-pulse" />}
-                          </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Instant 1-Click Verification</div>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMobileOperator('nagad');
-                          setMobileStep('phone');
-                          setErrorMessage('');
-                        }}
-                        className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 cursor-pointer ${
-                          mobileOperator === 'nagad'
-                            ? 'border-[#f7941d] bg-[#f7941d]/5 ring-4 ring-[#f7941d]/15'
-                            : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 bg-white dark:bg-[#0c1017]'
-                        }`}
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-[#f7941d] text-white font-black text-sm flex items-center justify-center shadow-sm shrink-0">
-                          NG
-                        </div>
-                        <div className="text-left">
-                          <div className="font-black text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                            Nagad Direct PGW
-                            {mobileOperator === 'nagad' && <span className="w-2 h-2 rounded-full bg-[#f7941d] animate-pulse" />}
-                          </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Dak Bibhag Digital PGW</div>
-                        </div>
-                      </button>
+              {/* Right Column: Interactive Content Canvas */}
+              <div className="flex-1 p-5 sm:p-6 bg-[#0f1523] flex flex-col justify-between min-h-[460px]">
+                {/* ================= SUCCESS STATE ================= */}
+                {isSuccess && completedReceipt ? (
+                  <div className="max-w-md mx-auto my-auto text-center space-y-5 p-6 rounded-2xl bg-[#131b2c] border border-emerald-500/30 text-white animate-in zoom-in-95 shadow-xl">
+                    <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20 animate-bounce">
+                      <Check size={32} className="stroke-[3]" />
                     </div>
 
-                    {/* Official Gateway Popup Frame */}
-                    <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 overflow-hidden shadow-sm bg-white dark:bg-[#0c1017]">
-                      {/* Gateway Header Banner */}
-                      <div className={`p-4 text-white flex items-center justify-between transition-colors ${
-                        mobileOperator === 'bkash' ? 'bg-[#e2136e]' : 'bg-[#f7941d]'
-                      }`}>
-                        <div className="flex items-center gap-2.5">
-                          <span className="font-black text-base tracking-tight uppercase">
-                            {mobileOperator === 'bkash' ? 'bKash' : 'Nagad'}
-                          </span>
-                          <span className="text-[11px] opacity-80 border-l border-white/40 pl-2.5 font-medium">Payment Gateway</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs opacity-80 font-sans">Payable Amount</div>
-                          <div className="font-black text-base tracking-tight">৳{checkoutPlan.price.toLocaleString()}</div>
-                        </div>
-                      </div>
+                    <div>
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[11px] uppercase tracking-wider border border-emerald-500/30">
+                        ✓ Transaction Approved by Bangladesh Bank
+                      </span>
+                      <h4 className="text-2xl font-black text-white mt-2">Payment Successful!</h4>
+                      <p className="text-xs text-slate-300 mt-1">
+                        BDT {completedReceipt.amount.toLocaleString()}.00 has been debited. Workspace <strong>{businessName}</strong> upgraded to <strong>{completedReceipt.planName}</strong>.
+                      </p>
+                    </div>
 
-                      {/* Gateway Merchant Info */}
-                      <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-100 dark:border-white/10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                        <span className="flex items-center gap-1.5">
-                          <ShieldCheck size={14} className="text-emerald-600" />
-                          Merchant: <strong>Quantrex Technologies</strong>
+                    <div className="p-4 rounded-xl bg-[#0c111c] border border-[#1e293b] text-left space-y-2 text-xs font-mono">
+                      <div className="flex justify-between items-center border-b border-[#1e293b] pb-2">
+                        <span className="text-slate-400 font-sans">Transaction ID:</span>
+                        <span className="font-bold text-white flex items-center gap-1.5">
+                          {completedReceipt.trxId}
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard?.writeText(completedReceipt.trxId)}
+                            className="text-slate-400 hover:text-emerald-400 transition-colors cursor-pointer"
+                            title="Copy TrxID"
+                          >
+                            <Copy size={12} />
+                          </button>
                         </span>
-                        <span className="text-[11px] font-mono">Invoice: INV-{Date.now().toString().slice(-6)}</span>
                       </div>
 
-                      {/* Gateway Step 1: Phone Number Input */}
-                      {mobileStep === 'phone' && (
-                        <form onSubmit={handlePhoneSubmit} className="p-5 space-y-4 animate-in fade-in duration-200">
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              Your {mobileOperator === 'bkash' ? 'bKash' : 'Nagad'} Account Number:
-                            </label>
-                            <div className="relative">
-                              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400 font-mono">
-                                +88
-                              </span>
+                      <div className="flex justify-between items-center border-b border-[#1e293b] pb-2">
+                        <span className="text-slate-400 font-sans">Bangladesh Bank Ref:</span>
+                        <span className="font-bold text-slate-200">{completedReceipt.bankRef}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center border-b border-[#1e293b] pb-2">
+                        <span className="text-slate-400 font-sans">Payment Method:</span>
+                        <span className="font-bold text-emerald-400">{completedReceipt.paymentMethod}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center border-b border-[#1e293b] pb-2">
+                        <span className="text-slate-400 font-sans">Account / Card:</span>
+                        <span className="font-bold text-white">{completedReceipt.accountNumber}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 font-sans">Verification Status:</span>
+                        <span className="font-bold text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 size={13} /> 100% Settled & Active
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutPlan(null)}
+                        className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold transition-all shadow-md shadow-emerald-600/30 cursor-pointer"
+                      >
+                        🎉 Return to Pro Workspace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePrintReceipt(completedReceipt)}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#0c111c] border border-[#1e293b] hover:bg-[#162033] text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Download size={14} />
+                        <span>Download Official Tax Receipt</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {/* ================= CHANNEL 1: MOBILE BANKING ================= */}
+                    {gatewayTab === 'mfs' && (
+                      <div className="space-y-4">
+                        {/* Operator Selection Screen (if none active) */}
+                        {!mfsOperator ? (
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                                <span>📱 Select Mobile Banking Wallet:</span>
+                              </h4>
+                              <p className="text-xs text-slate-400 mt-0.5">
+                                Instant payment with zero gateway convenience fee
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                              {/* bKash */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMfsOperator('bkash');
+                                  setMfsStep('phone');
+                                  setMfsPhone('');
+                                  setErrorMessage('');
+                                }}
+                                className="p-4 rounded-2xl bg-[#141b2a] border border-[#1e293b] hover:border-[#e2136e] hover:bg-[#e2136e]/10 transition-all text-left flex items-center gap-3.5 group cursor-pointer shadow-sm"
+                              >
+                                <div className="w-12 h-12 rounded-xl bg-[#e2136e] text-white font-black text-lg flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform">
+                                  bK
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-black text-sm text-white group-hover:text-[#e2136e] transition-colors">
+                                    bKash Tokenized
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">Direct Official PGW</div>
+                                </div>
+                                <ArrowRight size={16} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                              </button>
+
+                              {/* Nagad */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMfsOperator('nagad');
+                                  setMfsStep('phone');
+                                  setMfsPhone('');
+                                  setErrorMessage('');
+                                }}
+                                className="p-4 rounded-2xl bg-[#141b2a] border border-[#1e293b] hover:border-[#f7941d] hover:bg-[#f7941d]/10 transition-all text-left flex items-center gap-3.5 group cursor-pointer shadow-sm"
+                              >
+                                <div className="w-12 h-12 rounded-xl bg-[#f7941d] text-white font-black text-lg flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform">
+                                  NG
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-black text-sm text-white group-hover:text-[#f7941d] transition-colors">
+                                    Nagad Direct PGW
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">Dak Bibhag Digital MFS</div>
+                                </div>
+                                <ArrowRight size={16} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                              </button>
+
+                              {/* DBBL Rocket */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMfsOperator('rocket');
+                                  setMfsStep('phone');
+                                  setMfsPhone('');
+                                  setErrorMessage('');
+                                }}
+                                className="p-4 rounded-2xl bg-[#141b2a] border border-[#1e293b] hover:border-[#8c2d8c] hover:bg-[#8c2d8c]/10 transition-all text-left flex items-center gap-3.5 group cursor-pointer shadow-sm"
+                              >
+                                <div className="w-12 h-12 rounded-xl bg-[#8c2d8c] text-white font-black text-lg flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform">
+                                  RK
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-black text-sm text-white group-hover:text-purple-400 transition-colors">
+                                    DBBL Rocket
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">Dutch-Bangla Bank MFS</div>
+                                </div>
+                                <ArrowRight size={16} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                              </button>
+
+                              {/* Upay */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMfsOperator('upay');
+                                  setMfsStep('phone');
+                                  setMfsPhone('');
+                                  setErrorMessage('');
+                                }}
+                                className="p-4 rounded-2xl bg-[#141b2a] border border-[#1e293b] hover:border-[#00a3e0] hover:bg-[#00a3e0]/10 transition-all text-left flex items-center gap-3.5 group cursor-pointer shadow-sm"
+                              >
+                                <div className="w-12 h-12 rounded-xl bg-[#00a3e0] text-white font-black text-lg flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform">
+                                  UP
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-black text-sm text-white group-hover:text-cyan-400 transition-colors">
+                                    Upay Digital
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">UCB Fintech Platform</div>
+                                </div>
+                                <ArrowRight size={16} className="text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Active Sub-gateway Overlay (Official Operator Screen) */
+                          <div className="rounded-2xl border border-[#1e293b] overflow-hidden bg-[#0c111c] shadow-lg animate-in fade-in duration-200">
+                            {/* Operator Banner Header */}
+                            <div className={`p-4 text-white flex items-center justify-between transition-colors ${
+                              mfsOperator === 'bkash'
+                                ? 'bg-[#e2136e]'
+                                : mfsOperator === 'nagad'
+                                  ? 'bg-[#f7941d]'
+                                  : mfsOperator === 'rocket'
+                                    ? 'bg-[#8c2d8c]'
+                                    : 'bg-[#00a3e0]'
+                            }`}>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setMfsOperator(null)}
+                                  className="px-2 py-1 rounded bg-black/25 hover:bg-black/40 text-[10px] font-bold uppercase cursor-pointer"
+                                >
+                                  ← Change
+                                </button>
+                                <span className="font-black text-base tracking-tight uppercase">
+                                  {mfsOperator === 'bkash' ? 'bKash Tokenized Checkout' : mfsOperator === 'nagad' ? 'Nagad Direct PGW' : mfsOperator === 'rocket' ? 'DBBL Rocket MFS' : 'Upay Digital'}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[10px] opacity-80 uppercase">Payable</div>
+                                <div className="font-black text-base font-mono">BDT {checkoutPlan.price.toLocaleString()}.00</div>
+                              </div>
+                            </div>
+
+                            {/* Operator Sub-step 1: Mobile Number Input */}
+                            {mfsStep === 'phone' && (
+                              <form onSubmit={handleMfsPhoneSubmit} className="p-6 space-y-4">
+                                <div className="space-y-1.5">
+                                  <label className="text-xs font-bold text-slate-200">
+                                    Enter your 11-digit {mfsOperator.toUpperCase()} Account Number:
+                                  </label>
+                                  <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-slate-400">
+                                      +88
+                                    </span>
+                                    <input
+                                      type="tel"
+                                      required
+                                      autoFocus
+                                      value={mfsPhone}
+                                      onChange={(e) => setMfsPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                                      placeholder="01XXXXXXXXX"
+                                      className="w-full pl-14 pr-4 py-3 rounded-xl border border-[#1e293b] bg-[#141b2a] text-sm font-mono font-bold text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                    />
+                                  </div>
+                                  <p className="text-[11px] text-slate-400">
+                                    A 6-digit verification code (OTP) will be sent via SMS to this number.
+                                  </p>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-between gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setMfsOperator(null)}
+                                    className="px-5 py-2.5 rounded-xl border border-[#1e293b] hover:bg-white/[0.05] text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                                  >
+                                    Back
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="flex-1 px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                  >
+                                    <span>Proceed</span>
+                                    <ArrowRight size={14} />
+                                  </button>
+                                </div>
+                              </form>
+                            )}
+
+                            {/* Operator Sub-step 2: OTP Verification Code */}
+                            {mfsStep === 'otp' && (
+                              <form onSubmit={handleMfsOtpSubmit} className="p-6 space-y-4">
+                                <div className="space-y-1 text-center">
+                                  <h5 className="font-extrabold text-sm text-white">
+                                    Enter {mfsOperator.toUpperCase()} Verification Code
+                                  </h5>
+                                  <p className="text-xs text-slate-400">
+                                    Enter the 6-digit code sent to <strong className="text-slate-200">{mfsPhone}</strong>
+                                  </p>
+                                </div>
+
+                                <div className="space-y-2 max-w-xs mx-auto">
+                                  <input
+                                    type="text"
+                                    required
+                                    autoFocus
+                                    maxLength={6}
+                                    value={mfsOtp}
+                                    onChange={(e) => setMfsOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    placeholder="• • • • • •"
+                                    className="w-full text-center py-3 px-4 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xl font-mono font-black tracking-[0.4em] text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                  />
+                                  <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                                    <span>Auto-OTP SMS</span>
+                                    <span>
+                                      {mfsTimer > 0 ? (
+                                        `Resend in ${Math.floor(mfsTimer / 60)}:${(mfsTimer % 60).toString().padStart(2, '0')}`
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => setMfsTimer(120)}
+                                          className="text-sky-400 font-bold hover:underline cursor-pointer"
+                                        >
+                                          Resend OTP
+                                        </button>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-between gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setMfsStep('phone')}
+                                    className="px-5 py-2.5 rounded-xl border border-[#1e293b] hover:bg-white/[0.05] text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                                  >
+                                    Back
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="flex-1 px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                  >
+                                    <span>Verify Code</span>
+                                    <ArrowRight size={14} />
+                                  </button>
+                                </div>
+                              </form>
+                            )}
+
+                            {/* Operator Sub-step 3: Secret PIN */}
+                            {mfsStep === 'pin' && (
+                              <form onSubmit={handleMfsPinSubmit} className="p-6 space-y-4">
+                                <div className="space-y-1 text-center">
+                                  <h5 className="font-extrabold text-sm text-white">
+                                    Enter {mfsOperator.toUpperCase()} Secret PIN
+                                  </h5>
+                                  <p className="text-xs text-slate-400">
+                                    Authorize BDT {checkoutPlan.price.toLocaleString()}.00 for {checkoutPlan.name}
+                                  </p>
+                                </div>
+
+                                <div className="space-y-2 max-w-xs mx-auto">
+                                  <input
+                                    type="password"
+                                    required
+                                    autoFocus
+                                    maxLength={5}
+                                    value={mfsPin}
+                                    onChange={(e) => setMfsPin(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                                    placeholder="• • • • •"
+                                    className="w-full text-center py-3 px-4 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xl font-mono font-black tracking-[0.5em] text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                  />
+                                  <div className="p-2.5 rounded-lg bg-[#141b2a] border border-[#1e293b] flex items-center justify-center gap-2 text-[11px] text-slate-400">
+                                    <Lock size={12} className="text-emerald-400" />
+                                    <span>256-Bit SSL Encrypted. Never share PIN.</span>
+                                  </div>
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-between gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setMfsStep('otp')}
+                                    className="px-5 py-2.5 rounded-xl border border-[#1e293b] hover:bg-white/[0.05] text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                                  >
+                                    Back
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="flex-1 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                  >
+                                    <CheckCircle2 size={15} />
+                                    <span>Confirm Payment BDT {checkoutPlan.price.toLocaleString()}</span>
+                                  </button>
+                                </div>
+                              </form>
+                            )}
+
+                            {/* Operator Sub-step 4: Core Banking Authorization */}
+                            {mfsStep === 'processing' && (
+                              <div className="p-10 text-center space-y-4">
+                                <div className="w-14 h-14 rounded-full border-4 border-slate-700 border-t-sky-400 animate-spin mx-auto" />
+                                <div>
+                                  <h5 className="font-extrabold text-sm text-white">
+                                    Connecting to Bangladesh Bank MFS Core Network...
+                                  </h5>
+                                  <p className="text-xs text-slate-400 mt-1">
+                                    Authorizing transaction and provisioning Pro agency license...
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ================= CHANNEL 2: CARDS ================= */}
+                    {gatewayTab === 'cards' && (
+                      <div className="space-y-4 animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-extrabold text-sm text-white">Credit or Debit Card</h4>
+                            <p className="text-xs text-slate-400 mt-0.5">Instant authorization via Visa / MasterCard CyberSource</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+                            <span className="px-2 py-0.5 rounded bg-blue-900/40 border border-blue-500/40 text-blue-300">VISA</span>
+                            <span className="px-2 py-0.5 rounded bg-amber-900/40 border border-amber-500/40 text-amber-300">MasterCard</span>
+                            <span className="px-2 py-0.5 rounded bg-sky-900/40 border border-sky-500/40 text-sky-300">Amex</span>
+                          </div>
+                        </div>
+
+                        {cardStep === 'form' && (
+                          <form onSubmit={handleCardSubmit} className="space-y-3.5 pt-1">
+                            <div>
+                              <label className="text-xs font-bold text-slate-300 block mb-1">Cardholder Name *</label>
                               <input
-                                type="tel"
+                                type="text"
                                 required
-                                autoFocus
-                                value={mobileNumber}
-                                onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 11))}
-                                placeholder="017XXXXXXXX"
-                                className="w-full pl-14 pr-4 py-3 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-sm font-mono font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                value={cardHolder}
+                                onChange={(e) => setCardHolder(e.target.value)}
+                                placeholder="Name as printed on Card"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xs font-bold text-white outline-none focus:ring-2 focus:ring-sky-500"
                               />
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                              A 6-digit verification code (OTP) will be sent to this mobile number.
-                            </p>
-                          </div>
 
-                          <div className="pt-2 flex items-center justify-between gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setCheckoutPlan(null)}
-                              className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
-                            >
-                              Cancel
-                            </button>
+                            <div>
+                              <label className="text-xs font-bold text-slate-300 block mb-1">16-Digit Card Number *</label>
+                              <input
+                                type="text"
+                                required
+                                maxLength={19}
+                                value={cardNumber}
+                                onChange={(e) => {
+                                  const v = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                  const formatted = v.match(/.{1,4}/g)?.join(' ') || v;
+                                  setCardNumber(formatted);
+                                }}
+                                placeholder="4242 •••• •••• 4242"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xs font-mono font-bold text-white outline-none focus:ring-2 focus:ring-sky-500 tracking-wider"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-bold text-slate-300 block mb-1">Expiry Date *</label>
+                                <input
+                                  type="text"
+                                  required
+                                  maxLength={5}
+                                  value={cardExpiry}
+                                  onChange={(e) => {
+                                    let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                    if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
+                                    setCardExpiry(v);
+                                  }}
+                                  placeholder="MM/YY"
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xs font-mono font-bold text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-xs font-bold text-slate-300 block mb-1">CVV / CVC *</label>
+                                <input
+                                  type="password"
+                                  required
+                                  maxLength={4}
+                                  value={cardCvc}
+                                  onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                                  placeholder="•••"
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xs font-mono font-bold text-white outline-none focus:ring-2 focus:ring-sky-500 tracking-widest"
+                                />
+                              </div>
+                            </div>
 
                             <button
                               type="submit"
-                              className={`flex-1 px-6 py-2.5 rounded-xl text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                                mobileOperator === 'bkash'
-                                  ? 'bg-[#e2136e] hover:bg-[#c20f5c]'
-                                  : 'bg-[#f7941d] hover:bg-[#de7e0f]'
-                              }`}
+                              className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white text-xs font-extrabold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
                             >
-                              <span>Proceed</span>
-                              <ArrowRight size={14} />
+                              <Lock size={14} />
+                              <span>Pay BDT {checkoutPlan.price.toLocaleString()}.00 Securely</span>
                             </button>
-                          </div>
-                        </form>
-                      )}
+                          </form>
+                        )}
 
-                      {/* Gateway Step 2: OTP Verification Code */}
-                      {mobileStep === 'otp' && (
-                        <form onSubmit={handleOtpSubmit} className="p-5 space-y-4 animate-in fade-in duration-200">
-                          <div className="space-y-1.5 text-center">
-                            <h5 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                              Enter {mobileOperator === 'bkash' ? 'bKash' : 'Nagad'} Verification Code
-                            </h5>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              A 6-digit one-time code was sent to <strong className="text-slate-800 dark:text-slate-200">{mobileNumber}</strong>
+                        {cardStep === 'otp' && (
+                          <form onSubmit={handleCardOtpSubmit} className="p-6 rounded-xl bg-[#141b2a] border border-[#1e293b] space-y-4">
+                            <div className="flex items-center justify-between border-b border-[#1e293b] pb-2.5">
+                              <span className="font-extrabold text-xs text-white flex items-center gap-1.5">
+                                <ShieldCheck size={16} className="text-sky-400" />
+                                3D-Secure 2.0 Bank Authentication
+                              </span>
+                              <span className="text-[10px] text-emerald-400 font-mono">OTP Sent</span>
+                            </div>
+                            <p className="text-xs text-slate-400">
+                              Please enter the 6-digit authentication passcode sent by your card issuing bank.
                             </p>
-                          </div>
-
-                          <div className="space-y-2 max-w-xs mx-auto">
                             <input
                               type="text"
                               required
                               autoFocus
                               maxLength={6}
-                              value={otpCode}
-                              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                              value={cardOtp}
+                              onChange={(e) => setCardOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                               placeholder="• • • • • •"
-                              className="w-full text-center py-3 px-4 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-xl font-mono font-black tracking-[0.4em] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
+                              className="w-full text-center py-3 px-4 rounded-xl border border-[#1e293b] bg-[#0c111c] text-xl font-mono font-black tracking-widest text-white outline-none focus:ring-2 focus:ring-sky-500"
                             />
-                            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-1">
-                              <span>Auto-generated OTP</span>
-                              <span>
-                                {otpTimer > 0 ? (
-                                  `Resend in ${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, '0')}`
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setOtpTimer(120)}
-                                    className="text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer"
-                                  >
-                                    Resend Code
-                                  </button>
-                                )}
+                            <div className="flex items-center justify-between gap-3 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setCardStep('form')}
+                                className="px-5 py-2.5 rounded-xl border border-[#1e293b] text-xs font-bold text-slate-300 hover:bg-white/[0.05] cursor-pointer"
+                              >
+                                Back
+                              </button>
+                              <button
+                                type="submit"
+                                className="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold transition-all cursor-pointer"
+                              >
+                                Authorize Payment
+                              </button>
+                            </div>
+                          </form>
+                        )}
+
+                        {cardStep === 'processing' && (
+                          <div className="p-10 text-center space-y-4">
+                            <div className="w-14 h-14 rounded-full border-4 border-slate-700 border-t-sky-400 animate-spin mx-auto" />
+                            <h5 className="font-extrabold text-sm text-white">
+                              Authorizing with Visa / MasterCard CyberSource Gateway...
+                            </h5>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ================= CHANNEL 3: NET BANKING ================= */}
+                    {gatewayTab === 'netbanking' && (
+                      <div className="space-y-4 animate-in fade-in duration-200">
+                        {!selectedBank ? (
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-extrabold text-sm text-white">Internet Banking Portal</h4>
+                              <p className="text-xs text-slate-400 mt-0.5">Direct 1-click debit from your primary business bank account</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-1">
+                              {[
+                                { id: 'city', name: 'City Bank (Citytouch)', icon: '🏛️', sub: 'Instant Debit' },
+                                { id: 'brac', name: 'BRAC Bank (Astha)', icon: '🏢', sub: 'Fast Transfer' },
+                                { id: 'ebl', name: 'Eastern Bank (Skybanking)', icon: '🏦', sub: 'EBL Corporate' },
+                                { id: 'ibbl', name: 'Islami Bank (Cellfin)', icon: '🪙', sub: 'iBanking Gateway' },
+                                { id: 'mtb', name: 'Mutual Trust Bank (MTB)', icon: '💳', sub: 'Smart Banking' },
+                                { id: 'scb', name: 'Standard Chartered', icon: '🌐', sub: 'SC Mobile BD' }
+                              ].map((bank) => (
+                                <button
+                                  key={bank.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedBank(bank);
+                                    setBankStep('login');
+                                    setErrorMessage('');
+                                  }}
+                                  className="p-3.5 rounded-2xl bg-[#141b2a] border border-[#1e293b] hover:border-sky-500 hover:bg-sky-500/10 transition-all text-left flex items-center gap-3 group cursor-pointer"
+                                >
+                                  <span className="text-2xl">{bank.icon}</span>
+                                  <div>
+                                    <div className="font-bold text-xs text-white group-hover:text-sky-400 transition-colors">
+                                      {bank.name}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400">{bank.sub}</div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-[#1e293b] overflow-hidden bg-[#0c111c] shadow-lg animate-in fade-in duration-200">
+                            <div className="p-4 bg-[#141b2a] border-b border-[#1e293b] flex items-center justify-between text-white">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedBank(null)}
+                                  className="px-2 py-1 rounded bg-black/30 hover:bg-black/50 text-[10px] font-bold uppercase cursor-pointer"
+                                >
+                                  ← Change
+                                </button>
+                                <span className="font-extrabold text-sm">{selectedBank.name} Portal</span>
+                              </div>
+                              <span className="font-mono text-xs font-bold text-emerald-400">
+                                BDT {checkoutPlan.price.toLocaleString()}.00
                               </span>
                             </div>
+
+                            {bankStep === 'login' && (
+                              <form onSubmit={handleBankSubmit} className="p-6 space-y-3.5">
+                                <div>
+                                  <label className="text-xs font-bold text-slate-300 block mb-1">User ID / Customer ID *</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    autoFocus
+                                    value={bankUserId}
+                                    onChange={(e) => setBankUserId(e.target.value)}
+                                    placeholder="Enter your Internet Banking ID"
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xs font-bold text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="text-xs font-bold text-slate-300 block mb-1">Password / PIN *</label>
+                                  <input
+                                    type="password"
+                                    required
+                                    value={bankPassword}
+                                    onChange={(e) => setBankPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xs font-mono font-bold text-white outline-none focus:ring-2 focus:ring-sky-500"
+                                  />
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-between gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedBank(null)}
+                                    className="px-5 py-2.5 rounded-xl border border-[#1e293b] text-xs font-bold text-slate-300 hover:bg-white/[0.05] cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold transition-all cursor-pointer"
+                                  >
+                                    Proceed to 2FA OTP
+                                  </button>
+                                </div>
+                              </form>
+                            )}
+
+                            {bankStep === 'otp' && (
+                              <form onSubmit={handleBankOtpSubmit} className="p-6 space-y-4">
+                                <div className="space-y-1 text-center">
+                                  <h5 className="font-extrabold text-sm text-white">Enter Bank 2FA Passcode</h5>
+                                  <p className="text-xs text-slate-400">Sent to bank registered phone</p>
+                                </div>
+                                <input
+                                  type="text"
+                                  required
+                                  autoFocus
+                                  maxLength={6}
+                                  value={bankOtp}
+                                  onChange={(e) => setBankOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                  placeholder="• • • • • •"
+                                  className="w-full text-center py-3 px-4 rounded-xl border border-[#1e293b] bg-[#141b2a] text-xl font-mono font-black tracking-widest text-white outline-none focus:ring-2 focus:ring-sky-500 max-w-xs mx-auto block"
+                                />
+                                <div className="pt-2 flex items-center justify-between gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => setBankStep('login')}
+                                    className="px-5 py-2.5 rounded-xl border border-[#1e293b] text-xs font-bold text-slate-300 hover:bg-white/[0.05] cursor-pointer"
+                                  >
+                                    Back
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold transition-all cursor-pointer"
+                                  >
+                                    Authorize Payment
+                                  </button>
+                                </div>
+                              </form>
+                            )}
+
+                            {bankStep === 'processing' && (
+                              <div className="p-10 text-center space-y-4">
+                                <div className="w-14 h-14 rounded-full border-4 border-slate-700 border-t-sky-400 animate-spin mx-auto" />
+                                <h5 className="font-extrabold text-sm text-white">
+                                  Authorizing directly through {selectedBank.name}...
+                                </h5>
+                              </div>
+                            )}
                           </div>
-
-                          <div className="pt-2 flex items-center justify-between gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setMobileStep('phone')}
-                              className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              type="submit"
-                              className={`flex-1 px-6 py-2.5 rounded-xl text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                                mobileOperator === 'bkash'
-                                  ? 'bg-[#e2136e] hover:bg-[#c20f5c]'
-                                  : 'bg-[#f7941d] hover:bg-[#de7e0f]'
-                              }`}
-                            >
-                              <span>Verify Code</span>
-                              <ArrowRight size={14} />
-                            </button>
-                          </div>
-                        </form>
-                      )}
-
-                      {/* Gateway Step 3: Enter PIN */}
-                      {mobileStep === 'pin' && (
-                        <form onSubmit={handlePinSubmit} className="p-5 space-y-4 animate-in fade-in duration-200">
-                          <div className="space-y-1.5 text-center">
-                            <h5 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                              Enter {mobileOperator === 'bkash' ? 'bKash' : 'Nagad'} PIN
-                            </h5>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Enter PIN to authorize ৳{checkoutPlan.price.toLocaleString()} for {checkoutPlan.name}
-                            </p>
-                          </div>
-
-                          <div className="space-y-2 max-w-xs mx-auto">
-                            <input
-                              type="password"
-                              required
-                              autoFocus
-                              maxLength={5}
-                              value={pinCode}
-                              onChange={(e) => setPinCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                              placeholder="• • • • •"
-                              className="w-full text-center py-3 px-4 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-xl font-mono font-black tracking-[0.5em] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                            />
-                            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-white/5 flex items-center justify-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
-                              <Lock size={12} className="text-emerald-600" />
-                              <span>256-Bit SSL Encrypted. Never share PIN.</span>
-                            </div>
-                          </div>
-
-                          <div className="pt-2 flex items-center justify-between gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setMobileStep('otp')}
-                              className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer"
-                            >
-                              Back
-                            </button>
-
-                            <button
-                              type="submit"
-                              className={`flex-1 px-6 py-2.5 rounded-xl text-white text-xs font-extrabold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                                mobileOperator === 'bkash'
-                                  ? 'bg-[#e2136e] hover:bg-[#c20f5c]'
-                                  : 'bg-[#f7941d] hover:bg-[#de7e0f]'
-                              }`}
-                            >
-                              <CheckCircle2 size={15} />
-                              <span>Confirm Payment ৳{checkoutPlan.price.toLocaleString()}</span>
-                            </button>
-                          </div>
-                        </form>
-                      )}
-
-                      {/* Gateway Step 4: Real-time Processing Engine */}
-                      {mobileStep === 'processing' && (
-                        <div className="p-8 text-center space-y-4 animate-in fade-in duration-200">
-                          <div className="w-14 h-14 rounded-full border-4 border-slate-200 dark:border-white/10 border-t-sky-600 animate-spin mx-auto" />
-                          <div>
-                            <h5 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                              Communicating with {mobileOperator === 'bkash' ? 'bKash' : 'Nagad'} Gateway...
-                            </h5>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                              Authorizing transaction & provisioning your Pro agency workspace...
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* ================= CHANNEL 2: CARDS (VISA / MASTERCARD / AMEX) ================= */}
-                {paymentChannel === 'card' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    {/* Interactive Bank Card Preview */}
-                    <div className="p-5 rounded-2xl bg-gradient-to-tr from-slate-900 via-sky-950 to-indigo-950 text-white shadow-lg space-y-4 border border-white/15 relative overflow-hidden">
-                      <div className="flex justify-between items-center">
-                        <div className="w-10 h-7 rounded-md bg-amber-300/80 border border-amber-200 flex items-center justify-center text-[10px] font-mono font-bold text-slate-900">
-                          CHIP
-                        </div>
-                        <div className="font-black text-sm tracking-wider uppercase opacity-90">
-                          {cardNumber.startsWith('4') ? 'VISA' : cardNumber.startsWith('5') ? 'Mastercard' : 'QUANTREX PAY'}
-                        </div>
-                      </div>
-
-                      <div className="font-mono text-base sm:text-lg font-bold tracking-widest text-slate-200">
-                        {cardNumber ? cardNumber.padEnd(19, '•') : '•••• •••• •••• ••••'}
-                      </div>
-
-                      <div className="flex justify-between items-end text-xs">
-                        <div>
-                          <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Card Holder</div>
-                          <div className="font-extrabold tracking-wide uppercase text-slate-100">
-                            {cardHolder || 'ENTER NAME'}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Expires</div>
-                          <div className="font-mono font-bold text-slate-100">
-                            {cardExpiry || 'MM/YY'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Form */}
-                    {cardStep === 'card_form' && (
-                      <form onSubmit={handleCardSubmit} className="space-y-3.5">
-                        <div>
-                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Cardholder Name *</label>
-                          <input
-                            type="text"
-                            required
-                            value={cardHolder}
-                            onChange={(e) => setCardHolder(e.target.value)}
-                            placeholder="Full Name on Card"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-xs font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Card Number *</label>
-                          <input
-                            type="text"
-                            required
-                            maxLength={19}
-                            value={cardNumber}
-                            onChange={(e) => {
-                              const v = e.target.value.replace(/\D/g, '').slice(0, 16);
-                              const formatted = v.match(/.{1,4}/g)?.join(' ') || v;
-                              setCardNumber(formatted);
-                            }}
-                            placeholder="4242 4242 4242 4242"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">Expiry Date *</label>
-                            <input
-                              type="text"
-                              required
-                              maxLength={5}
-                              value={cardExpiry}
-                              onChange={(e) => {
-                                let v = e.target.value.replace(/\D/g, '').slice(0, 4);
-                                if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
-                                setCardExpiry(v);
-                              }}
-                              placeholder="MM/YY"
-                              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">CVC / CVV *</label>
-                            <input
-                              type="password"
-                              required
-                              maxLength={4}
-                              value={cardCvc}
-                              onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                              placeholder="CVC"
-                              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-xs font-mono font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-sky-500"
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-extrabold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
-                        >
-                          <Lock size={14} />
-                          <span>Pay ৳{checkoutPlan.price.toLocaleString()} Securely</span>
-                        </button>
-                      </form>
-                    )}
-
-                    {/* Card 3D-Secure Step */}
-                    {cardStep === 'card_otp' && (
-                      <form onSubmit={handleCardOtpSubmit} className="p-5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 space-y-3.5">
-                        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2">
-                          <span className="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                            <ShieldCheck size={16} className="text-sky-600" />
-                            3D-Secure Bank Verification
-                          </span>
-                          <span className="text-[10px] text-slate-500">Auto-OTP</span>
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          Please enter the 6-digit authentication passcode sent to your bank-registered mobile phone.
-                        </p>
-                        <input
-                          type="text"
-                          required
-                          autoFocus
-                          maxLength={6}
-                          value={cardOtp}
-                          onChange={(e) => setCardOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="• • • • • •"
-                          className="w-full text-center py-2.5 px-4 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#111722] text-lg font-mono font-black tracking-widest outline-none focus:ring-2 focus:ring-sky-500"
-                        />
-                        <div className="flex items-center justify-between gap-3 pt-2">
-                          <button
-                            type="button"
-                            onClick={() => setCardStep('card_form')}
-                            className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                          >
-                            Back
-                          </button>
-                          <button
-                            type="submit"
-                            className="flex-1 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold transition-all cursor-pointer"
-                          >
-                            Verify & Pay
-                          </button>
-                        </div>
-                      </form>
-                    )}
-
-                    {/* Card Processing */}
-                    {cardStep === 'card_processing' && (
-                      <div className="p-8 text-center space-y-4">
-                        <div className="w-14 h-14 rounded-full border-4 border-slate-200 dark:border-white/10 border-t-sky-600 animate-spin mx-auto" />
-                        <h5 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                          Processing 3D-Secure Card Authorization...
-                        </h5>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {/* Error Banner */}
-                {errorMessage && (
-                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-                    <AlertCircle size={15} className="shrink-0" />
-                    <span>{errorMessage}</span>
+                    {/* Error Banner */}
+                    {errorMessage && (
+                      <div className="p-3 mt-4 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+                        <AlertCircle size={15} className="shrink-0" />
+                        <span>{errorMessage}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
         </Modal>
       )}
