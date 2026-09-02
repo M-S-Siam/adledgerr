@@ -5628,25 +5628,25 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
 
       {/* GLOBAL CARD STATS SUMMARY */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 shrink-0">
-        <div className="bg-emerald-50/80 border border-emerald-200/70 p-3 rounded-xl shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white p-3 rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">USD Funded</p>
           <p className="text-sm font-black text-emerald-700">+{formatUSD(stats.purchased)}</p>
         </div>
-        <div className="bg-rose-50/80 border border-rose-200/70 p-3 rounded-xl shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white p-3 rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">Meta Ad Spend</p>
           <p className="text-sm font-black text-rose-700">-{formatUSD(stats.adSpend)}</p>
         </div>
-        <div className="bg-purple-50/80 border border-purple-200/70 p-3 rounded-xl shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white p-3 rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">15% Meta Tax</p>
           <p className="text-sm font-black text-purple-700">-{formatUSD(stats.tax)}</p>
         </div>
-        <div className="bg-amber-50/80 border border-amber-200/70 p-3 rounded-xl shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white p-3 rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">Bank Fees</p>
           <p className="text-sm font-black text-amber-700">-{formatUSD(stats.fees)}</p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-sm text-white">
-          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Live Balance</p>
-          <p className={`text-sm font-black ${currentBal < 0 ? 'text-rose-400' : 'text-sky-300'}`}>{formatUSD(currentBal)}</p>
+        <div className="bg-[#ebf0f7] border border-white p-3 rounded-2xl shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
+          <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">Live Balance</p>
+          <p className={`text-sm font-black ${currentBal < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{formatUSD(currentBal)}</p>
         </div>
       </div>
 
@@ -5676,9 +5676,9 @@ function CardDetailsModal({ card, metrics, transactions, onClose }) {
           <button
             type="button"
             onClick={handlePrintCardStatement}
-            className="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-1 rounded-md text-[11px] font-bold shadow-2xs transition-all"
+            className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
-            <Printer size={12} /> Print Statement
+            <Printer size={13} className="text-slate-500" /> Print Statement
           </button>
         </div>
       </div>
