@@ -13552,6 +13552,8 @@ function ClientActionsMenu({
 }
 
 function ClientTransactionHistoryModal({ client, transactions, metrics }) {
+  const isDark = typeof document !== 'undefined' && (document.documentElement.classList.contains('dark') || document.body.classList.contains('dark'));
+
   const clientTx = useMemo(() => {
     return transactions
       .filter(t => t.clientId === client.id)
@@ -13578,35 +13580,57 @@ function ClientTransactionHistoryModal({ client, transactions, metrics }) {
     <div className="space-y-5">
       {/* 4 COMPACT KPI TAGS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
+        <div className={`rounded-xl p-3 border ${
+          isDark
+            ? 'bg-[#0a1510] border-emerald-500/30'
+            : 'bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border-emerald-200/70 shadow-2xs'
+        }`}>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Payments Received</span>
-          <span className="text-sm font-black text-emerald-700 mt-0.5 block">{formatBDT(totalReceived)}</span>
+          <span className={`text-sm font-black mt-0.5 block ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>{formatBDT(totalReceived)}</span>
         </div>
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
+        <div className={`rounded-xl p-3 border ${
+          isDark
+            ? 'bg-[#130f1c] border-purple-500/30'
+            : 'bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border-purple-200/70 shadow-2xs'
+        }`}>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Ad Spend</span>
-          <span className="text-sm font-black text-purple-700 mt-0.5 block">{formatUSD(totalAdSpend)}</span>
+          <span className={`text-sm font-black mt-0.5 block ${isDark ? 'text-purple-400' : 'text-purple-700'}`}>{formatUSD(totalAdSpend)}</span>
         </div>
-        <div className="bg-gradient-to-br from-rose-50/80 via-white to-orange-50/40 border border-rose-200/70 rounded-lg p-3 shadow-2xs">
+        <div className={`rounded-xl p-3 border ${
+          isDark
+            ? 'bg-[#190d14] border-rose-500/30'
+            : 'bg-gradient-to-br from-rose-50/80 via-white to-orange-50/40 border-rose-200/70 shadow-2xs'
+        }`}>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Ad VAT (15%)</span>
-          <span className="text-sm font-black text-rose-700 mt-0.5 block">{formatUSD(totalTax)}</span>
+          <span className={`text-sm font-black mt-0.5 block ${isDark ? 'text-rose-400' : 'text-rose-700'}`}>{formatUSD(totalTax)}</span>
         </div>
-        <div className="bg-gradient-to-br from-slate-50 via-white to-slate-100/50 border border-slate-200/70 rounded-lg p-3 shadow-2xs">
+        <div className={`rounded-xl p-3 border ${
+          isDark
+            ? 'bg-[#111722] border-white/10'
+            : 'bg-gradient-to-br from-slate-50 via-white to-slate-100/50 border-slate-200/70 shadow-2xs'
+        }`}>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Ledger Entries</span>
-          <span className="text-sm font-black text-slate-900 mt-0.5 block">{clientTx.length} Entries</span>
+          <span className={`text-sm font-black mt-0.5 block ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{clientTx.length} Entries</span>
         </div>
       </div>
 
-      <div className="border border-slate-200/90 rounded-xl overflow-hidden bg-white shadow-2xs">
-        <div className="px-4 py-3 border-b border-slate-200/80 bg-slate-50/80 flex items-center justify-between">
+      <div className={`border rounded-xl overflow-hidden ${
+        isDark ? 'border-white/10 bg-[#111722]' : 'border-slate-200/90 bg-white shadow-2xs'
+      }`}>
+        <div className={`px-4 py-3 border-b flex items-center justify-between ${
+          isDark ? 'border-white/10 bg-[#0d121b]' : 'border-slate-200/80 bg-slate-50/80'
+        }`}>
           <div>
-            <h3 className="font-bold text-xs text-slate-800">Client Transaction History</h3>
+            <h3 className={`font-bold text-xs ${isDark ? 'text-white' : 'text-slate-800'}`}>Client Transaction History</h3>
             <p className="text-[11px] text-slate-400">All ledger records linked to {client.name}</p>
           </div>
         </div>
 
         <div className="overflow-x-auto max-h-[55vh]">
           <table className="w-full text-xs text-left whitespace-nowrap">
-            <thead className="bg-white text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase tracking-wider text-[10px]">
+            <thead className={`font-bold border-b sticky top-0 uppercase tracking-wider text-[10px] ${
+              isDark ? 'bg-[#0d121b] text-slate-400 border-white/10' : 'bg-white text-slate-500 border-slate-200'
+            }`}>
               <tr>
                 <th className="px-4 py-2.5">Date</th>
                 <th className="px-4 py-2.5">Type</th>
@@ -13615,7 +13639,7 @@ function ClientTransactionHistoryModal({ client, transactions, metrics }) {
                 <th className="px-4 py-2.5 text-right">USD</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className={`font-medium ${isDark ? 'divide-y divide-white/5' : 'divide-y divide-slate-100'}`}>
               {clientTx.length === 0 && (
                 <tr>
                   <td colSpan="5" className="text-center py-10 text-slate-400">No transactions recorded for this client yet.</td>
@@ -13630,11 +13654,11 @@ function ClientTransactionHistoryModal({ client, transactions, metrics }) {
                   : 0;
 
                 return (
-                  <tr key={tx.id} className="hover:bg-slate-50/70">
-                    <td className="px-4 py-3 text-slate-600 font-medium">{formatDate(tx.date)}</td>
+                  <tr key={tx.id} className={isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50/70'}>
+                    <td className={`px-4 py-3 font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatDate(tx.date)}</td>
                     <td className="px-4 py-3"><TransactionTypeBadge type={tx.type} /></td>
                     <td className="px-4 py-3 min-w-[240px]">
-                      <div className="font-bold text-slate-800">
+                      <div className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
                         {tx.notes || tx.campaign || tx.adAccount || tx.type.replaceAll('_', ' ')}
                       </div>
                       {tx.adAccount && (
@@ -13644,10 +13668,10 @@ function ClientTransactionHistoryModal({ client, transactions, metrics }) {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right font-bold">
-                      {isPayment ? <span className="text-emerald-600">+{formatBDT(tx.amountBDT)}</span> : '—'}
+                      {isPayment ? <span className={isDark ? 'text-emerald-400' : 'text-emerald-600'}>+{formatBDT(tx.amountBDT)}</span> : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-bold">
-                      {isAdSpend ? <span className="text-rose-600">-{formatUSD(usdAmount)}</span> : '—'}
+                      {isAdSpend ? <span className={isDark ? 'text-rose-400' : 'text-rose-600'}>-{formatUSD(usdAmount)}</span> : '—'}
                     </td>
                   </tr>
                 );
