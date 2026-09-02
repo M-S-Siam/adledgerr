@@ -149,3 +149,138 @@ body {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }
+
+/* =========================================================================
+   100% BULLETPROOF OBSIDIAN DARK FINTECH THEME
+   ========================================================================= */
+.adl-shell.dark,
+html.dark,
+body.dark {
+  background-color: #0a0d14 !important;
+  color: #f1f5f9 !important;
+}
+
+.adl-shell.dark main,
+.adl-shell.dark header,
+.adl-shell.dark aside {
+  background-color: #0a0d14 !important;
+}
+
+/* ALL CARDS & SIDEBAR PORTIONS IN DARK MODE: Deep Obsidian Surface #111722 */
+.adl-shell.dark .bg-\[\#ebf0f7\],
+.adl-shell.dark [class*="bg-[#ebf0f7]"],
+.adl-shell.dark .bg-white,
+.adl-shell.dark [class*="bg-white"],
+.adl-shell.dark aside > div > div,
+.adl-shell.dark aside [class*="rounded-3xl"] {
+  background-color: #111722 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* OVERRIDE ALL NEUMORPHIC WHITE HALO SHADOWS IN DARK MODE */
+.adl-shell.dark [class*="-6px_-6px"],
+.adl-shell.dark [class*="-5px_-5px"],
+.adl-shell.dark [class*="-4px_-4px"],
+.adl-shell.dark [class*="-3px_-3px"],
+.adl-shell.dark [class*="-2px_-2px"],
+.adl-shell.dark .shadow-\[6px_6px_16px_rgba\(166\,180\,200\,0\.5\)\,-6px_-6px_16px_\#ffffff\],
+.adl-shell.dark .shadow-\[5px_5px_14px_rgba\(166\,180\,200\,0\.45\)\,-5px_-5px_14px_\#ffffff\] {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.65), 0 8px 10px -6px rgba(0, 0, 0, 0.65) !important;
+}
+
+/* OVERRIDE INSET SHADOWS FOR DARK MODE */
+.adl-shell.dark [class*="shadow-[inset_2px_2px"],
+.adl-shell.dark [class*="shadow-[inset_3px_3px"],
+.adl-shell.dark [class*="shadow-[inset_4px_4px"] {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8), inset -1px -1px 2px rgba(255, 255, 255, 0.03) !important;
+}
+
+/* HIGH-CONTRAST TYPOGRAPHY IN DARK MODE */
+.adl-shell.dark h1,
+.adl-shell.dark h2,
+.adl-shell.dark h3,
+.adl-shell.dark h4,
+.adl-shell.dark [class*="text-slate-900"],
+.adl-shell.dark [class*="text-slate-800"] {
+  color: #f8fafc !important;
+}
+
+.adl-shell.dark [class*="text-slate-700"],
+.adl-shell.dark [class*="text-slate-600"] {
+  color: #cbd5e1 !important;
+}
+
+.adl-shell.dark [class*="text-slate-500"],
+.adl-shell.dark [class*="text-slate-400"] {
+  color: #94a3b8 !important;
+}
+
+/* INPUTS, SELECTS & SEARCH IN DARK MODE */
+.adl-shell.dark input,
+.adl-shell.dark select,
+.adl-shell.dark textarea {
+  background-color: #090c12 !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+
+.adl-shell.dark input::placeholder,
+.adl-shell.dark select::placeholder,
+.adl-shell.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* SIDEBAR ACTIVE NAV ITEM */
+.adl-shell.dark [class*="bg-[#e0eaf6]"] {
+  background-color: #182235 !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* SIDEBAR INACTIVE NAV ITEM HOVER */
+.adl-shell.dark button[class*="hover:bg-white"]:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* BORDERS & DIVIDERS IN DARK MODE */
+.adl-shell.dark [class*="border-white"],
+.adl-shell.dark [class*="border-slate-200"],
+.adl-shell.dark [class*="border-slate-100"] {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.adl-shell.dark [class*="divide-slate-200"] > * + * {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* TABLES IN DARK MODE */
+.adl-shell.dark table thead,
+.adl-shell.dark table thead tr,
+.adl-shell.dark [class*="bg-[#e5edf6]"],
+.adl-shell.dark [class*="bg-[#e4edf6]"] {
+  background-color: #0d121b !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.adl-shell.dark table thead th {
+  color: #94a3b8 !important;
+}
+
+.adl-shell.dark table tbody tr {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.adl-shell.dark table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* MODALS IN DARK MODE */
+.adl-shell.dark [role="dialog"],
+.adl-shell.dark .fixed [class*="bg-white"],
+.adl-shell.dark .fixed [class*="bg-[#ebf0f7]"] {
+  background-color: #111722 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85) !important;
+}
