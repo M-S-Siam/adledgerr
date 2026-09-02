@@ -264,50 +264,104 @@ body.dark {
   box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8), inset -1px -1px 2px rgba(255, 255, 255, 0.03) !important;
 }
 
-/* ALL PASTEL 50 & 100 ICON BOXES & BADGES ACROSS ALL SECTIONS */
+/* GLOWING STATUS DOTS & LED INDICATORS IN DARK MODE (VIBRANT GLOW!) */
+.adl-shell.dark .rounded-full.bg-emerald-500,
+.adl-shell.dark [class*="rounded-full"][class*="bg-emerald-500"],
+.adl-shell.dark [class*="rounded-full"][class*="bg-emerald-400"] {
+  background-color: #10b981 !important;
+  box-shadow: 0 0 8px #10b981, 0 0 14px rgba(16, 185, 129, 0.7) !important;
+}
+
+.adl-shell.dark .rounded-full.bg-sky-500,
+.adl-shell.dark [class*="rounded-full"][class*="bg-sky-500"],
+.adl-shell.dark [class*="rounded-full"][class*="bg-sky-400"] {
+  background-color: #0ea5e9 !important;
+  box-shadow: 0 0 8px #0ea5e9, 0 0 14px rgba(14, 165, 233, 0.7) !important;
+}
+
+.adl-shell.dark .rounded-full.bg-purple-500,
+.adl-shell.dark [class*="rounded-full"][class*="bg-purple-500"],
+.adl-shell.dark [class*="rounded-full"][class*="bg-purple-400"] {
+  background-color: #a855f7 !important;
+  box-shadow: 0 0 8px #a855f7, 0 0 14px rgba(168, 85, 247, 0.7) !important;
+}
+
+.adl-shell.dark .rounded-full.bg-amber-500,
+.adl-shell.dark [class*="rounded-full"][class*="bg-amber-500"],
+.adl-shell.dark [class*="rounded-full"][class*="bg-amber-400"] {
+  background-color: #f59e0b !important;
+  box-shadow: 0 0 8px #f59e0b, 0 0 14px rgba(245, 158, 11, 0.7) !important;
+}
+
+.adl-shell.dark .rounded-full.bg-rose-500,
+.adl-shell.dark [class*="rounded-full"][class*="bg-rose-500"],
+.adl-shell.dark [class*="rounded-full"][class*="bg-rose-400"] {
+  background-color: #f43f5e !important;
+  box-shadow: 0 0 8px #f43f5e, 0 0 14px rgba(244, 63, 94, 0.7) !important;
+}
+
+/* ALL PASTEL 50, 100 & 200 ICON BOXES & BADGES ACROSS ALL SECTIONS */
 /* Emerald (Payments, Revenue In, Attributed Revenue, Domestic Ledger, 2FA) */
-.adl-shell.dark [class*="bg-emerald-50"],
-.adl-shell.dark [class*="bg-emerald-100"],
-.adl-shell.dark [class*="bg-emerald-200"] {
+.adl-shell.dark .bg-emerald-50,
+.adl-shell.dark [class*="bg-emerald-50/"],
+.adl-shell.dark .bg-emerald-100,
+.adl-shell.dark [class*="bg-emerald-100/"],
+.adl-shell.dark .bg-emerald-200,
+.adl-shell.dark [class*="bg-emerald-200/"] {
   background-color: #0a1510 !important;
   color: #34d399 !important;
   border-color: rgba(16, 185, 129, 0.3) !important;
 }
 
 /* Purple (Total USD Spent, USD Out, Tracked Ad Spend, Concentric HUD) */
-.adl-shell.dark [class*="bg-purple-50"],
-.adl-shell.dark [class*="bg-purple-100"],
-.adl-shell.dark [class*="bg-purple-200"] {
+.adl-shell.dark .bg-purple-50,
+.adl-shell.dark [class*="bg-purple-50/"],
+.adl-shell.dark .bg-purple-100,
+.adl-shell.dark [class*="bg-purple-100/"],
+.adl-shell.dark .bg-purple-200,
+.adl-shell.dark [class*="bg-purple-200/"] {
   background-color: #130f1c !important;
   color: #c084fc !important;
   border-color: rgba(168, 85, 247, 0.3) !important;
 }
 
 /* Sky & Blue (Campaigns, Blended ROAS, FX & Meta Spend, USD Purchases) */
-.adl-shell.dark [class*="bg-sky-50"],
-.adl-shell.dark [class*="bg-sky-100"],
-.adl-shell.dark [class*="bg-sky-200"],
-.adl-shell.dark [class*="bg-blue-50"],
-.adl-shell.dark [class*="bg-blue-100"],
-.adl-shell.dark [class*="bg-blue-200"] {
+.adl-shell.dark .bg-sky-50,
+.adl-shell.dark [class*="bg-sky-50/"],
+.adl-shell.dark .bg-sky-100,
+.adl-shell.dark [class*="bg-sky-100/"],
+.adl-shell.dark .bg-sky-200,
+.adl-shell.dark [class*="bg-sky-200/"],
+.adl-shell.dark .bg-blue-50,
+.adl-shell.dark [class*="bg-blue-50/"],
+.adl-shell.dark .bg-blue-100,
+.adl-shell.dark [class*="bg-blue-100/"],
+.adl-shell.dark .bg-blue-200,
+.adl-shell.dark [class*="bg-blue-200/"] {
   background-color: #091422 !important;
   color: #38bdf8 !important;
   border-color: rgba(56, 189, 248, 0.3) !important;
 }
 
 /* Rose (Card Deficit, Card Warnings, Deficit Badges) */
-.adl-shell.dark [class*="bg-rose-50"],
-.adl-shell.dark [class*="bg-rose-100"],
-.adl-shell.dark [class*="bg-rose-200"] {
+.adl-shell.dark .bg-rose-50,
+.adl-shell.dark [class*="bg-rose-50/"],
+.adl-shell.dark .bg-rose-100,
+.adl-shell.dark [class*="bg-rose-100/"],
+.adl-shell.dark .bg-rose-200,
+.adl-shell.dark [class*="bg-rose-200/"] {
   background-color: #190d14 !important;
   color: #fb7185 !important;
   border-color: rgba(244, 63, 94, 0.3) !important;
 }
 
 /* Amber (Card Fees, Warnings, Promo Badges) */
-.adl-shell.dark [class*="bg-amber-50"],
-.adl-shell.dark [class*="bg-amber-100"],
-.adl-shell.dark [class*="bg-amber-200"] {
+.adl-shell.dark .bg-amber-50,
+.adl-shell.dark [class*="bg-amber-50/"],
+.adl-shell.dark .bg-amber-100,
+.adl-shell.dark [class*="bg-amber-100/"],
+.adl-shell.dark .bg-amber-200,
+.adl-shell.dark [class*="bg-amber-200/"] {
   background-color: #181308 !important;
   color: #fbbf24 !important;
   border-color: rgba(245, 158, 11, 0.3) !important;
@@ -315,21 +369,17 @@ body.dark {
 
 /* ALL PASTEL BORDERS IN DARK MODE */
 .adl-shell.dark [class*="border-emerald-200"],
-.adl-shell.dark [class*="border-emerald-300"],
-.adl-shell.dark [class*="border-emerald-500"] {
+.adl-shell.dark [class*="border-emerald-300"] {
   border-color: rgba(16, 185, 129, 0.3) !important;
 }
 .adl-shell.dark [class*="border-purple-200"],
-.adl-shell.dark [class*="border-purple-300"],
-.adl-shell.dark [class*="border-purple-500"] {
+.adl-shell.dark [class*="border-purple-300"] {
   border-color: rgba(168, 85, 247, 0.3) !important;
 }
 .adl-shell.dark [class*="border-sky-200"],
 .adl-shell.dark [class*="border-sky-300"],
-.adl-shell.dark [class*="border-sky-500"],
 .adl-shell.dark [class*="border-blue-200"],
-.adl-shell.dark [class*="border-blue-300"],
-.adl-shell.dark [class*="border-blue-500"] {
+.adl-shell.dark [class*="border-blue-300"] {
   border-color: rgba(56, 189, 248, 0.3) !important;
 }
 .adl-shell.dark [class*="border-rose-200"] {
