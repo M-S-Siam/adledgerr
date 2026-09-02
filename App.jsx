@@ -4494,7 +4494,7 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span>{chip.label}</span>
@@ -7128,7 +7128,7 @@ function CampaignsView({ campaigns = [], clients = [], transactions = [], metric
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span>{tab.label}</span>
@@ -9128,7 +9128,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <IconComponent size={14} className={active ? 'text-sky-600' : 'text-slate-400'} />
@@ -9178,7 +9178,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                       active
                         ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     <span>{tab.label}</span>
@@ -10615,7 +10615,7 @@ function UserGuideView({ onNavigate }) {
               className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs font-black'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>
@@ -12064,7 +12064,7 @@ function SettingsView({ settings, logo, subscription, onUpdateSubscription, onSa
               className={`w-full flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap relative cursor-pointer ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>

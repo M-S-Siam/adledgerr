@@ -190,43 +190,56 @@ body.dark {
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* ACTIVE TAB BUTTONS ACROSS ALL VIEWS (Transactions All Streams, Team Active Members, Role Filters) */
-.adl-shell.dark [class*="bg-slate-200"] button[class*="bg-white"],
-.adl-shell.dark [class*="bg-slate-100"] button[class*="bg-white"],
-.adl-shell.dark [class*="rounded-xl"] > button[class*="bg-white"],
-.adl-shell.dark [class*="rounded-lg"] > button[class*="bg-white"] {
+/* ACTIVE TAB BUTTONS ACROSS ALL VIEWS (ONLY the clicked/active button glows) */
+.adl-shell.dark [class*="bg-slate-200"] button.bg-white,
+.adl-shell.dark [class*="bg-slate-100"] button.bg-white,
+.adl-shell.dark [class*="rounded-xl"] > button.bg-white,
+.adl-shell.dark [class*="rounded-lg"] > button.bg-white,
+.adl-shell.dark [class*="rounded-md"] > button.bg-white {
   background-color: #182235 !important;
   color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.35) !important;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
-/* INACTIVE TAB BUTTONS */
-.adl-shell.dark [class*="bg-slate-200"] button:not([class*="bg-white"]),
-.adl-shell.dark [class*="bg-slate-100"] button:not([class*="bg-white"]),
-.adl-shell.dark [class*="rounded-xl"] > button:not([class*="bg-white"]),
-.adl-shell.dark [class*="rounded-lg"] > button:not([class*="bg-white"]) {
+/* INACTIVE TAB BUTTONS (NO BORDER, NO GLOW, CLEAN TEXT - 100% MATCH INTEGRATION) */
+.adl-shell.dark [class*="bg-slate-200"] button:not(.bg-white),
+.adl-shell.dark [class*="bg-slate-100"] button:not(.bg-white),
+.adl-shell.dark [class*="rounded-xl"] > button:not(.bg-white),
+.adl-shell.dark [class*="rounded-lg"] > button:not(.bg-white),
+.adl-shell.dark [class*="rounded-md"] > button:not(.bg-white) {
+  background-color: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
   color: #94a3b8 !important;
 }
-.adl-shell.dark [class*="bg-slate-200"] button:not([class*="bg-white"]):hover,
-.adl-shell.dark [class*="rounded-xl"] > button:not([class*="bg-white"]):hover {
+
+.adl-shell.dark [class*="bg-slate-200"] button:not(.bg-white):hover,
+.adl-shell.dark [class*="bg-slate-100"] button:not(.bg-white):hover,
+.adl-shell.dark [class*="rounded-xl"] > button:not(.bg-white):hover,
+.adl-shell.dark [class*="rounded-lg"] > button:not(.bg-white):hover,
+.adl-shell.dark [class*="rounded-md"] > button:not(.bg-white):hover {
   color: #f8fafc !important;
   background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
 }
 
-/* ACTIVE COUNT PILLS INSIDE TABS */
-.adl-shell.dark button[class*="bg-white"] [class*="bg-sky-100"],
-.adl-shell.dark button[class*="bg-white"] [class*="bg-blue-100"] {
+/* ACTIVE COUNT PILLS INSIDE ACTIVE TAB */
+.adl-shell.dark button.bg-white [class*="bg-sky-100"],
+.adl-shell.dark button.bg-white [class*="bg-blue-100"] {
   background-color: rgba(56, 189, 248, 0.2) !important;
   color: #38bdf8 !important;
   border: 1px solid rgba(56, 189, 248, 0.3) !important;
 }
 
-/* INACTIVE COUNT PILLS INSIDE TABS */
-.adl-shell.dark [class*="bg-slate-300"],
-.adl-shell.dark [class*="bg-slate-200"] span {
+/* INACTIVE COUNT PILLS INSIDE INACTIVE TAB (CLEAN, NO GLOW) */
+.adl-shell.dark button:not(.bg-white) [class*="bg-slate-300"],
+.adl-shell.dark button:not(.bg-white) span:last-child {
   background-color: rgba(255, 255, 255, 0.06) !important;
   color: #94a3b8 !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 /* OVERRIDE ALL NEUMORPHIC WHITE HALO SHADOWS IN ALL VIEWS */
