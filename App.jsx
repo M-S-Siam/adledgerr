@@ -10264,13 +10264,11 @@ function UserGuideView({ onNavigate }) {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
-      {/* Top Banner & PDF Print Header */}
-      <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        
+      {/* Top Banner & PDF Print Header (NEUMORPHIC SOFT UI WHITE) */}
+      <div className="bg-[#ebf0f7] border border-white rounded-3xl p-6 sm:p-8 text-slate-900 shadow-[6px_6px_16px_rgba(166,180,200,0.45),-6px_-6px_16px_#ffffff] relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#181d27] via-[#0f131a] to-[#080a0f] p-2 shadow-[0_12px_28px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.2)] border border-slate-700/70 hidden sm:flex items-center justify-center shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200/80 p-2 shadow-[2px_3px_8px_rgba(166,180,200,0.35),-2px_-2px_8px_#ffffff] hidden sm:flex items-center justify-center shrink-0">
               <img
                 src={QUANTREX_LOGO_DATA_URL}
                 alt="Quantrex Logo"
@@ -10278,14 +10276,14 @@ function UserGuideView({ onNavigate }) {
               />
             </div>
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-white/20">
+              <div className="inline-flex items-center gap-2 bg-sky-50 px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border border-sky-200/80 text-sky-700">
                 <BookOpen size={13} className="stroke-[2.5]" />
                 <span>Official Standard Operating Procedure (SOP) Manual</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
                 Quantrex — Digital Agency Financial Manual
               </h1>
-              <p className="text-sm text-sky-100 max-w-2xl font-medium leading-relaxed">
+              <p className="text-sm text-slate-600 max-w-2xl font-medium leading-relaxed">
                 ডিজিটাল মার্কেটিং এজেন্সির প্রতিটি পেজ ও মডিউল ব্যবহারের পূর্ণাঙ্গ গাইড, ডুয়েল-কারেন্সি অ্যাকাউন্টিং (BDT & USD), মেটা ১৫% ভ্যাট রুলস, এবং এজেন্সির প্রকৃত নিট লাভ নির্ণয়ের এনসাইক্লোপিডিক হ্যান্ডবুক।
               </p>
             </div>
@@ -10293,7 +10291,7 @@ function UserGuideView({ onNavigate }) {
 
           <button
             onClick={handleOpenAndPrintManual}
-            className="self-start md:self-auto inline-flex items-center gap-2.5 bg-white text-sky-700 hover:bg-sky-50 active:scale-95 px-5 py-3 rounded-2xl text-xs font-black shadow-lg hover:shadow-xl transition-all cursor-pointer shrink-0"
+            className="self-start md:self-auto inline-flex items-center gap-2.5 bg-sky-600 hover:bg-sky-700 text-white active:scale-95 px-5 py-3 rounded-2xl text-xs font-black shadow-sm transition-all cursor-pointer shrink-0"
           >
             <Printer size={16} className="stroke-[2.5]" />
             <span>Print / Save as PDF</span>
@@ -10301,21 +10299,21 @@ function UserGuideView({ onNavigate }) {
         </div>
 
         {/* Quick Search */}
-        <div className="mt-6 pt-6 border-t border-white/15 flex items-center gap-3">
+        <div className="mt-6 pt-6 border-t border-slate-200/70 flex items-center gap-3">
           <div className="relative flex-1 max-w-md">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none" />
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               placeholder="গাইড বা সমস্যা সার্চ করুন (যেমন: ভ্যাট, কার্ড ব্যালেন্স, ড্যাশবোর্ড, রিসিট)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/15 hover:bg-white/20 focus:bg-white text-xs text-white focus:text-slate-900 placeholder-white/60 focus:placeholder-slate-400 font-medium border border-white/20 focus:border-white outline-none transition-all"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-white focus:bg-white text-xs text-slate-900 placeholder-slate-400 font-medium border border-slate-200/90 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all shadow-xs"
             />
           </div>
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-xs text-white/80 hover:text-white underline font-semibold cursor-pointer"
+              className="text-xs text-sky-600 hover:text-sky-800 underline font-semibold cursor-pointer"
             >
               Clear Search
             </button>
@@ -10323,22 +10321,26 @@ function UserGuideView({ onNavigate }) {
         </div>
       </div>
 
-      {/* Category Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === tab.id
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80 shadow-2xs'
-            }`}
-          >
-            {tab.icon}
-            <span>{tab.label}</span>
-          </button>
-        ))}
+      {/* Category Navigation Tabs (STANDARDIZED INTEGRATION PILL STYLE) */}
+      <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
+        {tabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                active
+                  ? 'bg-white text-slate-900 shadow-xs font-black'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <span className={active ? 'text-sky-600' : 'text-slate-400'}>{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* TAB 1: CORE CONCEPTS & FORMULAS */}
