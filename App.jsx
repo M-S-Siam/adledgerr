@@ -10981,63 +10981,65 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
         </div>
       </div>
 
-      {/* PLAN PRICING COMPARISON CARDS */}
+      {/* PLAN PRICING COMPARISON CARDS (UNIFIED LUXURY NEUMORPHIC SOFT UI WHITE) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {plans.map((plan) => {
           return (
             <div
               key={plan.id}
-              className={`rounded-2xl p-6 border transition-all relative flex flex-col justify-between ${
-                plan.popular
-                  ? 'bg-white border-sky-500 ring-2 ring-sky-500/20 shadow-md'
-                  : 'bg-white/90 border-slate-200/90 hover:border-slate-300 shadow-xs'
+              className={`rounded-3xl p-6 bg-[#ebf0f7] border border-white text-slate-900 transition-all relative flex flex-col justify-between select-none shadow-[6px_6px_16px_rgba(166,180,200,0.45),-6px_-6px_16px_#ffffff] ${
+                plan.popular ? 'ring-2 ring-sky-500/40' : ''
               }`}
             >
               <div>
-                <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center justify-between gap-2 mb-3.5">
                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                    plan.popular
-                      ? 'bg-sky-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-700 border border-slate-200'
+                    plan.id === 'starter_monthly'
+                      ? 'bg-sky-100 text-sky-800 border border-sky-200/80'
+                      : plan.id === 'pro_annual'
+                        ? 'bg-purple-100 text-purple-800 border border-purple-200/80'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200/80'
                   }`}>
                     {plan.badge}
                   </span>
                   {plan.popular && (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
                       RECOMMENDED
                     </span>
                   )}
                 </div>
 
                 <h4 className="font-extrabold text-slate-900 text-base">{plan.name}</h4>
-                <p className="text-[11px] font-semibold text-sky-600 mt-0.5">{plan.trialNote}</p>
+                <p className="text-[11px] font-semibold text-sky-700 mt-0.5">{plan.trialNote}</p>
 
-                <div className="my-4 pb-4 border-b border-slate-100">
+                <div className="my-4 pb-4 border-b border-slate-200/80">
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 tracking-tight">৳{plan.price.toLocaleString()}</span>
-                    <span className="text-xs text-slate-500 font-medium">{plan.period}</span>
+                    <span className="text-xs text-slate-500 font-semibold">{plan.period}</span>
                   </div>
                   {plan.regularPrice > plan.price && (
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-400">
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500">
                       <span>Regular:</span>
-                      <span className="line-through font-medium">৳{plan.regularPrice.toLocaleString()}</span>
-                      <span className="text-emerald-600 font-bold">Save ৳{(plan.regularPrice - plan.price).toLocaleString()}</span>
+                      <span className="line-through font-medium text-slate-400">৳{plan.regularPrice.toLocaleString()}</span>
+                      <span className="text-emerald-700 font-bold">Save ৳{(plan.regularPrice - plan.price).toLocaleString()}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-2.5">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Included Features:</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Included Features:</p>
                   {plan.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs text-slate-700">
-                      <Check size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+                    <div key={idx} className="flex items-start gap-2 text-xs text-slate-700 font-medium">
+                      <div className="w-4 h-4 rounded-full bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shrink-0 mt-0.5 shadow-2xs">
+                        <Check size={11} className="stroke-[3]" />
+                      </div>
                       <span>{feat}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="pt-5 mt-5 border-t border-slate-100">
+              <div className="pt-5 mt-5 border-t border-slate-200/80">
                 <button
                   type="button"
                   onClick={() => {
@@ -11046,10 +11048,12 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
                     setErrorMessage('');
                     setTrxId('');
                   }}
-                  className={`w-full py-3 rounded-xl text-xs font-extrabold transition-all shadow-sm active:scale-98 flex items-center justify-center gap-2 cursor-pointer ${
-                    plan.popular
-                      ? 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-sky-600/20'
-                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  className={`w-full py-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer select-none active:scale-[0.98] ${
+                    plan.id === 'starter_monthly'
+                      ? 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white shadow-[3px_3px_10px_rgba(2,132,199,0.35),-2px_-2px_6px_#ffffff] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)]'
+                      : plan.id === 'pro_annual'
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-[3px_3px_10px_rgba(124,58,237,0.35),-2px_-2px_6px_#ffffff] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)]'
+                        : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-[3px_3px_10px_rgba(5,150,105,0.35),-2px_-2px_6px_#ffffff] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)]'
                   }`}
                 >
                   <CreditCard size={15} />
@@ -11063,8 +11067,8 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
 
       {/* TRUST & GUARANTEE FEATURES BAR */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-2xl bg-[#ebf0f7] border border-white shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] flex items-center gap-3 cursor-default select-none">
+          <div className="w-10 h-10 rounded-xl bg-emerald-100/90 border border-emerald-200/80 text-emerald-700 flex items-center justify-center shrink-0 shadow-xs">
             <Shield size={20} />
           </div>
           <div>
@@ -11073,8 +11077,8 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-2xl bg-[#ebf0f7] border border-white shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] flex items-center gap-3 cursor-default select-none">
+          <div className="w-10 h-10 rounded-xl bg-sky-100/90 border border-sky-200/80 text-sky-700 flex items-center justify-center shrink-0 shadow-xs">
             <Zap size={20} />
           </div>
           <div>
@@ -11083,8 +11087,8 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-2xl bg-[#ebf0f7] border border-white shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] flex items-center gap-3 cursor-default select-none">
+          <div className="w-10 h-10 rounded-xl bg-purple-100/90 border border-purple-200/80 text-purple-700 flex items-center justify-center shrink-0 shadow-xs">
             <MessageCircle size={20} />
           </div>
           <div>
@@ -11102,18 +11106,18 @@ function BillingPlansView({ subscription, onUpdate, businessName }) {
           onClose={() => setCheckoutPlan(null)}
         >
           <div className="p-6 space-y-5">
-            {/* Selected Plan Summary Banner */}
-            <div className="p-4 rounded-2xl bg-slate-900 text-white flex items-center justify-between gap-3 shadow-inner">
+            {/* Selected Plan Summary Banner (NEUMORPHIC WHITE) */}
+            <div className="p-4.5 rounded-2xl bg-[#ebf0f7] border border-white text-slate-900 flex items-center justify-between gap-3 shadow-[4px_4px_10px_rgba(166,180,200,0.45),-4px_-4px_10px_#ffffff] cursor-default select-none">
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-400">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 bg-sky-100/90 border border-sky-200/80 px-2 py-0.5 rounded-md">
                   {checkoutPlan.badge}
                 </span>
-                <h4 className="text-base font-extrabold text-white">{checkoutPlan.name}</h4>
-                <p className="text-xs text-slate-400">Workspace: <strong className="text-white">{businessName}</strong></p>
+                <h4 className="text-base font-extrabold text-slate-900 mt-1">{checkoutPlan.name}</h4>
+                <p className="text-xs text-slate-500">Workspace: <strong className="text-slate-800">{businessName}</strong></p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-black text-white">৳{checkoutPlan.price.toLocaleString()}</div>
-                <div className="text-[10px] text-slate-400">{checkoutPlan.period}</div>
+                <div className="text-2xl font-black text-slate-900">৳{checkoutPlan.price.toLocaleString()}</div>
+                <div className="text-[10px] text-slate-500 font-semibold">{checkoutPlan.period}</div>
               </div>
             </div>
 
