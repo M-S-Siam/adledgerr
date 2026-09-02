@@ -10735,44 +10735,44 @@ function UserGuideView({ onNavigate }) {
           </div>
 
           {/* Mathematical Formulas Card (NEUMORPHIC SOFT UI WHITE) */}
-          <div className="bg-[#ebf0f7] border border-white text-slate-900 rounded-2xl p-6 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] space-y-4 font-sans text-xs cursor-default select-none">
-            <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
-              <span className="text-sky-700 font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                <Terminal size={15} className="text-sky-600" />
+          <div className="bg-[#ebf0f7] dark:bg-[#111722] border border-white dark:border-white/10 text-slate-900 dark:text-slate-100 rounded-2xl p-6 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] space-y-4 font-sans text-xs cursor-default select-none">
+            <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3">
+              <span className="text-sky-700 dark:text-sky-400 font-black text-xs uppercase tracking-wider flex items-center gap-2">
+                <Terminal size={15} className="text-sky-600 dark:text-sky-400" />
                 Financial Mathematics & Logic Behind Quantrex
               </span>
-              <span className="text-[10px] text-sky-800 bg-sky-100/90 border border-sky-200/80 px-2.5 py-0.5 rounded-full uppercase font-bold">100% Automated</span>
+              <span className="text-[10px] text-sky-800 dark:text-sky-300 bg-sky-100/90 dark:bg-sky-950/60 border border-sky-200/80 dark:border-sky-500/30 px-2.5 py-0.5 rounded-full uppercase font-bold">100% Automated</span>
             </div>
 
             <div className="space-y-3.5 font-sans text-xs">
-              <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-sky-800 text-xs mb-1.5">১. কার্যকর ডলার কেনা রেট (Effective USD Buy Rate):</div>
-                <div className="font-mono font-bold text-emerald-700 bg-emerald-50/80 border border-emerald-200/70 p-2.5 rounded-lg text-[11.5px]">
+              <div className="p-4 bg-white/80 dark:bg-[#0c1017] rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+                <div className="font-bold text-sky-800 dark:text-sky-300 text-sm mb-1.5">১. কার্যকর ডলার কেনা রেট (Effective USD Buy Rate):</div>
+                <div className="font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-500/30 p-2.5 rounded-lg text-xs sm:text-[13px] tracking-wide">
                   Effective Rate = (মোট BDT খরচ + ক্যাশআউট চার্জ) ÷ ক্রয়কৃত USD
                 </div>
-                <div className="text-[11px] text-slate-600 mt-2 font-medium">
-                  উদাহরণ: ৳১৩,১২৫ দিয়ে $১০০ কিনলে প্রতি ডলারের প্রকৃত খরচ = <span className="font-bold text-slate-900">৳১৩১.২৫</span>
+                <div className="text-xs text-slate-600 dark:text-slate-200 mt-2 font-medium">
+                  উদাহরণ: ৳১৩,১২৫ দিয়ে $১০০ কিনলে প্রতি ডলারের প্রকৃত খরচ = <span className="font-bold text-slate-900 dark:text-white">৳১৩১.২৫</span>
                 </div>
               </div>
 
-              <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-purple-800 text-xs mb-1.5">২. মেটা স্পেন্ড ও মোট কার্ড কর্তন (Total Card Deduction):</div>
-                <div className="font-mono font-bold text-purple-700 bg-purple-50/80 border border-purple-200/70 p-2.5 rounded-lg text-[11.5px]">
+              <div className="p-4 bg-white/80 dark:bg-[#0c1017] rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+                <div className="font-bold text-purple-800 dark:text-purple-300 text-sm mb-1.5">২. মেটা স্পেন্ড ও মোট কার্ড কর্তন (Total Card Deduction):</div>
+                <div className="font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200/70 dark:border-purple-500/30 p-2.5 rounded-lg text-xs sm:text-[13px] tracking-wide">
                   মোট কার্ড কর্তন = অ্যাড স্পেন্ড (USD) + মেটা ১৫% ভ্যাট (USD)
                 </div>
-                <div className="text-[11px] text-slate-600 mt-2 font-medium">
-                  উদাহরণ: $১০০ মেটা অ্যাড চালালে কার্ড থেকে কাটা যাবে <span className="font-bold text-slate-900">$১১৫.০০</span> ($১০০ অ্যাড + $১৫ ভ্যাট)
+                <div className="text-xs text-slate-600 dark:text-slate-200 mt-2 font-medium">
+                  উদাহরণ: $১০০ মেটা অ্যাড চালালে কার্ড থেকে কাটা যাবে <span className="font-bold text-slate-900 dark:text-white">$১১৫.০০</span> ($১০০ অ্যাড + $১৫ ভ্যাট)
                 </div>
               </div>
 
-              <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-2xs">
-                <div className="font-bold text-emerald-800 text-xs mb-1.5">৩. এজেন্সির প্রকৃত নিট লাভ (Net Agency Profit):</div>
-                <div className="font-mono font-bold text-emerald-800 bg-emerald-50/80 border border-emerald-200/70 p-2.5 rounded-lg text-[11.5px]">
+              <div className="p-4 bg-white/80 dark:bg-[#0c1017] rounded-xl border border-slate-200/80 dark:border-white/10 shadow-2xs">
+                <div className="font-bold text-emerald-800 dark:text-emerald-300 text-sm mb-1.5">৩. এজেন্সির প্রকৃত নিট লাভ (Net Agency Profit):</div>
+                <div className="font-mono font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-500/30 p-2.5 rounded-lg text-xs sm:text-[13px] tracking-wide">
                   Net Profit (BDT) = ক্লায়েন্ট রেভিনিউ (BDT) - [মোট স্পেন্ড (USD) × Effective Buy Rate]
                 </div>
-                <div className="text-[11px] text-slate-600 mt-2 font-medium leading-relaxed">
+                <div className="text-xs text-slate-600 dark:text-slate-200 mt-2 font-medium leading-relaxed">
                   উদাহরণ: ক্লায়েন্ট দিল ৳১০,০০০। মোট খরচ $৫৫ × ৳১৩১.২৫ = ৳৭,২১৮.৭৫।<br />
-                  <strong className="text-emerald-700 font-black">প্রকৃত লাভ = ৳১০,০০০ - ৳৭,২১৮.৭৫ = ৳২,৭৮১.২৫ (মার্জিন: ২৭.৮%)</strong>
+                  <strong className="text-emerald-700 dark:text-emerald-300 font-black">প্রকৃত লাভ = ৳১০,০০০ - ৳৭,২১৮.৭৫ = ৳২,৭৮১.২৫ (মার্জিন: ২৭.৮%)</strong>
                 </div>
               </div>
             </div>
@@ -11065,49 +11065,49 @@ function UserGuideView({ onNavigate }) {
 
       {/* TAB 5: AGENCY PRO-TIPS */}
       {(activeTab === 'protips' || searchQuery) && (
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-2xs space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
-            <span className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">৫</span>
-            <h2 className="text-base font-extrabold text-slate-900">এজেন্সির সাফল্যের জন্য প্রো-টিপস ও চেকলিস্ট</h2>
+        <div className="bg-white dark:bg-[#111722] border border-slate-200/90 dark:border-white/10 rounded-2xl p-6 shadow-2xs space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-white/10 pb-4">
+            <span className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-sm">৫</span>
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-slate-100">এজেন্সির সাফল্যের জন্য প্রো-টিপস ও চেকলিস্ট</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200/80 space-y-1.5">
-              <div className="font-bold text-xs text-amber-950 flex items-center gap-2">
-                <Clock size={15} className="text-amber-600" />
+            <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-500/30 space-y-1.5">
+              <div className="font-bold text-sm text-amber-950 dark:text-amber-300 flex items-center gap-2">
+                <Clock size={16} className="text-amber-600 dark:text-amber-400" />
                 দৈনিক ৫ মিনিটের রুটিন
               </div>
-              <p className="text-xs text-amber-900 leading-relaxed">
+              <p className="text-xs text-amber-900 dark:text-slate-200 leading-relaxed font-medium">
                 প্রতিদিন কাজের শেষে মেটা অ্যাড ম্যানেজার থেকে সারাদিনের স্পেন্ড Quantrex-এ রেকর্ড করে ফেলুন। এতে মাসের শেষে কোনো অসামঞ্জস্য থাকবে না।
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-200/80 space-y-1.5">
-              <div className="font-bold text-xs text-sky-950 flex items-center gap-2">
-                <CreditCard size={15} className="text-sky-600" />
+            <div className="p-4 rounded-xl bg-sky-50/60 dark:bg-sky-950/30 border border-sky-200/80 dark:border-sky-500/30 space-y-1.5">
+              <div className="font-bold text-sm text-sky-950 dark:text-sky-300 flex items-center gap-2">
+                <CreditCard size={16} className="text-sky-600 dark:text-sky-400" />
                 ডলার কেনার সাথে সাথে এন্ট্রি
               </div>
-              <p className="text-xs text-sky-900 leading-relaxed">
+              <p className="text-xs text-sky-900 dark:text-slate-200 leading-relaxed font-medium">
                 সেলার থেকে কার্ডে ডলার আসা মাত্রই রেট ও ক্যাশআউট চার্জ সহ এন্ট্রি দিন, যাতে লাইভ কার্যকরী ডলার রেট ১০০% নিখুঁত থাকে।
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-1.5">
-              <div className="font-bold text-xs text-emerald-950 flex items-center gap-2">
-                <Users size={15} className="text-emerald-600" />
+            <div className="p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-500/30 space-y-1.5">
+              <div className="font-bold text-sm text-emerald-950 dark:text-emerald-300 flex items-center gap-2">
+                <Users size={16} className="text-emerald-600 dark:text-emerald-400" />
                 ক্লায়েন্ট পেমেন্ট ট্র্যাকিং
               </div>
-              <p className="text-xs text-emerald-900 leading-relaxed">
+              <p className="text-xs text-emerald-900 dark:text-slate-200 leading-relaxed font-medium">
                 ক্লায়েন্টের বাজেট শেষ হওয়ার আগেই ড্যাশবোর্ডের Client P&L টেবিল দেখে পরবর্তী পেমেন্ট নেওয়ার আগাম তাগাদা দিন।
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-purple-50/60 border border-purple-200/80 space-y-1.5">
-              <div className="font-bold text-xs text-purple-950 flex items-center gap-2">
-                <Database size={15} className="text-purple-600" />
+            <div className="p-4 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-500/30 space-y-1.5">
+              <div className="font-bold text-sm text-purple-950 dark:text-purple-300 flex items-center gap-2">
+                <Database size={16} className="text-purple-600 dark:text-purple-400" />
                 মাসিক ডাটা ব্যাকআপ
               </div>
-              <p className="text-xs text-purple-900 leading-relaxed">
+              <p className="text-xs text-purple-900 dark:text-slate-200 leading-relaxed font-medium">
                 প্রতি মাসের ১ তারিখে সেটিংস পেজ থেকে 'Export Backup' ফাইলটি ডাউনলোড করে গুগল ড্রাইভে সংরক্ষণ করুন।
               </p>
             </div>

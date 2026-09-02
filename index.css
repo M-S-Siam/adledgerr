@@ -594,3 +594,28 @@ body.dark .adl-plan-lifetime:hover {
   border-color: rgba(5, 150, 105, 0.6) !important;
   box-shadow: 0 12px 30px rgba(5, 150, 105, 0.25) !important;
 }
+
+/* =========================================================================
+   USER GUIDE & SOP HIGH-CONTRAST LEGIBLE DARK MODE TYPOGRAPHY
+   ========================================================================= */
+.adl-shell.dark [class*="text-amber-950"],
+.adl-shell.dark [class*="text-amber-900"] {
+  color: #fde68a !important; /* bright, warm, highly legible amber-200 */
+}
+.adl-shell.dark [class*="text-sky-950"],
+.adl-shell.dark [class*="text-sky-900"],
+.adl-shell.dark [class*="text-sky-800"] {
+  color: #7dd3fc !important; /* bright, readable sky-300 */
+}
+.adl-shell.dark [class*="text-emerald-950"],
+.adl-shell.dark [class*="text-emerald-900"],
+.adl-shell.dark [class*="text-emerald-800"],
+.adl-shell.dark [class*="text-emerald-700"] {
+  color: #6ee7b7 !important; /* bright, readable emerald-300 */
+}
+.adl-shell.dark [class*="text-purple-950"],
+.adl-shell.dark [class*="text-purple-900"],
+.adl-shell.dark [class*="text-purple-800"],
+.adl-shell.dark [class*="text-purple-700"] {
+  color: #d8b4fe !important; /* bright, readable purple-300 */
+}
