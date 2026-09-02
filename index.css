@@ -413,8 +413,7 @@ body.dark {
 /* ALL INPUTS, SEARCH BARS & SELECTS IN ALL VIEWS */
 .adl-shell.dark input,
 .adl-shell.dark select,
-.adl-shell.dark textarea,
-.adl-shell.dark [class*="bg-slate-50"] {
+.adl-shell.dark textarea {
   background-color: #090c12 !important;
   color: #f8fafc !important;
   border-color: rgba(255, 255, 255, 0.09) !important;
@@ -486,16 +485,20 @@ body.dark [class*="bg-[#ebf0f7]"][class*="z-50"] {
   color: #f8fafc !important;
 }
 
-/* MENU BUTTONS MUST BE CLEAN FLAT LIST ITEMS (NO BOXES, NO BORDERS, NO SHADOWS!) */
+/* MENU BUTTONS MUST BE 100% FLAT LIST ITEMS (NO BOXES, NO BORDERS, NO SHADOWS!) */
 html.dark [role="menu"] button,
 body.dark [role="menu"] button,
 .adl-shell.dark [role="menu"] button,
 html.dark [class*="z-[99999]"] button,
 body.dark [class*="z-[99999]"] button,
 .adl-shell.dark [class*="z-[99999]"] button {
+  background: transparent !important;
   background-color: transparent !important;
-  border: none !important;
+  border: 0 !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
   box-shadow: none !important;
+  outline: none !important;
   color: #cbd5e1 !important;
 }
 
@@ -506,27 +509,13 @@ body.dark [role="menu"] button:hover,
 html.dark [class*="z-[99999]"] button:hover,
 body.dark [class*="z-[99999]"] button:hover,
 .adl-shell.dark [class*="z-[99999]"] button:hover {
-  background-color: rgba(255, 255, 255, 0.07) !important;
-  border: none !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 0 !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
   box-shadow: none !important;
+  outline: none !important;
   color: #ffffff !important;
-}
-
-/* SUBMENUS (Change Status in ClientActionsMenu) */
-html.dark [role="menu"] [class*="bg-slate-50"],
-body.dark [role="menu"] [class*="bg-slate-50"],
-html.dark [class*="z-[99999]"] [class*="bg-slate-50"],
-body.dark [class*="z-[99999]"] [class*="bg-slate-50"] {
-  background-color: #0b0f17 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: none !important;
-}
-
-html.dark [role="menu"] [class*="bg-slate-50"] button,
-body.dark [role="menu"] [class*="bg-slate-50"] button {
-  border: none !important;
-  box-shadow: none !important;
-  background-color: transparent !important;
 }
 
 /* DIVIDERS INSIDE MENUS */
