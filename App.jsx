@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   LayoutDashboard, Users, CreditCard, DollarSign,
@@ -517,13 +517,53 @@ export default function AdLedgerApp() {
     paymentMethod: 'bKash'
   });
 
-  // Synchronize document root and portals with active theme
-  useEffect(() => {
+  // Synchronize document root and portals with active theme synchronously BEFORE browser paint
+  useLayoutEffect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.classList.toggle('dark', theme === 'dark');
       document.body.classList.toggle('dark', theme === 'dark');
     }
   }, [theme]);
+
+  // Clean, zero-flash theme switcher (eliminates intermediate white flash during toggle)
+  const handleToggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+
+    // 1. Temporarily disable all CSS transitions across the DOM so colors switch instantly with 0 flash
+    const disableTransitions = document.createElement('style');
+    disableTransitions.id = 'adl-disable-theme-transitions';
+    disableTransitions.textContent = `
+      *, *::before, *::after {
+        -webkit-transition: none !important;
+        -moz-transition: none !important;
+        -o-transition: none !important;
+        -ms-transition: none !important;
+        transition: none !important;
+        animation-duration: 0s !important;
+      }
+    `;
+    document.head.appendChild(disableTransitions);
+
+    // 2. Synchronously toggle 'dark' on documentElement and body BEFORE React paints
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', nextTheme === 'dark');
+      document.body.classList.toggle('dark', nextTheme === 'dark');
+    }
+
+    // 3. Update React state
+    setTheme(nextTheme);
+
+    // 4. Force layout recalculation so the new theme is applied with 0 transition artifacts
+    void document.documentElement.offsetHeight;
+
+    // 5. Restore transitions cleanly on the next animation frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const styleTag = document.getElementById('adl-disable-theme-transitions');
+        if (styleTag) styleTag.remove();
+      });
+    });
+  };
 
   // Auto-sync & sanitize workspace name from signup metadata (cleanse legacy 'AdLytic' test names)
   useEffect(() => {
@@ -1229,7 +1269,7 @@ export default function AdLedgerApp() {
               {/* THEME TOGGLE (SUN ☀️ / MOON 🌙) */}
               <button
                 type="button"
-                onClick={() => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))}
+                onClick={handleToggleTheme}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none border ${
                   theme === 'dark'
                     ? 'bg-[#090c12] border-white/10 text-amber-400 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.8),inset_-1px_-1px_3px_rgba(255,255,255,0.05)]'
