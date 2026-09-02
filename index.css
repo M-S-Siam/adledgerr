@@ -478,78 +478,74 @@ body.dark [role="menu"],
 html.dark [class*="z-[99999]"],
 body.dark [class*="z-[99999]"],
 .adl-shell.dark [class*="z-[99999]"],
-html.dark .fixed[class*="shadow-2xl"],
-body.dark .fixed[class*="shadow-2xl"],
-html.dark .fixed.bg-white,
-body.dark .fixed.bg-white,
-html.dark .absolute.bg-white,
-body.dark .absolute.bg-white,
-.adl-shell.dark .absolute.bg-white,
 html.dark [class*="bg-[#ebf0f7]"][class*="z-50"],
 body.dark [class*="bg-[#ebf0f7]"][class*="z-50"] {
   background-color: #111722 !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85) !important;
   color: #f8fafc !important;
 }
 
+/* MENU BUTTONS MUST BE CLEAN FLAT LIST ITEMS (NO BOXES, NO BORDERS, NO SHADOWS!) */
 html.dark [role="menu"] button,
 body.dark [role="menu"] button,
+.adl-shell.dark [role="menu"] button,
 html.dark [class*="z-[99999]"] button,
 body.dark [class*="z-[99999]"] button,
-html.dark .fixed[class*="shadow-2xl"] button,
-body.dark .fixed[class*="shadow-2xl"] button,
-html.dark .absolute.z-30 button,
-body.dark .absolute.z-30 button,
-html.dark .absolute.z-50 button,
-body.dark .absolute.z-50 button,
-.adl-shell.dark .absolute button {
+.adl-shell.dark [class*="z-[99999]"] button {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: #cbd5e1 !important;
 }
 
+/* HOVER EFFECT ON MENU ITEMS (SMOOTH SUBTLE HIGHLIGHT, ZERO BORDER BOX) */
 html.dark [role="menu"] button:hover,
 body.dark [role="menu"] button:hover,
+.adl-shell.dark [role="menu"] button:hover,
 html.dark [class*="z-[99999]"] button:hover,
 body.dark [class*="z-[99999]"] button:hover,
-html.dark .fixed[class*="shadow-2xl"] button:hover,
-body.dark .fixed[class*="shadow-2xl"] button:hover,
-html.dark .absolute.z-30 button:hover,
-body.dark .absolute.z-30 button:hover,
-html.dark .absolute.z-50 button:hover,
-body.dark .absolute.z-50 button:hover,
-.adl-shell.dark .absolute button:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+.adl-shell.dark [class*="z-[99999]"] button:hover {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  border: none !important;
+  box-shadow: none !important;
   color: #ffffff !important;
 }
 
+/* SUBMENUS (Change Status in ClientActionsMenu) */
 html.dark [role="menu"] [class*="bg-slate-50"],
 body.dark [role="menu"] [class*="bg-slate-50"],
 html.dark [class*="z-[99999]"] [class*="bg-slate-50"],
 body.dark [class*="z-[99999]"] [class*="bg-slate-50"] {
-  background-color: #0c1017 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: #0b0f17 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
 }
 
+html.dark [role="menu"] [class*="bg-slate-50"] button,
+body.dark [role="menu"] [class*="bg-slate-50"] button {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+/* DIVIDERS INSIDE MENUS */
 html.dark [role="menu"] [class*="border-slate-100"],
 body.dark [role="menu"] [class*="border-slate-100"],
 html.dark [class*="z-[99999]"] [class*="border-slate-100"],
 body.dark [class*="z-[99999]"] [class*="border-slate-100"],
 html.dark [role="menu"] [class*="h-px"],
-body.dark [role="menu"] [class*="h-px"] {
+body.dark [role="menu"] [class*="h-px"],
+html.dark [class*="z-[99999]"] [class*="h-px"],
+body.dark [class*="z-[99999]"] [class*="h-px"] {
   background-color: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* ALL MODALS & DIALOGS IN DARK MODE */
+/* MODALS IN DARK MODE (TARGETED STRICTLY TO DIALOGS, NEVER MENUS OR BUTTONS) */
 html.dark [role="dialog"],
 body.dark [role="dialog"],
-.adl-shell.dark [role="dialog"],
-html.dark .fixed [class*="bg-white"],
-body.dark .fixed [class*="bg-white"],
-.adl-shell.dark .fixed [class*="bg-white"],
-html.dark .fixed [class*="bg-[#ebf0f7]"],
-body.dark .fixed [class*="bg-[#ebf0f7]"],
-.adl-shell.dark .fixed [class*="bg-[#ebf0f7]"] {
+.adl-shell.dark [role="dialog"] {
   background-color: #111722 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #f8fafc !important;

@@ -6244,13 +6244,13 @@ function CampaignActionsMenu({ campaign, onInspect, onEdit, onToggleStatus, onDe
       >
         <button
           onClick={() => { setIsOpen(false); onInspect(campaign); }}
-          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:text-sky-700 dark:hover:text-sky-400 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-800/60 hover:text-sky-700 dark:hover:text-sky-400 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer border-0 outline-none shadow-none"
         >
           <Eye size={14} className="text-sky-600 dark:text-sky-400" /> Deep-Dive Analytics
         </button>
         <button
           onClick={() => { setIsOpen(false); onEdit(campaign); }}
-          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer border-0 outline-none shadow-none"
         >
           <Edit size={14} className="text-blue-600 dark:text-blue-400" /> Edit Campaign
         </button>
@@ -6259,7 +6259,7 @@ function CampaignActionsMenu({ campaign, onInspect, onEdit, onToggleStatus, onDe
             setIsOpen(false);
             onToggleStatus(campaign.id, campaign.status === 'Active' ? 'Paused' : 'Active');
           }}
-          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer border-0 outline-none shadow-none"
         >
           {campaign.status === 'Active' ? (
             <>
@@ -6276,7 +6276,7 @@ function CampaignActionsMenu({ campaign, onInspect, onEdit, onToggleStatus, onDe
 
         <button
           onClick={() => { setIsOpen(false); onDelete(campaign.id); }}
-          className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer border-0 outline-none shadow-none"
         >
           <Trash2 size={14} className="text-rose-500 dark:text-rose-400" /> Delete Campaign
         </button>
@@ -13395,7 +13395,7 @@ function ClientActionsMenu({
         <button
           type="button"
           onClick={() => closeAndRun(onViewDetails)}
-          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:text-sky-700 dark:hover:text-sky-400 flex items-center gap-2.5 transition-colors"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-sky-50 dark:hover:bg-slate-800/60 hover:text-sky-700 dark:hover:text-sky-400 flex items-center gap-2.5 transition-colors border-0 outline-none shadow-none"
         >
           <Eye size={15} className="text-sky-600 dark:text-sky-400 shrink-0" />
           <span>View Details</span>
@@ -13404,7 +13404,7 @@ function ClientActionsMenu({
         <button
           type="button"
           onClick={() => closeAndRun(onHistory)}
-          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-2.5 transition-colors"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-2.5 transition-colors border-0 outline-none shadow-none"
         >
           <Receipt size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
           <span>Transaction History</span>
@@ -13413,7 +13413,7 @@ function ClientActionsMenu({
         <button
           type="button"
           onClick={() => closeAndRun(onEdit)}
-          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white flex items-center gap-2.5 transition-colors"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white flex items-center gap-2.5 transition-colors border-0 outline-none shadow-none"
         >
           <Edit size={15} className="text-slate-500 dark:text-slate-400 shrink-0" />
           <span>Edit Client Profile</span>
@@ -13422,7 +13422,7 @@ function ClientActionsMenu({
         <button
           type="button"
           onClick={() => closeAndRun(onReceivePayment)}
-          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-2.5 transition-colors"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-2.5 transition-colors border-0 outline-none shadow-none"
         >
           <Coins size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>Receive Payment</span>
@@ -13433,7 +13433,7 @@ function ClientActionsMenu({
         <button
           type="button"
           onClick={() => setShowStatusMenu(prev => !prev)}
-          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between transition-colors"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 flex items-center justify-between transition-colors border-0 outline-none shadow-none"
           aria-expanded={showStatusMenu}
         >
           <span className="flex items-center gap-2.5">
@@ -13447,11 +13447,11 @@ function ClientActionsMenu({
         </button>
 
         {showStatusMenu && (
-          <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 dark:bg-[#0c1017] border border-slate-100/90 dark:border-white/10 p-1 space-y-0.5">
+          <div className="mx-1 mb-1 mt-1 rounded-lg bg-slate-50 dark:bg-[#0c1017] border border-slate-100/90 dark:border-white/10 p-1 space-y-0.5 shadow-none">
             <button
               type="button"
               onClick={() => closeAndRun(() => onToggleStatus?.('active'))}
-              className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 rounded-md hover:bg-emerald-100/70 dark:hover:bg-emerald-950/50 flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 rounded-md hover:bg-emerald-100/70 dark:hover:bg-emerald-950/50 flex items-center gap-2 border-0 outline-none shadow-none"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Mark Active
@@ -13460,7 +13460,7 @@ function ClientActionsMenu({
             <button
               type="button"
               onClick={() => closeAndRun(() => onToggleStatus?.('inactive'))}
-              className="w-full text-left px-3 py-2 text-xs font-bold text-orange-700 dark:text-orange-400 rounded-md hover:bg-orange-100/70 dark:hover:bg-orange-950/50 flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs font-bold text-orange-700 dark:text-orange-400 rounded-md hover:bg-orange-100/70 dark:hover:bg-orange-950/50 flex items-center gap-2 border-0 outline-none shadow-none"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
               Mark Inactive
@@ -13469,7 +13469,7 @@ function ClientActionsMenu({
             <button
               type="button"
               onClick={() => closeAndRun(() => onToggleStatus?.('completed'))}
-              className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 dark:text-blue-400 rounded-md hover:bg-blue-100/70 dark:hover:bg-blue-950/50 flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs font-bold text-blue-700 dark:text-blue-400 rounded-md hover:bg-blue-100/70 dark:hover:bg-blue-950/50 flex items-center gap-2 border-0 outline-none shadow-none"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               Mark Completed
@@ -13482,7 +13482,7 @@ function ClientActionsMenu({
         <button
           type="button"
           onClick={() => closeAndRun(onDelete)}
-          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-between transition-colors"
+          className="w-full text-left px-3.5 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-between transition-colors border-0 outline-none shadow-none"
         >
           <span className="flex items-center gap-2.5">
             <Trash2 size={15} className="text-rose-500 shrink-0" />
