@@ -4254,31 +4254,35 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
         </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+      <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0 no-scrollbar">
         {[
           { id: 'ALL', label: 'All Streams', count: transactions.length },
           { id: 'PAYMENT_RECEIVED', label: '📥 Payments In (BDT)', count: transactions.filter(t => t.type === 'PAYMENT_RECEIVED').length },
           { id: 'USD_PURCHASE', label: '💳 USD Purchases', count: transactions.filter(t => t.type === 'USD_PURCHASE').length },
           { id: 'AD_SPEND', label: '📢 Meta Ad Spend', count: transactions.filter(t => t.type === 'AD_SPEND').length },
           { id: 'FEE', label: '⚡ Card Fees', count: transactions.filter(t => t.type === 'FEE').length }
-        ].map(chip => (
-          <button
-            key={chip.id}
-            onClick={() => setTypeFilter(chip.id)}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all shadow-2xs whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-              typeFilter === chip.id
-                ? 'bg-sky-600 text-white shadow-sm ring-1 ring-sky-500/30'
-                : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <span>{chip.label}</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-              typeFilter === chip.id ? 'bg-sky-700/80 text-white' : 'bg-slate-100 text-slate-500'
-            }`}>
-              {chip.count}
-            </span>
-          </button>
-        ))}
+        ].map(chip => {
+          const active = typeFilter === chip.id;
+          return (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => setTypeFilter(chip.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                active
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <span>{chip.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                active ? 'bg-sky-100 text-sky-700 font-extrabold' : 'bg-slate-300/80 text-slate-700'
+              }`}>
+                {chip.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2.5 flex-wrap">
@@ -6703,20 +6707,35 @@ function CampaignsView({ campaigns, clients, transactions, metrics, onSave, onDe
       </div>
 
       {/* QUICK PLATFORM FILTER CHIPS */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-        {['All', 'Meta', 'Google', 'TikTok', 'Other'].map(p => (
-          <button
-            key={p}
-            onClick={() => setPlatformFilter(p)}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all shadow-2xs ${
-              platformFilter === p
-                ? 'bg-sky-600 text-white'
-                : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {p === 'All' ? 'All Channels' : `${p} Ads`}
-          </button>
-        ))}
+      <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
+        {[
+          { id: 'All', label: 'All Channels', count: campaigns.length },
+          { id: 'Meta', label: 'Meta Ads', count: campaigns.filter(c => (c.platform || '').toLowerCase().includes('meta') || (c.platform || '').toLowerCase().includes('facebook') || (c.platform || '').toLowerCase().includes('instagram')).length },
+          { id: 'Google', label: 'Google Ads', count: campaigns.filter(c => (c.platform || '').toLowerCase().includes('google')).length },
+          { id: 'TikTok', label: 'TikTok Ads', count: campaigns.filter(c => (c.platform || '').toLowerCase().includes('tiktok')).length },
+          { id: 'Other', label: 'Other', count: campaigns.filter(c => !['meta', 'facebook', 'instagram', 'google', 'tiktok'].some(p => (c.platform || '').toLowerCase().includes(p))).length },
+        ].map((tab) => {
+          const active = platformFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setPlatformFilter(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                active
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                active ? 'bg-sky-100 text-sky-700 font-extrabold' : 'bg-slate-300/80 text-slate-700'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* SEARCH AND MULTI-DIMENSION FILTERS */}
@@ -8678,56 +8697,35 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
       </div>
 
       {/* TEAM SECTION TABS NAVIGATION */}
-      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('members')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeSubTab === 'members'
-              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
-          }`}
-        >
-          <UsersRound size={15} className={activeSubTab === 'members' ? 'text-sky-600' : 'text-slate-400'} />
-          Active Workspace Members
-          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-extrabold">
-            {activeMembersList.length + 1}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('pending')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeSubTab === 'pending'
-              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
-          }`}
-        >
-          <Mail size={15} className={activeSubTab === 'pending' ? 'text-amber-600' : 'text-slate-400'} />
-          Pending Invitations
-          {pendingMembersList.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">
-              {pendingMembersList.length}
-            </span>
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('activities')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeSubTab === 'activities'
-              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
-          }`}
-        >
-          <Activity size={15} className={activeSubTab === 'activities' ? 'text-emerald-600' : 'text-slate-400'} />
-          Live Audit & Activity Trail
-          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold">
-            {activities.length}
-          </span>
-        </button>
+      <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl w-full sm:w-auto shrink-0">
+        {[
+          { id: 'members', label: 'Active Workspace Members', icon: UsersRound, count: activeMembersList.length + 1 },
+          { id: 'pending', label: 'Pending Invitations', icon: Mail, count: pendingMembersList.length },
+          { id: 'activities', label: 'Live Audit Trail', icon: Activity, count: activities.length },
+        ].map((tab) => {
+          const active = activeSubTab === tab.id;
+          const IconComponent = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveSubTab(tab.id)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+                active
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
+              }`}
+            >
+              <IconComponent size={14} className={active ? 'text-sky-600' : 'text-slate-400'} />
+              <span>{tab.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                active ? 'bg-sky-100 text-sky-700 font-extrabold' : 'bg-slate-300/80 text-slate-700'
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ================= SUBTAB 1: ACTIVE WORKSPACE MEMBERS ================= */}
@@ -8748,21 +8746,32 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
             </div>
 
             {/* Role Filter Tabs */}
-            <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-100 rounded-xl">
-              {['All', 'Admin', 'Campaign Manager', 'Accountant', 'Viewer'].map((tab) => {
-                const active = roleFilter === tab;
+            <div className="flex items-center gap-1 overflow-x-auto p-1 bg-slate-200/60 rounded-xl">
+              {[
+                { id: 'All', label: 'All Roles', count: teamMembers.length + 1 },
+                { id: 'Admin', label: 'Admin', count: teamMembers.filter(m => m.role === 'Admin' || m.role === 'Agency Admin').length + 1 },
+                { id: 'Campaign Manager', label: 'Campaign Manager', count: teamMembers.filter(m => m.role?.includes('Campaign') || m.role?.includes('Manager')).length },
+                { id: 'Accountant', label: 'Accountant', count: teamMembers.filter(m => m.role === 'Accountant').length },
+                { id: 'Viewer', label: 'Viewer', count: teamMembers.filter(m => m.role === 'Viewer' || m.role === 'Client Viewer').length },
+              ].map((tab) => {
+                const active = roleFilter === tab.id;
                 return (
                   <button
-                    key={tab}
+                    key={tab.id}
                     type="button"
-                    onClick={() => setRoleFilter(tab)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                    onClick={() => setRoleFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                       active
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-900'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
                     }`}
                   >
-                    {tab}
+                    <span>{tab.label}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      active ? 'bg-sky-100 text-sky-700 font-extrabold' : 'bg-slate-300/80 text-slate-700'
+                    }`}>
+                      {tab.count}
+                    </span>
                   </button>
                 );
               })}
@@ -11621,7 +11630,7 @@ function SettingsView({ settings, logo, subscription, onUpdateSubscription, onSa
       )}
 
       {/* TAB NAVIGATION (EQUAL 6-COLUMN FULL WIDTH DISTRIBUTION) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 p-1 bg-slate-200/60 rounded-lg w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 p-1 bg-slate-200/60 rounded-xl w-full">
         {navTabs.map((tab) => {
           const active = activeTab === tab.id;
           const hasError =
@@ -11634,7 +11643,7 @@ function SettingsView({ settings, logo, subscription, onUpdateSubscription, onSa
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center justify-center gap-2 py-2.5 px-2 rounded-md text-xs font-bold transition-all whitespace-nowrap relative ${
+              className={`w-full flex items-center justify-center gap-2 py-2.5 px-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap relative cursor-pointer ${
                 active
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-white/40'
