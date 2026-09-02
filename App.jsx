@@ -2008,13 +2008,13 @@ function ReportsView({ clients, cards, transactions }) {
             <button
               type="button"
               onClick={() => setShowExportMenu(prev => !prev)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold shadow-2xs transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border text-xs font-bold shadow-2xs transition-all cursor-pointer ${
                 showExportMenu
                   ? 'bg-slate-100 border-slate-300 text-slate-900 ring-2 ring-sky-500/20'
-                  : 'bg-slate-900 border-slate-800 text-white hover:bg-slate-800'
+                  : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50'
               }`}
             >
-              <Download size={13} /> Export <ChevronDown size={11} className={`transition-transform duration-150 ${showExportMenu ? 'rotate-180' : ''}`} />
+              <Download size={14} className="text-slate-500" /> Export <ChevronDown size={12} className={`text-slate-400 transition-transform duration-150 ${showExportMenu ? 'rotate-180' : ''}`} />
             </button>
             {showExportMenu && (
               <>
@@ -2023,7 +2023,7 @@ function ReportsView({ clients, cards, transactions }) {
                   <button
                     type="button"
                     onClick={() => { setShowExportMenu(false); exportCSV(); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg text-left transition-colors cursor-pointer"
                   >
                     <FileSpreadsheet size={15} className="text-emerald-600" />
                     <span>Export Excel / CSV (.csv)</span>
@@ -2031,7 +2031,7 @@ function ReportsView({ clients, cards, transactions }) {
                   <button
                     type="button"
                     onClick={() => { setShowExportMenu(false); handlePrintReportPDF(); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 text-left rounded-lg transition-colors hover:text-sky-800 cursor-pointer"
                   >
                     <Printer size={15} className="text-sky-600" />
                     <span>Print / PDF Statement (A4)</span>
@@ -5050,7 +5050,7 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
           <button
             type="button"
             onClick={onAddCard}
-            className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
+            className="inline-flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
           >
             <Plus size={15} /> Add Card
           </button>
