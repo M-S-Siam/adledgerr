@@ -233,13 +233,20 @@ body.dark {
   border: 1px solid rgba(56, 189, 248, 0.3) !important;
 }
 
-/* INACTIVE COUNT PILLS INSIDE INACTIVE TAB (CLEAN, NO GLOW) */
-.adl-shell.dark button:not(.bg-white) [class*="bg-slate-300"],
-.adl-shell.dark button:not(.bg-white) span:last-child {
+/* INACTIVE COUNT PILLS INSIDE INACTIVE TAB (ONLY rounded pill badges, NEVER text labels) */
+.adl-shell.dark button:not(.bg-white) span.rounded-full {
   background-color: rgba(255, 255, 255, 0.06) !important;
   color: #94a3b8 !important;
   border: none !important;
   box-shadow: none !important;
+}
+
+/* ZERO BACKGROUND BOXES BEHIND ANY TEXT LABELS */
+.adl-shell.dark button span:not(.rounded-full),
+.adl-shell.dark nav span:not(.rounded-full),
+.adl-shell.dark aside span:not(.rounded-full) {
+  background-color: transparent !important;
+  background: transparent !important;
 }
 
 /* OVERRIDE ALL NEUMORPHIC WHITE HALO SHADOWS IN ALL VIEWS */
