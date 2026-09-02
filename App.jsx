@@ -1318,7 +1318,11 @@ export default function AdLedgerApp() {
                 <button
                   onClick={() => setIsQuickSettingsOpen(prev => !prev)}
                   title="Quick Settings & Profile"
-                  className="w-9 h-9 rounded-xl bg-[#ebf0f7] border border-white text-slate-600 hover:text-slate-900 shadow-[3px_3px_8px_rgba(166,180,200,0.45),-3px_-3px_8px_#ffffff] transition-all flex items-center justify-center cursor-pointer active:scale-95"
+                  className={`w-9 h-9 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
+                    isQuickSettingsOpen
+                      ? 'bg-[#e2eaf4] border-slate-300/60 text-sky-600 shadow-[inset_2.5px_2.5px_5px_rgba(166,180,200,0.6),inset_-2.5px_-2.5px_5px_#ffffff]'
+                      : 'bg-[#ebf0f7] border-white text-slate-600 hover:text-slate-900 shadow-[3px_3px_8px_rgba(166,180,200,0.45),-3px_-3px_8px_#ffffff] active:scale-95'
+                  }`}
                 >
                   <SlidersHorizontal size={17} className={`transition-all duration-200 ${isQuickSettingsOpen ? 'text-sky-600' : ''}`} />
                 </button>
