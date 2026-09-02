@@ -8714,18 +8714,23 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
           <button
             type="button"
             onClick={() => setShowPermissionsGuide(prev => !prev)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all"
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs font-bold transition-all cursor-pointer select-none ${
+              showPermissionsGuide
+                ? 'bg-[#ebf0f7] border-white text-sky-800 shadow-[inset_2px_2px_5px_rgba(166,180,200,0.5),inset_-2px_-2px_5px_#ffffff]'
+                : 'bg-[#ebf0f7] border-white text-slate-700 shadow-[3px_3px_8px_rgba(166,180,200,0.45),-3px_-3px_8px_#ffffff] hover:text-sky-700 active:shadow-[inset_2px_2px_5px_rgba(166,180,200,0.5),inset_-2px_-2px_5px_#ffffff] active:scale-[0.98]'
+            }`}
           >
             <ShieldCheck size={14} className="text-sky-600" />
-            {showPermissionsGuide ? 'Hide Roles Guide' : 'View Roles Guide'}
+            <span>{showPermissionsGuide ? 'Hide Roles Guide' : 'View Roles Guide'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => openInviteModal('Active')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all hover:scale-[1.01]"
+            className="inline-flex items-center gap-2 px-4.5 py-2 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-[3px_3px_10px_rgba(2,132,199,0.35),-2px_-2px_6px_#ffffff] active:scale-[0.98] active:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)] transition-all cursor-pointer select-none"
           >
-            <UserPlus size={15} /> Invite Member
+            <UserPlus size={15} />
+            <span>Invite Member</span>
           </button>
         </div>
       </div>
