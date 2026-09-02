@@ -517,6 +517,14 @@ export default function AdLedgerApp() {
     paymentMethod: 'bKash'
   });
 
+  // Synchronize document root and portals with active theme
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.body.classList.toggle('dark', theme === 'dark');
+    }
+  }, [theme]);
+
   // Auto-sync & sanitize workspace name from signup metadata (cleanse legacy 'AdLytic' test names)
   useEffect(() => {
     // If current businessName is legacy AdLytic, sanitize it to generic default
@@ -888,6 +896,7 @@ export default function AdLedgerApp() {
     switch (currentView) {
       case 'dashboard':
         return <DashboardView
+          theme={theme}
           metrics={metrics}
           chartData={revenueChartData}
           cards={cards}
@@ -973,6 +982,7 @@ export default function AdLedgerApp() {
         />;
       default: return (
         <DashboardView
+          theme={theme}
           metrics={metrics}
           chartData={revenueChartData}
           transactions={transactions}
@@ -993,20 +1003,20 @@ export default function AdLedgerApp() {
 
   return (
     <>      <style>{`
-        /* 100% AUTHENTIC MASTER NEUMORPHIC SOFT-UI DESIGN SYSTEM */
-        .adl-shell {
+        /* 100% AUTHENTIC MASTER NEUMORPHIC SOFT-UI DESIGN SYSTEM (LIGHT) */
+        .adl-shell:not(.dark) {
           background: #ebf0f7 !important;
           color: #0f172a !important;
         }
-        .adl-shell main {
+        .adl-shell:not(.dark) main {
           background: #ebf0f7 !important;
         }
-        .adl-shell header {
+        .adl-shell:not(.dark) header {
           background: #ebf0f7 !important;
           border-color: rgba(166, 180, 200, 0.35) !important;
           box-shadow: 0 4px 18px rgba(166, 180, 200, 0.2) !important;
         }
-        .adl-shell aside {
+        .adl-shell:not(.dark) aside {
           background: #ebf0f7 !important;
           border-right: 1px solid rgba(255, 255, 255, 0.9) !important;
           box-shadow: 8px 0 25px rgba(166, 180, 200, 0.28) !important;
@@ -1018,58 +1028,202 @@ export default function AdLedgerApp() {
         .adl-shell aside nav::-webkit-scrollbar {
           display: none;
         }
-        .adl-shell h1, .adl-shell h2 {
+        .adl-shell:not(.dark) h1, .adl-shell:not(.dark) h2 {
           color: #0f172a !important;
           letter-spacing: -0.025em;
         }
-        .adl-shell h3 {
+        .adl-shell:not(.dark) h3 {
           color: #1e293b !important;
         }
-        .adl-shell .text-slate-500 {
+        .adl-shell:not(.dark) .text-slate-500 {
           color: #64748b !important;
         }
-        .adl-shell .text-slate-900 {
+        .adl-shell:not(.dark) .text-slate-900 {
           color: #0f172a !important;
         }
-        /* Extruded Neumorphic Cards */
-        .adl-shell .bg-white {
+        /* Extruded Neumorphic Cards in Light */
+        .adl-shell:not(.dark) .bg-white {
           background: #ebf0f7 !important;
           border: 1px solid rgba(255, 255, 255, 0.9) !important;
           box-shadow: 6px 6px 16px rgba(166, 180, 200, 0.5), -6px -6px 16px #ffffff !important;
           border-radius: 20px !important;
         }
-        .adl-shell .border-slate-200, .adl-shell .border-slate-300, .adl-shell .border-slate-100 {
+        .adl-shell:not(.dark) .border-slate-200, .adl-shell:not(.dark) .border-slate-300, .adl-shell:not(.dark) .border-slate-100 {
           border-color: rgba(166, 180, 200, 0.35) !important;
         }
-        .adl-shell .bg-slate-50 {
+        .adl-shell:not(.dark) .bg-slate-50 {
           background: #e2eaf4 !important;
         }
-        .adl-shell .bg-slate-100 {
+        .adl-shell:not(.dark) .bg-slate-100 {
           background: #dbe4ef !important;
         }
-        /* Inset Neumorphic Inputs & Sunken Controls */
-        .adl-shell input, .adl-shell select, .adl-shell textarea {
+        /* Inset Neumorphic Inputs & Sunken Controls (Light) */
+        .adl-shell:not(.dark) input, .adl-shell:not(.dark) select, .adl-shell:not(.dark) textarea {
           background: #ebf0f7 !important;
           border: 1px solid rgba(255, 255, 255, 0.85) !important;
           box-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.45), inset -3px -3px 6px #ffffff !important;
         }
-        .adl-shell input:focus, .adl-shell select:focus, .adl-shell textarea:focus {
+        .adl-shell:not(.dark) input:focus, .adl-shell:not(.dark) select:focus, .adl-shell:not(.dark) textarea:focus {
           outline: none;
           border-color: #38bdf8 !important;
           box-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.45), inset -3px -3px 6px #ffffff, 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
         }
-        .adl-shell header input {
+        .adl-shell:not(.dark) header input {
           background: #ebf0f7 !important;
           border: 1px solid rgba(255, 255, 255, 0.9) !important;
           box-shadow: inset 2px 2px 5px rgba(166, 180, 200, 0.4), inset -2px -2px 5px #ffffff !important;
         }
-        .adl-shell table thead {
+        .adl-shell:not(.dark) table thead {
           background: #e4edf6 !important;
         }
-        .adl-shell table thead th {
+        .adl-shell:not(.dark) table thead th {
           color: #475569 !important;
           font-weight: 800 !important;
         }
+
+        /* =========================================================================
+           AUTHENTIC OBSIDIAN DARK FINTECH THEME (CYBERNETIC NEUMORPHIC)
+           ========================================================================= */
+        .adl-shell.dark {
+          background: #0a0d14 !important;
+          color: #f1f5f9 !important;
+        }
+        .adl-shell.dark main {
+          background: #0a0d14 !important;
+        }
+        .adl-shell.dark aside {
+          background: #0a0d14 !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+          box-shadow: 8px 0 28px rgba(0, 0, 0, 0.7) !important;
+        }
+        .adl-shell.dark header {
+          background: #0a0d14 !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+        }
+        .adl-shell.dark h1, .adl-shell.dark h2, .adl-shell.dark h3 {
+          color: #f8fafc !important;
+        }
+        .adl-shell.dark .text-slate-900, .adl-shell.dark .text-slate-800 {
+          color: #f8fafc !important;
+        }
+        .adl-shell.dark .text-slate-700, .adl-shell.dark .text-slate-600 {
+          color: #cbd5e1 !important;
+        }
+        .adl-shell.dark .text-slate-500, .adl-shell.dark .text-slate-400 {
+          color: #94a3b8 !important;
+        }
+
+        /* Dark Neumorphic Frosted Obsidian Cards */
+        .adl-shell.dark .bg-\[\#ebf0f7\],
+        .adl-shell.dark .bg-white {
+          background: #111722 !important;
+          border-color: rgba(255, 255, 255, 0.07) !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+        }
+
+        /* Dark Border and Dividers */
+        .adl-shell.dark .border-white,
+        .adl-shell.dark .border-white\/90,
+        .adl-shell.dark .border-white\/80 {
+          border-color: rgba(255, 255, 255, 0.07) !important;
+        }
+        .adl-shell.dark .border-slate-200, 
+        .adl-shell.dark .border-slate-300, 
+        .adl-shell.dark .border-slate-100,
+        .adl-shell.dark .border-slate-200\/60 {
+          border-color: rgba(255, 255, 255, 0.06) !important;
+        }
+        .adl-shell.dark .divide-slate-200\/60 > * + * {
+          border-color: rgba(255, 255, 255, 0.06) !important;
+        }
+
+        /* Dark Sunken Inputs, Selects & Search */
+        .adl-shell.dark input, 
+        .adl-shell.dark select, 
+        .adl-shell.dark textarea {
+          background: #090c12 !important;
+          color: #f1f5f9 !important;
+          border: 1px solid rgba(255, 255, 255, 0.09) !important;
+          box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.75), inset -1px -1px 3px rgba(255, 255, 255, 0.03) !important;
+        }
+        .adl-shell.dark input:focus, 
+        .adl-shell.dark select:focus, 
+        .adl-shell.dark textarea:focus {
+          border-color: #38bdf8 !important;
+          box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.75), 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+        }
+        .adl-shell.dark input::placeholder,
+        .adl-shell.dark select::placeholder,
+        .adl-shell.dark textarea::placeholder {
+          color: #64748b !important;
+        }
+        .adl-shell.dark header input {
+          background: #090c12 !important;
+          color: #f1f5f9 !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.8) !important;
+        }
+
+        /* Dark Tables */
+        .adl-shell.dark table thead,
+        .adl-shell.dark table thead tr,
+        .adl-shell.dark .bg-\[\#e5edf6\],
+        .adl-shell.dark .bg-\[\#e4edf6\] {
+          background: #0d121b !important;
+          border-color: rgba(255, 255, 255, 0.07) !important;
+        }
+        .adl-shell.dark table thead th {
+          color: #94a3b8 !important;
+        }
+        .adl-shell.dark table tbody tr {
+          border-color: rgba(255, 255, 255, 0.04) !important;
+        }
+        .adl-shell.dark table tbody tr:hover {
+          background: rgba(255, 255, 255, 0.03) !important;
+        }
+
+        /* Dark Badges & Sub-elements */
+        .adl-shell.dark .bg-slate-50,
+        .adl-shell.dark .bg-slate-100,
+        .adl-shell.dark .bg-slate-200 {
+          background: rgba(255, 255, 255, 0.04) !important;
+        }
+        .adl-shell.dark .shadow-\[inset_2px_2px_4px_rgba\(166\,180\,200\,0\.4\)\,inset_-2px_-2px_4px_\#ffffff\] {
+          box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.6), inset -1px -1px 2px rgba(255, 255, 255, 0.04) !important;
+        }
+        .adl-shell.dark .shadow-\[inset_2px_2px_5px_rgba\(166\,180\,200\,0\.45\)\,inset_-2px_-2px_5px_\#ffffff\] {
+          box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.7), inset -1px -1px 3px rgba(255, 255, 255, 0.04) !important;
+        }
+        .adl-shell.dark .shadow-\[inset_3px_3px_6px_rgba\(166\,180\,200\,0\.45\)\,inset_-3px_-3px_6px_\#ffffff\] {
+          box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.75), inset -1px -1px 3px rgba(255, 255, 255, 0.04) !important;
+        }
+        .adl-shell.dark .shadow-\[3px_3px_8px_rgba\(166\,180\,200\,0\.45\)\,-3px_-3px_8px_\#ffffff\] {
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+        }
+        .adl-shell.dark .shadow-\[5px_5px_14px_rgba\(166\,180\,200\,0\.45\)\,-5px_-5px_14px_\#ffffff\],
+        .adl-shell.dark .shadow-\[6px_6px_16px_rgba\(166\,180\,200\,0\.5\)\,-6px_-6px_16px_\#ffffff\] {
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+        }
+
+        /* Dark NavItem active state */
+        .adl-shell.dark .bg-\[\#e0eaf6\] {
+          background: #182235 !important;
+          color: #38bdf8 !important;
+          border-color: rgba(56, 189, 248, 0.25) !important;
+          box-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.7), inset -1px -1px 2px rgba(255, 255, 255, 0.05) !important;
+        }
+
+        /* Modals in Dark Mode */
+        .adl-shell.dark .fixed .bg-white,
+        .adl-shell.dark [role="dialog"],
+        .adl-shell.dark .fixed.inset-0 .bg-\[\#ebf0f7\] {
+          background: #111722 !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          color: #f8fafc !important;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85) !important;
+        }
+
         .adl-shell button:not(:disabled):active {
           transform: scale(0.98);
         }
@@ -1077,9 +1231,9 @@ export default function AdLedgerApp() {
           transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
         }
       `}</style>
-      <div className="adl-shell flex h-screen bg-[#ebf0f7] text-slate-900 font-sans overflow-hidden">
+      <div className={`adl-shell flex h-screen font-sans overflow-hidden ${theme === 'dark' ? 'dark bg-[#0a0d14] text-slate-100' : 'bg-[#ebf0f7] text-slate-900'}`}>
         {/* SIDEBAR (EXACT 4 FLOATING NEUMORPHIC PORTIONS) */}
-        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#ebf0f7] text-slate-800 transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col justify-between p-3.5 gap-3 h-screen overflow-y-auto no-scrollbar`}>
+        <aside className={`fixed inset-y-0 left-0 z-50 w-64 ${theme === 'dark' ? 'bg-[#0a0d14] text-slate-200' : 'bg-[#ebf0f7] text-slate-800'} transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col justify-between p-3.5 gap-3 h-screen overflow-y-auto no-scrollbar`}>
           
           {/* Top Wrapper for Portion 1, 2, 3 */}
           <div className="space-y-3 flex-1">
@@ -1165,9 +1319,9 @@ export default function AdLedgerApp() {
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 flex flex-col h-screen overflow-hidden bg-[#ebf0f7]">
+        <main className={`flex-1 flex flex-col h-screen overflow-hidden ${theme === 'dark' ? 'bg-[#0a0d14]' : 'bg-[#ebf0f7]'}`}>
           {/* HEADER (NEUMORPHIC GLOBAL MASTER HUB) */}
-          <header className="bg-[#ebf0f7] border-b border-white/80 h-16 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0 shadow-[0_4px_18px_rgba(166,180,200,0.18)]">
+          <header className={`${theme === 'dark' ? 'bg-[#0a0d14] border-b border-white/[0.08] shadow-[0_4px_18px_rgba(0,0,0,0.5)]' : 'bg-[#ebf0f7] border-b border-white/80 shadow-[0_4px_18px_rgba(166,180,200,0.18)]'} h-16 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0`}>
             <div className="flex items-center gap-4">
               <button className="md:hidden text-slate-500" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu size={24} />
@@ -1184,6 +1338,30 @@ export default function AdLedgerApp() {
             </div>
 
             <div className="flex items-center gap-3 pr-2 sm:pr-4">
+              {/* THEME TOGGLE (SUN ☀️ / MOON 🌙) */}
+              <button
+                type="button"
+                onClick={() => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'))}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer select-none border ${
+                  theme === 'dark'
+                    ? 'bg-[#090c12] border-white/10 text-amber-400 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.8),inset_-1px_-1px_3px_rgba(255,255,255,0.05)]'
+                    : 'bg-[#ebf0f7] border-white text-slate-700 shadow-[3px_3px_8px_rgba(166,180,200,0.45),-3px_-3px_8px_#ffffff] hover:text-amber-600 active:scale-95'
+                }`}
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {theme === 'dark' ? (
+                  <>
+                    <Moon size={14} className="text-amber-400 fill-amber-400/20" />
+                    <span className="hidden sm:inline text-amber-300 font-extrabold text-[11px]">Dark</span>
+                  </>
+                ) : (
+                  <>
+                    <Sun size={14} className="text-amber-500 fill-amber-500/20" />
+                    <span className="hidden sm:inline text-slate-700 font-extrabold text-[11px]">Light</span>
+                  </>
+                )}
+              </button>
+
               {/* SUBSCRIPTION & 3-DAY TRIAL STATUS PILL */}
               <button
                 onClick={() => setCurrentView('settings')}
@@ -2601,6 +2779,7 @@ function ReportEmptyState() {
 }
 
 function DashboardView({
+  theme = 'light',
   metrics,
   chartData = [],
   transactions = [],
@@ -2814,18 +2993,18 @@ function DashboardView({
           <div className="my-3 space-y-2">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Received</span>
-              <div className="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tight">
+              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${theme === 'dark' ? 'text-[#10b981]' : 'text-emerald-600'}`}>
                 {formatBDT(metrics.totalRevenueBDT)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">Total BDT Cost</span>
-                <span className="font-bold text-rose-600">{formatBDT(dashboardData.totalBDTCost)}</span>
+                <span className="font-bold text-rose-500">{formatBDT(dashboardData.totalBDTCost)}</span>
               </div>
               <div>
                 <span className="text-slate-400 block font-semibold">Net BDT in Hand</span>
-                <span className={`font-bold ${dashboardData.netBDT < 0 ? 'text-rose-600' : 'text-slate-800'}`}>
+                <span className={`font-bold ${dashboardData.netBDT < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-[#10b981]' : 'text-slate-800')}`}>
                   {formatBDT(dashboardData.netBDT)}
                 </span>
               </div>
@@ -2856,18 +3035,18 @@ function DashboardView({
           <div className="my-3 space-y-2">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Ads + Tax + Fees</span>
-              <div className="text-2xl sm:text-3xl font-black text-purple-700 tracking-tight">
+              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${theme === 'dark' ? 'text-[#c084fc]' : 'text-purple-700'}`}>
                 {formatUSD(dashboardData.totalBurnUSD)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">USD Purchased</span>
-                <span className="font-bold text-sky-600">{formatUSD(metrics.totalUSDPurchased)}</span>
+                <span className="font-bold text-sky-500">{formatUSD(metrics.totalUSDPurchased)}</span>
               </div>
               <div>
                 <span className="text-slate-400 block font-semibold">Meta Ads + 15%</span>
-                <span className="font-bold text-slate-800">{formatUSD(metrics.totalAdSpendUSD + metrics.totalTaxUSD)}</span>
+                <span className={`font-bold ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{formatUSD(metrics.totalAdSpendUSD + metrics.totalTaxUSD)}</span>
               </div>
             </div>
           </div>
@@ -2896,18 +3075,18 @@ function DashboardView({
           <div className="my-3 space-y-2">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Actual Earnings</span>
-              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                 {formatBDT(metrics.netProfitBDT)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">Profit Margin</span>
-                <span className="font-bold text-emerald-600">{metrics.profitMargin.toFixed(1)}%</span>
+                <span className="font-bold text-emerald-500">{metrics.profitMargin.toFixed(1)}%</span>
               </div>
               <div>
                 <span className="text-slate-400 block font-semibold">Buy Rate</span>
-                <span className="font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}/USD</span>
+                <span className={`font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-800'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(2)}/USD</span>
               </div>
             </div>
           </div>
@@ -2940,18 +3119,18 @@ function DashboardView({
           <div className="my-3 space-y-2">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Available USD</span>
-              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${totalCardBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${totalCardBalance < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                 {formatUSD(totalCardBalance)}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
               <div>
                 <span className="text-slate-400 block font-semibold">Dollar Buy Rate</span>
-                <span className="font-bold text-slate-800">৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
+                <span className={`font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-800'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
               </div>
               <div>
                 <span className="text-slate-400 block font-semibold">15% VAT Paid</span>
-                <span className="font-bold text-rose-600">{formatUSD(metrics.totalTaxUSD)}</span>
+                <span className={`font-bold ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatUSD(metrics.totalTaxUSD)}</span>
               </div>
             </div>
           </div>
@@ -3001,18 +3180,18 @@ function DashboardView({
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? 'rgba(255,255,255,0.06)' : '#e2e8f0'} vertical={false} />
                   <XAxis
                     dataKey="date"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 10.5, fontWeight: 700 }}
+                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10.5, fontWeight: 700 }}
                     dy={6}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 10.5, fontWeight: 700 }}
+                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10.5, fontWeight: 700 }}
                     tickFormatter={(v) => `৳${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
                   />
                   <Tooltip
@@ -3114,9 +3293,9 @@ function DashboardView({
                   </defs>
 
                   {/* Base Track Arcs */}
-                  <circle cx="95" cy="95" r="72" fill="none" stroke="#dbe4ef" strokeWidth="8" />
-                  <circle cx="95" cy="95" r="56" fill="none" stroke="#dbe4ef" strokeWidth="7" />
-                  <circle cx="95" cy="95" r="40" fill="none" stroke="#dbe4ef" strokeWidth="6" />
+                  <circle cx="95" cy="95" r="72" fill="none" stroke={theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#dbe4ef'} strokeWidth="8" />
+                  <circle cx="95" cy="95" r="56" fill="none" stroke={theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#dbe4ef'} strokeWidth="7" />
+                  <circle cx="95" cy="95" r="40" fill="none" stroke={theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#dbe4ef'} strokeWidth="6" />
 
                   {/* Glowing Layer 1: Meta Ads (Outer) */}
                   {metrics.totalAdSpendUSD > 0 && (
@@ -3176,10 +3355,10 @@ function DashboardView({
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
                     <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">TOTAL BURN</span>
                   </div>
-                  <span className="text-lg font-black text-slate-900 tracking-tight leading-none">
+                  <span className={`text-lg font-black tracking-tight leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                     {formatUSD(dashboardData.totalBurnUSD)}
                   </span>
-                  <span className="text-[8.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 mt-1 shadow-xs">
+                  <span className={`text-[8.5px] font-bold px-2 py-0.5 rounded-full border mt-1 shadow-xs ${theme === 'dark' ? 'text-sky-400 bg-sky-950/60 border-sky-500/40' : 'text-emerald-600 bg-emerald-50 border-emerald-200/60'}`}>
                     Live Telemetry
                   </span>
                 </div>
@@ -3196,14 +3375,14 @@ function DashboardView({
                 <div className="flex items-center justify-between font-semibold text-[11px]">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full shadow-xs" style={{ backgroundColor: item.color }} />
-                    <span className="text-slate-700 font-bold">{item.name}</span>
+                    <span className={`${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-bold`}>{item.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400 text-[10px]">({item.percentage}%)</span>
-                    <span className="font-bold text-slate-900">{formatUSD(item.value)}</span>
+                    <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatUSD(item.value)}</span>
                   </div>
                 </div>
-                <div className="w-full h-1.5 bg-[#dbe4ef] rounded-full overflow-hidden shadow-inner">
+                <div className={`w-full h-1.5 ${theme === 'dark' ? 'bg-slate-800' : 'bg-[#dbe4ef]'} rounded-full overflow-hidden shadow-inner`}>
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
@@ -3486,31 +3665,41 @@ function DashboardView({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         
         {/* CARD 1: CARD LIQUIDITY SAFETY SHIELD */}
-        <div className={`rounded-2xl border p-5 transition-all flex flex-col justify-between shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] ${
-          totalCardBalance < 0
-            ? 'bg-[#ebf0f7] border-rose-200/90 text-rose-950'
-            : 'bg-[#ebf0f7] border-emerald-200/90 text-emerald-950'
+        <div className={`rounded-2xl border p-5 transition-all flex flex-col justify-between ${
+          theme === 'dark'
+            ? (totalCardBalance < 0
+                ? 'bg-[#180d14] border-rose-500/30 text-rose-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]'
+                : 'bg-[#0a1b16] border-emerald-500/30 text-emerald-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]')
+            : (totalCardBalance < 0
+                ? 'bg-[#ebf0f7] border-rose-200/90 text-rose-950 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+                : 'bg-[#ebf0f7] border-emerald-200/90 text-emerald-950 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]')
         }`}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
-                totalCardBalance < 0 ? 'bg-rose-100/80 border-rose-200 text-rose-700' : 'bg-emerald-100/80 border-emerald-200 text-emerald-700'
+                totalCardBalance < 0
+                  ? (theme === 'dark' ? 'bg-rose-950/60 border-rose-500/40 text-rose-400' : 'bg-rose-100/80 border-rose-200 text-rose-700')
+                  : (theme === 'dark' ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-emerald-100/80 border-emerald-200 text-emerald-700')
               }`}>
                 {totalCardBalance < 0 ? <AlertCircle size={19} /> : <ShieldCheck size={19} />}
               </div>
               <div>
                 <h4 className={`font-black text-xs uppercase tracking-wider ${
-                  totalCardBalance < 0 ? 'text-rose-900' : 'text-emerald-900'
+                  totalCardBalance < 0
+                    ? (theme === 'dark' ? 'text-rose-400' : 'text-rose-900')
+                    : (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-900')
                 }`}>
                   {totalCardBalance < 0 ? 'Card Liquidity Warning' : 'Healthy Card Liquidity'}
                 </h4>
-                <span className="text-[10px] opacity-75 font-semibold">Virtual Card Reserves</span>
+                <span className={`text-[10px] font-semibold ${theme === 'dark' ? 'opacity-70 text-slate-400' : 'opacity-75'}`}>Virtual Card Reserves</span>
               </div>
             </div>
           </div>
 
           <p className={`text-xs font-medium mt-3 ${
-            totalCardBalance < 0 ? 'text-rose-800/90' : 'text-emerald-800/90'
+            totalCardBalance < 0
+              ? (theme === 'dark' ? 'text-rose-300/90' : 'text-rose-800/90')
+              : (theme === 'dark' ? 'text-emerald-300/90' : 'text-emerald-800/90')
           }`}>
             {totalCardBalance < 0
               ? `Virtual card balance is in deficit by ${formatUSD(Math.abs(totalCardBalance))}. Top up immediately to prevent Meta ad pauses.`
@@ -3519,37 +3708,49 @@ function DashboardView({
         </div>
 
         {/* CARD 2: REVENUE INFLOW HEALTH */}
-        <div className="rounded-2xl border border-emerald-200/80 bg-[#ebf0f7] p-5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] flex flex-col justify-between">
+        <div className={`rounded-2xl border p-5 flex flex-col justify-between ${
+          theme === 'dark'
+            ? 'border-emerald-500/30 bg-[#0a1b16] text-emerald-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]'
+            : 'border-emerald-200/80 bg-[#ebf0f7] text-emerald-900 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+        }`}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100/80 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold shrink-0 shadow-xs">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+              theme === 'dark' ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-emerald-100/80 border-emerald-200 text-emerald-700'
+            }`}>
               <CheckCircle2 size={19} />
             </div>
             <div>
-              <h4 className="font-black text-xs uppercase tracking-wider text-emerald-900">
+              <h4 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-900'}`}>
                 Healthy Revenue Flow
               </h4>
-              <span className="text-[10px] text-emerald-700/80 font-semibold">Client Inflow Status</span>
+              <span className={`text-[10px] font-semibold ${theme === 'dark' ? 'text-emerald-400/80' : 'text-emerald-700/80'}`}>Client Inflow Status</span>
             </div>
           </div>
-          <p className="text-xs text-emerald-800/90 font-medium mt-3">
+          <p className={`text-xs font-medium mt-3 ${theme === 'dark' ? 'text-emerald-300/90' : 'text-emerald-800/90'}`}>
             {formatBDT(metrics.totalRevenueBDT)} received across active client accounts with positive cashflow surplus.
           </p>
         </div>
 
         {/* CARD 3: PROFIT & MARGIN SNAPSHOT */}
-        <div className="rounded-2xl border border-blue-200/80 bg-[#ebf0f7] p-5 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff] flex flex-col justify-between">
+        <div className={`rounded-2xl border p-5 flex flex-col justify-between ${
+          theme === 'dark'
+            ? 'border-sky-500/30 bg-[#0c1626] text-sky-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]'
+            : 'border-blue-200/80 bg-[#ebf0f7] text-blue-900 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+        }`}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-100/80 border border-blue-200 text-blue-700 flex items-center justify-center font-bold shrink-0 shadow-xs">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+              theme === 'dark' ? 'bg-sky-950/60 border-sky-500/40 text-sky-400' : 'bg-blue-100/80 border-blue-200 text-blue-700'
+            }`}>
               <TrendingUp size={19} />
             </div>
             <div>
-              <h4 className="font-black text-xs uppercase tracking-wider text-blue-900">
+              <h4 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-sky-400' : 'text-blue-900'}`}>
                 Net Profit Snapshot
               </h4>
-              <span className="text-[10px] text-blue-700/80 font-semibold">Bottom Line Performance</span>
+              <span className={`text-[10px] font-semibold ${theme === 'dark' ? 'text-sky-400/80' : 'text-blue-700/80'}`}>Bottom Line Performance</span>
             </div>
           </div>
-          <p className="text-xs text-blue-800/90 font-medium mt-3">
+          <p className={`text-xs font-medium mt-3 ${theme === 'dark' ? 'text-sky-300/90' : 'text-blue-800/90'}`}>
             {formatBDT(metrics.netProfitBDT)} net agency profit achieved with a healthy {metrics.profitMargin.toFixed(1)}% margin.
           </p>
         </div>
