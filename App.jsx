@@ -9007,7 +9007,7 @@ function TeamView({ teamMembers = [], onAdd, onUpdate, onRemove, clients = [], w
           <button
             type="button"
             onClick={() => openInviteModal('Active')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-none active:scale-[0.98] transition-all cursor-pointer select-none whitespace-nowrap shrink-0 border-0"
           >
             <UserPlus size={15} className="shrink-0" />
             <span className="whitespace-nowrap">Invite Member</span>
