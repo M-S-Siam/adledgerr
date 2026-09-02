@@ -478,3 +478,62 @@ body.dark {
   color: #f8fafc !important;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85) !important;
 }
+
+/* =========================================================================
+   SLEEK MODERN SCROLLBARS (ELIMINATES UGLY WHITE BROWSER SCROLLBARS IN DARK MODE)
+   ========================================================================= */
+html.dark,
+body.dark,
+.adl-shell.dark {
+  color-scheme: dark;
+}
+
+/* Webkit (Chrome, Edge, Opera, Safari) */
+html.dark ::-webkit-scrollbar,
+body.dark ::-webkit-scrollbar,
+.adl-shell.dark ::-webkit-scrollbar,
+html.dark *::-webkit-scrollbar,
+body.dark *::-webkit-scrollbar,
+.adl-shell.dark *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html.dark ::-webkit-scrollbar-track,
+body.dark ::-webkit-scrollbar-track,
+.adl-shell.dark ::-webkit-scrollbar-track,
+html.dark *::-webkit-scrollbar-track,
+body.dark *::-webkit-scrollbar-track,
+.adl-shell.dark *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.dark ::-webkit-scrollbar-thumb,
+body.dark ::-webkit-scrollbar-thumb,
+.adl-shell.dark ::-webkit-scrollbar-thumb,
+html.dark *::-webkit-scrollbar-thumb,
+body.dark *::-webkit-scrollbar-thumb,
+.adl-shell.dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover,
+body.dark ::-webkit-scrollbar-thumb:hover,
+.adl-shell.dark ::-webkit-scrollbar-thumb:hover,
+html.dark *::-webkit-scrollbar-thumb:hover,
+body.dark *::-webkit-scrollbar-thumb:hover,
+.adl-shell.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Firefox / Modern CSS scrollbar standard */
+html.dark,
+html.dark *,
+body.dark,
+body.dark *,
+.adl-shell.dark,
+.adl-shell.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-width: thin;
+}
