@@ -5969,69 +5969,117 @@ function PlatformBadge({ platform }) {
 
 function CampaignActionsMenu({ campaign, onInspect, onEdit, onToggleStatus, onDelete }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
+  const updateMenuPosition = () => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const menuWidth = 208;
+    const menuHeight = 160;
+    const gap = 6;
+    const viewportPadding = 8;
+
+    let left = rect.right - menuWidth;
+    left = Math.max(viewportPadding, Math.min(left, window.innerWidth - menuWidth - viewportPadding));
+
+    let top = rect.bottom + gap;
+    if (top + menuHeight > window.innerHeight - viewportPadding) {
+      top = rect.top - menuHeight - gap;
+    }
+    top = Math.max(viewportPadding, Math.min(top, window.innerHeight - menuHeight - viewportPadding));
+
+    setMenuPosition({ top, left });
+  };
+
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false);
+    if (!isOpen) return;
+    updateMenuPosition();
+
+    const handleOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target) && buttonRef.current && !buttonRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
     };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handleScroll = () => updateMenuPosition();
+
+    document.addEventListener('mousedown', handleOutside);
+    window.addEventListener('resize', handleScroll);
+    window.addEventListener('scroll', handleScroll, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [isOpen]);
 
+  const menu = isOpen && typeof document !== 'undefined'
+    ? createPortal(
+      <div
+        ref={menuRef}
+        className="fixed bg-white border border-slate-200/90 rounded-xl shadow-2xl z-[99999] p-1.5 animate-in fade-in duration-100"
+        style={{ top: menuPosition.top, left: menuPosition.left, width: 208 }}
+        role="menu"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={() => { setIsOpen(false); onInspect(campaign); }}
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+        >
+          <Eye size={14} className="text-sky-600" /> Deep-Dive Analytics
+        </button>
+        <button
+          onClick={() => { setIsOpen(false); onEdit(campaign); }}
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+        >
+          <Edit size={14} className="text-blue-600" /> Edit Campaign
+        </button>
+        <button
+          onClick={() => {
+            setIsOpen(false);
+            onToggleStatus(campaign.id, campaign.status === 'Active' ? 'Paused' : 'Active');
+          }}
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+        >
+          {campaign.status === 'Active' ? (
+            <>
+              <Pause size={14} className="text-amber-600" /> Pause Campaign
+            </>
+          ) : (
+            <>
+              <Play size={14} className="text-emerald-600" /> Activate Campaign
+            </>
+          )}
+        </button>
+
+        <div className="my-1 border-t border-slate-100" />
+
+        <button
+          onClick={() => { setIsOpen(false); onDelete(campaign.id); }}
+          className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-2.5 transition-colors cursor-pointer"
+        >
+          <Trash2 size={14} className="text-rose-500" /> Delete Campaign
+        </button>
+      </div>,
+      document.body
+    )
+    : null;
+
   return (
-    <div className="relative inline-block text-left" ref={menuRef}>
+    <>
       <button
+        ref={buttonRef}
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
         title="Campaign Actions"
       >
         <MoreVertical size={16} />
       </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100">
-          <button
-            onClick={() => { setIsOpen(false); onInspect(campaign); }}
-            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-sky-50 hover:text-sky-700 flex items-center gap-2.5 transition-colors"
-          >
-            <Eye size={14} className="text-sky-600" /> Deep-Dive Analytics
-          </button>
-          <button
-            onClick={() => { setIsOpen(false); onEdit(campaign); }}
-            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
-          >
-            <Edit size={14} className="text-blue-600" /> Edit Campaign
-          </button>
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              onToggleStatus(campaign.id, campaign.status === 'Active' ? 'Paused' : 'Active');
-            }}
-            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
-          >
-            {campaign.status === 'Active' ? (
-              <>
-                <Pause size={14} className="text-amber-600" /> Pause Campaign
-              </>
-            ) : (
-              <>
-                <Play size={14} className="text-emerald-600" /> Activate Campaign
-              </>
-            )}
-          </button>
-
-          <div className="my-1 border-t border-slate-100" />
-
-          <button
-            onClick={() => { setIsOpen(false); onDelete(campaign.id); }}
-            className="w-full text-left px-3.5 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors"
-          >
-            <Trash2 size={14} className="text-rose-500" /> Delete Campaign
-          </button>
-        </div>
-      )}
-    </div>
+      {menu}
+    </>
   );
 }
 
@@ -6158,41 +6206,41 @@ function CampaignDetailsModal({ campaign, clients, transactions, metrics, onClos
 
   return (
     <div className="flex flex-col h-full space-y-5">
-      {/* VIP OBSIDIAN HEADER */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl p-5 border border-slate-800 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* VIP CAMPAIGN NEUMORPHIC HEADER */}
+      <div className="bg-[#ebf0f7] border border-white text-slate-900 rounded-2xl p-5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-default select-none">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5 mb-1 flex-wrap">
             <PlatformBadge platform={campaign.platform} />
-            <h2 className="text-xl font-black text-white tracking-tight">{campaign.name}</h2>
-            <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold flex items-center gap-1.5 ${
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">{campaign.name}</h2>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1.5 ${
               campaign.status === 'Active'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200/80'
                 : campaign.status === 'Completed'
-                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  ? 'bg-sky-100 text-sky-800 border border-sky-200/80'
+                  : 'bg-amber-100 text-amber-800 border border-amber-200/80'
             }`}>
-              {campaign.status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+              {campaign.status === 'Active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
               {campaign.status || 'Active'}
             </span>
           </div>
-          <p className="text-slate-300 text-xs font-semibold">
-            Client: <span className="text-sky-300 font-bold">{client?.name || 'Unassigned'}</span> {client?.company ? `(${client.company})` : ''} • Objective: <span className="text-slate-200">{campaign.goal || 'General Performance'}</span>
+          <p className="text-slate-600 text-xs font-semibold">
+            Client: <span className="text-sky-700 font-bold">{client?.name || 'Unassigned'}</span> {client?.company ? `(${client.company})` : ''} • Objective: <span className="text-slate-800 font-semibold">{campaign.goal || 'General Performance'}</span>
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 mt-3.5 pt-3.5 border-t border-slate-800/80 text-xs">
-            <div className="text-slate-300">
-              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Target Budget</span>
-              <span className="font-bold text-sky-400">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2.5 mt-3.5 pt-3.5 border-t border-slate-200/80 text-xs">
+            <div>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Target Budget</span>
+              <span className="font-bold text-sky-700">
                 {campaign.budget ? `${campaign.budgetType === 'BDT' ? '৳' : '$'}${Number(campaign.budget).toLocaleString()}` : 'Flexible / Ongoing'}
               </span>
             </div>
-            <div className="text-slate-300">
-              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Timeline</span>
-              <span className="font-semibold text-slate-200">{formatDate(campaign.startDate)} – {campaign.endDate ? formatDate(campaign.endDate) : 'Ongoing'}</span>
+            <div>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Timeline</span>
+              <span className="font-semibold text-slate-800">{formatDate(campaign.startDate)} – {campaign.endDate ? formatDate(campaign.endDate) : 'Ongoing'}</span>
             </div>
-            <div className="text-slate-300">
-              <span className="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Attributed Revenue</span>
-              <span className="font-bold text-emerald-400">{formatBDT(stats.revenueBDT)}</span>
+            <div>
+              <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Attributed Revenue</span>
+              <span className="font-bold text-emerald-700">{formatBDT(stats.revenueBDT)}</span>
             </div>
           </div>
         </div>
@@ -6201,52 +6249,52 @@ function CampaignDetailsModal({ campaign, clients, transactions, metrics, onClos
           <button
             type="button"
             onClick={() => { onClose(); onEdit(campaign); }}
-            className="inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
             <Edit size={13} /> Edit Campaign
           </button>
           <button
             type="button"
             onClick={handlePrintCampaignReport}
-            className="inline-flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all whitespace-nowrap hover:text-white"
+            className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs transition-all whitespace-nowrap active:scale-95 cursor-pointer"
           >
-            <Printer size={13} /> PDF Report
+            <Printer size={13} className="text-slate-500" /> PDF Report
           </button>
         </div>
       </div>
 
-      {/* 4 FROSTED KPI CARDS */}
+      {/* 4 STABLE NEUMORPHIC KPI CARDS (NO HOVER GLOW) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <div className="bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/40 border border-purple-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Ad Spend</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Ad Spend</span>
             <Activity size={14} className="text-purple-600" />
           </div>
           <span className="text-sm font-black text-purple-700 mt-1 block">{formatUSD(stats.grossSpendUSD)}</span>
           <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">{formatBDT(stats.grossSpendBDT)} with 15% VAT</span>
         </div>
 
-        <div className="bg-gradient-to-br from-sky-50/80 via-white to-blue-50/40 border border-sky-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Delivered Results</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Delivered Results</span>
             <Target size={14} className="text-sky-600" />
           </div>
           <span className="text-sm font-black text-sky-700 mt-1 block">{stats.resultCount.toLocaleString()} {campaign.resultLabel || 'Leads'}</span>
           <span className="text-[10px] text-sky-600 font-semibold mt-0.5 block">Delivered</span>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50/80 via-white to-orange-50/40 border border-amber-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost Per Result (CPA)</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cost Per Result (CPA)</span>
             <DollarSign size={14} className="text-amber-600" />
           </div>
           <span className="text-sm font-black text-amber-700 mt-1 block">${stats.cpr.toFixed(2)}</span>
           <span className="text-[10px] text-slate-500 font-semibold mt-0.5 block">Avg per {campaign.resultLabel?.slice(0, -1) || 'result'}</span>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 border border-emerald-200/70 rounded-lg p-3 shadow-2xs">
+        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-3 shadow-[4px_4px_10px_rgba(166,180,200,0.4),-4px_-4px_10px_#ffffff] cursor-default select-none">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net ROAS</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Net ROAS</span>
             <TrendingUp size={14} className="text-emerald-600" />
           </div>
           <span className="text-sm font-black text-emerald-700 mt-1 block">{stats.roas.toFixed(2)}x ROAS</span>
