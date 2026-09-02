@@ -10454,45 +10454,45 @@ function UserGuideView({ onNavigate }) {
             </div>
           </div>
 
-          {/* Mathematical Formulas Card */}
-          <div className="bg-slate-950 text-slate-200 rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4 font-mono text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-sky-400 font-sans font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                <Terminal size={15} />
+          {/* Mathematical Formulas Card (NEUMORPHIC SOFT UI WHITE) */}
+          <div className="bg-[#ebf0f7] border border-white text-slate-900 rounded-2xl p-6 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] space-y-4 font-sans text-xs cursor-default select-none">
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+              <span className="text-sky-700 font-black text-xs uppercase tracking-wider flex items-center gap-2">
+                <Terminal size={15} className="text-sky-600" />
                 Financial Mathematics & Logic Behind Quantrex
               </span>
-              <span className="text-[10px] text-slate-500 uppercase font-sans font-bold">100% Automated</span>
+              <span className="text-[10px] text-sky-800 bg-sky-100/90 border border-sky-200/80 px-2.5 py-0.5 rounded-full uppercase font-bold">100% Automated</span>
             </div>
 
-            <div className="space-y-4 font-sans text-xs">
-              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800/80">
-                <div className="font-bold text-sky-300 mb-1">১. কার্যকর ডলার কেনা রেট (Effective USD Buy Rate):</div>
-                <div className="font-mono text-emerald-400 bg-black/40 p-2 rounded-lg text-[11px]">
+            <div className="space-y-3.5 font-sans text-xs">
+              <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-2xs">
+                <div className="font-bold text-sky-800 text-xs mb-1.5">১. কার্যকর ডলার কেনা রেট (Effective USD Buy Rate):</div>
+                <div className="font-mono font-bold text-emerald-700 bg-emerald-50/80 border border-emerald-200/70 p-2.5 rounded-lg text-[11.5px]">
                   Effective Rate = (মোট BDT খরচ + ক্যাশআউট চার্জ) ÷ ক্রয়কৃত USD
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1.5">
-                  উদাহরণ: ৳১৩,১২৫ দিয়ে $১০০ কিনলে প্রতি ডলারের প্রকৃত খরচ = ৳১৩১.২৫
+                <div className="text-[11px] text-slate-600 mt-2 font-medium">
+                  উদাহরণ: ৳১৩,১২৫ দিয়ে $১০০ কিনলে প্রতি ডলারের প্রকৃত খরচ = <span className="font-bold text-slate-900">৳১৩১.২৫</span>
                 </div>
               </div>
 
-              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800/80">
-                <div className="font-bold text-purple-300 mb-1">২. মেটা স্পেন্ড ও মোট কার্ড কর্তন (Total Card Deduction):</div>
-                <div className="font-mono text-purple-400 bg-black/40 p-2 rounded-lg text-[11px]">
+              <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-2xs">
+                <div className="font-bold text-purple-800 text-xs mb-1.5">২. মেটা স্পেন্ড ও মোট কার্ড কর্তন (Total Card Deduction):</div>
+                <div className="font-mono font-bold text-purple-700 bg-purple-50/80 border border-purple-200/70 p-2.5 rounded-lg text-[11.5px]">
                   মোট কার্ড কর্তন = অ্যাড স্পেন্ড (USD) + মেটা ১৫% ভ্যাট (USD)
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1.5">
-                  উদাহরণ: $১০০ মেটা অ্যাড চালালে কার্ড থেকে কাটা যাবে $১১৫.০০ ($১০০ অ্যাড + $১৫ ভ্যাট)
+                <div className="text-[11px] text-slate-600 mt-2 font-medium">
+                  উদাহরণ: $১০০ মেটা অ্যাড চালালে কার্ড থেকে কাটা যাবে <span className="font-bold text-slate-900">$১১৫.০০</span> ($১০০ অ্যাড + $১৫ ভ্যাট)
                 </div>
               </div>
 
-              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800/80">
-                <div className="font-bold text-emerald-300 mb-1">৩. এজেন্সির প্রকৃত নিট লাভ (Net Agency Profit):</div>
-                <div className="font-mono text-emerald-400 bg-black/40 p-2 rounded-lg text-[11px]">
+              <div className="p-4 bg-white/80 rounded-xl border border-slate-200/80 shadow-2xs">
+                <div className="font-bold text-emerald-800 text-xs mb-1.5">৩. এজেন্সির প্রকৃত নিট লাভ (Net Agency Profit):</div>
+                <div className="font-mono font-bold text-emerald-800 bg-emerald-50/80 border border-emerald-200/70 p-2.5 rounded-lg text-[11.5px]">
                   Net Profit (BDT) = ক্লায়েন্ট রেভিনিউ (BDT) - [মোট স্পেন্ড (USD) × Effective Buy Rate]
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1.5">
+                <div className="text-[11px] text-slate-600 mt-2 font-medium leading-relaxed">
                   উদাহরণ: ক্লায়েন্ট দিল ৳১০,০০০। মোট খরচ $৫৫ × ৳১৩১.২৫ = ৳৭,২১৮.৭৫।<br />
-                  <strong className="text-white">প্রকৃত লাভ = ৳১০,০০০ - ৳৭,২১৮.৭৫ = ৳২,৭৮১.২৫ (মার্জিন: ২৭.৮%)</strong>
+                  <strong className="text-emerald-700 font-black">প্রকৃত লাভ = ৳১০,০০০ - ৳৭,২১৮.৭৫ = ৳২,৭৮১.২৫ (মার্জিন: ২৭.৮%)</strong>
                 </div>
               </div>
             </div>
