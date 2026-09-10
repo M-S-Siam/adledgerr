@@ -244,7 +244,7 @@ body {
 
   /* Modals: fit comfortable mobile viewport */
   .adl-shell [role="dialog"],
-  .fixed [class*="rounded-3xl"]:has(button) {
+  .adl-shell .fixed.inset-0 > div {
     width: calc(100vw - 18px) !important;
     max-width: calc(100vw - 18px) !important;
     max-height: calc(100dvh - 20px) !important;
@@ -255,7 +255,16 @@ body {
 
   /* Mobile sidebar drawer */
   .adl-shell aside {
-    width: min(85vw, 320px) !important;
+    width: min(84vw, 290px) !important;
+    max-width: 84vw !important;
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.3) !important;
+  }
+  .adl-shell aside [class*="rounded-3xl"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
   .adl-shell .border-b:last-child {
     border-bottom-width: 0;

@@ -1142,6 +1142,14 @@ export default function AdLedgerApp() {
         }
       `}</style>
       <div className={`adl-shell flex h-screen font-sans overflow-hidden ${theme === 'dark' ? 'dark bg-[#0a0d14] text-slate-100' : 'bg-[#ebf0f7] text-slate-900'}`}>
+        {/* MOBILE BACKDROP OVERLAY */}
+        {isMobileMenuOpen && (
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs md:hidden transition-opacity cursor-pointer"
+            aria-label="Close menu"
+          />
+        )}
         {/* SIDEBAR (EXACT 4 FLOATING NEUMORPHIC PORTIONS) */}
         <aside className={`fixed inset-y-0 left-0 z-50 w-64 ${theme === 'dark' ? 'bg-[#0a0d14] text-slate-200' : 'bg-[#ebf0f7] text-slate-800'} transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col justify-between p-3.5 gap-3 h-screen overflow-y-auto no-scrollbar`}>
           
@@ -1184,6 +1192,15 @@ export default function AdLedgerApp() {
                     </span>
                   </div>
                 </div>
+                {/* Mobile close button */}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="md:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors ml-1 shrink-0"
+                  aria-label="Close sidebar"
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
 
