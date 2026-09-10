@@ -18,61 +18,289 @@ body {
 
 /* Desktop is intentionally untouched. All responsive changes are phone-only. */
 @media (max-width: 767px) {
-  html, body, #root { width: 100%; max-width: 100%; overflow-x: hidden; }
-  body { min-width: 0; }
-  .adl-shell, .adl-shell main { min-width: 0 !important; width: 100% !important; }
-  .adl-shell header { height: 66px !important; min-height: 66px !important; padding: 0 10px !important; gap: 8px !important; }
+  html, body, #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    min-width: 0;
+  }
+
+  /* Universal Mobile Text Containment & Anti-Overflow */
+  .adl-shell,
+  .adl-shell main {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
+
+  /* Ensure all text, paragraphs, headings and spans wrap cleanly within boxes */
+  .adl-shell h1, .adl-shell h2, .adl-shell h3, .adl-shell h4, .adl-shell h5, .adl-shell h6,
+  .adl-shell p, .adl-shell span, .adl-shell div, .adl-shell label, .adl-shell button {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* Mobile Header */
+  .adl-shell header {
+    height: 64px !important;
+    min-height: 64px !important;
+    padding: 0 10px !important;
+    gap: 8px !important;
+  }
   .adl-shell header > div { min-width: 0; }
   .adl-shell header > div:last-child { margin-left: auto; gap: 8px !important; }
   .adl-shell header > div:last-child > button { flex-shrink: 0; }
-  .adl-shell header input, .adl-shell header [placeholder*="Search"], .adl-shell header [class*="search"] { display: none !important; }
-  .adl-shell main > div.flex-1.overflow-auto { padding: 12px 9px 24px !important; width: 100% !important; min-width: 0 !important; }
-  .adl-shell h1 { font-size: 1.45rem !important; line-height: 1.18 !important; margin-bottom: 4px !important; }
-  .adl-shell h2 { line-height: 1.2 !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) { gap: 10px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child { padding: 14px 13px !important; border-radius: 16px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child h1 { font-size: 1.42rem !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child p { font-size: .82rem !important; line-height: 1.35 !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div { min-width: 0 !important; min-height: 0 !important; height: 112px !important; padding: 11px 11px 10px !important; border-radius: 15px !important; }
+  .adl-shell header input,
+  .adl-shell header [placeholder*="Search"],
+  .adl-shell header [class*="search"] {
+    display: none !important;
+  }
+
+  /* Main scrollable body */
+  .adl-shell main > div.flex-1.overflow-auto {
+    padding: 12px 10px 32px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .adl-shell h1 {
+    font-size: 1.35rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 4px !important;
+  }
+  .adl-shell h2 {
+    line-height: 1.25 !important;
+  }
+
+  /* Dashboard View Spacing */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) {
+    gap: 12px !important;
+  }
+
+  /* Hero strip on mobile */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child {
+    padding: 14px 13px !important;
+    border-radius: 18px !important;
+    height: auto !important;
+  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child h1 {
+    font-size: 1.35rem !important;
+  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:first-child p {
+    font-size: .80rem !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Master Financial Health Matrix (4 KPI Cards) - Eliminates fixed height so text NEVER overflows */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div {
+    min-width: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 14px 12px !important;
+    border-radius: 18px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+  }
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h2,
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h3 { font-size: 1.02rem !important; line-height: 1.1 !important; margin: 0 !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div p { font-size: .70rem !important; line-height: 1.25 !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div p:last-child { margin-bottom: 0 !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div svg { width: 17px !important; height: 17px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="w-10"],
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="h-10"] { width: 32px !important; height: 32px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(3),
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(4),
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(5) { gap: 10px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) .h-72 { height: 165px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) .h-64 { height: 155px !important; }
-  .adl-shell .grid[class*="grid-cols-4"], .adl-shell .grid[class*="grid-cols-5"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
-  .adl-shell .grid[class*="grid-cols-4"] > *, .adl-shell .grid[class*="grid-cols-5"] > * { min-width: 0 !important; }
-  .adl-shell .grid[class*="grid-cols-4"] > .bg-white, .adl-shell .grid[class*="grid-cols-5"] > .bg-white { padding: 11px !important; min-height: 124px !important; }
-  .adl-shell .grid[class*="grid-cols-4"] h2, .adl-shell .grid[class*="grid-cols-5"] h2 { font-size: 1.18rem !important; line-height: 1.1 !important; }
-  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 9px !important; }
-  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > * { min-width: 0 !important; }
-  .adl-shell .grid[class*="xl:grid-cols-3"] { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
-  .adl-shell [class*="xl:col-span-2"] { grid-column: auto !important; }
-  .adl-shell .h-72 { height: 180px !important; }
-  .adl-shell .h-64 { height: 170px !important; }
-  .adl-shell .recharts-responsive-container, .adl-shell .recharts-wrapper { max-width: 100% !important; }
-  .adl-shell .overflow-x-auto { width: 100% !important; max-width: 100% !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
-  .adl-shell table { min-width: 640px; }
-  .adl-shell select, .adl-shell input, .adl-shell textarea, .adl-shell form { max-width: 100%; }
-  .adl-shell [role="dialog"] { width: calc(100vw - 18px) !important; max-width: calc(100vw - 18px) !important; max-height: calc(100vh - 18px) !important; margin: 9px !important; overflow-y: auto !important; }
-  .adl-shell aside { width: min(84vw, 310px) !important; }
-  .adl-shell .border-b:last-child { border-bottom-width: 0; }
-  .adl-shell button { max-width: 100%; }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h3 {
+    font-size: 1.05rem !important;
+    line-height: 1.15 !important;
+  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div p {
+    font-size: .75rem !important;
+    line-height: 1.3 !important;
+  }
+  /* Large currency numbers scale smoothly to fit cards without clipping */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="text-2xl"],
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="text-3xl"] {
+    font-size: clamp(1.15rem, 4.2vw, 1.65rem) !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+  }
+  /* Subgrid breakdown inside cards (Total BDT Cost & Net BDT) */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div .grid.grid-cols-2 {
+    gap: 6px !important;
+    padding-top: 6px !important;
+  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div .grid.grid-cols-2 span {
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    word-break: break-word !important;
+  }
+
+  /* Grid layouts across all other views (Clients, Cards, Campaigns, Reports) */
+  .adl-shell .grid[class*="grid-cols-4"],
+  .adl-shell .grid[class*="grid-cols-5"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+  .adl-shell .grid[class*="grid-cols-4"] > *,
+  .adl-shell .grid[class*="grid-cols-5"] > * {
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+  .adl-shell .grid[class*="grid-cols-4"] > .bg-white,
+  .adl-shell .grid[class*="grid-cols-5"] > .bg-white,
+  .adl-shell .grid[class*="grid-cols-4"] > [class*="bg-[#ebf0f7]"],
+  .adl-shell .grid[class*="grid-cols-5"] > [class*="bg-[#ebf0f7]"] {
+    padding: 12px 10px !important;
+    height: auto !important;
+    min-height: auto !important;
+    border-radius: 16px !important;
+  }
+  .adl-shell .grid[class*="grid-cols-4"] h2,
+  .adl-shell .grid[class*="grid-cols-5"] h2 {
+    font-size: 1.12rem !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Two & Three column card layouts collapse to single column cleanly */
+  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .adl-shell .grid[class*="md:grid-cols-2"][class*="xl:grid-cols-3"] > * {
+    min-width: 0 !important;
+    height: auto !important;
+  }
+  .adl-shell .grid[class*="xl:grid-cols-3"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .adl-shell [class*="xl:col-span-2"] {
+    grid-column: auto !important;
+  }
+
+  /* All cards across all views adapt dynamically to contents */
+  .adl-shell .bg-white,
+  .adl-shell [class*="bg-[#ebf0f7]"],
+  .adl-shell.dark [class*="bg-[#111722]"],
+  .adl-shell [class*="rounded-2xl"],
+  .adl-shell [class*="rounded-3xl"] {
+    height: auto;
+    max-height: none;
+  }
+
+  /* Tab bars and filter strips smoothly scroll horizontally on mobile */
+  .adl-shell [class*="bg-slate-200"],
+  .adl-shell [class*="bg-slate-100"],
+  .adl-shell [class*="bg-[#dbe4ef]"],
+  .adl-shell [class*="bg-[#e0eaf6]"],
+  .adl-shell [class*="bg-[#e2eaf4]"],
+  .adl-shell [class*="bg-[#e4edf6]"],
+  .adl-shell [class*="bg-[#e5edf6]"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+  }
+  .adl-shell [class*="bg-slate-200"]::-webkit-scrollbar,
+  .adl-shell [class*="bg-slate-100"]::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Charts scale comfortably without overflowing cards */
+  .adl-shell .h-72 { height: 210px !important; }
+  .adl-shell .h-64 { height: 190px !important; }
+  .adl-shell .recharts-responsive-container,
+  .adl-shell .recharts-wrapper {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Tables: seamless horizontal scrolling on touch */
+  .adl-shell .overflow-x-auto {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .adl-shell table {
+    min-width: 580px;
+  }
+
+  /* Inputs, selects and form elements stay strictly inside containers */
+  .adl-shell select,
+  .adl-shell input,
+  .adl-shell textarea,
+  .adl-shell form {
+    max-width: 100% !important;
+  }
+
+  /* Modals: fit comfortable mobile viewport */
+  .adl-shell [role="dialog"],
+  .fixed [class*="rounded-3xl"]:has(button) {
+    width: calc(100vw - 18px) !important;
+    max-width: calc(100vw - 18px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    margin: 9px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile sidebar drawer */
+  .adl-shell aside {
+    width: min(85vw, 320px) !important;
+  }
+  .adl-shell .border-b:last-child {
+    border-bottom-width: 0;
+  }
+  .adl-shell button {
+    max-width: 100%;
+  }
+
+  /* Pricing Plan Cards */
+  .adl-shell .adl-plan-card {
+    height: auto !important;
+    min-height: auto !important;
+    width: 100% !important;
+  }
 }
 
+/* Specific optimizations for portrait smartphones (under 520px) */
+@media (max-width: 520px) {
+  /* On compact phone screens, master financial cards stack as full-width cards so all telemetry fits with generous space */
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="text-2xl"],
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="text-3xl"] {
+    font-size: 1.6rem !important;
+  }
+
+  /* KPI badge text wrap so words never shoot out of boxes */
+  .adl-shell .grid[class*="grid-cols-2"] [class*="whitespace-nowrap"]:not(button):not(td):not(th) {
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+  }
+}
+
+/* Ultra-compact phone screens (under 380px) */
 @media (max-width: 380px) {
-  .adl-shell main > div.flex-1.overflow-auto { padding-left: 8px !important; padding-right: 8px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) { gap: 7px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div { height: 106px !important; padding: 9px !important; border-radius: 14px !important; }
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h2,
-  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div h3 { font-size: .96rem !important; }
+  .adl-shell main > div.flex-1.overflow-auto {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div {
+    padding: 12px 10px !important;
+    border-radius: 16px !important;
+  }
 }
 
 /* ---------- AUTH: ONE PASSWORD REVEAL CONTROL ---------- */
