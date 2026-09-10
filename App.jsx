@@ -1154,7 +1154,7 @@ export default function AdLedgerApp() {
         <aside className={`fixed inset-y-0 left-0 z-50 w-64 ${theme === 'dark' ? 'bg-[#0a0d14] text-slate-200' : 'bg-[#ebf0f7] text-slate-800'} transition-transform transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:relative md:flex flex-col justify-between p-3.5 gap-3 h-screen overflow-y-auto no-scrollbar`}>
           
           {/* Top Wrapper for Portion 1, 2, 3 */}
-          <div className="space-y-3 flex-1">
+          <div className="space-y-3 flex flex-col gap-3 flex-1">
             
             {/* PORTION 1: Top Active Agency Switcher Pill */}
             <div className={`rounded-3xl p-3 transition-all border ${

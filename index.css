@@ -257,12 +257,19 @@ body {
   .adl-shell aside {
     width: min(84vw, 290px) !important;
     max-width: 84vw !important;
-    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.4) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  .adl-shell aside > div:first-child {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
   }
   .adl-shell aside [class*="rounded-3xl"] {
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 !important;
     max-height: none !important;
     overflow: visible !important;
   }
