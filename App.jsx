@@ -2888,68 +2888,101 @@ function DashboardView({
   const totalCardBalance = metrics.totalCardBalance || 0;
 
   return (
-    <div className="space-y-6 w-full max-w-[1720px] mx-auto animate-in fade-in duration-500 pb-16">
+    <div className="space-y-4 w-full max-w-[1720px] mx-auto animate-in fade-in duration-300 pb-12">
       
-      {/* 1. EXECUTIVE OPERATIONAL HERO STRIP */}
-      <div className={`rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border ${
+      {/* 1. EXECUTIVE OPERATIONAL HERO STRIP (COMPACT & ORGANIZED) */}
+      <div className={`rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border ${
         theme === 'dark'
-          ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-          : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+          ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+          : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
       }`}>
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black border ${
-              theme === 'dark'
-                ? 'bg-[#091422] border-sky-500/30 text-sky-400 shadow-none'
-                : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[inset_2px_2px_5px_rgba(166,180,200,0.45),inset_-2px_-2px_5px_#ffffff]'
-            }`}>
-              <LayoutDashboard size={19} />
-            </div>
-            <h1 className={`text-xl sm:text-2xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold border shrink-0 ${
+            theme === 'dark'
+              ? 'bg-[#091422] border-sky-500/30 text-sky-400'
+              : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff]'
+          }`}>
+            <LayoutDashboard size={17} />
+          </div>
+          <div>
+            <h1 className={`text-base sm:text-lg font-black tracking-tight leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               Agency Command Center
             </h1>
+            <p className={`text-[11px] font-medium leading-tight mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+              Real-time dual-currency telemetry, liquidity distribution &amp; client P&amp;L.
+            </p>
           </div>
-          <p className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-            Live financial telemetry, liquidity distribution & client performance overview.
-          </p>
         </div>
 
-        {/* Live Operational Status & DB Telemetry */}
-        <div className="flex items-center gap-2.5">
-          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border ${
+        {/* Quick Action Shortcuts & Sync Badge */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10.5px] font-bold select-none ${
             theme === 'dark'
-              ? 'bg-[#0a1510] border-emerald-500/30 shadow-none'
-              : 'bg-[#ebf0f7] border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff]'
+              ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400'
+              : 'bg-[#ebf0f7] border-white shadow-[inset_1px_1px_3px_rgba(166,180,200,0.4)] text-slate-700'
           }`}>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] animate-pulse" />
-            <span className={`text-xs font-bold ${theme === 'dark' ? 'text-emerald-300' : 'text-slate-700'}`}>Live Supabase DB Sync</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Live Cloud Sync</span>
           </div>
+
+          {onAddPayment && (
+            <button
+              type="button"
+              onClick={onAddPayment}
+              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              <Plus size={13} />
+              <span>Payment</span>
+            </button>
+          )}
+
+          {onAddUSD && (
+            <button
+              type="button"
+              onClick={onAddUSD}
+              className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              <Plus size={13} />
+              <span>Buy USD</span>
+            </button>
+          )}
+
+          {onAddSpend && (
+            <button
+              type="button"
+              onClick={onAddSpend}
+              className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              <Plus size={13} />
+              <span>Ad Spend</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2. EXECUTIVE FINANCIAL HEALTH MATRIX (4 MASTER NEUMORPHIC CARDS) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+      {/* 2. EXECUTIVE FINANCIAL HEALTH MATRIX (4 COMPACT MASTER CARDS) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
 
         {/* CARD 1: TOTAL REVENUE (BDT) */}
-        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+        <div className={`rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+          <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold shrink-0 border ${
                 theme === 'dark'
-                  ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.15)]'
+                  ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400'
                   : 'bg-emerald-50 border-emerald-200/60 text-emerald-600'
               }`}>
-                <ArrowDownRight size={17} />
+                <ArrowDownRight size={15} />
               </div>
-              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                Total<br />Revenue
+              <span className={`font-extrabold text-[11px] uppercase tracking-wider leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                Total Revenue
               </span>
             </div>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border leading-none ${
               theme === 'dark'
                 ? 'bg-[#0a1510] text-emerald-400 border-emerald-500/30'
                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -2958,52 +2991,47 @@ function DashboardView({
             </span>
           </div>
 
-          <div className="my-3 space-y-2">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Received</span>
-              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${theme === 'dark' ? 'text-[#10b981]' : 'text-emerald-600'}`}>
-                {formatBDT(metrics.totalRevenueBDT)}
-              </div>
-            </div>
-            <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[11px] ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
-              <div>
-                <span className="text-slate-400 block font-semibold">Total BDT Cost</span>
-                <span className="font-bold text-rose-500">{formatBDT(dashboardData.totalBDTCost)}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-semibold">Net BDT in Hand</span>
-                <span className={`font-bold ${dashboardData.netBDT < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-[#10b981]' : 'text-slate-800')}`}>
-                  {formatBDT(dashboardData.netBDT)}
-                </span>
-              </div>
+          <div className="my-2.5">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Received</div>
+            <div className={`text-xl sm:text-2xl font-black font-mono tracking-tight truncate mt-0.5 ${theme === 'dark' ? 'text-[#10b981]' : 'text-emerald-600'}`}>
+              {formatBDT(metrics.totalRevenueBDT)}
             </div>
           </div>
 
-          <div className="text-[10px] text-slate-400 font-medium">
-            Client payments received minus BDT spent on USD.
+          <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[10.5px] font-medium ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+            <div className="truncate">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Cost</span>
+              <span className="font-bold font-mono text-rose-400">{formatBDT(dashboardData.totalBDTCost)}</span>
+            </div>
+            <div className="truncate text-right">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Net in Hand</span>
+              <span className={`font-bold font-mono ${dashboardData.netBDT < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-[#10b981]' : 'text-slate-800')}`}>
+                {formatBDT(dashboardData.netBDT)}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* CARD 2: TOTAL USD SPENT */}
-        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+        <div className={`rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+          <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold shrink-0 border ${
                 theme === 'dark'
-                  ? 'bg-[#130f1c] border-purple-500/30 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.15)]'
+                  ? 'bg-[#130f1c] border-purple-500/30 text-purple-400'
                   : 'bg-purple-50 border-purple-200/60 text-purple-600'
               }`}>
-                <Activity size={17} />
+                <Activity size={15} />
               </div>
-              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                Total USD<br />Spent
+              <span className={`font-extrabold text-[11px] uppercase tracking-wider leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                Total USD Spent
               </span>
             </div>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border leading-none ${
               theme === 'dark'
                 ? 'bg-[#130f1c] text-purple-400 border-purple-500/30'
                 : 'bg-purple-50 text-purple-700 border-purple-200'
@@ -3012,50 +3040,47 @@ function DashboardView({
             </span>
           </div>
 
-          <div className="my-3 space-y-2">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Ads + Tax + Fees</span>
-              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${theme === 'dark' ? 'text-[#c084fc]' : 'text-purple-700'}`}>
-                {formatUSD(dashboardData.totalBurnUSD)}
-              </div>
-            </div>
-            <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[11px] ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
-              <div>
-                <span className="text-slate-400 block font-semibold">USD Purchased</span>
-                <span className="font-bold text-sky-500">{formatUSD(metrics.totalUSDPurchased)}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-semibold">Meta Ads + 15%</span>
-                <span className={`font-bold ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{formatUSD(metrics.totalAdSpendUSD + metrics.totalTaxUSD)}</span>
-              </div>
+          <div className="my-2.5">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ads + Tax + Fees</div>
+            <div className={`text-xl sm:text-2xl font-black font-mono tracking-tight truncate mt-0.5 ${theme === 'dark' ? 'text-[#c084fc]' : 'text-purple-700'}`}>
+              {formatUSD(dashboardData.totalBurnUSD)}
             </div>
           </div>
 
-          <div className="text-[10px] text-slate-400 font-medium">
-            Total USD spent on Meta ads, 15% VAT, and bank fees.
+          <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[10.5px] font-medium ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+            <div className="truncate">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">USD Bought</span>
+              <span className="font-bold font-mono text-sky-400">{formatUSD(metrics.totalUSDPurchased)}</span>
+            </div>
+            <div className="truncate text-right">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Meta + 15% Tax</span>
+              <span className={`font-bold font-mono ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                {formatUSD(metrics.totalAdSpendUSD + metrics.totalTaxUSD)}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* CARD 3: NET AGENCY PROFIT */}
-        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+        <div className={`rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+          <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold shrink-0 border ${
                 theme === 'dark'
-                  ? 'bg-[#091422] border-sky-500/30 text-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.15)]'
+                  ? 'bg-[#091422] border-sky-500/30 text-sky-400'
                   : 'bg-sky-50 border-sky-200/60 text-sky-600'
               }`}>
-                <TrendingUp size={17} />
+                <TrendingUp size={15} />
               </div>
-              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                Net Agency<br />Profit
+              <span className={`font-extrabold text-[11px] uppercase tracking-wider leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                Net Profit
               </span>
             </div>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border leading-none ${
               theme === 'dark'
                 ? 'bg-[#091422] text-sky-400 border-sky-500/30'
                 : 'bg-sky-50 text-sky-700 border-sky-200'
@@ -3064,50 +3089,45 @@ function DashboardView({
             </span>
           </div>
 
-          <div className="my-3 space-y-2">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Actual Earnings</span>
-              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${metrics.netProfitBDT < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
-                {formatBDT(metrics.netProfitBDT)}
-              </div>
-            </div>
-            <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[11px] ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
-              <div>
-                <span className="text-slate-400 block font-semibold">Profit Margin</span>
-                <span className="font-bold text-emerald-500">{metrics.profitMargin.toFixed(1)}%</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-semibold">Buy Rate</span>
-                <span className={`font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-800'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(2)}/USD</span>
-              </div>
+          <div className="my-2.5">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Actual Earnings</div>
+            <div className={`text-xl sm:text-2xl font-black font-mono tracking-tight truncate mt-0.5 ${metrics.netProfitBDT < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
+              {formatBDT(metrics.netProfitBDT)}
             </div>
           </div>
 
-          <div className="text-[10px] text-slate-400 font-medium">
-            Client revenue minus actual USD ad cost in BDT.
+          <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[10.5px] font-medium ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+            <div className="truncate">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Margin</span>
+              <span className="font-bold font-mono text-emerald-400">{metrics.profitMargin.toFixed(1)}%</span>
+            </div>
+            <div className="truncate text-right">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Effective Rate</span>
+              <span className={`font-bold font-mono ${theme === 'dark' ? 'text-slate-300' : 'text-slate-800'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(1)}</span>
+            </div>
           </div>
         </div>
 
         {/* CARD 4: TOTAL CARD BALANCE */}
-        <div className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border ${
+        <div className={`rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
-            <div className="flex items-center gap-2.5">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+          <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold shrink-0 border ${
                 totalCardBalance < 0
-                  ? (theme === 'dark' ? 'bg-[#190d14] border-rose-500/30 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.15)]' : 'bg-rose-50 border-rose-200/60 text-rose-600')
-                  : (theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.15)]' : 'bg-sky-50 border-sky-200/60 text-sky-600')
+                  ? (theme === 'dark' ? 'bg-[#190d14] border-rose-500/30 text-rose-400' : 'bg-rose-50 border-rose-200/60 text-rose-600')
+                  : (theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400' : 'bg-sky-50 border-sky-200/60 text-sky-600')
               }`}>
-                <CreditCard size={17} />
+                <CreditCard size={15} />
               </div>
-              <span className={`font-extrabold text-xs uppercase tracking-wider leading-tight block ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
-                Total Card<br />Balance
+              <span className={`font-extrabold text-[11px] uppercase tracking-wider leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                Card Liquidity
               </span>
             </div>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border leading-none ${
               totalCardBalance < 0
                 ? (theme === 'dark' ? 'bg-[#190d14] text-rose-400 border-rose-500/30' : 'bg-rose-50 text-rose-700 border-rose-200')
                 : (theme === 'dark' ? 'bg-[#091422] text-sky-400 border-sky-500/30' : 'bg-sky-50 text-sky-700 border-sky-200')
@@ -3116,27 +3136,22 @@ function DashboardView({
             </span>
           </div>
 
-          <div className="my-3 space-y-2">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Available USD</span>
-              <div className={`text-2xl sm:text-3xl font-black tracking-tight ${totalCardBalance < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
-                {formatUSD(totalCardBalance)}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
-              <div>
-                <span className="text-slate-400 block font-semibold">Dollar Buy Rate</span>
-                <span className={`font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-800'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(2)}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-semibold">15% VAT Paid</span>
-                <span className={`font-bold ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatUSD(metrics.totalTaxUSD)}</span>
-              </div>
+          <div className="my-2.5">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Available USD</div>
+            <div className={`text-xl sm:text-2xl font-black font-mono tracking-tight truncate mt-0.5 ${totalCardBalance < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
+              {formatUSD(totalCardBalance)}
             </div>
           </div>
 
-          <div className="text-[10px] text-slate-400 font-medium">
-            Current spendable USD balance across all virtual cards.
+          <div className={`grid grid-cols-2 gap-2 pt-2 border-t text-[10.5px] font-medium ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+            <div className="truncate">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">Buy Rate</span>
+              <span className={`font-bold font-mono ${theme === 'dark' ? 'text-slate-300' : 'text-slate-800'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(1)}</span>
+            </div>
+            <div className="truncate text-right">
+              <span className="text-slate-400 block text-[9.5px] uppercase font-bold">15% Tax Paid</span>
+              <span className={`font-bold font-mono ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatUSD(metrics.totalTaxUSD)}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -3145,35 +3160,35 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* CHART 1: Revenue vs Ad Burn Trajectory (8 Cols) */}
-        <div className={`xl:col-span-8 rounded-2xl p-5 flex flex-col justify-between border ${
+        <div className={`xl:col-span-8 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
-              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                <TrendingUp size={16} className="text-emerald-600" />
+              <h3 className={`font-extrabold text-xs sm:text-sm tracking-tight flex items-center gap-1.5 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                <TrendingUp size={15} className="text-emerald-500 shrink-0" />
                 Revenue vs Ad Burn Trajectory
               </h3>
-              <p className="text-xs text-slate-400 font-medium">Daily BDT collection vs equivalent BDT ad cost.</p>
+              <p className="text-[11px] text-slate-400 font-medium">Daily BDT collection vs equivalent BDT ad cost.</p>
             </div>
-            <div className="flex items-center gap-4 text-xs font-bold">
-              <span className="inline-flex items-center gap-1.5 text-emerald-600">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-xs" />
+            <div className="flex items-center gap-3 text-[11px] font-bold">
+              <span className="inline-flex items-center gap-1.5 text-emerald-500">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs" />
                 Revenue In (BDT)
               </span>
               <span className="inline-flex items-center gap-1.5 text-amber-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-xs" />
+                <span className="w-2 h-2 rounded-full bg-amber-500 shadow-xs" />
                 Ad Cost (BDT)
               </span>
             </div>
           </div>
 
-          <div className="h-64 sm:h-72 w-full">
+          <div className="h-48 sm:h-56 w-full">
             {dashboardData.flowData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dashboardData.flowData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                <AreaChart data={dashboardData.flowData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                   <defs>
                     <linearGradient id="dashRevGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.28} />
@@ -3189,13 +3204,13 @@ function DashboardView({
                     dataKey="date"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10.5, fontWeight: 700 }}
-                    dy={6}
+                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10, fontWeight: 700 }}
+                    dy={4}
                   />
                   <YAxis
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10.5, fontWeight: 700 }}
+                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 10, fontWeight: 700 }}
                     tickFormatter={(v) => `৳${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
                   />
                   <Tooltip
@@ -3205,7 +3220,7 @@ function DashboardView({
                       const cost = payload.find(p => p.dataKey === 'adCostBDT')?.value || 0;
                       const margin = rev > 0 ? (((rev - cost) / rev) * 100).toFixed(1) : 0;
                       return (
-                        <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-800 rounded-xl p-3 shadow-xl text-xs space-y-1.5 min-w-[170px]">
+                        <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-800 rounded-xl p-2.5 shadow-xl text-xs space-y-1.5 min-w-[160px]">
                           <div className="font-bold text-slate-400 border-b border-slate-800 pb-1 flex items-center justify-between">
                             <span>{label}</span>
                             <span className="text-[10px] text-emerald-400 font-extrabold">{margin}% Margin</span>
@@ -3231,7 +3246,7 @@ function DashboardView({
                     dataKey="revenue"
                     name="Revenue"
                     stroke="#10b981"
-                    strokeWidth={2.8}
+                    strokeWidth={2.2}
                     fillOpacity={1}
                     fill="url(#dashRevGrad)"
                   />
@@ -3240,7 +3255,7 @@ function DashboardView({
                     dataKey="adCostBDT"
                     name="Ad Cost"
                     stroke="#f59e0b"
-                    strokeWidth={2.8}
+                    strokeWidth={2.2}
                     fillOpacity={1}
                     fill="url(#dashCostGrad)"
                   />
@@ -3253,20 +3268,20 @@ function DashboardView({
         </div>
 
         {/* CHART 2: Cybernetic Concentric Radial Burn HUD (4 Cols) */}
-        <div className={`xl:col-span-4 rounded-2xl p-5 flex flex-col justify-between border ${
+        <div className={`xl:col-span-4 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`mb-2 pb-3 border-b flex items-center justify-between ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+          <div className={`mb-2 pb-2.5 border-b flex items-center justify-between ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
-              <h3 className={`font-extrabold text-sm tracking-tight flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                <Activity size={16} className="text-purple-600" />
+              <h3 className={`font-extrabold text-xs sm:text-sm tracking-tight flex items-center gap-1.5 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                <Activity size={15} className="text-purple-500 shrink-0" />
                 USD Burn Allocation
               </h3>
               <p className="text-[11px] text-slate-400 font-medium">Meta Ads, 15% VAT, and bank fees.</p>
             </div>
-            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+            <span className={`px-2 py-0.5 rounded-full border text-[9.5px] font-bold ${
               theme === 'dark'
                 ? 'bg-[#130f1c] border-purple-500/30 text-purple-400'
                 : 'bg-[#ebf0f7] border-white shadow-[inset_2px_2px_4px_rgba(166,180,200,0.4),inset_-2px_-2px_4px_#ffffff] text-purple-700'
@@ -3277,8 +3292,8 @@ function DashboardView({
 
           {/* UNIQUE GLOWING CONCENTRIC CIRCULAR GAUGE */}
           {dashboardData.totalBurnUSD > 0 ? (
-            <div className="py-2 flex flex-col items-center">
-              <div className="relative w-48 h-48 flex items-center justify-center">
+            <div className="py-1 flex flex-col items-center">
+              <div className="relative w-36 h-36 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 190 190">
                   <defs>
                     <linearGradient id="dashGlowAds" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -3365,12 +3380,12 @@ function DashboardView({
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
                   <div className="flex items-center gap-1 mb-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">TOTAL BURN</span>
+                    <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider">TOTAL BURN</span>
                   </div>
-                  <span className={`text-lg font-black tracking-tight leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                  <span className={`text-base font-black font-mono tracking-tight leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                     {formatUSD(dashboardData.totalBurnUSD)}
                   </span>
-                  <span className={`text-[8.5px] font-bold px-2 py-0.5 rounded-full border mt-1 shadow-xs ${theme === 'dark' ? 'text-sky-400 bg-sky-950/60 border-sky-500/40' : 'text-emerald-600 bg-emerald-50 border-emerald-200/60'}`}>
+                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border mt-1 shadow-xs ${theme === 'dark' ? 'text-sky-400 bg-sky-950/60 border-sky-500/40' : 'text-emerald-600 bg-emerald-50 border-emerald-200/60'}`}>
                     Live Telemetry
                   </span>
                 </div>
@@ -3381,16 +3396,16 @@ function DashboardView({
           )}
 
           {/* Segmented Metric Progress Bars */}
-          <div className="space-y-2 pt-2 border-t border-slate-200/60 text-xs">
+          <div className="space-y-1.5 pt-2 border-t border-slate-200/60 text-xs">
             {dashboardData.expenseBreakdown.map((item, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex items-center justify-between font-semibold text-[11px]">
+              <div key={idx} className="space-y-0.5">
+                <div className="flex items-center justify-between font-semibold text-[10.5px]">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full shadow-xs" style={{ backgroundColor: item.color }} />
+                    <span className="w-1.5 h-1.5 rounded-full shadow-xs" style={{ backgroundColor: item.color }} />
                     <span className={`${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-bold`}>{item.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 text-[10px]">({item.percentage}%)</span>
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="text-slate-400 text-[9.5px]">({item.percentage}%)</span>
                     <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{formatUSD(item.value)}</span>
                   </div>
                 </div>
@@ -3413,49 +3428,49 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* TABLE 1: CLIENT P&L PERFORMANCE (6 Cols) */}
-        <div className={`xl:col-span-6 rounded-2xl overflow-hidden flex flex-col border ${
+        <div className={`xl:col-span-6 rounded-2xl overflow-hidden flex flex-col border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`px-5 py-3.5 border-b flex items-center justify-between ${
+          <div className={`px-4 py-2.5 border-b flex items-center justify-between ${
             theme === 'dark' ? 'bg-[#0d121b] border-white/10' : 'bg-[#e5edf6] border-slate-200/60'
           }`}>
             <div>
               <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Client P&L Performance</h3>
-              <p className="text-[10.5px] text-slate-400 font-medium">Top client accounts, revenue collected & net margin.</p>
+              <p className="text-[10px] text-slate-400 font-medium">Top client accounts, revenue collected & net margin.</p>
             </div>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('clients')}
-                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
                   theme === 'dark'
                     ? 'bg-[#182235] border-sky-500/30 text-sky-400 shadow-none'
-                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff]'
+                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[1px_1px_3px_rgba(166,180,200,0.4),-1px_-1px_3px_#ffffff]'
                 }`}
               >
                 <span>All Clients</span>
-                <ChevronRight size={13} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
+                <ChevronRight size={12} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
               </button>
             )}
           </div>
 
-          <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
+          <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[290px] no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
-              <thead className={`sticky top-0 uppercase tracking-wider text-[9.5px] font-bold border-b ${
+              <thead className={`sticky top-0 uppercase tracking-wider text-[9px] font-bold border-b ${
                 theme === 'dark' ? 'bg-[#0a0d14] text-slate-400 border-white/10' : 'bg-[#ebf0f7] text-slate-500 border-slate-200'
               }`}>
                 <tr>
-                  <th className="w-[28%] pl-5 pr-2 py-3 text-left">Client & Brand</th>
-                  <th className="w-[21%] px-3 py-3 text-right">Revenue</th>
-                  <th className="w-[20%] px-3 py-3 text-right">Ad Cost</th>
-                  <th className="w-[18%] px-3 py-3 text-right">Net Profit</th>
-                  <th className="w-[13%] pl-2 pr-5 py-3 text-right">Margin</th>
+                  <th className="w-[30%] pl-4 pr-2 py-2 text-left">Client & Brand</th>
+                  <th className="w-[20%] px-2 py-2 text-right">Revenue</th>
+                  <th className="w-[20%] px-2 py-2 text-right">Ad Cost</th>
+                  <th className="w-[18%] px-2 py-2 text-right">Net Profit</th>
+                  <th className="w-[12%] pl-1 pr-4 py-2 text-right">Margin</th>
                 </tr>
               </thead>
               <tbody className={`divide-y font-medium ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
                 {dashboardData.clientRows.length === 0 && (
-                  <tr><td colSpan="5" className="px-5 py-8 text-center text-slate-400 font-semibold">No client activity recorded yet.</td></tr>
+                  <tr><td colSpan="5" className="px-4 py-6 text-center text-slate-400 font-semibold text-xs">No client activity recorded yet.</td></tr>
                 )}
                 {dashboardData.clientRows.slice(0, 5).map(row => (
                   <tr
@@ -3463,9 +3478,9 @@ function DashboardView({
                     onClick={() => onViewClient && row.rawClient && onViewClient(row.rawClient)}
                     className={`transition-colors cursor-pointer group ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-white/50'}`}
                   >
-                    <td className="w-[28%] pl-5 pr-2 py-3 text-left">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 transition-colors shadow-xs ${
+                    <td className="w-[30%] pl-4 pr-2 py-2 text-left">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-[11px] shrink-0 transition-colors shadow-xs ${
                           theme === 'dark'
                             ? 'bg-sky-950/60 text-sky-400 border border-sky-500/30 group-hover:bg-sky-600 group-hover:text-white'
                             : 'bg-sky-100 text-sky-700 group-hover:bg-sky-600 group-hover:text-white'
@@ -3473,18 +3488,18 @@ function DashboardView({
                           {row.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <div className={`font-bold truncate transition-colors ${theme === 'dark' ? 'text-white group-hover:text-sky-400' : 'text-slate-900 group-hover:text-sky-700'}`}>{row.name}</div>
-                          <div className="text-[10px] text-slate-400 truncate">{row.company}</div>
+                          <div className={`font-bold text-xs truncate transition-colors ${theme === 'dark' ? 'text-white group-hover:text-sky-400' : 'text-slate-900 group-hover:text-sky-700'}`}>{row.name}</div>
+                          <div className="text-[9.5px] text-slate-400 truncate leading-none">{row.company}</div>
                         </div>
                       </div>
                     </td>
-                    <td className={`w-[21%] px-3 py-3 text-right font-bold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>{formatBDT(row.revenue)}</td>
-                    <td className={`w-[20%] px-3 py-3 text-right font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{formatBDT(row.adCostBDT)}</td>
-                    <td className={`w-[18%] px-3 py-3 text-right font-black ${row.profit < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
+                    <td className={`w-[20%] px-2 py-2 text-right font-bold font-mono text-xs ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>{formatBDT(row.revenue)}</td>
+                    <td className={`w-[20%] px-2 py-2 text-right font-medium font-mono text-xs ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{formatBDT(row.adCostBDT)}</td>
+                    <td className={`w-[18%] px-2 py-2 text-right font-black font-mono text-xs ${row.profit < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                       {formatBDT(row.profit)}
                     </td>
-                    <td className="w-[13%] pl-2 pr-5 py-3 text-right">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    <td className="w-[12%] pl-1 pr-4 py-2 text-right">
+                      <span className={`inline-block px-1.5 py-0.5 rounded-full text-[9px] font-bold font-mono border ${
                         row.margin > 50
                           ? (theme === 'dark' ? 'bg-[#0a1510] text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200')
                           : row.margin < 0
@@ -3502,48 +3517,48 @@ function DashboardView({
         </div>
 
         {/* TABLE 2: CARD LIQUIDITY & BURN (6 Cols) */}
-        <div className={`xl:col-span-6 rounded-2xl overflow-hidden flex flex-col border ${
+        <div className={`xl:col-span-6 rounded-2xl overflow-hidden flex flex-col border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`px-5 py-3.5 border-b flex items-center justify-between ${
+          <div className={`px-4 py-2.5 border-b flex items-center justify-between ${
             theme === 'dark' ? 'bg-[#0d121b] border-white/10' : 'bg-[#e5edf6] border-slate-200/60'
           }`}>
             <div>
               <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Card Liquidity & Burn</h3>
-              <p className="text-[10.5px] text-slate-400 font-medium">USD funded, burned, and live spendable balances.</p>
+              <p className="text-[10px] text-slate-400 font-medium">USD funded, burned, and live spendable balances.</p>
             </div>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('cards')}
-                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
                   theme === 'dark'
                     ? 'bg-[#182235] border-sky-500/30 text-sky-400 shadow-none'
-                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff]'
+                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[1px_1px_3px_rgba(166,180,200,0.4),-1px_-1px_3px_#ffffff]'
                 }`}
               >
                 <span>All Cards</span>
-                <ChevronRight size={13} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
+                <ChevronRight size={12} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
               </button>
             )}
           </div>
 
-          <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[360px] no-scrollbar">
+          <div className="overflow-y-auto overflow-x-hidden flex-1 max-h-[290px] no-scrollbar">
             <table className="table-fixed w-full text-xs text-left">
-              <thead className={`sticky top-0 uppercase tracking-wider text-[9.5px] font-bold border-b ${
+              <thead className={`sticky top-0 uppercase tracking-wider text-[9px] font-bold border-b ${
                 theme === 'dark' ? 'bg-[#0a0d14] text-slate-400 border-white/10' : 'bg-[#ebf0f7] text-slate-500 border-slate-200'
               }`}>
                 <tr>
-                  <th className="w-[32%] pl-5 pr-2 py-3 text-left">Card & Provider</th>
-                  <th className="w-[23%] px-3 py-3 text-right">USD Funded</th>
-                  <th className="w-[23%] px-3 py-3 text-right">Total Burned</th>
-                  <th className="w-[22%] pl-2 pr-5 py-3 text-right">Live Balance</th>
+                  <th className="w-[34%] pl-4 pr-2 py-2 text-left">Card & Provider</th>
+                  <th className="w-[22%] px-2 py-2 text-right">USD Funded</th>
+                  <th className="w-[22%] px-2 py-2 text-right">Total Burned</th>
+                  <th className="w-[22%] pl-1 pr-4 py-2 text-right">Live Balance</th>
                 </tr>
               </thead>
               <tbody className={`divide-y font-medium ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
                 {dashboardData.allCards.length === 0 && (
-                  <tr><td colSpan="4" className="px-5 py-8 text-center text-slate-400 font-semibold">No active cards found.</td></tr>
+                  <tr><td colSpan="4" className="px-4 py-6 text-center text-slate-400 font-semibold text-xs">No active cards found.</td></tr>
                 )}
                 {dashboardData.allCards.slice(0, 5).map(card => (
                   <tr
@@ -3551,28 +3566,28 @@ function DashboardView({
                     onClick={() => onViewCard && onViewCard(card)}
                     className={`transition-colors cursor-pointer group ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-white/50'}`}
                   >
-                    <td className="w-[32%] pl-5 pr-2 py-3 text-left">
+                    <td className="w-[34%] pl-4 pr-2 py-2 text-left">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-5 rounded bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[7px] font-black text-white shadow-xs shrink-0">
+                        <div className="w-6 h-4 rounded bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[6.5px] font-black text-white shadow-xs shrink-0">
                           EMV
                         </div>
                         <div className="min-w-0">
-                          <div className={`font-bold truncate transition-colors ${theme === 'dark' ? 'text-white group-hover:text-sky-400' : 'text-slate-900 group-hover:text-sky-700'}`}>
+                          <div className={`font-bold text-xs truncate transition-colors ${theme === 'dark' ? 'text-white group-hover:text-sky-400' : 'text-slate-900 group-hover:text-sky-700'}`}>
                             {card.name}
                           </div>
-                          <div className="text-[10px] text-slate-400 truncate">
+                          <div className="text-[9.5px] text-slate-400 truncate leading-none">
                             {card.provider || 'Virtual Card'} {card.last4 && `· *${card.last4}`}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className={`w-[23%] px-3 py-3 text-right font-bold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                    <td className={`w-[22%] px-2 py-2 text-right font-bold font-mono text-xs ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
                       +{formatUSD(card.purchased)}
                     </td>
-                    <td className={`w-[23%] px-3 py-3 text-right font-bold ${theme === 'dark' ? 'text-purple-400' : 'text-purple-700'}`}>
+                    <td className={`w-[22%] px-2 py-2 text-right font-bold font-mono text-xs ${theme === 'dark' ? 'text-purple-400' : 'text-purple-700'}`}>
                       -{formatUSD(card.spent)}
                     </td>
-                    <td className={`w-[22%] pl-2 pr-5 py-3 text-right font-black ${card.balance < 0 ? 'text-rose-500' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
+                    <td className={`w-[22%] pl-1 pr-4 py-2 text-right font-black font-mono text-xs ${card.balance < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                       {formatUSD(card.balance)}
                     </td>
                   </tr>
@@ -3587,34 +3602,34 @@ function DashboardView({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
         {/* REAL-TIME MOVEMENT STREAM (7 Cols) */}
-        <div className={`xl:col-span-7 rounded-2xl p-5 flex flex-col justify-between border ${
+        <div className={`xl:col-span-7 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+          <div className={`flex items-center justify-between pb-2.5 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
               <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Live Movement Stream</h3>
-              <p className="text-[10.5px] text-slate-400 font-medium">Real-time ledger events and transactions.</p>
+              <p className="text-[10px] text-slate-400 font-medium">Real-time ledger events and transactions.</p>
             </div>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('ledger')}
-                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
+                className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer border ${
                   theme === 'dark'
                     ? 'bg-[#182235] border-sky-500/30 text-sky-400 shadow-none'
-                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[2px_2px_5px_rgba(166,180,200,0.4),-2px_-2px_5px_#ffffff]'
+                    : 'bg-[#ebf0f7] border-white text-sky-600 shadow-[1px_1px_3px_rgba(166,180,200,0.4),-1px_-1px_3px_#ffffff]'
                 }`}
               >
                 <span>Full Ledger</span>
-                <ChevronRight size={13} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
+                <ChevronRight size={12} className={theme === 'dark' ? 'text-sky-400' : 'text-sky-600'} />
               </button>
             )}
           </div>
 
-          <div className={`divide-y my-2 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
+          <div className={`divide-y my-1 ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
             {dashboardData.recentTransactions.length === 0 && (
-              <div className="py-8 text-center text-slate-400 text-xs">No transactions recorded yet.</div>
+              <div className="py-6 text-center text-slate-400 text-xs">No transactions recorded yet.</div>
             )}
             {dashboardData.recentTransactions.map(tx => {
               const isIn = tx.type === 'PAYMENT_RECEIVED' || tx.type === 'USD_PURCHASE';
@@ -3627,9 +3642,9 @@ function DashboardView({
               const card = cards.find(c => c.id === tx.cardId)?.name;
 
               return (
-                <div key={tx.id} className={`py-2.5 flex items-center justify-between gap-3 px-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-white/60'}`}>
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs border ${
+                <div key={tx.id} className={`py-1.5 flex items-center justify-between gap-2.5 px-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-white/60'}`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
                       theme === 'dark'
                         ? (isPayment ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400' :
                            isUSD ? 'bg-[#091422] border-sky-500/30 text-sky-400' :
@@ -3640,23 +3655,23 @@ function DashboardView({
                            isAds ? 'bg-purple-50 border-purple-200/60 text-purple-600' :
                            'bg-amber-50 border-amber-200/60 text-amber-600')
                     }`}>
-                      {isPayment && <ArrowDownLeft size={16} />}
-                      {isUSD && <DollarSign size={16} />}
-                      {isAds && <Activity size={16} />}
-                      {isFee && <Wallet size={16} />}
+                      {isPayment && <ArrowDownLeft size={14} />}
+                      {isUSD && <DollarSign size={14} />}
+                      {isAds && <Activity size={14} />}
+                      {isFee && <Wallet size={14} />}
                     </div>
                     <div className="min-w-0">
-                      <div className={`font-bold text-xs truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      <div className={`font-bold text-xs truncate leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         {isPayment ? 'Payment Received' : isUSD ? 'USD Purchased' : isAds ? 'Meta Ad Spend' : 'Card Fee'}
                       </div>
-                      <div className="text-[10px] text-slate-400 truncate">
+                      <div className="text-[9.5px] text-slate-400 truncate leading-none mt-0.5">
                         {client || card || tx.campaign || tx.notes || 'Ledger entry'} · {formatDate(tx.date)}
                       </div>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className={`font-black text-xs ${
+                    <div className={`font-black font-mono text-xs ${
                       isIn
                         ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600')
                         : isAds
@@ -3668,86 +3683,86 @@ function DashboardView({
                        isAds ? `-${formatUSD(parseFloat(tx.amountUSD || 0) + parseFloat(tx.taxUSD || 0))}` :
                        `-${formatUSD(tx.amountUSD)}`}
                     </div>
-                    <div className="text-[9.5px] font-mono text-slate-400">#{String(tx.id).slice(-6)}</div>
+                    <div className="text-[9px] font-mono text-slate-400">#{String(tx.id).slice(-6)}</div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className={`text-[10.5px] font-medium pt-2 border-t flex items-center justify-between ${theme === 'dark' ? 'border-white/10 text-slate-400' : 'border-slate-200/60 text-slate-400'}`}>
+          <div className={`text-[10px] font-medium pt-2 border-t flex items-center justify-between ${theme === 'dark' ? 'border-white/10 text-slate-400' : 'border-slate-200/60 text-slate-400'}`}>
             <span>Verified against Supabase Ledger</span>
             <span className={`font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{transactions.length} Total Records</span>
           </div>
         </div>
 
         {/* QUICK STATS SNAPSHOT (5 Cols) */}
-        <div className={`xl:col-span-5 rounded-2xl p-5 flex flex-col justify-between border ${
+        <div className={`xl:col-span-5 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between border transition-all ${
           theme === 'dark'
-            ? 'bg-[#111722] border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.55)]'
-            : 'bg-[#ebf0f7] border-white/90 shadow-[6px_6px_16px_rgba(166,180,200,0.5),-6px_-6px_16px_#ffffff]'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className={`flex items-center justify-between pb-3 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
+          <div className={`flex items-center justify-between pb-2.5 border-b ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div>
               <h3 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Quick Operational Stats</h3>
-              <p className="text-[10.5px] text-slate-400 font-medium">A compact snapshot of your operations.</p>
+              <p className="text-[10px] text-slate-400 font-medium">A compact snapshot of your operations.</p>
             </div>
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           </div>
 
-          <div className={`divide-y my-2 text-xs ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
-            <div className="py-2.5 flex items-center justify-between">
+          <div className={`divide-y my-1 text-xs ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-200/60'}`}>
+            <div className="py-2 flex items-center justify-between">
               <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Active Clients</span>
               <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{dashboardData.activeClients.length} of {clients.length}</span>
             </div>
-            <div className="py-2.5 flex items-center justify-between">
+            <div className="py-2 flex items-center justify-between">
               <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Total Virtual Cards</span>
               <span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{cards.length} Cards</span>
             </div>
-            <div className="py-2.5 flex items-center justify-between">
+            <div className="py-2 flex items-center justify-between">
               <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Avg Effective FX Rate</span>
               <span className={`font-bold font-mono ${theme === 'dark' ? 'text-sky-400' : 'text-sky-600'}`}>৳{metrics.avgUSDEffectiveRate.toFixed(2)} / USD</span>
             </div>
-            <div className="py-2.5 flex items-center justify-between">
+            <div className="py-2 flex items-center justify-between">
               <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Total BDT Spent on USD</span>
-              <span className={`font-bold ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatBDT(dashboardData.totalBDTCost)}</span>
+              <span className={`font-bold font-mono ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatBDT(dashboardData.totalBDTCost)}</span>
             </div>
-            <div className="py-2.5 flex items-center justify-between">
+            <div className="py-2 flex items-center justify-between">
               <span className={`font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Total Meta 15% VAT</span>
-              <span className={`font-bold ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatUSD(metrics.totalTaxUSD)}</span>
+              <span className={`font-bold font-mono ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'}`}>{formatUSD(metrics.totalTaxUSD)}</span>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10.5px]">
             <span className="text-slate-400">Ledger Health</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <CheckCircle2 size={13} /> 100% Balanced
+            <span className="font-bold text-emerald-500 flex items-center gap-1">
+              <CheckCircle2 size={12} /> 100% Balanced
             </span>
           </div>
         </div>
       </div>
 
       {/* 6. FULL-WIDTH 3-PILLAR OPERATIONAL HEALTH STATUS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         
         {/* CARD 1: CARD LIQUIDITY SAFETY SHIELD */}
-        <div className={`rounded-2xl border p-5 transition-all flex flex-col justify-between ${
+        <div className={`rounded-2xl border p-3.5 sm:p-4 transition-all flex flex-col justify-between ${
           theme === 'dark'
             ? (totalCardBalance < 0
                 ? 'bg-[#180d14] border-rose-500/30 text-rose-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]'
                 : 'bg-[#0a1b16] border-emerald-500/30 text-emerald-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]')
             : (totalCardBalance < 0
-                ? 'bg-[#ebf0f7] border-rose-200/90 text-rose-950 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
-                : 'bg-[#ebf0f7] border-emerald-200/90 text-emerald-950 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]')
+                ? 'bg-[#ebf0f7] border-rose-200/90 text-rose-950 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+                : 'bg-[#ebf0f7] border-emerald-200/90 text-emerald-950 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]')
         }`}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 border ${
                 totalCardBalance < 0
                   ? (theme === 'dark' ? 'bg-rose-950/60 border-rose-500/40 text-rose-400' : 'bg-rose-100/80 border-rose-200 text-rose-700')
                   : (theme === 'dark' ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-emerald-100/80 border-emerald-200 text-emerald-700')
               }`}>
-                {totalCardBalance < 0 ? <AlertCircle size={19} /> : <ShieldCheck size={19} />}
+                {totalCardBalance < 0 ? <AlertCircle size={16} /> : <ShieldCheck size={16} />}
               </div>
               <div>
                 <h4 className={`font-black text-xs uppercase tracking-wider ${
@@ -3757,66 +3772,66 @@ function DashboardView({
                 }`}>
                   {totalCardBalance < 0 ? 'Card Liquidity Warning' : 'Healthy Card Liquidity'}
                 </h4>
-                <span className={`text-[10px] font-semibold ${theme === 'dark' ? 'opacity-70 text-slate-400' : 'opacity-75'}`}>Virtual Card Reserves</span>
+                <span className={`text-[9.5px] font-semibold ${theme === 'dark' ? 'opacity-70 text-slate-400' : 'opacity-75'}`}>Virtual Card Reserves</span>
               </div>
             </div>
           </div>
 
-          <p className={`text-xs font-medium mt-3 ${
+          <p className={`text-xs font-medium mt-2 leading-relaxed ${
             totalCardBalance < 0
               ? (theme === 'dark' ? 'text-rose-300/90' : 'text-rose-800/90')
               : (theme === 'dark' ? 'text-emerald-300/90' : 'text-emerald-800/90')
           }`}>
             {totalCardBalance < 0
-              ? `Virtual card balance is in deficit by ${formatUSD(Math.abs(totalCardBalance))}. Top up immediately to prevent Meta ad pauses.`
+              ? `Virtual card balance is in deficit by ${formatUSD(Math.abs(totalCardBalance))}. Top up immediately.`
               : `Total spendable balance across all active cards is ${formatUSD(totalCardBalance)}.`}
           </p>
         </div>
 
         {/* CARD 2: REVENUE INFLOW HEALTH */}
-        <div className={`rounded-2xl border p-5 flex flex-col justify-between ${
+        <div className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col justify-between transition-all ${
           theme === 'dark'
             ? 'border-emerald-500/30 bg-[#0a1b16] text-emerald-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]'
-            : 'border-emerald-200/80 bg-[#ebf0f7] text-emerald-900 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+            : 'border-emerald-200/80 bg-[#ebf0f7] text-emerald-900 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 border ${
               theme === 'dark' ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400' : 'bg-emerald-100/80 border-emerald-200 text-emerald-700'
             }`}>
-              <CheckCircle2 size={19} />
+              <CheckCircle2 size={16} />
             </div>
             <div>
               <h4 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-900'}`}>
                 Healthy Revenue Flow
               </h4>
-              <span className={`text-[10px] font-semibold ${theme === 'dark' ? 'text-emerald-400/80' : 'text-emerald-700/80'}`}>Client Inflow Status</span>
+              <span className={`text-[9.5px] font-semibold ${theme === 'dark' ? 'text-emerald-400/80' : 'text-emerald-700/80'}`}>Client Inflow Status</span>
             </div>
           </div>
-          <p className={`text-xs font-medium mt-3 ${theme === 'dark' ? 'text-emerald-300/90' : 'text-emerald-800/90'}`}>
+          <p className={`text-xs font-medium mt-2 leading-relaxed ${theme === 'dark' ? 'text-emerald-300/90' : 'text-emerald-800/90'}`}>
             {formatBDT(metrics.totalRevenueBDT)} received across active client accounts with positive cashflow surplus.
           </p>
         </div>
 
         {/* CARD 3: PROFIT & MARGIN SNAPSHOT */}
-        <div className={`rounded-2xl border p-5 flex flex-col justify-between ${
+        <div className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col justify-between transition-all ${
           theme === 'dark'
             ? 'border-sky-500/30 bg-[#0c1626] text-sky-300 shadow-[0_4px_14px_rgba(0,0,0,0.5)]'
-            : 'border-blue-200/80 bg-[#ebf0f7] text-blue-900 shadow-[5px_5px_14px_rgba(166,180,200,0.45),-5px_-5px_14px_#ffffff]'
+            : 'border-blue-200/80 bg-[#ebf0f7] text-blue-900 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
         }`}>
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs border ${
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 border ${
               theme === 'dark' ? 'bg-sky-950/60 border-sky-500/40 text-sky-400' : 'bg-blue-100/80 border-blue-200 text-blue-700'
             }`}>
-              <TrendingUp size={19} />
+              <TrendingUp size={16} />
             </div>
             <div>
               <h4 className={`font-black text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-sky-400' : 'text-blue-900'}`}>
                 Net Profit Snapshot
               </h4>
-              <span className={`text-[10px] font-semibold ${theme === 'dark' ? 'text-sky-400/80' : 'text-blue-700/80'}`}>Bottom Line Performance</span>
+              <span className={`text-[9.5px] font-semibold ${theme === 'dark' ? 'text-sky-400/80' : 'text-blue-700/80'}`}>Bottom Line Performance</span>
             </div>
           </div>
-          <p className={`text-xs font-medium mt-3 ${theme === 'dark' ? 'text-sky-300/90' : 'text-blue-800/90'}`}>
+          <p className={`text-xs font-medium mt-2 leading-relaxed ${theme === 'dark' ? 'text-sky-300/90' : 'text-blue-800/90'}`}>
             {formatBDT(metrics.netProfitBDT)} net agency profit achieved with a healthy {metrics.profitMargin.toFixed(1)}% margin.
           </p>
         </div>
@@ -4456,70 +4471,86 @@ function LedgerView({ transactions, clients, cards, metrics, onDeleteTransaction
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] cursor-default select-none">
-          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5 mb-3">
+        <div className={`rounded-2xl p-3.5 sm:p-4 border transition-all cursor-default select-none ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between border-b pb-2.5 mb-2.5 ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs">
-                <ArrowDownLeft size={15} />
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center border ${
+                theme === 'dark' ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-xs'
+              }`}>
+                <ArrowDownLeft size={14} />
               </div>
-              <span className="text-xs font-black tracking-wider text-slate-900 uppercase">
+              <span className={`text-xs font-black tracking-wider uppercase ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                 BDT Operating Cashflow
               </span>
             </div>
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/60 border border-emerald-200/60 px-2 py-0.5 rounded-md uppercase">Domestic Ledger</span>
+            <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-md uppercase border ${
+              theme === 'dark' ? 'text-emerald-400 bg-[#0a1510] border-emerald-500/30' : 'text-emerald-700 bg-emerald-100/60 border-emerald-200/60'
+            }`}>Domestic Ledger</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-left">
+          <div className="grid grid-cols-3 gap-2.5 text-left">
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">BDT In (Received)</span>
-              <span className="text-sm sm:text-base font-black text-emerald-600 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT In</span>
+              <span className="text-sm sm:text-base font-black font-mono text-emerald-500 mt-0.5 block">
                 {formatBDT(ledgerSummary.bdtIn)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">BDT Out (Purchases)</span>
-              <span className="text-sm sm:text-base font-black text-rose-600 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">BDT Out</span>
+              <span className="text-sm sm:text-base font-black font-mono text-rose-500 mt-0.5 block">
                 {formatBDT(ledgerSummary.bdtOut)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Operating Surplus</span>
-              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Surplus</span>
+              <span className={`text-sm sm:text-base font-black font-mono mt-0.5 block ${ledgerSummary.netBDT < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                 {formatBDT(ledgerSummary.netBDT)}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl p-4 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] cursor-default select-none">
-          <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5 mb-3">
+        <div className={`rounded-2xl p-3.5 sm:p-4 border transition-all cursor-default select-none ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`flex items-center justify-between border-b pb-2.5 mb-2.5 ${theme === 'dark' ? 'border-white/10' : 'border-slate-200/60'}`}>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs">
-                <RefreshCw size={15} />
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center border ${
+                theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400' : 'bg-sky-50 border-sky-200 text-sky-700 shadow-xs'
+              }`}>
+                <RefreshCw size={14} />
               </div>
-              <span className="text-xs font-black tracking-wider text-slate-900 uppercase">
+              <span className={`text-xs font-black tracking-wider uppercase ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                 USD Foreign Liquidity & Ad Burn
               </span>
             </div>
-            <span className="text-[10px] font-bold text-sky-700 bg-sky-100/60 border border-sky-200/60 px-2 py-0.5 rounded-md uppercase">FX & Meta Spend</span>
+            <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-md uppercase border ${
+              theme === 'dark' ? 'text-sky-400 bg-[#091422] border-sky-500/30' : 'text-sky-700 bg-sky-100/60 border-sky-200/60'
+            }`}>FX & Meta Spend</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 text-left">
+          <div className="grid grid-cols-3 gap-2.5 text-left">
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">USD In (Funded)</span>
-              <span className="text-sm sm:text-base font-black text-emerald-600 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD In (Funded)</span>
+              <span className="text-sm sm:text-base font-black font-mono text-emerald-500 mt-0.5 block">
                 {formatUSD(ledgerSummary.usdIn)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">USD Out (Burned)</span>
-              <span className="text-sm sm:text-base font-black text-purple-700 mt-1 block">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">USD Out (Burned)</span>
+              <span className="text-sm sm:text-base font-black font-mono text-purple-500 mt-0.5 block">
                 {formatUSD(ledgerSummary.usdOut)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Net USD Liquidity</span>
-              <span className={`text-sm sm:text-base font-black mt-1 block ${ledgerSummary.netUSD < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Net Liquidity</span>
+              <span className={`text-sm sm:text-base font-black font-mono mt-0.5 block ${ledgerSummary.netUSD < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
                 {formatUSD(ledgerSummary.netUSD)}
               </span>
             </div>
@@ -4840,79 +4871,121 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
         </button>
       </div>
 
-      {/* COMPACT KPI METRIC CARDS (FIXED NEUMORPHIC STATS) */}
+      {/* COMPACT KPI METRIC CARDS (EXECUTIVE FINTECH WIDGETS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Active Portfolios */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
-          <div className="w-8 h-8 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
-            <UsersRound size={16} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400' : 'bg-sky-50 border-sky-200/60 text-sky-600'
+          }`}>
+            <UsersRound size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Client Accounts</span>
-            <span className="text-[11px] font-bold text-sky-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-600 shrink-0" />
-              {overallSummary.activeCount} Active / {overallSummary.totalCount} Total
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Client Accounts</span>
+            <span className={`text-base sm:text-lg font-black font-mono block truncate leading-tight mt-0.5 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              {overallSummary.activeCount} <span className="text-xs font-normal text-slate-400">/ {overallSummary.totalCount}</span>
+            </span>
+            <span className="text-[9.5px] font-bold text-sky-500 block truncate mt-0.5">
+              ● Active Portfolios
             </span>
           </div>
         </div>
 
         {/* Card 2: Total Revenue */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
-            <ArrowDownRight size={16} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            theme === 'dark' ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200/60 text-emerald-600'
+          }`}>
+            <ArrowDownRight size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Total Revenue</span>
-            <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
-              {formatBDT(overallSummary.totalRevenue)} Received
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Total Revenue</span>
+            <span className="text-base sm:text-lg font-black font-mono text-emerald-500 block truncate leading-tight mt-0.5">
+              {formatBDT(overallSummary.totalRevenue)}
+            </span>
+            <span className="text-[9.5px] font-bold text-emerald-600 block truncate mt-0.5">
+              Received in BDT
             </span>
           </div>
         </div>
 
         {/* Card 3: Total Ad Spend */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
-          <div className="w-8 h-8 rounded-xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
-            <Activity size={16} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            theme === 'dark' ? 'bg-[#130f1c] border-purple-500/30 text-purple-400' : 'bg-purple-50 border-purple-200/60 text-purple-600'
+          }`}>
+            <Activity size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Total Ad Spend</span>
-            <span className="text-[11px] font-bold text-purple-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
-              {formatUSD(overallSummary.totalAdSpendUSD)} Spend
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Total Ad Spend</span>
+            <span className="text-base sm:text-lg font-black font-mono text-purple-500 block truncate leading-tight mt-0.5">
+              {formatUSD(overallSummary.totalAdSpendUSD)}
+            </span>
+            <span className="text-[9.5px] font-bold text-purple-600 block truncate mt-0.5">
+              Meta Ads Burn
             </span>
           </div>
         </div>
 
         {/* Card 4: Net Agency Profit */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-3.5 py-3 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3 min-w-0 cursor-default select-none">
-          <div className="w-8 h-8 rounded-xl bg-blue-100/90 border border-blue-200/80 flex items-center justify-center text-blue-700 shadow-xs shrink-0">
-            <TrendingUp size={16} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400' : 'bg-sky-50 border-sky-200/60 text-sky-600'
+          }`}>
+            <TrendingUp size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-xs font-black text-slate-900 block truncate leading-tight">Net Agency Profit</span>
-            <span className="text-[11px] font-bold text-blue-700 flex items-center gap-1.5 truncate whitespace-nowrap leading-tight mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
-              {formatBDT(overallSummary.totalProfitBDT)} ({overallSummary.avgMargin.toFixed(1)}%)
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Net Agency Profit</span>
+            <span className={`text-base sm:text-lg font-black font-mono block truncate leading-tight mt-0.5 ${overallSummary.totalProfitBDT < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
+              {formatBDT(overallSummary.totalProfitBDT)}
+            </span>
+            <span className="text-[9.5px] font-bold text-emerald-500 block truncate mt-0.5">
+              {overallSummary.avgMargin.toFixed(1)}% Avg Margin
             </span>
           </div>
         </div>
       </div>
 
-      {/* SEARCH AND FILTER CONTROLS */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
+      {/* COMPACT SINGLE-ROW SEARCH AND FILTER TOOLBAR */}
+      <div className={`rounded-xl p-2 sm:p-2.5 border flex flex-col sm:flex-row items-center gap-2.5 ${
+        theme === 'dark' ? 'bg-[#111722] border-white/10' : 'bg-white border-slate-200/90 shadow-2xs'
+      }`}>
+        <div className="relative flex-1 w-full">
+          <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search clients, business name, or brand..."
-            className="w-full pl-9 pr-4 py-2 border border-slate-200/90 rounded-lg text-xs font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none bg-white shadow-2xs"
+            className={`w-full pl-8 pr-3 py-1.5 rounded-lg text-xs font-medium outline-none border transition-all ${
+              theme === 'dark'
+                ? 'bg-[#0a0d14] border-white/10 text-white placeholder-slate-500 focus:border-sky-500'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-sky-500'
+            }`}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
         <select
-          className="border border-slate-200/90 rounded-lg px-3 py-2 text-xs font-semibold outline-none bg-white min-w-[180px] shadow-2xs text-slate-700"
+          className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none border transition-all min-w-[160px] w-full sm:w-auto ${
+            theme === 'dark'
+              ? 'bg-[#0a0d14] border-white/10 text-slate-300'
+              : 'bg-slate-50 border-slate-200 text-slate-700'
+          }`}
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
@@ -4925,26 +4998,32 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
       </div>
 
       {/* CLIENTS DATA TABLE */}
-      <div className="bg-white rounded-xl border border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+      <div className={`rounded-2xl border overflow-hidden transition-all ${
+        theme === 'dark'
+          ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+          : 'bg-white border-slate-200/90 shadow-[0_1px_3px_rgba(0,0,0,0.02)]'
+      }`}>
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left whitespace-nowrap">
-            <thead className="bg-slate-50/80 text-slate-500 font-bold border-b border-slate-200/80 uppercase tracking-wider text-[10px]">
+            <thead className={`font-bold border-b uppercase tracking-wider text-[9.5px] ${
+              theme === 'dark' ? 'bg-[#0a0d14] text-slate-400 border-white/10' : 'bg-slate-50/90 text-slate-500 border-slate-200/80'
+            }`}>
               <tr>
-                <th className="px-5 py-3.5">Client & Business</th>
-                <th className="px-5 py-3.5">Service & Status</th>
-                <th className="px-5 py-3.5 text-right">Budget Plan</th>
-                <th className="px-5 py-3.5 text-right">Revenue (BDT)</th>
-                <th className="px-5 py-3.5 text-right">Ad Spend (USD)</th>
-                <th className="px-5 py-3.5 text-right">Profit (BDT)</th>
-                <th className="px-5 py-3.5 text-center">Actions</th>
+                <th className="px-3.5 py-2.5">Client & Business</th>
+                <th className="px-3.5 py-2.5">Service & Status</th>
+                <th className="px-3.5 py-2.5 text-right">Budget Plan</th>
+                <th className="px-3.5 py-2.5 text-right">Revenue (BDT)</th>
+                <th className="px-3.5 py-2.5 text-right">Ad Spend (USD)</th>
+                <th className="px-3.5 py-2.5 text-right">Profit (BDT)</th>
+                <th className="px-3.5 py-2.5 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className={`divide-y font-medium ${theme === 'dark' ? 'divide-white/5' : 'divide-slate-100'}`}>
               {filteredClients.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center py-12 text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <UsersRound size={28} className="text-slate-300" />
+                  <td colSpan="7" className="text-center py-10 text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <UsersRound size={24} className="text-slate-400" />
                       <span className="text-xs font-semibold text-slate-500">No client accounts found matching your search filter.</span>
                     </div>
                   </td>
@@ -4956,14 +5035,16 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                 const initial = (c.name || 'C').charAt(0).toUpperCase();
 
                 return (
-                  <tr key={c.id} className="hover:bg-slate-50/70 transition-colors group">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 border border-sky-200/80 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                  <tr key={c.id} className={`transition-colors group ${theme === 'dark' ? 'hover:bg-white/[0.03]' : 'hover:bg-slate-50/70'}`}>
+                    <td className="px-3.5 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center shrink-0 border ${
+                          theme === 'dark' ? 'bg-sky-950/60 text-sky-400 border-sky-500/30' : 'bg-sky-50 text-sky-700 border-sky-200/80 shadow-2xs'
+                        }`}>
                           {initial}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                          <div className={`font-bold text-xs flex items-center gap-1.5 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                             <span>{c.name}</span>
                             {c.phone && (
                               <a
@@ -4973,17 +5054,17 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                                 title={`Chat on WhatsApp (${c.phone})`}
                                 className="text-emerald-500 hover:text-emerald-600 transition-colors inline-flex items-center"
                               >
-                                <MessageCircle size={12} />
+                                <MessageCircle size={11} />
                               </a>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-500 font-medium">{c.company || 'Direct Client'}</div>
+                          <div className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">{c.company || 'Direct Client'}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex flex-col gap-1">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold w-fit
+                    <td className="px-3.5 py-2.5">
+                      <div className="flex flex-col gap-0.5">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-extrabold w-fit
                           ${isWorking ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' :
                             displayStatus.includes('Completed') ? 'bg-blue-50 text-blue-700 border border-blue-200/60' :
                               displayStatus === 'Inactive' ? 'bg-orange-50 text-orange-700 border border-orange-200/60' :
@@ -4992,28 +5073,28 @@ function ClientsView({ clients, transactions, metrics, onAddClient, onEditClient
                           {displayStatus}
                         </span>
                         {c.serviceType && (
-                          <span className="text-[10px] text-slate-400 font-medium">
+                          <span className="text-[9.5px] text-slate-400 font-medium leading-none">
                             {c.serviceType}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-right text-slate-700 font-semibold">
+                    <td className={`px-3.5 py-2.5 text-right font-semibold text-xs ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                       {getBudgetDisplay(c.budgetType, c.budgetAmount || c.budget)}
                     </td>
-                    <td className="px-5 py-3.5 text-right font-bold text-emerald-600">
+                    <td className="px-3.5 py-2.5 text-right font-bold font-mono text-xs text-emerald-500">
                       {formatBDT(c.revenue)}
                     </td>
-                    <td className="px-5 py-3.5 text-right font-bold text-slate-800">
+                    <td className={`px-3.5 py-2.5 text-right font-bold font-mono text-xs ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
                       {formatUSD(c.adSpendUSD)}
                     </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <div className={`font-black ${c.profitBDT < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{formatBDT(c.profitBDT)}</div>
-                      <div className={`text-[10px] font-bold inline-block px-1.5 py-0.2 rounded mt-0.5 ${c.profitMargin > 50 ? 'bg-emerald-50 text-emerald-700' : c.profitMargin < 0 ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
+                    <td className="px-3.5 py-2.5 text-right">
+                      <div className={`font-black font-mono text-xs ${c.profitBDT < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>{formatBDT(c.profitBDT)}</div>
+                      <div className={`text-[9.5px] font-bold font-mono inline-block px-1.5 py-0.2 rounded mt-0.5 ${c.profitMargin > 50 ? 'bg-emerald-50 text-emerald-700' : c.profitMargin < 0 ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
                         Margin: {c.profitMargin.toFixed(1)}%
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-center">
+                    <td className="px-3.5 py-2.5 text-center">
                       <ClientActionsMenu
                         client={c}
                         onViewDetails={() => onViewDetails(c)}
@@ -5330,56 +5411,94 @@ function CardsView({ cards, metrics, transactions, onAddCard, onEditCard, onFund
         </div>
       </div>
 
-      {/* EXECUTIVE CARD LIQUIDITY OVERVIEW RIBBON (FIXED NEUMORPHIC STATS) */}
+      {/* EXECUTIVE CARD LIQUIDITY OVERVIEW RIBBON (COMPACT FINTECH WIDGETS) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Total Card Liquidity */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
-          <div className="w-9 h-9 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
-            <CreditCard size={18} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            metrics.totalCardBalance < 0
+              ? (theme === 'dark' ? 'bg-[#190d14] border-rose-500/30 text-rose-400' : 'bg-rose-50 border-rose-200/60 text-rose-600')
+              : (theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400' : 'bg-sky-50 border-sky-200/60 text-sky-600')
+          }`}>
+            <CreditCard size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">Available Liquidity</span>
-            <span className={`text-base font-black truncate block mt-0.5 ${metrics.totalCardBalance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Available Liquidity</span>
+            <span className={`text-base sm:text-lg font-black font-mono block truncate leading-tight mt-0.5 ${metrics.totalCardBalance < 0 ? 'text-rose-400' : (theme === 'dark' ? 'text-white' : 'text-slate-900')}`}>
               {formatUSD(metrics.totalCardBalance)}
+            </span>
+            <span className="text-[9.5px] font-bold text-sky-500 block truncate mt-0.5">
+              Live Card Balance
             </span>
           </div>
         </div>
 
         {/* Card 2: Total USD Purchased */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100/90 border border-emerald-200/80 flex items-center justify-center text-emerald-700 shadow-xs shrink-0">
-            <ArrowDownRight size={18} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            theme === 'dark' ? 'bg-[#0a1510] border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200/60 text-emerald-600'
+          }`}>
+            <ArrowDownRight size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Funded (All-Time)</span>
-            <span className="text-base font-black text-emerald-700 truncate block mt-0.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">USD Funded</span>
+            <span className="text-base sm:text-lg font-black font-mono text-emerald-500 block truncate leading-tight mt-0.5">
               {formatUSD(metrics.totalUSDPurchased)}
+            </span>
+            <span className="text-[9.5px] font-bold text-emerald-600 block truncate mt-0.5">
+              Total Procured
             </span>
           </div>
         </div>
 
         {/* Card 3: Total USD Burned */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
-          <div className="w-9 h-9 rounded-xl bg-purple-100/90 border border-purple-200/80 flex items-center justify-center text-purple-700 shadow-xs shrink-0">
-            <Activity size={18} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            theme === 'dark' ? 'bg-[#130f1c] border-purple-500/30 text-purple-400' : 'bg-purple-50 border-purple-200/60 text-purple-600'
+          }`}>
+            <Activity size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">USD Burned (Spend+Tax)</span>
-            <span className="text-base font-black text-purple-700 truncate block mt-0.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">USD Burned</span>
+            <span className="text-base sm:text-lg font-black font-mono text-purple-500 block truncate leading-tight mt-0.5">
               {formatUSD(metrics.totalAdSpendUSD + metrics.totalTaxUSD)}
+            </span>
+            <span className="text-[9.5px] font-bold text-purple-600 block truncate mt-0.5">
+              Ads + 15% VAT
             </span>
           </div>
         </div>
 
         {/* Card 4: Weighted Average FX Rate */}
-        <div className="bg-[#ebf0f7] border border-white rounded-2xl px-4 py-3.5 shadow-[5px_5px_12px_rgba(166,180,200,0.45),-5px_-5px_12px_#ffffff] flex items-center gap-3.5 cursor-default select-none">
-          <div className="w-9 h-9 rounded-xl bg-sky-100/90 border border-sky-200/80 flex items-center justify-center text-sky-700 shadow-xs shrink-0">
-            <RefreshCw size={18} />
+        <div className={`rounded-2xl p-3 sm:p-3.5 border transition-all flex items-center gap-3 min-w-0 ${
+          theme === 'dark'
+            ? 'bg-[#111722] border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            : 'bg-[#ebf0f7] border-white/90 shadow-[4px_4px_12px_rgba(166,180,200,0.4),-4px_-4px_12px_#ffffff]'
+        }`}>
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${
+            theme === 'dark' ? 'bg-[#091422] border-sky-500/30 text-sky-400' : 'bg-sky-50 border-sky-200/60 text-sky-600'
+          }`}>
+            <RefreshCw size={15} />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider block">Effective FX Rate</span>
-            <span className="text-base font-black text-sky-700 truncate block mt-0.5">
-              ৳{metrics.avgUSDEffectiveRate.toFixed(2)} / USD
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block truncate">Effective FX Rate</span>
+            <span className="text-base sm:text-lg font-black font-mono text-sky-500 block truncate leading-tight mt-0.5">
+              ৳{metrics.avgUSDEffectiveRate.toFixed(2)}
+            </span>
+            <span className="text-[9.5px] font-bold text-slate-400 block truncate mt-0.5">
+              Cost Per Dollar
             </span>
           </div>
         </div>
