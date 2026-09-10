@@ -49,6 +49,8 @@ body {
     min-height: 64px !important;
     padding: 0 10px !important;
     gap: 8px !important;
+    position: relative !important;
+    z-index: 40 !important;
   }
   .adl-shell header > div { min-width: 0; }
   .adl-shell header > div:last-child { margin-left: auto; gap: 8px !important; }
@@ -57,6 +59,26 @@ body {
   .adl-shell header [placeholder*="Search"],
   .adl-shell header [class*="search"] {
     display: none !important;
+  }
+
+  /* Sticky table headers solid background so rows never shine through or overlap during scroll */
+  .adl-shell table thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+  }
+  .adl-shell:not(.dark) table thead,
+  .adl-shell:not(.dark) table thead tr,
+  .adl-shell:not(.dark) table thead th {
+    background-color: #ebf0f7 !important;
+  }
+  .adl-shell.dark table thead,
+  .adl-shell.dark table thead tr,
+  .adl-shell.dark table thead th {
+    background-color: #0d121b !important;
+  }
+  .adl-shell .overflow-y-auto:has(> table) {
+    overflow-x: auto !important;
   }
 
   /* Main scrollable body */
