@@ -274,14 +274,15 @@ body {
 
 /* Specific optimizations for portrait smartphones (under 520px) */
 @media (max-width: 520px) {
-  /* On compact phone screens, master financial cards stack as full-width cards so all telemetry fits with generous space */
+  /* Maintain the 2-column grid layout so the app structure is 100% preserved */
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
   }
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="text-2xl"],
   .adl-shell main > div.flex-1.overflow-auto > div:has(> div.grid[class*="xl:grid-cols-4"]) > div:nth-child(2) > div [class*="text-3xl"] {
-    font-size: 1.6rem !important;
+    font-size: clamp(1.05rem, 3.8vw, 1.35rem) !important;
+    line-height: 1.2 !important;
   }
 
   /* KPI badge text wrap so words never shoot out of boxes */
